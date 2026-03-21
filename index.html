@@ -218,13 +218,16 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<div class="login-screen" id="loginScreen">
-  <div class="login-box">
+-box">
     <div class="login-logo">&#9917; CAT 16 SC</div>
     <div class="login-sub">LISFI II Zona B 2026</div>
     <form id="loginForm" onsubmit="event.preventDefault(); window.doLogin();" autocomplete="on">
-      <input type="text" name="username" autocomplete="username" value="cat16sc" style="display:none">
+      <div class="login-field">
+        <label>Usuario</label>
+        <div class="input-wrap">
+          <input type="text" id="loginUser" name="username" autocomplete="username" value="cat16sc" readonly style="color:var(--muted);cursor:default;">
+        </div>
+      </div>
       <div class="login-field">
         <label>Contraseña</label>
         <div class="input-wrap">
