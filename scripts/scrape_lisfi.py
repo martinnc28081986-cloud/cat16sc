@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Scraper LISFI Zona II B 2026 — con verificación triple.
+Calcula posiciones desde los resultados (más robusto que scraping de tablas).
 Genera liga_data.json solo si los 3 intentos de verificación pasan.
 """
 import requests
@@ -8,13 +9,13 @@ from bs4 import BeautifulSoup
 import json, re, sys, time
 from datetime import datetime
 
-RESULTS_URL  = "https://www.lisfi.com.ar/index.php/liga-2b-2026/resultados"
-POSICION_URL = "https://www.lisfi.com.ar/index.php/liga-2b-2026/posiciones"
-CATEGORIES   = [13, 14, 15, 16, 17, 18, 19, 20]
-SC_RE        = re.compile(r'sagr', re.IGNORECASE)
-HEADERS      = {"User-Agent": "Mozilla/5.0 (compatible; ClubSC-Bot/1.0)"}
+RESULTS_URL = "https://www.lisfi.com.ar/index.php/liga-2b-2026/resultados"
+CATEGORIES  = [13, 14, 15, 16, 17, 18, 19, 20]
+SC_RE       = re.compile(r'sagr', re.IGNORECASE)
+HEADERS     = {"User-Agent": "Mozilla/5.0 (compatible; ClubSC-Bot/1.0)"}
 
 def is_sc(name): return bool(SC_RE.search(name))
+
 def parse_score(s):
     m = re.match(r"(\d+)\s*[-–]\s*(\d+)", s.strip())
     return (int(m.group(1)), int(m.group(2))) if m else None
@@ -30,21 +31,32 @@ def get_soup(url):
             print(f"   ⚠️  Conexión falló (intento {attempt}): {e} — reintentando en 5s...")
             time.sleep(5)
 
-# ── RESULTADOS ────────────────────────────────────────────────────────────────
-def scrape_results():
+# ── SCRAPING DE RESULTADOS ────────────────────────────────────────────────────
+def scrape_all():
+    """
+    Parsea TODOS los partidos de la página de resultados.
+    Retorna:
+      sc_results    {cat: [{fecha, rival, cond, gf, gc}]}
+      rival_results {cat: {rival: [{f, vs, gf, gc}]}}
+      all_matches   {cat: [(local, visit, gf_l, gc_l, fecha)]}
+    """
     soup = get_soup(RESULTS_URL)
     sc_results    = {cat: [] for cat in CATEGORIES}
     rival_results = {cat: {} for cat in CATEGORIES}
+    all_matches   = {cat: [] for cat in CATEGORIES}
+
     body = soup.find("body") or soup
     current_fecha = None
 
     for elem in body.descendants:
         if not hasattr(elem, "name") or not elem.name: continue
+
         if elem.name in ("p","h2","h3","strong","b","div","td"):
             m = re.search(r"Fecha\s*N[°º]?\s*(\d+)", elem.get_text(), re.IGNORECASE)
             if m:
                 nf = int(m.group(1))
                 if nf != current_fecha: current_fecha = nf
+
         if elem.name == "table" and current_fecha is not None:
             rows = elem.find_all("tr")
             if len(rows) < 2: continue
@@ -54,17 +66,23 @@ def scrape_results():
                 m2 = re.search(r"Cat\.?\s*\.?(\d+)", h, re.IGNORECASE)
                 if m2: cat_cols[int(m2.group(1))] = i
             if not cat_cols: continue
+
             for row in rows[1:]:
                 cells = [td.get_text().strip() for td in row.find_all("td")]
                 if not cells: continue
                 parts = re.split(r"\s+vs\.?\s+", cells[0], maxsplit=1, flags=re.IGNORECASE)
                 if len(parts) != 2: continue
                 local, visit = parts[0].strip(), parts[1].strip()
+
                 for cat, col in cat_cols.items():
                     if col >= len(cells): continue
                     score = parse_score(cells[col])
                     if not score: continue
                     gf_l, gc_l = score
+
+                    # Guardar todos los partidos para calcular standings
+                    all_matches[cat].append((local, visit, gf_l, gc_l, current_fecha))
+
                     if is_sc(local):
                         sc_results[cat].append({"fecha":current_fecha,"rival":visit,"cond":"L","gf":gf_l,"gc":gc_l})
                     elif is_sc(visit):
@@ -72,50 +90,55 @@ def scrape_results():
                     else:
                         for team,gf,gc,vs in [(local,gf_l,gc_l,visit),(visit,gc_l,gf_l,local)]:
                             rival_results[cat].setdefault(team,[]).append({"f":current_fecha,"vs":vs,"gf":gf,"gc":gc})
+
             current_fecha = None
 
     for cat in CATEGORIES: sc_results[cat].sort(key=lambda x: x["fecha"])
-    return sc_results, rival_results
+    return sc_results, rival_results, all_matches
 
-# ── POSICIONES ────────────────────────────────────────────────────────────────
-def scrape_standings():
-    soup = get_soup(POSICION_URL)
-    posiciones = {cat: [] for cat in CATEGORIES}
-    current_cat = None
-    body = soup.find("body") or soup
+# ── CALCULAR POSICIONES DESDE RESULTADOS ─────────────────────────────────────
+def build_standings(all_matches):
+    """
+    Calcula la tabla de posiciones a partir de los partidos scrapeados.
+    LISFI: 2 puntos por victoria, 1 por empate, 0 por derrota.
+    Siempre matemáticamente consistente.
+    """
+    posiciones = {}
 
-    for elem in body.descendants:
-        if not hasattr(elem, "name") or not elem.name: continue
-        if elem.name != "table":
-            m = re.search(r"Posiciones\s+Categor[íi]a\s*(\d{4})", elem.get_text(), re.IGNORECASE)
-            if m:
-                cat = int(m.group(1))
-                if cat in CATEGORIES: current_cat = cat
-            continue
-        if current_cat is None: continue
-        rows = elem.find_all("tr")
-        if len(rows) < 3: continue
-        hcells = [td.get_text().strip().upper() for td in rows[0].find_all(["th","td"])]
-        if "PJ" not in hcells or "PTS" not in hcells: continue
-        def col(name):
-            try: return next(i for i,h in enumerate(hcells) if h==name)
-            except StopIteration: return None
-        eq_c  = next((i for i,h in enumerate(hcells) if "EQUIPO" in h or h==""), None)
-        pj_c,pg_c,pe_c,pp_c,gf_c,gc_c,pts_c = col("PJ"),col("PG"),col("PE"),col("PP"),col("GF"),col("GC"),col("PTS")
-        if None in (eq_c,pj_c,pg_c,pe_c,pp_c,gf_c,gc_c,pts_c): continue
+    for cat, matches in all_matches.items():
+        teams = {}
+
+        for local, visit, gf_l, gc_l, fecha in matches:
+            for team in (local, visit):
+                if team not in teams:
+                    teams[team] = {"pj":0,"pg":0,"pe":0,"pp":0,"gf":0,"gc":0}
+
+            # Equipo local
+            teams[local]["pj"] += 1
+            teams[local]["gf"] += gf_l
+            teams[local]["gc"] += gc_l
+            if   gf_l > gc_l: teams[local]["pg"] += 1
+            elif gf_l == gc_l: teams[local]["pe"] += 1
+            else:               teams[local]["pp"] += 1
+
+            # Equipo visitante
+            teams[visit]["pj"] += 1
+            teams[visit]["gf"] += gc_l
+            teams[visit]["gc"] += gf_l
+            if   gc_l > gf_l: teams[visit]["pg"] += 1
+            elif gc_l == gf_l: teams[visit]["pe"] += 1
+            else:               teams[visit]["pp"] += 1
+
         standings = []
-        for row in rows[1:]:
-            cells = [td.get_text().strip() for td in row.find_all("td")]
-            if len(cells) <= pts_c: continue
-            eq = cells[eq_c].strip()
-            if not eq: continue
-            try:
-                standings.append({"eq":eq,"pj":int(cells[pj_c]),"pg":int(cells[pg_c]),"pe":int(cells[pe_c]),
-                                   "pp":int(cells[pp_c]),"gf":int(cells[gf_c]),"gc":int(cells[gc_c]),"pts":int(cells[pts_c])})
-            except (ValueError, IndexError): continue
-        if standings:
-            posiciones[current_cat] = standings
-            current_cat = None
+        for eq, s in teams.items():
+            pts = s["pg"]*2 + s["pe"]  # LISFI: 2pts por victoria
+            standings.append({"eq":eq,"pj":s["pj"],"pg":s["pg"],"pe":s["pe"],
+                               "pp":s["pp"],"gf":s["gf"],"gc":s["gc"],"pts":pts})
+
+        # Ordenar: pts desc, diferencia de goles desc, gf desc
+        standings.sort(key=lambda x: (-x["pts"], -(x["gf"]-x["gc"]), -x["gf"]))
+        posiciones[cat] = standings
+
     return posiciones
 
 # ── VERIFICACIÓN ──────────────────────────────────────────────────────────────
@@ -125,39 +148,39 @@ def verify(sc_results, posiciones, n):
     # 1. Las 8 categorías presentes en posiciones
     for cat in CATEGORIES:
         if not posiciones.get(cat):
-            errors.append(f"Cat {cat}: tabla de posiciones vacía o no encontrada")
+            errors.append(f"Cat {cat}: tabla de posiciones vacía")
 
     # 2. Cantidad de equipos razonable (Zona II B tiene 11)
     for cat in CATEGORIES:
         n_eq = len(posiciones.get(cat, []))
         if 0 < n_eq < 6 or n_eq > 14:
-            errors.append(f"Cat {cat}: {n_eq} equipos en tabla (esperado 8-14)")
+            errors.append(f"Cat {cat}: {n_eq} equipos (esperado 8-14)")
 
-    # 3. PTS = PG*2 + PE  (LISFI: 2 puntos por victoria)
+    # 3. PTS = PG*2 + PE  — siempre debería pasar al calcular desde resultados
     for cat in CATEGORIES:
         for row in posiciones.get(cat, []):
             expected = row["pg"]*2 + row["pe"]
             if row["pts"] != expected:
-                errors.append(f"Cat {cat} — {row['eq']}: pts={row['pts']} pero PG×2+PE={expected}")
+                errors.append(f"Cat {cat} — {row['eq']}: pts={row['pts']} esperado {expected}")
 
     # 4. PJ = PG + PE + PP
     for cat in CATEGORIES:
         for row in posiciones.get(cat, []):
-            if row["pj"] != row["pg"] + row["pe"] + row["pp"]:
-                errors.append(f"Cat {cat} — {row['eq']}: PJ={row['pj']} ≠ PG+PE+PP={row['pg']+row['pe']+row['pp']}")
+            if row["pj"] != row["pg"]+row["pe"]+row["pp"]:
+                errors.append(f"Cat {cat} — {row['eq']}: PJ inconsistente")
 
-    # 5. Goles no negativos ni absurdos
+    # 5. Goles razonables
     for cat in CATEGORIES:
         for r in sc_results.get(cat, []):
             if r["gf"] < 0 or r["gc"] < 0:
-                errors.append(f"Cat {cat} F{r['fecha']}: goles negativos ({r['gf']}-{r['gc']})")
+                errors.append(f"Cat {cat} F{r['fecha']}: goles negativos")
             if r["gf"] > 25 or r["gc"] > 25:
                 errors.append(f"Cat {cat} F{r['fecha']} vs {r['rival']}: marcador sospechoso {r['gf']}-{r['gc']}")
 
     # 6. SC tiene resultados en al menos 6 de 8 categorías
     cats_ok = sum(1 for cat in CATEGORIES if sc_results.get(cat))
     if cats_ok < 6:
-        errors.append(f"Solo {cats_ok}/8 categorías tienen resultados de SC (posible fallo de scraping)")
+        errors.append(f"Solo {cats_ok}/8 categorías con resultados SC (posible fallo de scraping)")
 
     # 7. Sin fechas duplicadas para SC
     for cat in CATEGORIES:
@@ -178,11 +201,11 @@ def main():
         print(f"\n{'='*50}\n  INTENTO {attempt}/3\n{'='*50}")
         try:
             print("⏳ Scrapeando resultados...")
-            sc_results, rival_results = scrape_results()
-            print("⏳ Scrapeando posiciones...")
-            posiciones = scrape_standings()
+            sc_results, rival_results, all_matches = scrape_all()
+            print("📐 Calculando posiciones desde resultados...")
+            posiciones = build_standings(all_matches)
         except Exception as e:
-            msg = f"Error de conexión: {e}"
+            msg = f"Error: {e}"
             print(f"❌ {msg}")
             all_errors.append(msg)
             if attempt < 3:
@@ -214,7 +237,6 @@ def main():
                 print("   Reintentando en 15s...")
                 time.sleep(15)
 
-    # Los 3 intentos fallaron
     print(f"\n{'='*50}")
     print("  ❌ LOS 3 INTENTOS FALLARON — liga_data.json NO modificado")
     print(f"{'='*50}")
