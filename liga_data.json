@@ -1,5 +1,5 @@
 {
-  "updatedAt": "12/04/2026",
+  "updatedAt": "14/04/2026",
   "scResults": {
     "13": [
       {
@@ -36,6 +36,13 @@
         "cond": "V",
         "gf": 2,
         "gc": 2
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 2,
+        "gc": 0
       }
     ],
     "14": [
@@ -73,6 +80,13 @@
         "cond": "V",
         "gf": 1,
         "gc": 0
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 0,
+        "gc": 3
       }
     ],
     "15": [
@@ -110,6 +124,13 @@
         "cond": "V",
         "gf": 3,
         "gc": 2
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 6,
+        "gc": 0
       }
     ],
     "16": [
@@ -147,6 +168,13 @@
         "cond": "V",
         "gf": 0,
         "gc": 3
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 0,
+        "gc": 1
       }
     ],
     "17": [
@@ -184,6 +212,13 @@
         "cond": "V",
         "gf": 2,
         "gc": 8
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 2,
+        "gc": 4
       }
     ],
     "18": [
@@ -221,6 +256,13 @@
         "cond": "V",
         "gf": 2,
         "gc": 0
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 1,
+        "gc": 3
       }
     ],
     "19": [
@@ -258,6 +300,13 @@
         "cond": "V",
         "gf": 2,
         "gc": 0
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 5,
+        "gc": 1
       }
     ],
     "20": [
@@ -295,6 +344,13 @@
         "cond": "V",
         "gf": 2,
         "gc": 0
+      },
+      {
+        "fecha": 6,
+        "rival": "Cambaceres",
+        "cond": "L",
+        "gf": 0,
+        "gc": 1
       }
     ]
   },
@@ -330,6 +386,12 @@
           "vs": "CRISFA V.",
           "gf": 8,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Villa Progreso": [
@@ -356,6 +418,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "N.Fuerza": [
@@ -388,6 +456,12 @@
           "vs": "Cambaceres",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Def. S. Lorenzo": [
@@ -440,6 +514,12 @@
           "vs": "ADAFI",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Cambaceres": [
@@ -492,6 +572,12 @@
           "vs": "Villa Progreso",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Hernandez": [
@@ -518,6 +604,12 @@
           "vs": "Cambaceres",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "La Plata V": [
@@ -537,6 +629,12 @@
           "f": 5,
           "vs": "Def. S. Lorenzo",
           "gf": 4,
+          "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 1,
           "gc": 0
         }
       ],
@@ -558,6 +656,12 @@
           "vs": "N.Fuerza",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
         }
       ]
     },
@@ -592,6 +696,12 @@
           "vs": "CRISFA V.",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Villa Progreso": [
@@ -618,6 +728,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "N.Fuerza": [
@@ -650,6 +766,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
+          "gf": 2,
+          "gc": 2
         }
       ],
       "Def. S. Lorenzo": [
@@ -702,6 +824,12 @@
           "vs": "ADAFI",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "Cambaceres": [
@@ -754,6 +882,12 @@
           "vs": "Villa Progreso",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Hernandez": [
@@ -780,6 +914,12 @@
           "vs": "Cambaceres",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 2
         }
       ],
       "La Plata V": [
@@ -800,6 +940,12 @@
           "vs": "Def. S. Lorenzo",
           "gf": 3,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Cap.Chica": [
@@ -820,6 +966,12 @@
           "vs": "N.Fuerza",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
         }
       ]
     },
@@ -854,6 +1006,12 @@
           "vs": "CRISFA V.",
           "gf": 7,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 4,
+          "gc": 0
         }
       ],
       "Villa Progreso": [
@@ -880,6 +1038,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "N.Fuerza": [
@@ -912,6 +1076,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 5
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Def. S. Lorenzo": [
@@ -964,6 +1134,12 @@
           "vs": "ADAFI",
           "gf": 0,
           "gc": 7
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Cambaceres": [
@@ -1016,6 +1192,12 @@
           "vs": "Villa Progreso",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Hernandez": [
@@ -1042,6 +1224,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "La Plata V": [
@@ -1062,6 +1250,12 @@
           "vs": "Def. S. Lorenzo",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Cap.Chica": [
@@ -1082,6 +1276,12 @@
           "vs": "N.Fuerza",
           "gf": 5,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 4
         }
       ]
     },
@@ -1116,6 +1316,12 @@
           "vs": "CRISFA V.",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 1,
+          "gc": 4
         }
       ],
       "Villa Progreso": [
@@ -1142,6 +1348,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 0,
+          "gc": 6
         }
       ],
       "N.Fuerza": [
@@ -1174,6 +1386,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 7
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 5
         }
       ],
       "Def. S. Lorenzo": [
@@ -1226,6 +1444,12 @@
           "vs": "ADAFI",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 6,
+          "gc": 0
         }
       ],
       "Cambaceres": [
@@ -1278,6 +1502,12 @@
           "vs": "Villa Progreso",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Hernandez": [
@@ -1304,6 +1534,12 @@
           "vs": "Cambaceres",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 5,
+          "gc": 0
         }
       ],
       "La Plata V": [
@@ -1324,6 +1560,12 @@
           "vs": "Def. S. Lorenzo",
           "gf": 6,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -1342,6 +1584,12 @@
         {
           "f": 4,
           "vs": "N.Fuerza",
+          "gf": 4,
+          "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
           "gf": 4,
           "gc": 1
         }
@@ -1378,6 +1626,12 @@
           "vs": "CRISFA V.",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Villa Progreso": [
@@ -1404,6 +1658,12 @@
           "vs": "Catella",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "N.Fuerza": [
@@ -1436,6 +1696,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Def. S. Lorenzo": [
@@ -1488,6 +1754,12 @@
           "vs": "ADAFI",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Cambaceres": [
@@ -1540,6 +1812,12 @@
           "vs": "Villa Progreso",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Hernandez": [
@@ -1566,6 +1844,12 @@
           "vs": "Cambaceres",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "La Plata V": [
@@ -1586,6 +1870,12 @@
           "vs": "Def. S. Lorenzo",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Cap.Chica": [
@@ -1606,6 +1896,12 @@
           "vs": "N.Fuerza",
           "gf": 3,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
+          "gf": 2,
+          "gc": 0
         }
       ]
     },
@@ -1640,6 +1936,12 @@
           "vs": "CRISFA V.",
           "gf": 5,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Villa Progreso": [
@@ -1666,6 +1968,12 @@
           "vs": "Catella",
           "gf": 5,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 3,
+          "gc": 3
         }
       ],
       "N.Fuerza": [
@@ -1697,6 +2005,12 @@
           "f": 5,
           "vs": "Cambaceres",
           "gf": 1,
+          "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
+          "gf": 0,
           "gc": 2
         }
       ],
@@ -1750,6 +2064,12 @@
           "vs": "ADAFI",
           "gf": 1,
           "gc": 5
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 3,
+          "gc": 3
         }
       ],
       "Cambaceres": [
@@ -1802,6 +2122,12 @@
           "vs": "Villa Progreso",
           "gf": 0,
           "gc": 5
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Hernandez": [
@@ -1828,6 +2154,12 @@
           "vs": "Cambaceres",
           "gf": 1,
           "gc": 6
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "La Plata V": [
@@ -1848,6 +2180,12 @@
           "vs": "Def. S. Lorenzo",
           "gf": 1,
           "gc": 5
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -1868,6 +2206,12 @@
           "vs": "N.Fuerza",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
         }
       ]
     },
@@ -1902,6 +2246,12 @@
           "vs": "CRISFA V.",
           "gf": 6,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Villa Progreso": [
@@ -1928,6 +2278,12 @@
           "vs": "Catella",
           "gf": 3,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "N.Fuerza": [
@@ -1960,6 +2316,12 @@
           "vs": "Cambaceres",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Def. S. Lorenzo": [
@@ -2012,6 +2374,12 @@
           "vs": "ADAFI",
           "gf": 2,
           "gc": 6
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Cambaceres": [
@@ -2064,6 +2432,12 @@
           "vs": "Villa Progreso",
           "gf": 3,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Hernandez": [
@@ -2090,6 +2464,12 @@
           "vs": "Cambaceres",
           "gf": 5,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "La Plata V": [
@@ -2110,6 +2490,12 @@
           "vs": "Def. S. Lorenzo",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Cap.Chica": [
@@ -2130,6 +2516,12 @@
           "vs": "N.Fuerza",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
         }
       ]
     },
@@ -2164,6 +2556,12 @@
           "vs": "CRISFA V.",
           "gf": 0,
           "gc": 4
+        },
+        {
+          "f": 6,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Villa Progreso": [
@@ -2190,6 +2588,12 @@
           "vs": "Catella",
           "gf": 2,
           "gc": 5
+        },
+        {
+          "f": 6,
+          "vs": "CRISFA V.",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "N.Fuerza": [
@@ -2214,6 +2618,12 @@
         {
           "f": 4,
           "vs": "Cap.Chica",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "Hernandez",
           "gf": 0,
           "gc": 2
         }
@@ -2268,6 +2678,12 @@
           "vs": "ADAFI",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "Villa Progreso",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "Cambaceres": [
@@ -2314,6 +2730,12 @@
           "vs": "Villa Progreso",
           "gf": 5,
           "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "La Plata V",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Hernandez": [
@@ -2340,6 +2762,12 @@
           "vs": "Cambaceres",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "La Plata V": [
@@ -2360,6 +2788,12 @@
           "vs": "Def. S. Lorenzo",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "Catella",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Cap.Chica": [
@@ -2380,6 +2814,12 @@
           "vs": "N.Fuerza",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
         }
       ]
     }
@@ -2388,102 +2828,102 @@
     "13": [
       {
         "eq": "ADAFI",
-        "pj": 5,
-        "pg": 4,
+        "pj": 6,
+        "pg": 5,
         "pe": 0,
         "pp": 1,
-        "gf": 29,
+        "gf": 31,
         "gc": 2,
-        "pts": 8
+        "pts": 10
       },
       {
         "eq": "La Plata V",
-        "pj": 4,
-        "pg": 4,
+        "pj": 5,
+        "pg": 5,
         "pe": 0,
         "pp": 0,
-        "gf": 10,
+        "gf": 11,
         "gc": 2,
-        "pts": 8
+        "pts": 10
       },
       {
         "eq": "N.Fuerza",
-        "pj": 5,
+        "pj": 6,
         "pg": 4,
-        "pe": 0,
+        "pe": 1,
         "pp": 1,
-        "gf": 8,
-        "gc": 4,
-        "pts": 8
+        "gf": 9,
+        "gc": 5,
+        "pts": 9
       },
       {
         "eq": "Hernandez",
-        "pj": 4,
+        "pj": 5,
+        "pg": 3,
+        "pe": 2,
+        "pp": 0,
+        "gf": 12,
+        "gc": 6,
+        "pts": 8
+      },
+      {
+        "eq": "Sagr. Corazón",
+        "pj": 6,
         "pg": 3,
         "pe": 1,
-        "pp": 0,
+        "pp": 2,
         "gf": 11,
-        "gc": 5,
+        "gc": 7,
         "pts": 7
       },
       {
         "eq": "Cap.Chica",
-        "pj": 4,
-        "pg": 2,
-        "pe": 1,
-        "pp": 1,
-        "gf": 8,
-        "gc": 5,
-        "pts": 5
-      },
-      {
-        "eq": "Sagr. Corazón",
         "pj": 5,
         "pg": 2,
         "pe": 1,
         "pp": 2,
-        "gf": 9,
+        "gf": 8,
         "gc": 7,
         "pts": 5
       },
       {
         "eq": "Catella",
-        "pj": 5,
+        "pj": 6,
         "pg": 2,
         "pe": 1,
-        "pp": 2,
+        "pp": 3,
         "gf": 6,
-        "gc": 8,
+        "gc": 9,
         "pts": 5
       },
       {
-        "eq": "Cambaceres",
-        "pj": 4,
-        "pg": 1,
+        "eq": "Villa Progreso",
+        "pj": 5,
+        "pg": 2,
         "pe": 0,
         "pp": 3,
-        "gf": 4,
-        "gc": 7,
-        "pts": 2
+        "gf": 8,
+        "gc": 15,
+        "pts": 4
       },
       {
-        "eq": "Villa Progreso",
-        "pj": 4,
+        "eq": "Cambaceres",
+        "pj": 5,
         "pg": 1,
         "pe": 0,
-        "pp": 3,
-        "gf": 7,
-        "gc": 15,
+        "pp": 4,
+        "gf": 4,
+        "gc": 9,
         "pts": 2
       },
       {
         "eq": "CRISFA V.",
-        "pj": 5,
+        "pj": 6,
         "pg": 0,
         "pe": 0,
-        "pp": 5,
+        "pp": 6,
         "gf": 4,
-        "gc": 21,
+        "gc": 22,
         "pts": 0
       },
       {
@@ -2500,102 +2940,102 @@
     "14": [
       {
         "eq": "ADAFI",
-        "pj": 5,
-        "pg": 4,
+        "pj": 6,
+        "pg": 5,
         "pe": 1,
         "pp": 0,
-        "gf": 19,
+        "gf": 21,
         "gc": 2,
-        "pts": 9
+        "pts": 11
       },
       {
         "eq": "Cambaceres",
-        "pj": 4,
-        "pg": 4,
+        "pj": 5,
+        "pg": 5,
         "pe": 0,
         "pp": 0,
-        "gf": 16,
+        "gf": 19,
         "gc": 2,
-        "pts": 8
+        "pts": 10
       },
       {
-        "eq": "Sagr. Corazón",
+        "eq": "CRISFA V.",
+        "pj": 6,
+        "pg": 3,
+        "pe": 1,
+        "pp": 2,
+        "gf": 8,
+        "gc": 8,
+        "pts": 7
+      },
+      {
+        "eq": "Hernandez",
         "pj": 5,
         "pg": 2,
         "pe": 2,
         "pp": 1,
         "gf": 6,
-        "gc": 4,
+        "gc": 5,
         "pts": 6
       },
       {
-        "eq": "Hernandez",
-        "pj": 4,
-        "pg": 2,
-        "pe": 1,
-        "pp": 1,
-        "gf": 4,
-        "gc": 3,
-        "pts": 5
-      },
-      {
         "eq": "Catella",
-        "pj": 5,
+        "pj": 6,
         "pg": 1,
-        "pe": 3,
+        "pe": 4,
         "pp": 1,
-        "gf": 7,
-        "gc": 8,
-        "pts": 5
+        "gf": 8,
+        "gc": 9,
+        "pts": 6
       },
       {
-        "eq": "CRISFA V.",
-        "pj": 5,
+        "eq": "Sagr. Corazón",
+        "pj": 6,
         "pg": 2,
-        "pe": 1,
-        "pp": 2,
-        "gf": 5,
-        "gc": 7,
-        "pts": 5
-      },
-      {
-        "eq": "Villa Progreso",
-        "pj": 4,
-        "pg": 1,
         "pe": 2,
-        "pp": 1,
-        "gf": 3,
+        "pp": 2,
+        "gf": 6,
         "gc": 7,
-        "pts": 4
+        "pts": 6
       },
       {
         "eq": "La Plata V",
-        "pj": 4,
+        "pj": 5,
+        "pg": 1,
+        "pe": 2,
+        "pp": 2,
+        "gf": 6,
+        "gc": 12,
+        "pts": 4
+      },
+      {
+        "eq": "Villa Progreso",
+        "pj": 5,
+        "pg": 1,
+        "pe": 2,
+        "pp": 2,
+        "gf": 4,
+        "gc": 10,
+        "pts": 4
+      },
+      {
+        "eq": "N.Fuerza",
+        "pj": 6,
         "pg": 1,
         "pe": 1,
-        "pp": 2,
-        "gf": 5,
-        "gc": 11,
+        "pp": 4,
+        "gf": 8,
+        "gc": 20,
         "pts": 3
       },
       {
         "eq": "Cap.Chica",
-        "pj": 4,
-        "pg": 1,
-        "pe": 0,
-        "pp": 3,
-        "gf": 4,
-        "gc": 4,
-        "pts": 2
-      },
-      {
-        "eq": "N.Fuerza",
         "pj": 5,
         "pg": 1,
         "pe": 0,
         "pp": 4,
-        "gf": 6,
-        "gc": 18,
+        "gf": 4,
+        "gc": 6,
         "pts": 2
       },
       {
@@ -2612,92 +3052,92 @@
     "15": [
       {
         "eq": "Sagr. Corazón",
-        "pj": 5,
-        "pg": 3,
+        "pj": 6,
+        "pg": 4,
         "pe": 2,
         "pp": 0,
-        "gf": 8,
+        "gf": 14,
         "gc": 3,
-        "pts": 8
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 4,
-        "pg": 3,
-        "pe": 0,
-        "pp": 1,
-        "gf": 12,
-        "gc": 3,
-        "pts": 6
+        "pts": 10
       },
       {
         "eq": "ADAFI",
-        "pj": 5,
-        "pg": 3,
+        "pj": 6,
+        "pg": 4,
         "pe": 0,
         "pp": 2,
-        "gf": 11,
+        "gf": 15,
         "gc": 5,
-        "pts": 6
+        "pts": 8
       },
       {
         "eq": "Villa Progreso",
-        "pj": 4,
-        "pg": 3,
+        "pj": 5,
+        "pg": 4,
         "pe": 0,
         "pp": 1,
-        "gf": 10,
+        "gf": 12,
         "gc": 8,
-        "pts": 6
+        "pts": 8
       },
       {
         "eq": "La Plata V",
-        "pj": 4,
+        "pj": 5,
         "pg": 2,
-        "pe": 1,
+        "pe": 2,
         "pp": 1,
-        "gf": 11,
-        "gc": 5,
-        "pts": 5
+        "gf": 12,
+        "gc": 6,
+        "pts": 6
       },
       {
-        "eq": "Cap.Chica",
-        "pj": 4,
+        "eq": "Hernandez",
+        "pj": 5,
         "pg": 2,
-        "pe": 1,
+        "pe": 2,
         "pp": 1,
-        "gf": 10,
-        "gc": 4,
-        "pts": 5
+        "gf": 8,
+        "gc": 3,
+        "pts": 6
+      },
+      {
+        "eq": "Cambaceres",
+        "pj": 5,
+        "pg": 3,
+        "pe": 0,
+        "pp": 2,
+        "gf": 12,
+        "gc": 9,
+        "pts": 6
       },
       {
         "eq": "Catella",
+        "pj": 6,
+        "pg": 2,
+        "pe": 2,
+        "pp": 2,
+        "gf": 8,
+        "gc": 9,
+        "pts": 6
+      },
+      {
+        "eq": "Cap.Chica",
         "pj": 5,
         "pg": 2,
         "pe": 1,
         "pp": 2,
-        "gf": 7,
+        "gf": 10,
         "gc": 8,
         "pts": 5
       },
       {
-        "eq": "Hernandez",
-        "pj": 4,
-        "pg": 1,
-        "pe": 2,
-        "pp": 1,
-        "gf": 6,
-        "gc": 3,
-        "pts": 4
-      },
-      {
         "eq": "CRISFA V.",
-        "pj": 5,
+        "pj": 6,
         "pg": 1,
         "pe": 1,
-        "pp": 3,
+        "pp": 4,
         "gf": 3,
-        "gc": 15,
+        "gc": 17,
         "pts": 3
       },
       {
@@ -2712,114 +3152,114 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 5,
+        "pj": 6,
         "pg": 0,
         "pe": 0,
-        "pp": 5,
+        "pp": 6,
         "gf": 0,
-        "gc": 23,
+        "gc": 25,
         "pts": 0
       }
     ],
     "16": [
       {
         "eq": "Hernandez",
-        "pj": 4,
-        "pg": 4,
+        "pj": 5,
+        "pg": 5,
         "pe": 0,
         "pp": 0,
-        "gf": 15,
+        "gf": 20,
         "gc": 3,
-        "pts": 8
+        "pts": 10
       },
       {
         "eq": "La Plata V",
-        "pj": 4,
-        "pg": 3,
+        "pj": 5,
+        "pg": 4,
         "pe": 1,
         "pp": 0,
-        "gf": 19,
+        "gf": 21,
         "gc": 3,
-        "pts": 7
+        "pts": 9
       },
       {
         "eq": "CRISFA V.",
+        "pj": 6,
+        "pg": 4,
+        "pe": 1,
+        "pp": 1,
+        "gf": 17,
+        "gc": 7,
+        "pts": 9
+      },
+      {
+        "eq": "Cambaceres",
         "pj": 5,
         "pg": 3,
         "pe": 1,
         "pp": 1,
         "gf": 11,
-        "gc": 7,
+        "gc": 5,
         "pts": 7
       },
       {
         "eq": "ADAFI",
+        "pj": 6,
+        "pg": 3,
+        "pe": 0,
+        "pp": 3,
+        "gf": 23,
+        "gc": 9,
+        "pts": 6
+      },
+      {
+        "eq": "Cap.Chica",
         "pj": 5,
         "pg": 3,
         "pe": 0,
         "pp": 2,
-        "gf": 22,
-        "gc": 5,
+        "gf": 12,
+        "gc": 6,
         "pts": 6
       },
       {
-        "eq": "Cambaceres",
-        "pj": 4,
-        "pg": 2,
-        "pe": 1,
-        "pp": 1,
-        "gf": 10,
-        "gc": 5,
-        "pts": 5
-      },
-      {
         "eq": "Sagr. Corazón",
-        "pj": 5,
+        "pj": 6,
         "pg": 2,
         "pe": 1,
-        "pp": 2,
+        "pp": 3,
         "gf": 11,
-        "gc": 9,
+        "gc": 10,
         "pts": 5
-      },
-      {
-        "eq": "Cap.Chica",
-        "pj": 4,
-        "pg": 2,
-        "pe": 0,
-        "pp": 2,
-        "gf": 8,
-        "gc": 5,
-        "pts": 4
-      },
-      {
-        "eq": "Villa Progreso",
-        "pj": 4,
-        "pg": 1,
-        "pe": 1,
-        "pp": 2,
-        "gf": 3,
-        "gc": 14,
-        "pts": 3
       },
       {
         "eq": "Catella",
+        "pj": 6,
+        "pg": 1,
+        "pe": 1,
+        "pp": 4,
+        "gf": 7,
+        "gc": 23,
+        "pts": 3
+      },
+      {
+        "eq": "Villa Progreso",
         "pj": 5,
         "pg": 1,
         "pe": 1,
         "pp": 3,
-        "gf": 7,
-        "gc": 21,
+        "gf": 3,
+        "gc": 20,
         "pts": 3
       },
       {
         "eq": "N.Fuerza",
-        "pj": 5,
+        "pj": 6,
         "pg": 0,
         "pe": 1,
-        "pp": 4,
+        "pp": 5,
         "gf": 7,
-        "gc": 21,
+        "gc": 26,
         "pts": 1
       },
       {
@@ -2836,102 +3276,102 @@
     "17": [
       {
         "eq": "Hernandez",
-        "pj": 4,
-        "pg": 3,
+        "pj": 5,
+        "pg": 4,
         "pe": 1,
         "pp": 0,
-        "gf": 11,
+        "gf": 12,
         "gc": 3,
-        "pts": 7
+        "pts": 9
+      },
+      {
+        "eq": "Cambaceres",
+        "pj": 5,
+        "pg": 4,
+        "pe": 0,
+        "pp": 1,
+        "gf": 14,
+        "gc": 10,
+        "pts": 8
       },
       {
         "eq": "Sagr. Corazón",
+        "pj": 6,
+        "pg": 3,
+        "pe": 1,
+        "pp": 2,
+        "gf": 20,
+        "gc": 17,
+        "pts": 7
+      },
+      {
+        "eq": "La Plata V",
         "pj": 5,
         "pg": 3,
         "pe": 1,
         "pp": 1,
-        "gf": 18,
-        "gc": 13,
+        "gf": 9,
+        "gc": 10,
         "pts": 7
       },
       {
-        "eq": "Cambaceres",
-        "pj": 4,
-        "pg": 3,
-        "pe": 0,
-        "pp": 1,
-        "gf": 10,
-        "gc": 8,
-        "pts": 6
-      },
-      {
-        "eq": "N.Fuerza",
+        "eq": "Cap.Chica",
         "pj": 5,
         "pg": 3,
         "pe": 0,
         "pp": 2,
-        "gf": 8,
-        "gc": 7,
-        "pts": 6
-      },
-      {
-        "eq": "La Plata V",
-        "pj": 4,
-        "pg": 3,
-        "pe": 0,
-        "pp": 1,
-        "gf": 8,
-        "gc": 9,
+        "gf": 16,
+        "gc": 10,
         "pts": 6
       },
       {
         "eq": "Villa Progreso",
-        "pj": 4,
+        "pj": 5,
         "pg": 2,
-        "pe": 1,
+        "pe": 2,
         "pp": 1,
-        "gf": 9,
-        "gc": 5,
-        "pts": 5
+        "gf": 10,
+        "gc": 6,
+        "pts": 6
       },
       {
-        "eq": "Cap.Chica",
-        "pj": 4,
-        "pg": 2,
+        "eq": "N.Fuerza",
+        "pj": 6,
+        "pg": 3,
         "pe": 0,
-        "pp": 2,
-        "gf": 14,
-        "gc": 10,
-        "pts": 4
+        "pp": 3,
+        "gf": 8,
+        "gc": 8,
+        "pts": 6
       },
       {
         "eq": "CRISFA V.",
-        "pj": 5,
+        "pj": 6,
         "pg": 1,
-        "pe": 2,
+        "pe": 3,
         "pp": 2,
-        "gf": 7,
-        "gc": 6,
-        "pts": 4
+        "gf": 8,
+        "gc": 7,
+        "pts": 5
       },
       {
         "eq": "Catella",
-        "pj": 5,
+        "pj": 6,
         "pg": 1,
-        "pe": 1,
+        "pe": 2,
         "pp": 3,
-        "gf": 10,
-        "gc": 13,
-        "pts": 3
+        "gf": 11,
+        "gc": 14,
+        "pts": 4
       },
       {
         "eq": "ADAFI",
-        "pj": 5,
+        "pj": 6,
         "pg": 1,
         "pe": 0,
-        "pp": 4,
+        "pp": 5,
         "gf": 7,
-        "gc": 13,
+        "gc": 15,
         "pts": 2
       },
       {
@@ -2948,43 +3388,43 @@
     "18": [
       {
         "eq": "ADAFI",
+        "pj": 6,
+        "pg": 6,
+        "pe": 0,
+        "pp": 0,
+        "gf": 28,
+        "gc": 8,
+        "pts": 12
+      },
+      {
+        "eq": "Cambaceres",
         "pj": 5,
         "pg": 5,
         "pe": 0,
         "pp": 0,
-        "gf": 26,
-        "gc": 8,
+        "gf": 21,
+        "gc": 3,
         "pts": 10
       },
       {
         "eq": "Sagr. Corazón",
-        "pj": 5,
+        "pj": 6,
         "pg": 5,
         "pe": 0,
-        "pp": 0,
-        "gf": 15,
-        "gc": 2,
+        "pp": 1,
+        "gf": 16,
+        "gc": 5,
         "pts": 10
       },
       {
-        "eq": "Cambaceres",
-        "pj": 4,
+        "eq": "Hernandez",
+        "pj": 5,
         "pg": 4,
         "pe": 0,
-        "pp": 0,
-        "gf": 18,
-        "gc": 2,
-        "pts": 8
-      },
-      {
-        "eq": "Hernandez",
-        "pj": 4,
-        "pg": 3,
-        "pe": 0,
         "pp": 1,
-        "gf": 23,
+        "gf": 25,
         "gc": 10,
-        "pts": 6
+        "pts": 8
       },
       {
         "eq": "Def. S. Lorenzo",
@@ -2998,36 +3438,36 @@
       },
       {
         "eq": "Villa Progreso",
-        "pj": 4,
+        "pj": 5,
+        "pg": 1,
+        "pe": 2,
+        "pp": 2,
+        "gf": 11,
+        "gc": 10,
+        "pts": 4
+      },
+      {
+        "eq": "La Plata V",
+        "pj": 5,
         "pg": 1,
         "pe": 1,
-        "pp": 2,
-        "gf": 8,
-        "gc": 7,
+        "pp": 3,
+        "gf": 4,
+        "gc": 13,
         "pts": 3
       },
       {
         "eq": "N.Fuerza",
-        "pj": 5,
+        "pj": 6,
         "pg": 1,
         "pe": 0,
-        "pp": 4,
+        "pp": 5,
         "gf": 4,
-        "gc": 8,
+        "gc": 10,
         "pts": 2
       },
       {
         "eq": "Cap.Chica",
-        "pj": 4,
-        "pg": 1,
-        "pe": 0,
-        "pp": 3,
-        "gf": 3,
-        "gc": 19,
-        "pts": 2
-      },
-      {
-        "eq": "Catella",
         "pj": 5,
         "pg": 1,
         "pe": 0,
@@ -3037,96 +3477,96 @@
         "pts": 2
       },
       {
-        "eq": "La Plata V",
-        "pj": 4,
-        "pg": 0,
-        "pe": 1,
-        "pp": 3,
+        "eq": "Catella",
+        "pj": 6,
+        "pg": 1,
+        "pe": 0,
+        "pp": 5,
         "gf": 3,
-        "gc": 13,
-        "pts": 1
+        "gc": 22,
+        "pts": 2
       },
       {
         "eq": "CRISFA V.",
-        "pj": 5,
+        "pj": 6,
         "pg": 0,
-        "pe": 0,
+        "pe": 1,
         "pp": 5,
-        "gf": 5,
-        "gc": 20,
-        "pts": 0
+        "gf": 8,
+        "gc": 23,
+        "pts": 1
       }
     ],
     "19": [
       {
         "eq": "ADAFI",
+        "pj": 6,
+        "pg": 6,
+        "pe": 0,
+        "pp": 0,
+        "gf": 21,
+        "gc": 4,
+        "pts": 12
+      },
+      {
+        "eq": "Hernandez",
         "pj": 5,
         "pg": 5,
         "pe": 0,
         "pp": 0,
         "gf": 19,
-        "gc": 4,
+        "gc": 2,
         "pts": 10
       },
       {
-        "eq": "Hernandez",
-        "pj": 4,
-        "pg": 4,
-        "pe": 0,
-        "pp": 0,
-        "gf": 17,
-        "gc": 2,
-        "pts": 8
-      },
-      {
         "eq": "Sagr. Corazón",
-        "pj": 5,
-        "pg": 4,
+        "pj": 6,
+        "pg": 5,
         "pe": 0,
         "pp": 1,
-        "gf": 8,
-        "gc": 2,
-        "pts": 8
+        "gf": 13,
+        "gc": 3,
+        "pts": 10
       },
       {
         "eq": "CRISFA V.",
-        "pj": 5,
-        "pg": 3,
+        "pj": 6,
+        "pg": 4,
         "pe": 0,
         "pp": 2,
-        "gf": 21,
+        "gf": 23,
         "gc": 9,
-        "pts": 6
+        "pts": 8
       },
       {
         "eq": "Villa Progreso",
-        "pj": 4,
+        "pj": 5,
         "pg": 2,
         "pe": 1,
-        "pp": 1,
+        "pp": 2,
         "gf": 8,
-        "gc": 8,
+        "gc": 10,
+        "pts": 5
+      },
+      {
+        "eq": "Catella",
+        "pj": 6,
+        "pg": 2,
+        "pe": 1,
+        "pp": 3,
+        "gf": 8,
+        "gc": 16,
         "pts": 5
       },
       {
         "eq": "Cap.Chica",
-        "pj": 4,
+        "pj": 5,
         "pg": 2,
         "pe": 0,
-        "pp": 2,
-        "gf": 6,
-        "gc": 5,
-        "pts": 4
-      },
-      {
-        "eq": "Catella",
-        "pj": 5,
-        "pg": 1,
-        "pe": 1,
         "pp": 3,
         "gf": 6,
-        "gc": 16,
-        "pts": 3
+        "gc": 7,
+        "pts": 4
       },
       {
         "eq": "Def. S. Lorenzo",
@@ -3140,105 +3580,105 @@
       },
       {
         "eq": "La Plata V",
-        "pj": 4,
+        "pj": 5,
         "pg": 1,
         "pe": 0,
-        "pp": 3,
+        "pp": 4,
         "gf": 2,
-        "gc": 7,
+        "gc": 9,
         "pts": 2
       },
       {
         "eq": "N.Fuerza",
-        "pj": 5,
+        "pj": 6,
         "pg": 0,
         "pe": 1,
-        "pp": 4,
+        "pp": 5,
         "gf": 1,
-        "gc": 15,
+        "gc": 17,
         "pts": 1
       },
       {
         "eq": "Cambaceres",
-        "pj": 4,
+        "pj": 5,
         "pg": 0,
         "pe": 1,
-        "pp": 3,
-        "gf": 3,
-        "gc": 18,
+        "pp": 4,
+        "gf": 4,
+        "gc": 23,
         "pts": 1
       }
     ],
     "20": [
       {
         "eq": "Catella",
-        "pj": 5,
-        "pg": 5,
+        "pj": 6,
+        "pg": 6,
         "pe": 0,
         "pp": 0,
-        "gf": 18,
+        "gf": 20,
         "gc": 3,
-        "pts": 10
+        "pts": 12
       },
       {
-        "eq": "Sagr. Corazón",
+        "eq": "CRISFA V.",
+        "pj": 6,
+        "pg": 4,
+        "pe": 0,
+        "pp": 2,
+        "gf": 12,
+        "gc": 6,
+        "pts": 8
+      },
+      {
+        "eq": "Hernandez",
         "pj": 5,
         "pg": 4,
         "pe": 0,
         "pp": 1,
-        "gf": 8,
-        "gc": 3,
+        "gf": 9,
+        "gc": 4,
         "pts": 8
       },
       {
-        "eq": "CRISFA V.",
+        "eq": "Sagr. Corazón",
+        "pj": 6,
+        "pg": 4,
+        "pe": 0,
+        "pp": 2,
+        "gf": 8,
+        "gc": 4,
+        "pts": 8
+      },
+      {
+        "eq": "Villa Progreso",
         "pj": 5,
         "pg": 3,
         "pe": 0,
         "pp": 2,
         "gf": 10,
-        "gc": 5,
-        "pts": 6
-      },
-      {
-        "eq": "Villa Progreso",
-        "pj": 4,
-        "pg": 3,
-        "pe": 0,
-        "pp": 1,
-        "gf": 9,
-        "gc": 5,
-        "pts": 6
-      },
-      {
-        "eq": "Hernandez",
-        "pj": 4,
-        "pg": 3,
-        "pe": 0,
-        "pp": 1,
-        "gf": 7,
-        "gc": 4,
+        "gc": 7,
         "pts": 6
       },
       {
         "eq": "ADAFI",
-        "pj": 5,
-        "pg": 2,
+        "pj": 6,
+        "pg": 3,
         "pe": 0,
         "pp": 3,
-        "gf": 3,
+        "gf": 5,
         "gc": 12,
-        "pts": 4
+        "pts": 6
       },
       {
         "eq": "Cambaceres",
-        "pj": 3,
-        "pg": 1,
+        "pj": 4,
+        "pg": 2,
         "pe": 0,
         "pp": 2,
-        "gf": 3,
+        "gf": 4,
         "gc": 4,
-        "pts": 2
+        "pts": 4
       },
       {
         "eq": "Def. S. Lorenzo",
@@ -3252,32 +3692,32 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 4,
+        "pj": 5,
         "pg": 1,
         "pe": 0,
-        "pp": 3,
+        "pp": 4,
         "gf": 2,
-        "gc": 6,
+        "gc": 8,
         "pts": 2
       },
       {
         "eq": "Cap.Chica",
-        "pj": 4,
+        "pj": 5,
         "pg": 1,
         "pe": 0,
-        "pp": 3,
+        "pp": 4,
         "gf": 2,
-        "gc": 6,
+        "gc": 8,
         "pts": 2
       },
       {
         "eq": "La Plata V",
-        "pj": 4,
+        "pj": 5,
         "pg": 0,
         "pe": 0,
-        "pp": 4,
+        "pp": 5,
         "gf": 0,
-        "gc": 11,
+        "gc": 13,
         "pts": 0
       }
     ]
