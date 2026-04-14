@@ -316,9 +316,9 @@
     <div style="font-size:0.65rem;color:var(--muted);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:28px">Estadísticas y Citaciones</div>
     <form id="loginForm" onsubmit="event.preventDefault(); window.doLogin();" autocomplete="on">
       <div class="login-field">
-        <label>Usuario</label>
+        <label>Email</label>
         <div class="input-wrap">
-          <input type="text" id="loginUser" name="username" autocomplete="username" value="profe">
+          <input type="email" id="loginEmail" name="username" autocomplete="username" placeholder="tu@email.com">
         </div>
       </div>
       <div class="login-field">
@@ -329,6 +329,9 @@
       </div>
       <div class="login-err" id="loginErr"></div>
       <button type="submit" class="login-btn" id="loginBtn">Ingresar</button>
+      <div style="text-align:center;margin-top:12px">
+        <a href="#" onclick="window.doResetPass(event)" style="font-size:0.75rem;color:var(--muted);text-decoration:none">¿Olvidaste tu contraseña?</a>
+      </div>
     </form>
   </div>
 </div>
@@ -534,6 +537,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, remove, get, onValue, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const FC = {
   apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
@@ -546,32 +550,32 @@ const FC = {
 };
 const app = initializeApp(FC);
 const db  = getDatabase(app);
+const auth = getAuth(app);
 
 // ── PRESENCIA EN TIEMPO REAL ──
 let _connectedUsers = 0;
 let _connectedCats = [];
 let _myPresRef = null;
 
+let _currentCat = '';
+
 const connectedRef = ref(db, '.info/connected');
 onValue(connectedRef, snap => {
   if (snap.val() === true) {
     _myPresRef = push(ref(db, 'presence'));
     onDisconnect(_myPresRef).remove();
-    // cat se actualiza al hacer login (ver window._updatePresenceCat)
-    set(_myPresRef, { t: Date.now(), cat: sessionStorage.getItem('cat16sc_cat') || '' });
+    set(_myPresRef, { t: Date.now(), cat: _currentCat });
   }
 });
 
 window._updatePresenceCat = function(cat){
+  _currentCat = cat;
   if(_myPresRef) set(_myPresRef, { t: Date.now(), cat });
 };
 
 // Refrescar timestamp cada 4 minutos para que no expire el filtro de 10min
 setInterval(() => {
-  if(_myPresRef){
-    const cat = sessionStorage.getItem('cat16sc_cat') || '';
-    if(cat) set(_myPresRef, { t: Date.now(), cat });
-  }
+  if(_myPresRef && _currentCat) set(_myPresRef, { t: Date.now(), cat: _currentCat });
 }, 4 * 60 * 1000);
 
 onValue(ref(db, 'presence'), snap => {
@@ -594,86 +598,112 @@ onValue(ref(db, 'config/suspensions'), snap => {
   if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
 });
 
-// ── CONTRASEÑAS POR CATEGORÍA ──
-const CAT_PASSES = { 'cat16':'2016','cat13':'2013','cat2020':'2020','cat2019':'2019','cat2018':'2018','cat2017':'2017','cat2015':'2015','cat2014':'2014','escuelita':'escuelita','coord':'juan' };
-const SESSION_KEY = 'cat16sc_auth';
-
 // ── LOGIN ──
-window.doLogin = function(){
-  const pass = document.getElementById('loginPass').value;
-  const btn  = document.getElementById('loginBtn');
-  const err  = document.getElementById('loginErr');
-  if(!pass){ err.textContent='Ingresá la contraseña'; return; }
-  const cat = Object.keys(CAT_PASSES).find(k => CAT_PASSES[k] === pass);
-  if(cat){
-    sessionStorage.setItem(SESSION_KEY, '1');
-    sessionStorage.setItem('cat16sc_cat', cat);
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('logoutBtn').style.display   = 'inline-block';
-    window._updatePresenceCat(cat);
-    if(window.PasswordCredential){
-      const cred = new PasswordCredential({ id:'profe'+cat, password:pass });
-      navigator.credentials.store(cred);
-    }
-    if(cat === 'coord'){
-      if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
-      else { document.getElementById('loadingScreen').style.display='none'; }
-    } else {
-      launchCat(cat);
-    }
-  } else {
-    err.textContent = 'Contraseña incorrecta';
+window.doLogin = async function(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  if(!email){ err.textContent='Ingresá tu email'; return; }
+  if(!pass){  err.textContent='Ingresá la contraseña'; return; }
+  btn.disabled=true; btn.textContent='Ingresando...';
+  err.textContent='';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    // onAuthStateChanged se encarga del resto
+  } catch(e) {
     btn.disabled=false; btn.textContent='Ingresar';
+    if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found'){
+      err.textContent='Email o contraseña incorrectos';
+    } else if(e.code==='auth/too-many-requests'){
+      err.textContent='Demasiados intentos. Esperá unos minutos o resetéa tu contraseña.';
+    } else {
+      err.textContent='Error al ingresar. Intentá de nuevo.';
+    }
+  }
+};
+
+// ── RESET CONTRASEÑA ──
+window.doResetPass = async function(e){
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  if(!email){ document.getElementById('loginErr').textContent='Ingresá tu email primero'; return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    document.getElementById('loginErr').style.color='var(--green)';
+    document.getElementById('loginErr').textContent='✓ Te enviamos un email para resetear tu contraseña';
+    setTimeout(()=>{ document.getElementById('loginErr').style.color=''; document.getElementById('loginErr').textContent=''; }, 5000);
+  } catch(e) {
+    document.getElementById('loginErr').textContent='No encontramos ese email.';
   }
 };
 
 // ── LOGOUT ──
-window.doLogout = function(){
+window.doLogout = async function(){
   if(!confirm('¿Cerrar sesión?')) return;
-  sessionStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem('cat16sc_cat');
-  document.getElementById('loginScreen').style.display  = 'flex';
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('logoutBtn').style.display    = 'none';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginErr').textContent = '';
-  document.getElementById('coord-app').style.display = 'none';
-  document.querySelector('.tabs-wrapper').style.display = '';
-  document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
-  if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{try{u();}catch(e){}});  window._coordUnsubs=null; }
-  _onSuspensionChange = null;
-  window._appStarted = false;
-  if(window._unsub1) try{window._unsub1();}catch(e){}
-  if(window._unsub2) try{window._unsub2();}catch(e){}
-  window._unsub1=null; window._unsub2=null;
+  await signOut(auth);
+  // onAuthStateChanged limpia la UI
 };
 
-// Enter en contraseña
-document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') window.doLogin(); });
+// ── MANEJO DE ESTADO DE AUTH ──
+function _launchByRole(profile){
+  const { role, cat } = profile;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('logoutBtn').style.display='inline-block';
+  if(role==='super-admin' || role==='coordinator'){
+    window._updatePresenceCat('coord');
+    if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
+    else { document.getElementById('loadingScreen').style.display='none'; }
+  } else if(role==='profe' && cat){
+    window._updatePresenceCat(cat);
+    launchCat(cat);
+  } else {
+    signOut(auth);
+    document.getElementById('loginErr').textContent='Tu usuario no tiene acceso configurado. Contactá al administrador.';
+    document.getElementById('loginScreen').style.display='flex';
+  }
+}
 
-// ── CHEQUEO DE SESIÓN ──
+onAuthStateChanged(auth, async user => {
+  if(user){
+    try {
+      const snap = await get(ref(db, 'users/' + user.uid));
+      if(snap.exists()){
+        _launchByRole(snap.val());
+      } else {
+        // No tiene perfil en DB
+        await signOut(auth);
+        document.getElementById('loginErr').textContent='Tu usuario no tiene acceso configurado. Contactá al administrador.';
+        document.getElementById('loginScreen').style.display='flex';
+      }
+    } catch(e){
+      await signOut(auth);
+      document.getElementById('loginErr').textContent='Error al verificar tu acceso. Intentá de nuevo.';
+      document.getElementById('loginScreen').style.display='flex';
+    }
+  } else {
+    // No autenticado — mostrar login
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('logoutBtn').style.display='none';
+    document.getElementById('coord-app').style.display='none';
+    document.querySelector('.tabs-wrapper').style.display='';
+    document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
+    if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{try{u();}catch(e){}});  window._coordUnsubs=null; }
+    _onSuspensionChange=null;
+    window._appStarted=false;
+    if(window._unsub1) try{window._unsub1();}catch(e){}
+    if(window._unsub2) try{window._unsub2();}catch(e){}
+    window._unsub1=null; window._unsub2=null;
+  }
+});
+
 function launchCat(cat){
   document.getElementById('loadingScreen').style.display = 'flex';
   document.getElementById('logoutBtn').style.display = 'inline-block';
   if(!window._appStarted){ window._appStarted=true; startApp(cat); }
-}
-
-if(sessionStorage.getItem(SESSION_KEY)){
-  const savedCat = sessionStorage.getItem('cat16sc_cat');
-  if(savedCat){
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('logoutBtn').style.display   = 'inline-block';
-    if(savedCat === 'coord'){
-      if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
-      else { document.getElementById('loadingScreen').style.display='none'; }
-    } else {
-      launchCat(savedCat);
-    }
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
-  }
-} else {
-  document.getElementById('loginScreen').style.display = 'flex';
 }
 
 function startApp(cat){
@@ -2887,7 +2917,7 @@ window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _pwaPrompt = e;
   // Mostrar banner solo si el usuario ya está logueado
-  if(sessionStorage.getItem('cat16sc_auth')){
+  if(auth.currentUser){
     document.getElementById('pwaBanner').classList.add('show');
   }
 });
