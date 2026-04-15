@@ -311,9 +311,20 @@
 <!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-box">
-    <div class="login-logo" style="font-size:1.5rem;letter-spacing:2px">&#9917; ESCUELA DE FUTBOL</div>
-    <div class="login-sub">SAGRADO CORAZÓN</div>
-    <div style="font-size:0.65rem;color:var(--muted);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:28px">Estadísticas y Citaciones</div>
+    <div style="display:flex;justify-content:center;margin-bottom:16px">
+      <svg width="240" height="68" viewBox="0 0 240 68">
+        <circle cx="34" cy="34" r="22" fill="none" stroke="#4d73f5" stroke-width="2"/>
+        <line x1="34" y1="12" x2="34" y2="56" stroke="#4d73f5" stroke-width="1.5"/>
+        <line x1="12" y1="34" x2="56" y2="34" stroke="#4d73f5" stroke-width="1.5"/>
+        <ellipse cx="34" cy="34" rx="10" ry="22" fill="none" stroke="#4d73f5" stroke-width="1.5"/>
+        <ellipse cx="34" cy="34" rx="22" ry="10" fill="none" stroke="#4d73f5" stroke-width="1.5"/>
+        <line x1="68" y1="16" x2="68" y2="52" stroke="#1e3a9e" stroke-width="1"/>
+        <text x="80" y="30" font-family="Arial Black, sans-serif" font-size="16" font-weight="900" fill="#ffffff" letter-spacing="2">MI</text>
+        <text x="80" y="52" font-family="Arial Black, sans-serif" font-size="16" font-weight="900" fill="#4d73f5" letter-spacing="2">PLANTEL</text>
+      </svg>
+    </div>
+    <div class="login-sub" style="font-size:0.72rem;margin-bottom:6px">El plantel siempre bajo control</div>
+    <div style="font-size:0.65rem;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:24px">Citaciones · Presencias · Estadísticas<br>todo organizado en un solo lugar.</div>
     <form id="loginForm" onsubmit="event.preventDefault(); window.doLogin();" autocomplete="on">
       <div class="login-field">
         <label>Email</label>
@@ -520,6 +531,18 @@
   <button class="pwa-dismiss-btn" onclick="window.pwaDismiss()">✕</button>
 </div>
 
+<!-- SUPER ADMIN -->
+<div id="superadmin-app" style="display:none">
+  <div class="coord-tabs" id="saTabsEl">
+    <div class="coord-tab cta" onclick="window.saTab('clubes')">🏟️ Clubes</div>
+    <div class="coord-tab" onclick="window.saTab('facturacion')">💳 Facturación</div>
+    <div class="coord-tab" onclick="window.saTab('usuarios')">👥 Usuarios</div>
+  </div>
+  <div id="sa-clubes"      class="coord-view active"></div>
+  <div id="sa-facturacion" class="coord-view"></div>
+  <div id="sa-usuarios"    class="coord-view"></div>
+</div>
+
 <!-- COORDINADOR -->
 <div id="coord-app" style="display:none">
   <div class="coord-tabs" id="coordTabsEl">
@@ -652,7 +675,11 @@ function _launchByRole(profile){
   document.getElementById('loginPass').value='';
   document.getElementById('loginErr').textContent='';
   document.getElementById('logoutBtn').style.display='inline-block';
-  if(role==='super-admin' || role==='coordinator'){
+  if(role==='super-admin'){
+    window._updatePresenceCat('super-admin');
+    if(!window._appStarted){ window._appStarted=true; startSuperAdminApp(); }
+    else { document.getElementById('loadingScreen').style.display='none'; }
+  } else if(role==='coordinator'){
     window._updatePresenceCat('coord');
     if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
     else { document.getElementById('loadingScreen').style.display='none'; }
@@ -689,6 +716,8 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('logoutBtn').style.display='none';
     document.getElementById('coord-app').style.display='none';
+    document.getElementById('superadmin-app').style.display='none';
+    const sabb=document.getElementById('saBackBtn'); if(sabb) sabb.remove();
     document.querySelector('.tabs-wrapper').style.display='';
     document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
     if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{try{u();}catch(e){}});  window._coordUnsubs=null; }
@@ -716,50 +745,57 @@ const CAT_CONFIG = {
     dbPath: 'cat16'
   },
   cat13: {
-    label: 'CAT 13 SC',
+    label: 'MI PLANTEL',
     sub: 'LISFI II Zona B 2026',
     players: ["Villanueva Manuel","Benitez Bastian","Celis Juan Pablo","Fontela Severino","Coronel Salvador","Tortorelli Junior","Gil Marin Genaro","Torres Guillermo","Volpi Juan Ignacio","Baraglia Romeo","Baldoni Thiago","Auricchio Felipe","Scotto Lucio","Gulino Mendieta Lisandro","Albasi Ignacio"],
     dbPath: 'cat13'
   },
   cat2020: {
-    label: 'CAT 2020 SC',
+    label: 'MI PLANTEL',
+    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Baldini Felipe","Ramirez Fausto","Campañaro Lucca","Olivetto Tomas","Picone Santino","Miron Amaro","Martinez Liam","Rodriguez Bruno","Cerecedo Benicio","Violini Gabriel","De Franco Bruno","Villafañe Bahiano","Parente Juan Ignacio","Roberto Aaron"],
     dbPath: 'cat2020'
   },
   cat2019: {
-    label: 'CAT 2019 SC',
+    label: 'MI PLANTEL',
+    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Benítez Álvaro","Cardoso Felipe","Chiarlo Manuel","Costa Gaspar","Etchepare Juan Pedro","López Machado Milo","Loredo Camilo","Pochettino Vico","Ranieri Gino"],
     dbPath: 'cat2019'
   },
   cat2018: {
-    label: 'CAT 2018 SC',
+    label: 'MI PLANTEL',
+    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Vicente","Bautista F","Felipe P","Simón","Ciro T","Francisco C","Baltazar","Lautaro","Felipe R","Osman"],
     dbPath: 'cat2018'
   },
   cat2017: {
-    label: 'CAT 2017 SC',
+    label: 'MI PLANTEL',
+    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Jaume","De Angelis","Dante","Ismael","Lorenzo","Guarda","Juan","Recio","Fadel","Simon","Fermin","Pedro","Carmelo","Burruchaga","Aurichio"],
     dbPath: 'cat2017'
   },
   cat2015: {
-    label: 'CAT 2015 SC',
+    label: 'MI PLANTEL',
+    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Regalado Ciro","Arona Ciro","Recio Matias","La Rosa Valentin","Agristola Felipe","Valbruni Thiago","Pereyra Thiago","Arona Thiago","Cantaleano Miqueas","Baldini Santino","Baraglia Felipe","Merelles Matias"],
     dbPath: 'cat2015'
   },
   cat2014: {
-    label: 'CAT 2014 SC',
+    label: 'MI PLANTEL',
+    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Baseggio Bertino","Tartaruga Bautista","Sosa Ciriaco","Colque Bautista","Vitali Juan Ignacio","Traversaro Bautista","De Francisco Pedro","Costa Blas","Silvero Mateo","Di Pietro Vicente","Castillo Miqueas","Sagarra Salvador","Seranggioli Francisco","Macías Felipe"],
     dbPath: 'cat2014'
   },
   escuelita: {
-    label: 'ESCUELITA SC',
-    sub: 'Sagrado Corazón',
+    label: 'MI PLANTEL',
+    club: 'Sagrado Corazón',
+    sub: 'Escuela de Fútbol',
     players: ["Benjamin Rasedo","Pedro Ezeiza","Juan Valenciano","Santino Castillo","Bastian Basegio","Fermin Montañes","Juan Martin Cacheri","Francisco Conocioto","Ciro Cerecedo","Thiago Torres"],
     playerCats: {"Benjamin Rasedo":2015,"Pedro Ezeiza":2014,"Juan Valenciano":2016,"Santino Castillo":2016,"Bastian Basegio":2016,"Fermin Montañes":2018,"Juan Martin Cacheri":2018,"Francisco Conocioto":2015,"Ciro Cerecedo":2020,"Thiago Torres":2014},
     dbPath: 'escuelita',
@@ -770,12 +806,10 @@ const CAT_CONFIG = {
 const CFG = CAT_CONFIG[cat] || CAT_CONFIG['cat16'];
 const DB_PREFIX = CFG.dbPath;
 
-// Update header
-document.querySelector('.logo').textContent = CFG.label;
-document.querySelector('header .logo').nextElementSibling && (document.querySelector('header .logo + div') || document.querySelector('header div div div:nth-child(2)'));
-// update subtitle
+// Update header — siempre MI PLANTEL arriba, club abajo
+document.querySelector('.logo').textContent = 'MI PLANTEL';
 const subtitleEl = document.querySelector('header div div div[style*="0.62rem"]');
-if(subtitleEl) subtitleEl.textContent = CFG.sub;
+if(subtitleEl) subtitleEl.textContent = (CFG.club || '') + (CFG.sub ? ' · ' + CFG.sub : '');
 // Show category badge (read-only, no switching)
 const logoutBtn = document.getElementById('logoutBtn');
 let catBadge = document.getElementById('catBadge');
@@ -2330,6 +2364,315 @@ window._ligaDataReady = (async () => {
   }
 })();
 
+
+// ════════════════════════════════════════════════
+// PANEL SUPER ADMIN
+// ════════════════════════════════════════════════
+async function startSuperAdminApp(){
+  document.querySelector('.tabs-wrapper').style.display = 'none';
+  document.querySelectorAll('.view').forEach(v=>{ if(!v.closest('#superadmin-app')) v.style.display='none'; });
+  document.getElementById('coord-app').style.display = 'none';
+  document.getElementById('superadmin-app').style.display = 'block';
+  document.getElementById('loadingScreen').style.display = 'none';
+
+  // Header
+  const logo = document.querySelector('.logo');
+  if(logo) logo.textContent = 'MI PLANTEL';
+  const subEl = document.querySelector('header div div div[style*="0.62rem"]');
+  if(subEl) subEl.textContent = 'Panel Super Admin';
+  let catBadge = document.getElementById('catBadge');
+  if(!catBadge){
+    catBadge = document.createElement('span');
+    catBadge.id = 'catBadge';
+    catBadge.style.cssText = 'background:rgba(255,171,64,0.15);color:var(--yellow);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;margin-left:6px;';
+    document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn'));
+  }
+  catBadge.textContent = 'SUPER ADMIN';
+
+  window.saTab = function(tab){
+    const tabs = ['clubes','facturacion','usuarios'];
+    document.querySelectorAll('#saTabsEl .coord-tab').forEach((t,i)=>{
+      t.className = 'coord-tab' + (tabs[i]===tab ? ' cta' : '');
+    });
+    document.querySelectorAll('#superadmin-app .coord-view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('sa-'+tab).classList.add('active');
+    renderSATab(tab);
+  };
+
+  renderSATab('clubes');
+}
+
+async function renderSATab(tab){
+  if(tab==='clubes')    await renderSAClubes();
+  if(tab==='facturacion') await renderSAFacturacion();
+  if(tab==='usuarios')  await renderSAUsuarios();
+}
+
+// ── HELPERS ──
+function _daysFrom(ts){ return Math.floor((Date.now()-ts)/(1000*60*60*24)); }
+function _daysUntil(ts){ return Math.floor((ts-Date.now())/(1000*60*60*24)); }
+function _planBadge(club){
+  const ahora = Date.now();
+  if(!club.plan || club.plan==='trial'){
+    const dias = _daysUntil(club.trialEnd||0);
+    if(dias>0) return `<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);border-radius:20px;padding:2px 10px;font-size:0.72rem;font-weight:700">🟢 TRIAL — ${dias}d</span>`;
+    else return `<span style="background:rgba(255,23,68,0.15);color:var(--red);border:1px solid rgba(255,23,68,0.3);border-radius:20px;padding:2px 10px;font-size:0.72rem;font-weight:700">🔴 VENCIDO</span>`;
+  }
+  if(club.plan==='activo'){
+    const dias = _daysUntil(club.planEnd||0);
+    if(dias>0) return `<span style="background:rgba(77,115,245,0.15);color:var(--green);border:1px solid rgba(77,115,245,0.3);border-radius:20px;padding:2px 10px;font-size:0.72rem;font-weight:700">🔵 ACTIVO — ${dias}d</span>`;
+    else return `<span style="background:rgba(255,23,68,0.15);color:var(--red);border:1px solid rgba(255,23,68,0.3);border-radius:20px;padding:2px 10px;font-size:0.72rem;font-weight:700">🔴 VENCIDO</span>`;
+  }
+  return `<span style="color:var(--muted);font-size:0.72rem">—</span>`;
+}
+
+// ── TAB CLUBES ──
+async function renderSAClubes(){
+  const el = document.getElementById('sa-clubes');
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
+  try {
+    const snap = await get(ref(db, 'clubs'));
+    const clubs = snap.exists() ? snap.val() : {};
+    const ids = Object.keys(clubs);
+
+    let html = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">${ids.length} club${ids.length!==1?'s':''} registrado${ids.length!==1?'s':''}</div>
+        <button onclick="window.saAltaClub()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:8px 14px;font-size:0.8rem;font-weight:700;cursor:pointer">+ Nuevo club</button>
+      </div>`;
+
+    if(ids.length===0){
+      html += `<div class="coord-ok-box" style="text-align:center;padding:24px">
+        <div style="font-size:2rem;margin-bottom:8px">🏟️</div>
+        <div style="font-weight:700;margin-bottom:4px">No hay clubes registrados</div>
+        <div style="font-size:0.8rem;color:var(--muted)">Agregá el primer club con el botón de arriba</div>
+      </div>`;
+    } else {
+      ids.forEach(id => {
+        const c = clubs[id];
+        html += `
+        <div class="prow" style="flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <div>
+              <div style="font-weight:700;font-size:0.95rem">${c.nombre||id}</div>
+              <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${c.ciudad||'—'}</div>
+            </div>
+            ${_planBadge(c)}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="window.saVerClub('${id}')" style="background:rgba(77,115,245,0.15);color:var(--green);border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">👁 Ver</button>
+            <button onclick="window.saEditarClub('${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">✏️ Editar</button>
+            <button onclick="window.saGestionarPlan('${id}')" style="background:rgba(255,171,64,0.15);color:var(--yellow);border:1px solid rgba(255,171,64,0.3);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">💳 Plan</button>
+          </div>
+        </div>`;
+      });
+    }
+
+    // Club actual (Sagrado Corazón) como acceso rápido
+    html += `
+      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Acceso rápido — Club activo</div>
+        <div class="prow" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div style="font-weight:700">⚽ Sagrado Corazón</div>
+          <div style="font-size:0.75rem;color:var(--muted)">Entrá como coordinador o elegí una categoría</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+            <button onclick="window.saEntrarComo('coord')" style="background:rgba(77,115,245,0.15);color:var(--green);border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">📊 Coordinador</button>
+            <button onclick="window.saEntrarComo('cat16')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2016</button>
+            <button onclick="window.saEntrarComo('cat13')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2013</button>
+            <button onclick="window.saEntrarComo('cat2020')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2020</button>
+            <button onclick="window.saEntrarComo('cat2019')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2019</button>
+            <button onclick="window.saEntrarComo('cat2018')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2018</button>
+            <button onclick="window.saEntrarComo('cat2017')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2017</button>
+            <button onclick="window.saEntrarComo('cat2015')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2015</button>
+            <button onclick="window.saEntrarComo('cat2014')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2014</button>
+            <button onclick="window.saEntrarComo('escuelita')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Escuelita</button>
+          </div>
+        </div>
+      </div>`;
+
+    el.innerHTML = html;
+  } catch(e){
+    el.innerHTML = `<div class="coord-alert-box">Error cargando clubes: ${e.message}</div>`;
+  }
+}
+
+// ── TAB FACTURACIÓN ──
+async function renderSAFacturacion(){
+  const el = document.getElementById('sa-facturacion');
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
+  try {
+    const snap = await get(ref(db, 'clubs'));
+    const clubs = snap.exists() ? snap.val() : {};
+    const ids = Object.keys(clubs);
+    const ahora = Date.now();
+
+    const vencidos   = ids.filter(id=>{ const c=clubs[id]; const end=c.plan==='activo'?c.planEnd:c.trialEnd; return !end||end<ahora; });
+    const proximos   = ids.filter(id=>{ const c=clubs[id]; const end=c.plan==='activo'?c.planEnd:c.trialEnd; const d=_daysUntil(end||0); return d>=0&&d<=7; });
+    const activos    = ids.filter(id=>{ const c=clubs[id]; return c.plan==='activo'&&(c.planEnd||0)>ahora; });
+    const enTrial    = ids.filter(id=>{ const c=clubs[id]; return (!c.plan||c.plan==='trial')&&(c.trialEnd||0)>ahora; });
+
+    let html = '';
+
+    // Resumen
+    html += `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <div class="coord-ok-box" style="text-align:center;padding:12px">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--green)">${activos.length}</div>
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Activos</div>
+        </div>
+        <div class="coord-ok-box" style="text-align:center;padding:12px">
+          <div style="font-size:1.4rem;font-weight:800;color:#22cd78">${enTrial.length}</div>
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">En trial</div>
+        </div>
+        <div style="background:rgba(255,171,64,0.07);border:1px solid rgba(255,171,64,0.2);border-radius:9px;padding:12px;text-align:center">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--yellow)">${proximos.length}</div>
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Vencen en 7d</div>
+        </div>
+        <div class="coord-alert-box" style="text-align:center;padding:12px">
+          <div style="font-size:1.4rem;font-weight:800;color:var(--red)">${vencidos.length}</div>
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Vencidos</div>
+        </div>
+      </div>`;
+
+    // Lista detallada
+    if(ids.length===0){
+      html += `<div class="coord-ok-box" style="text-align:center;padding:20px;color:var(--muted)">No hay clubes registrados aún</div>`;
+    } else {
+      html += `<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Detalle por club</div>`;
+      ids.forEach(id=>{
+        const c = clubs[id];
+        const esTrial = !c.plan||c.plan==='trial';
+        const end = esTrial ? c.trialEnd : c.planEnd;
+        const dias = end ? _daysUntil(end) : null;
+        const fechaStr = end ? new Date(end).toLocaleDateString('es-AR') : '—';
+
+        html += `
+          <div class="prow" style="flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+              <div style="font-weight:700">${c.nombre||id}</div>
+              ${_planBadge(c)}
+            </div>
+            <div style="font-size:0.75rem;color:var(--muted)">
+              ${esTrial ? 'Trial' : 'Plan pago'} · Vence: <strong style="color:var(--text)">${fechaStr}</strong>
+              ${dias!==null ? (dias>=0?` · <span style="color:${dias<=7?'var(--yellow)':'var(--muted)'}">${dias} días restantes</span>`:`· <span style="color:var(--red)">Venció hace ${Math.abs(dias)} días</span>`):''}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button onclick="window.saGestionarPlan('${id}')" style="background:rgba(255,171,64,0.15);color:var(--yellow);border:1px solid rgba(255,171,64,0.3);border-radius:7px;padding:4px 10px;font-size:0.72rem;font-weight:600;cursor:pointer">💳 Gestionar plan</button>
+            </div>
+          </div>`;
+      });
+    }
+    el.innerHTML = html;
+  } catch(e){
+    el.innerHTML = `<div class="coord-alert-box">Error: ${e.message}</div>`;
+  }
+}
+
+// ── TAB USUARIOS ──
+async function renderSAUsuarios(){
+  const el = document.getElementById('sa-usuarios');
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
+  try {
+    const snap = await get(ref(db, 'users'));
+    const users = snap.exists() ? snap.val() : {};
+    const uids = Object.keys(users);
+
+    const roleLabel = { 'super-admin':'Super Admin', 'coordinator':'Coordinador', 'profe':'Profe' };
+    const roleColor = { 'super-admin':'var(--yellow)', 'coordinator':'var(--green)', 'profe':'var(--text)' };
+
+    let html = `
+      <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">${uids.length} usuario${uids.length!==1?'s':''} registrado${uids.length!==1?'s':''}</div>`;
+
+    uids.forEach(uid=>{
+      const u = users[uid];
+      html += `
+        <div class="prow" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <div style="font-size:0.85rem;font-weight:600;word-break:break-all">${u.email||uid}</div>
+            <span style="font-size:0.68rem;font-weight:700;color:${roleColor[u.role]||'var(--muted)'};white-space:nowrap;margin-left:8px">${roleLabel[u.role]||u.role||'—'}</span>
+          </div>
+          ${u.cat?`<div style="font-size:0.72rem;color:var(--muted)">${u.cat} · ${u.clubId||'—'}</div>`:''}
+          ${u.clubId&&!u.cat?`<div style="font-size:0.72rem;color:var(--muted)">${u.clubId}</div>`:''}
+        </div>`;
+    });
+
+    el.innerHTML = html;
+  } catch(e){
+    el.innerHTML = `<div class="coord-alert-box">Error: ${e.message}</div>`;
+  }
+}
+
+// ── ACCIONES ──
+window.saEntrarComo = function(cat){
+  document.getElementById('superadmin-app').style.display = 'none';
+  window._appStarted = false;
+  if(cat==='coord'){
+    window._appStarted = true;
+    startCoordApp();
+  } else {
+    launchCat(cat);
+  }
+  // Botón para volver al panel SA
+  let backBtn = document.getElementById('saBackBtn');
+  if(!backBtn){
+    backBtn = document.createElement('button');
+    backBtn.id = 'saBackBtn';
+    backBtn.textContent = '← Super Admin';
+    backBtn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9990;background:rgba(255,171,64,0.9);color:#000;border:none;border-radius:9px;padding:10px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.3)';
+    backBtn.onclick = function(){
+      backBtn.remove();
+      document.getElementById('coord-app').style.display='none';
+      document.querySelector('.tabs-wrapper').style.display='none';
+      document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
+      document.getElementById('superadmin-app').style.display='block';
+      window._appStarted = false;
+    };
+    document.body.appendChild(backBtn);
+  }
+};
+
+window.saAltaClub = function(){
+  const nombre = prompt('Nombre del club:');
+  if(!nombre) return;
+  const ciudad = prompt('Ciudad:') || '';
+  const clubId = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  const trialEnd = Date.now() + (30*24*60*60*1000);
+  set(ref(db, 'clubs/'+clubId), {
+    nombre, ciudad,
+    plan: 'trial',
+    trialStart: Date.now(),
+    trialEnd,
+    createdAt: Date.now()
+  }).then(()=>{
+    alert('Club creado. Trial de 30 días activado.');
+    renderSATab('clubes');
+  }).catch(e=>alert('Error: '+e.message));
+};
+
+window.saGestionarPlan = function(clubId){
+  const accion = prompt('Acciones disponibles:\n1 - Activar plan pago (30 días)\n2 - Extender trial (30 días)\n3 - Marcar como vencido\n\nIngresá el número:');
+  if(!accion) return;
+  const updates = {};
+  if(accion==='1'){
+    updates.plan = 'activo';
+    updates.planStart = Date.now();
+    updates.planEnd = Date.now() + (30*24*60*60*1000);
+  } else if(accion==='2'){
+    updates.plan = 'trial';
+    updates.trialEnd = Date.now() + (30*24*60*60*1000);
+  } else if(accion==='3'){
+    updates.plan = 'trial';
+    updates.trialEnd = Date.now() - 1;
+  } else return;
+  set(ref(db, 'clubs/'+clubId), {...updates}).then(()=>{
+    alert('Plan actualizado.');
+    renderSATab('facturacion');
+  }).catch(e=>alert('Error: '+e.message));
+};
+
+window.saVerClub   = function(id){ alert('Vista detallada del club — próximamente'); };
+window.saEditarClub = function(id){ alert('Edición de club — próximamente'); };
+
 // ════════════════════════════════════════════════
 // TABLERO COORDINADOR
 // ════════════════════════════════════════════════
@@ -2342,7 +2685,7 @@ async function startCoordApp(){
   document.querySelector('.tabs-wrapper').style.display = 'none';
   document.querySelectorAll('.view').forEach(v=>{ if(!v.closest('#coord-app')) v.style.display='none'; });
   document.getElementById('coord-app').style.display = 'block';
-  document.querySelector('.logo').textContent = 'COORDINADOR';
+  document.querySelector('.logo').textContent = 'MI PLANTEL';
   const subEl = document.querySelector('header div div div[style*="0.62rem"]');
   if(subEl) subEl.textContent = 'Sagrado Corazón — Vista Global';
   let catBadge = document.getElementById('catBadge');
@@ -2864,7 +3207,7 @@ async function startCoordApp(){
   const manifest = {
     name: "MI PLANTEL",
     short_name: "MI PLANTEL",
-    description: "Citaciones y estadísticas Sagrado Corazón",
+    description: "Gestión de planteles de fútbol infantil y juvenil",
     start_url: "./",
     display: "standalone",
     orientation: "portrait",
