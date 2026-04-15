@@ -2574,6 +2574,7 @@ async function renderSAUsuarios(){
   el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
   try {
     const snap = await get(ref(db, 'users'));
+    if(!snap.exists()) throw new Error('no_data');
     const users = snap.exists() ? snap.val() : {};
     const uids = Object.keys(users);
 
@@ -2604,8 +2605,15 @@ async function renderSAUsuarios(){
 
 // ── ACCIONES ──
 window.saEntrarComo = function(cat){
+  // Ocultar todo antes de lanzar
   document.getElementById('superadmin-app').style.display = 'none';
+  document.getElementById('coord-app').style.display = 'none';
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.querySelector('.tabs-wrapper').style.display = '';
+  document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
   window._appStarted = false;
+  window._unsub1 = null;
+  window._unsub2 = null;
   if(cat==='coord'){
     window._appStarted = true;
     startCoordApp();
