@@ -646,6 +646,65 @@ window.doLogin = async function(){
   }
 };
 
+
+// ── SELECTOR DE CATEGORÍA (profes con múltiples cats) ──
+function _showCatSelector(cats){
+  const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('loadingScreen').style.display='none';
+
+  let sel = document.getElementById('catSelectorScreen');
+  if(!sel){
+    sel = document.createElement('div');
+    sel.id = 'catSelectorScreen';
+    sel.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9998;padding:24px;';
+    document.body.appendChild(sel);
+  }
+
+  const btns = cats.map(c => `
+    <button onclick="window._selectCat('${c}')" style="width:100%;padding:14px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;margin-bottom:10px;text-align:left;transition:background 0.15s">
+      ⚽ ${catLabels[c]||c}
+    </button>`).join('');
+
+  sel.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px 28px;width:100%;max-width:340px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--green);text-align:center;margin-bottom:4px;">MI PLANTEL</div>
+      <div style="font-size:0.72rem;color:var(--muted);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:24px;">Seleccioná tu categoría</div>
+      ${btns}
+    </div>`;
+
+  sel.style.display = 'flex';
+}
+
+window._selectCat = function(cat){
+  const sel = document.getElementById('catSelectorScreen');
+  if(sel) sel.style.display = 'none';
+  window._updatePresenceCat(cat);
+  launchCat(cat);
+  // Mostrar botón switcher si tiene más de una categoría
+  const profile = window._userProfile || {};
+  const cats = profile.cats ? Object.values(profile.cats) : (profile.cat ? [profile.cat] : []);
+  if(cats.length > 1){
+    setTimeout(()=>_showCatSwitcher(cats, cat), 800);
+  }
+};
+
+function _showCatSwitcher(cats, currentCat){
+  const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
+  let btn = document.getElementById('catSwitchBtn');
+  if(!btn){
+    btn = document.createElement('button');
+    btn.id = 'catSwitchBtn';
+    btn.style.cssText = 'background:rgba(77,115,245,0.15);color:var(--green);border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer;margin-left:6px;letter-spacing:0.5px;';
+    const logoutBtn = document.getElementById('logoutBtn');
+    if(logoutBtn) logoutBtn.parentNode.insertBefore(btn, logoutBtn);
+  }
+  btn.textContent = '⇄ ' + (catLabels[currentCat]||currentCat);
+  btn.onclick = function(){
+    _showCatSelector(cats);
+  };
+}
+
 // ── RESET CONTRASEÑA ──
 window.doResetPass = async function(e){
   e.preventDefault();
@@ -683,9 +742,21 @@ function _launchByRole(profile){
     window._updatePresenceCat('coord');
     if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
     else { document.getElementById('loadingScreen').style.display='none'; }
-  } else if(role==='profe' && cat){
-    window._updatePresenceCat(cat);
-    launchCat(cat);
+  } else if(role==='profe'){
+    const cats = profile.cats || (cat ? [cat] : []);
+    if(cats.length === 0){
+      signOut(auth);
+      document.getElementById('loginErr').textContent='Tu usuario no tiene categoría asignada. Contactá al administrador.';
+      document.getElementById('loginScreen').style.display='flex';
+      return;
+    }
+    if(cats.length === 1){
+      window._updatePresenceCat(cats[0]);
+      launchCat(cats[0]);
+    } else if(cats.length > 1){
+      // Mostrar selector de categoría
+      _showCatSelector(cats);
+    }
   } else {
     signOut(auth);
     document.getElementById('loginErr').textContent='Tu usuario no tiene acceso configurado. Contactá al administrador.';
@@ -698,6 +769,7 @@ onAuthStateChanged(auth, async user => {
     try {
       const snap = await get(ref(db, 'users/' + user.uid));
       if(snap.exists()){
+        window._userProfile = snap.val();
         _launchByRole(snap.val());
       } else {
         // No tiene perfil en DB
