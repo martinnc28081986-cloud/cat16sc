@@ -2079,40 +2079,67 @@ function renderTablas(){
     html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--red)">'+rL+'</div><div style="font-size:0.6rem;color:var(--muted)">P</div></div>';
     html+='</div></div></div>';
 
-    // Rival last results
-    if(rRivRes.length){
-      html+='<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Últ. resultados '+nextF.rival+'</div>';
-      html+='<div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">';
-      rRivRes.forEach(r=>{
-        const res=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-        const col=res==='V'?'#22cd78':res==='E'?'var(--yellow)':'var(--red)';
-        html+='<span style="background:rgba(255,255,255,0.05);border-radius:6px;padding:4px 8px;font-size:0.72rem"><span style="font-family:Bebas Neue,sans-serif;color:'+col+'">'+res+'</span> <span style="color:var(--muted)">F'+r.f+' vs '+r.vs+' '+r.gf+'-'+r.gc+'</span></span>';
-      });
-      html+='</div>';
-    }
     html+='</div>';
   }
 
-  // ── NUESTROS RESULTADOS ──
-  html+='<div class="stitle">Nuestros Resultados</div>';
-  if(!scRes.length){
-    html+='<div class="empty-msg">Sin resultados cargados aún</div>';
-  } else {
-    [...scRes].reverse().forEach(r=>{
-      const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
-      const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-      const condLbl=r.cond==='L'?'Local':'Visita';
-      const condCls=r.cond==='L'?'local':'visita';
-      const scoreDisp=r.cond==='L'?r.gf+' - '+r.gc:r.gc+' - '+r.gf;
-      const localTeam=r.cond==='L'?'Sagrado C.':r.rival;
-      const visitTeam=r.cond==='L'?r.rival:'Sagrado C.';
-      html+='<div class="res-card"><div class="res-header">';
-      html+='<div><div class="res-rival">'+localTeam+' <span style="color:var(--muted);font-weight:400">vs</span> '+visitTeam+'</div>';
-      html+='<div style="margin-top:3px"><span class="res-fecha">Fecha '+r.fecha+'</span> <span class="res-cond '+condCls+'">'+condLbl+'</span></div></div>';
-      html+='<div style="text-align:right"><div class="res-score '+res+'">'+scoreDisp+'</div>';
-      html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:'+(res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)')+'">'+resLbl+'</div></div>';
-      html+='</div></div>';
-    });
+  // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ──
+  if(scRes.length || (rRivRes && rRivRes.length)){
+    html+='<div class="stitle" style="margin-top:4px">Últimos resultados</div>';
+    html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:4px">';
+    html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Sagrado C.</div>';
+    html+='<div></div>';
+    html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:right">'+nextF.rival+'</div>';
+    html+='</div>';
+
+    const scLast=[...scRes].reverse().slice(0,3);
+    const rivLast=(rRivRes||[]).slice(-3);
+    const rows=Math.max(scLast.length, rivLast.length);
+
+    for(let i=0;i<rows;i++){
+      html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:5px">';
+
+      // SC card
+      if(scLast[i]){
+        const r=scLast[i];
+        const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
+        const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
+        const condCls=r.cond==='L'?'local':'visita';
+        const condLbl=r.cond==='L'?'Loc':'Vis';
+        const scoreDisp=r.cond==='L'?r.gf+'-'+r.gc:r.gc+'-'+r.gf;
+        const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
+        html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
+        html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.fecha+' <span class="res-cond '+condCls+'">'+condLbl+'</span></div>';
+        html+='<div style="display:flex;align-items:baseline;gap:4px">';
+        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
+        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div>';
+        html+='</div>';
+      } else {
+        html+='<div></div>';
+      }
+
+      // Fecha label
+      const fLabel=scLast[i]?'F'+scLast[i].fecha:rivLast[i]?'F'+rivLast[i].f:'';
+      html+='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0 2px">'+fLabel+'</div>';
+
+      // Rival card
+      if(rivLast[i]){
+        const r=rivLast[i];
+        const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
+        const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
+        const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
+        const scoreDisp=r.gf+'-'+r.gc;
+        html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
+        html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.f+' vs '+r.vs+'</div>';
+        html+='<div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end">';
+        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
+        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div>';
+        html+='</div>';
+      } else {
+        html+='<div></div>';
+      }
+
+      html+='</div>';
+    }
   }
 
   // ── TABLA DE POSICIONES ──
