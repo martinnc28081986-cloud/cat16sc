@@ -2085,7 +2085,7 @@ function renderTablas(){
       html+='<div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">';
       rRivRes.forEach(r=>{
         const res=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-        const col=res==='V'?'var(--green)':res==='E'?'var(--yellow)':'var(--red)';
+        const col=res==='V'?'#22cd78':res==='E'?'var(--yellow)':'var(--red)';
         html+='<span style="background:rgba(255,255,255,0.05);border-radius:6px;padding:4px 8px;font-size:0.72rem"><span style="font-family:Bebas Neue,sans-serif;color:'+col+'">'+res+'</span> <span style="color:var(--muted)">F'+r.f+' vs '+r.vs+' '+r.gf+'-'+r.gc+'</span></span>';
       });
       html+='</div>';
@@ -2110,7 +2110,7 @@ function renderTablas(){
       html+='<div><div class="res-rival">'+localTeam+' <span style="color:var(--muted);font-weight:400">vs</span> '+visitTeam+'</div>';
       html+='<div style="margin-top:3px"><span class="res-fecha">Fecha '+r.fecha+'</span> <span class="res-cond '+condCls+'">'+condLbl+'</span></div></div>';
       html+='<div style="text-align:right"><div class="res-score '+res+'">'+scoreDisp+'</div>';
-      html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:'+(res==='win'?'var(--green)':res==='draw'?'var(--yellow)':'var(--red)')+'">'+resLbl+'</div></div>';
+      html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:'+(res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)')+'">'+resLbl+'</div></div>';
       html+='</div></div>';
     });
   }
