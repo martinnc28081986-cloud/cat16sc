@@ -2082,7 +2082,7 @@ function renderTablas(){
     html+='</div>';
   }
 
-  // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ──
+  // ══ ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ══
   if(scRes.length || (rRivRes && rRivRes.length)){
     html+='<div class="stitle" style="margin-top:4px">Últimos resultados</div>';
     html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:4px">';
@@ -2090,15 +2090,11 @@ function renderTablas(){
     html+='<div></div>';
     html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:right">'+nextF.rival+'</div>';
     html+='</div>';
-
     const scLast=[...scRes].reverse().slice(0,3);
     const rivLast=(rRivRes||[]).slice(-3);
-    const rows=Math.max(scLast.length, rivLast.length);
-
+    const rows=Math.max(scLast.length,rivLast.length);
     for(let i=0;i<rows;i++){
       html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:5px">';
-
-      // SC card
       if(scLast[i]){
         const r=scLast[i];
         const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
@@ -2109,19 +2105,11 @@ function renderTablas(){
         const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
         html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
         html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.fecha+' <span class="res-cond '+condCls+'">'+condLbl+'</span></div>';
-        html+='<div style="display:flex;align-items:baseline;gap:4px">';
-        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
-        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div>';
-        html+='</div>';
-      } else {
-        html+='<div></div>';
-      }
-
-      // Fecha label
+        html+='<div style="display:flex;align-items:baseline;gap:4px"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
+        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
+      } else { html+='<div></div>'; }
       const fLabel=scLast[i]?'F'+scLast[i].fecha:rivLast[i]?'F'+rivLast[i].f:'';
       html+='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0 2px">'+fLabel+'</div>';
-
-      // Rival card
       if(rivLast[i]){
         const r=rivLast[i];
         const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
@@ -2130,19 +2118,14 @@ function renderTablas(){
         const scoreDisp=r.gf+'-'+r.gc;
         html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
         html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.f+' vs '+r.vs+'</div>';
-        html+='<div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end">';
-        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
-        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div>';
-        html+='</div>';
-      } else {
-        html+='<div></div>';
-      }
-
+        html+='<div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
+        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
+      } else { html+='<div></div>'; }
       html+='</div>';
     }
   }
 
-  // ── TABLA DE POSICIONES ──
+    // ── TABLA DE POSICIONES ──
   html+='<div class="stitle">Tabla de Posiciones — Cat '+catNum+'</div>';
   html+='<div class="card" style="padding:10px 8px"><table class="standings-table">';
   html+='<thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th></tr></thead><tbody>';
