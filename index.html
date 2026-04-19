@@ -2010,8 +2010,6 @@ function renderTablas(){
   const scRes = LIGA_DATA.scResults[catNum]||[];
   const pos   = LIGA_DATA.posiciones[catNum]||[];
 
-  // Next rival from fixture
-  // Próximo partido = primero sin citación guardada y sin suspensión
   const nextF = FIXTURE.find(f=>{
     if(f.cond==='-') return false;
     if(_suspensions[f.fecha]) return false;
@@ -2020,13 +2018,11 @@ function renderTablas(){
   });
   const rivalKey = nextF ? nextF.rival : null;
 
-  // SC record
   const scW=scRes.filter(r=>r.gf>r.gc).length;
   const scE=scRes.filter(r=>r.gf===r.gc).length;
   const scL=scRes.filter(r=>r.gf<r.gc).length;
-  const scPts=scW*2+scE; // LISFI usa 2pts x victoria
+  const scPts=scW*2+scE;
 
-  // Rival record from posiciones
   let rivalData=null;
   if(rivalKey){
     const rk=rivalKey.toLowerCase().replace(/\./g,'').replace(/\s+/g,' ').trim();
@@ -2042,9 +2038,8 @@ function renderTablas(){
   if(nextF && rivalData){
     const rW=rivalData.pg, rE=rivalData.pe, rL=rivalData.pp, rPts=rivalData.pts;
     const maxPts=Math.max(scPts,rPts)||1;
-    const maxPJ=Math.max(scRes.length,rivalData.pj)||1;
     const rRivAll=LIGA_DATA.rivalResults[catNum]||{};
-  const rRivRes=(rRivAll[rivalKey]||[]).slice(-5);
+    const rRivRes=(rRivAll[rivalKey]||[]).slice(-3);
 
     html+='<div class="stitle">Próximo Rival — F'+nextF.fecha+'</div>';
     html+='<div class="compare-card">';
@@ -2064,76 +2059,63 @@ function renderTablas(){
     html+='<div class="compare-bar-wrap" style="margin:0 4px"></div>';
     html+='<span class="compare-val" style="color:var(--muted)">'+rivalData.pj+'</span></div>';
 
-    // W/E/L badges
+    // G/E/P badges
     html+='<div style="display:flex;gap:6px;margin:8px 0 4px">';
     html+='<div style="flex:1;background:rgba(34,85,238,0.1);border-radius:8px;padding:8px;text-align:center">';
     html+='<div style="display:flex;justify-content:space-around">';
-    html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--green)">'+scW+'</div><div style="font-size:0.6rem;color:var(--muted)">G</div></div>';
+    html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:#22cd78">'+scW+'</div><div style="font-size:0.6rem;color:var(--muted)">G</div></div>';
     html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--yellow)">'+scE+'</div><div style="font-size:0.6rem;color:var(--muted)">E</div></div>';
     html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--red)">'+scL+'</div><div style="font-size:0.6rem;color:var(--muted)">P</div></div>';
     html+='</div></div>';
     html+='<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:8px;padding:8px;text-align:center">';
     html+='<div style="display:flex;justify-content:space-around">';
-    html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--green)">'+rW+'</div><div style="font-size:0.6rem;color:var(--muted)">G</div></div>';
+    html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:#22cd78">'+rW+'</div><div style="font-size:0.6rem;color:var(--muted)">G</div></div>';
     html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--yellow)">'+rE+'</div><div style="font-size:0.6rem;color:var(--muted)">E</div></div>';
     html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--red)">'+rL+'</div><div style="font-size:0.6rem;color:var(--muted)">P</div></div>';
     html+='</div></div></div>';
 
-    // Rival last results
-    if(rRivRes.length){
-      html+='<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Últ. resultados '+nextF.rival+'</div>';
-      html+='<div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">';
-      rRivRes.forEach(r=>{
-        const res=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-        const col=res==='V'?'var(--green)':res==='E'?'var(--yellow)':'var(--red)';
-        html+='<span style="background:rgba(255,255,255,0.05);border-radius:6px;padding:4px 8px;font-size:0.72rem"><span style="font-family:Bebas Neue,sans-serif;color:'+col+'">'+res+'</span> <span style="color:var(--muted)">F'+r.f+' vs '+r.vs+' '+r.gf+'-'+r.gc+'</span></span>';
-      });
+    // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ──
+    if(scRes.length || rRivRes.length){
+      html+='<div class="stitle" style="margin-top:8px">Últimos resultados</div>';
+      html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:4px">';
+      html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Sagrado C.</div>';
+      html+='<div></div>';
+      html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:right">'+nextF.rival+'</div>';
       html+='</div>';
+      const scLast=[...scRes].reverse().slice(0,3);
+      const rows=Math.max(scLast.length,rRivRes.length);
+      for(let i=0;i<rows;i++){
+        html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:5px">';
+        if(scLast[i]){
+          const r=scLast[i];
+          const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
+          const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
+          const condCls=r.cond==='L'?'local':'visita';
+          const condLbl=r.cond==='L'?'Loc':'Vis';
+          const scoreDisp=r.cond==='L'?r.gf+'-'+r.gc:r.gc+'-'+r.gf;
+          const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
+          html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
+          html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.fecha+' <span class="res-cond '+condCls+'">'+condLbl+'</span></div>';
+          html+='<div style="display:flex;align-items:baseline;gap:4px"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
+          html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
+        } else { html+='<div></div>'; }
+        const fLabel=scLast[i]?'F'+scLast[i].fecha:rRivRes[i]?'F'+rRivRes[i].f:'';
+        html+='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0 2px">'+fLabel+'</div>';
+        if(rRivRes[i]){
+          const r=rRivRes[i];
+          const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
+          const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
+          const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
+          const scoreDisp=r.gf+'-'+r.gc;
+          html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
+          html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.f+' vs '+r.vs+'</div>';
+          html+='<div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
+          html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
+        } else { html+='<div></div>'; }
+        html+='</div>';
+      }
     }
-    html+='</div>';
-  }
-
-  // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ──
-  if(scRes.length || (rRivRes && rRivRes.length)){
-    html+='<div class="stitle" style="margin-top:4px">Últimos resultados</div>';
-    html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:4px">';
-    html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Sagrado C.</div>';
-    html+='<div></div>';
-    html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:right">'+nextF.rival+'</div>';
-    html+='</div>';
-    const scLast=[...scRes].reverse().slice(0,3);
-    const rivLast=(rRivRes||[]).slice(-3);
-    const rows=Math.max(scLast.length,rivLast.length);
-    for(let i=0;i<rows;i++){
-      html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:5px">';
-      if(scLast[i]){
-        const r=scLast[i];
-        const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
-        const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-        const condCls=r.cond==='L'?'local':'visita';
-        const condLbl=r.cond==='L'?'Loc':'Vis';
-        const scoreDisp=r.cond==='L'?r.gf+'-'+r.gc:r.gc+'-'+r.gf;
-        const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
-        html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
-        html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.fecha+' <span class="res-cond '+condCls+'">'+condLbl+'</span></div>';
-        html+='<div style="display:flex;align-items:baseline;gap:4px"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
-        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
-      } else { html+='<div></div>'; }
-      const fLabel=scLast[i]?'F'+scLast[i].fecha:rivLast[i]?'F'+rivLast[i].f:'';
-      html+='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0 2px">'+fLabel+'</div>';
-      if(rivLast[i]){
-        const r=rivLast[i];
-        const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
-        const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-        const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
-        const scoreDisp=r.gf+'-'+r.gc;
-        html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
-        html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.f+' vs '+r.vs+'</div>';
-        html+='<div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
-        html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
-      } else { html+='<div></div>'; }
-      html+='</div>';
-    }
+    html+='</div>'; // cierre compare-card
   }
 
   // ── NUESTROS RESULTADOS ──
@@ -2153,7 +2135,7 @@ function renderTablas(){
       html+='<div><div class="res-rival">'+localTeam+' <span style="color:var(--muted);font-weight:400">vs</span> '+visitTeam+'</div>';
       html+='<div style="margin-top:3px"><span class="res-fecha">Fecha '+r.fecha+'</span> <span class="res-cond '+condCls+'">'+condLbl+'</span></div></div>';
       html+='<div style="text-align:right"><div class="res-score '+res+'">'+scoreDisp+'</div>';
-      html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:'+(res==='win'?'var(--green)':res==='draw'?'var(--yellow)':'var(--red)')+'">'+resLbl+'</div></div>';
+      html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:'+(res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)')+'">'+resLbl+'</div></div>';
       html+='</div></div>';
     });
   }
@@ -2172,6 +2154,8 @@ function renderTablas(){
 
   el.innerHTML=html;
 }
+
+
 
 } // end startApp
 
