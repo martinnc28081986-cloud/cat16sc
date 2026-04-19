@@ -104,7 +104,7 @@
   .pill-y { background:rgba(255,171,64,0.14); color:var(--yellow); }
 
   .rbadge { font-family:'Bebas Neue',sans-serif; font-size:0.88rem; letter-spacing:1px; padding:2px 8px; border-radius:5px; display:inline-block; margin-left:5px; vertical-align:middle; }
-  .rV { background:rgba(34,205,120,0.15); color:#22cd78; }
+  .rV { background:rgba(34,85,238,0.15); color:var(--green); }
   .rL { background:rgba(255,23,68,0.12); color:var(--red); }
   .rE { background:rgba(255,171,64,0.12); color:var(--yellow); }
 
@@ -212,7 +212,7 @@
   .res-fecha { font-family:'Bebas Neue',sans-serif; font-size:0.85rem; letter-spacing:1px; color:var(--muted); }
   .res-rival { font-weight:600; font-size:0.92rem; }
   .res-score { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:2px; }
-  .res-score.win { color:#22cd78; }
+  .res-score.win { color:var(--green); }
   .res-score.draw { color:var(--yellow); }
   .res-score.loss { color:var(--red); }
   .res-cond { font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:4px; }
@@ -2079,10 +2079,21 @@ function renderTablas(){
     html+='<div style="text-align:center"><div style="font-family:Bebas Neue,sans-serif;font-size:1.4rem;color:var(--red)">'+rL+'</div><div style="font-size:0.6rem;color:var(--muted)">P</div></div>';
     html+='</div></div></div>';
 
+    // Rival last results
+    if(rRivRes.length){
+      html+='<div style="font-size:0.68rem;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Últ. resultados '+nextF.rival+'</div>';
+      html+='<div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">';
+      rRivRes.forEach(r=>{
+        const res=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
+        const col=res==='V'?'var(--green)':res==='E'?'var(--yellow)':'var(--red)';
+        html+='<span style="background:rgba(255,255,255,0.05);border-radius:6px;padding:4px 8px;font-size:0.72rem"><span style="font-family:Bebas Neue,sans-serif;color:'+col+'">'+res+'</span> <span style="color:var(--muted)">F'+r.f+' vs '+r.vs+' '+r.gf+'-'+r.gc+'</span></span>';
+      });
+      html+='</div>';
+    }
     html+='</div>';
   }
 
-  // ══ ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ══
+  // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ──
   if(scRes.length || (rRivRes && rRivRes.length)){
     html+='<div class="stitle" style="margin-top:4px">Últimos resultados</div>';
     html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:4px">';
@@ -2125,7 +2136,29 @@ function renderTablas(){
     }
   }
 
-    // ── TABLA DE POSICIONES ──
+  // ── NUESTROS RESULTADOS ──
+  html+='<div class="stitle">Nuestros Resultados</div>';
+  if(!scRes.length){
+    html+='<div class="empty-msg">Sin resultados cargados aún</div>';
+  } else {
+    [...scRes].reverse().forEach(r=>{
+      const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
+      const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
+      const condLbl=r.cond==='L'?'Local':'Visita';
+      const condCls=r.cond==='L'?'local':'visita';
+      const scoreDisp=r.cond==='L'?r.gf+' - '+r.gc:r.gc+' - '+r.gf;
+      const localTeam=r.cond==='L'?'Sagrado C.':r.rival;
+      const visitTeam=r.cond==='L'?r.rival:'Sagrado C.';
+      html+='<div class="res-card"><div class="res-header">';
+      html+='<div><div class="res-rival">'+localTeam+' <span style="color:var(--muted);font-weight:400">vs</span> '+visitTeam+'</div>';
+      html+='<div style="margin-top:3px"><span class="res-fecha">Fecha '+r.fecha+'</span> <span class="res-cond '+condCls+'">'+condLbl+'</span></div></div>';
+      html+='<div style="text-align:right"><div class="res-score '+res+'">'+scoreDisp+'</div>';
+      html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.85rem;color:'+(res==='win'?'var(--green)':res==='draw'?'var(--yellow)':'var(--red)')+'">'+resLbl+'</div></div>';
+      html+='</div></div>';
+    });
+  }
+
+  // ── TABLA DE POSICIONES ──
   html+='<div class="stitle">Tabla de Posiciones — Cat '+catNum+'</div>';
   html+='<div class="card" style="padding:10px 8px"><table class="standings-table">';
   html+='<thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th></tr></thead><tbody>';
@@ -2714,22 +2747,11 @@ window.saEntrarComo = function(cat){
     backBtn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9990;background:rgba(255,171,64,0.9);color:#000;border:none;border-radius:9px;padding:10px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.3)';
     backBtn.onclick = function(){
       backBtn.remove();
-      // Ocultar todo
       document.getElementById('coord-app').style.display='none';
       document.querySelector('.tabs-wrapper').style.display='none';
-      // Ocultar todas las vistas de categoría
-      document.querySelectorAll('.view').forEach(v=>{ v.style.display='none'; });
-      // Limpiar listeners activos
-      if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{try{u();}catch(e){}});  window._coordUnsubs=null; }
-      if(window._unsub1) try{window._unsub1();}catch(e){}
-      if(window._unsub2) try{window._unsub2();}catch(e){}
-      window._unsub1=null; window._unsub2=null;
-      window._appStarted = false;
-      // Mostrar super-admin
+      document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
       document.getElementById('superadmin-app').style.display='block';
-      // Limpiar badge de categoría si existe
-      const cb = document.getElementById('catBadge'); if(cb) cb.textContent='SUPER ADMIN';
-      const sw = document.getElementById('catSwitchBtn'); if(sw) sw.remove();
+      window._appStarted = false;
     };
     document.body.appendChild(backBtn);
   }
