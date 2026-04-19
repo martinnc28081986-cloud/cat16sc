@@ -574,6 +574,7 @@ const FC = {
 const app = initializeApp(FC);
 const db  = getDatabase(app);
 const auth = getAuth(app);
+const CLUB_PATH = 'clubs/sagrado-corazon'; // Prefijo multitenant
 
 // ── PRESENCIA EN TIEMPO REAL ──
 let _connectedUsers = 0;
@@ -616,7 +617,7 @@ onValue(ref(db, 'presence'), snap => {
 // ── SUSPENSIONES (compartidas, tiempo real) ──
 let _suspensions = {};
 let _onSuspensionChange = null;
-onValue(ref(db, 'config/suspensions'), snap => {
+onValue(ref(db, CLUB_PATH+'/config/suspensions'), snap => {
   _suspensions = snap.val() || {};
   if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
 });
@@ -876,7 +877,7 @@ const CAT_CONFIG = {
 };
 
 const CFG = CAT_CONFIG[cat] || CAT_CONFIG['cat16'];
-const DB_PREFIX = CFG.dbPath;
+const DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath;
 
 // Update header — siempre MI PLANTEL arriba, club abajo
 document.querySelector('.logo').textContent = 'MI PLANTEL';
@@ -929,7 +930,7 @@ if(CFG.escuelita){
   }
 
   // ── Listener Firebase para plantel dinámico ──
-  const playersRef=ref(db,'escuelita/players');
+  const playersRef=ref(db, CLUB_PATH+'/escuelita/players');
   onValue(playersRef, snap=>{
     if(!snap.exists()){
       // Seed inicial con los jugadores hardcodeados
@@ -1536,7 +1537,7 @@ window._addPlayer=async function(){
   const fullName=nombre+' '+apellido;
   if(PLAYERS.includes(fullName)){showToast('Ya existe ese jugador');return;}
   try{
-    await push(ref(db,'escuelita/players'),{name:fullName,cat});
+    await push(ref(db, CLUB_PATH+'/escuelita/players'),{name:fullName,cat});
     document.getElementById('newPlayerNombre').value='';
     document.getElementById('newPlayerApellido').value='';
     document.getElementById('newPlayerCat').value='';
@@ -1549,7 +1550,7 @@ window._removePlayer=async function(key){
   if(!p) return;
   if(!confirm('¿Dar de baja a '+p.name+'?\nSu historial de asistencia se conserva.')) return;
   try{
-    await remove(ref(db,'escuelita/players/'+key));
+    await remove(ref(db, CLUB_PATH+'/escuelita/players/'+key));
     showToast(p.name+' dado de baja');
   }catch(e){showToast('Error al guardar');}
 };
@@ -2840,9 +2841,9 @@ async function startCoordApp(){
   window.toggleSusp = async function(fecha){
     try {
       if(_suspensions[fecha]){
-        await remove(ref(db,'config/suspensions/'+fecha));
+        await remove(ref(db, CLUB_PATH+'/config/suspensions/'+fecha));
       } else {
-        await set(ref(db,'config/suspensions/'+fecha), true);
+        await set(ref(db, CLUB_PATH+'/config/suspensions/'+fecha), true);
       }
     } catch(e){ alert('Error al guardar. Revisá la conexión.'); }
   };
@@ -2857,8 +2858,8 @@ async function startCoordApp(){
   (async function loadCoordData(){
     try {
       const reads = ALL_CATS.flatMap(cat=>[
-        get(ref(db, cat.key+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{}),
-        get(ref(db, cat.key+'/citaciones')).then(s=>{ D[cat.key].cit=s.val()||{}; }).catch(()=>{})
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{}),
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/citaciones')).then(s=>{ D[cat.key].cit=s.val()||{}; }).catch(()=>{})
       ]);
       await Promise.all(reads);
     } catch(e){}
