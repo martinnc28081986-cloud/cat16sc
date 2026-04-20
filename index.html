@@ -1734,9 +1734,6 @@ function renderCitStats(){
 
   const totalFechas=FIXTURE.filter(f=>f.cond!=='-').length;
   const jugadas=tot;
-  const scW=allE.filter(([,r])=>r.result==='V').length;
-  const scE=allE.filter(([,r])=>r.result==='E').length;
-  const scL=allE.filter(([,r])=>r.result==='L').length;
   const pct=totalFechas?Math.round(jugadas/totalFechas*100):0;
 
   const dotsHtml=FIXTURE.map(f=>{
@@ -1751,8 +1748,7 @@ function renderCitStats(){
     else if(isCitada){const res=saved.result;bg=res==='V'?'#22cd78':res==='L'?'#ff1744':res==='E'?'#ffab40':'#4d73f5';col=res==='E'?'#000':'#fff';}
     else if(f.fecha===jugadas+1){bg='#ffab40';col='#000';}
     else{bg='#1e3a9e';col='#7a9ccc';}
-    const sz=isLibre?16:20;
-    return '<div style="flex-shrink:0"><div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:'+(isLibre?7:8)+'px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
+    return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
   }).join('');
 
   if(timelineEl) timelineEl.innerHTML=`
@@ -1765,19 +1761,12 @@ function renderCitStats(){
         <div style="height:100%;width:${pct}%;background:#4d73f5;border-radius:3px;transition:width 0.4s"></div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">${dotsHtml}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.62rem;color:var(--muted);margin-bottom:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.62rem;color:var(--muted)">
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78;margin-right:2px"></span>V</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40;margin-right:2px"></span>E/Prox.</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40;margin-right:2px"></span>E/Próx.</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff1744;margin-right:2px"></span>L</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5;margin-right:2px"></span>Cit.</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1e3a9e;margin-right:2px"></span>Libre/Pend.</span>
-      </div>
-      <div style="display:flex;justify-content:space-around">
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#4d73f5">${jugadas}</div><div style="font-size:0.6rem;color:var(--muted)">Jugados</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--muted)">${totalFechas-jugadas}</div><div style="font-size:0.6rem;color:var(--muted)">Restantes</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#22cd78">${scW}</div><div style="font-size:0.6rem;color:var(--muted)">G</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--yellow)">${scE}</div><div style="font-size:0.6rem;color:var(--muted)">E</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--red)">${scL}</div><div style="font-size:0.6rem;color:var(--muted)">P</div></div>
       </div>
     </div>`;
 
