@@ -560,11 +560,17 @@
     <div class="coord-tab"     onclick="window.coordTab('presencias')">🏃 Presencias</div>
     <div class="coord-tab"     onclick="window.coordTab('citaciones')">⭐ Citaciones</div>
     <div class="coord-tab"     onclick="window.coordTab('liga')">🏆 Liga</div>
+    <div class="coord-tab"     onclick="window.coordTab('fixture')">📋 Fixture</div>
+    <div class="coord-tab"     onclick="window.coordTab('horarios')">⏰ Horarios</div>
+    <div class="coord-tab"     onclick="window.coordTab('profes')">👥 Profes</div>
   </div>
   <div id="cv-resumen"    class="coord-view active"></div>
   <div id="cv-presencias" class="coord-view"></div>
   <div id="cv-citaciones" class="coord-view"></div>
   <div id="cv-liga"       class="coord-view"></div>
+  <div id="cv-fixture"    class="coord-view"></div>
+  <div id="cv-horarios"   class="coord-view"></div>
+  <div id="cv-profes"     class="coord-view"></div>
 </div>
 
 <script type="module">
@@ -980,7 +986,7 @@ if(CFG.escuelita){
 }
 
 // ── FIXTURE ──
-const FIXTURE = [
+let FIXTURE = [
   { fecha:1,  rival:"LA PLATA V",      cond:"V" },
   { fecha:2,  rival:"DEF.SAN LORENZO", cond:"V" },
   { fecha:3,  rival:"CATELLA",         cond:"V" },
@@ -1009,6 +1015,57 @@ let PLAYERS = [...(CFG.players||[])];
 let PLAYERS_INACTIVE = []; // jugadores dados de baja
 
 // Cargar jugadores desde Firebase (sobrescribe los hardcodeados si existen)
+
+// ── CLUB CONFIG: fixture, horarios y dirección desde Firebase ──
+// Se lee de /clubs/{clubId}/config y sobreescribe los hardcodeados
+const FIXTURE_DEFAULT = [...FIXTURE]; // backup del hardcodeado
+
+async function loadClubConfig(){
+  if(window._isEscuelita) return;
+  try {
+    const snap = await get(ref(db, CLUB_PATH+'/config'));
+    if(snap.exists()){
+      const cfg = snap.val();
+      // Fixture
+      if(cfg.fixture){
+        const arr = Object.entries(cfg.fixture)
+          .map(([k,v])=>({fecha:parseInt(k), rival:v.rival, cond:v.cond}))
+          .sort((a,b)=>a.fecha-b.fecha);
+        if(arr.length) FIXTURE = arr;
+      }
+      // Horario de esta categoría
+      const catKey = DB_PREFIX.split('/').pop();
+      if(cfg.horarios && cfg.horarios[catKey]){
+        CFG.matchTime = cfg.horarios[catKey];
+      }
+      // Dirección
+      if(cfg.address) CFG.address = cfg.address;
+    } else {
+      // Primera vez: guardar config hardcodeada en Firebase
+      await _saveDefaultClubConfig();
+    }
+  } catch(e){ console.warn('loadClubConfig error:', e); }
+}
+
+async function _saveDefaultClubConfig(){
+  try {
+    const fixtureObj = {};
+    FIXTURE_DEFAULT.forEach(f=>{ fixtureObj[f.fecha]={rival:f.rival,cond:f.cond}; });
+    const horarios = {
+      cat16:'15:50', cat13:'13:20', cat2014:'14:10', cat2015:'15:00',
+      cat2017:'10:00', cat2018:'10:50', cat2019:'11:40', cat2020:'12:30'
+    };
+    await set(ref(db, CLUB_PATH+'/config'), {
+      fixture: fixtureObj,
+      horarios,
+      address: 'Av. 13 y 610 Villa Elvira',
+      liga: 'LISFI',
+      zona: 'II B'
+    });
+    console.log('Club config initialized in Firebase');
+  } catch(e){ console.warn('_saveDefaultClubConfig error:', e); }
+}
+
 async function loadPlayersFromDB(){
   if(window._isEscuelita) return; // escuelita usa su propio sistema
   try {
@@ -2334,7 +2391,7 @@ window.shareFormacion = function(){
 };
 
 // INIT
-loadPlayersFromDB().then(()=>{ loadAttMarks(today()); renderAtt(); renderNextMatch(); });
+loadClubConfig().then(()=> loadPlayersFromDB()).then(()=>{ loadAttMarks(today()); renderAtt(); renderNextMatch(); });
 
 
 async function renderTablas(){
@@ -3240,7 +3297,7 @@ async function startCoordApp(){
 
   window.coordTab=function(tab){
     coordActiveTab=tab;
-    const tabs=['resumen','presencias','citaciones','liga'];
+    const tabs=['resumen','presencias','citaciones','liga','fixture','horarios','profes'];
     document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{ t.className='coord-tab'+(tabs[i]===tab?' cta':''); });
     document.querySelectorAll('#coord-app .coord-view').forEach(v=>v.classList.remove('active'));
     const vEl=document.getElementById('cv-'+tab); if(vEl) vEl.classList.add('active');
@@ -3254,6 +3311,9 @@ async function startCoordApp(){
     if(tab==='presencias') renderPresencias();
     if(tab==='citaciones') renderCitaciones();
     if(tab==='liga')       renderLiga();
+    if(tab==='fixture')    renderCoordFixture();
+    if(tab==='horarios')   renderCoordHorarios();
+    if(tab==='profes')     renderCoordProfes();
   }
 
   // ── TAB RESUMEN ──
@@ -3651,6 +3711,220 @@ async function startCoordApp(){
     });
     el.innerHTML=h;
   }
+  // ── TAB FIXTURE ──
+  async function renderCoordFixture(){
+    const el=document.getElementById('cv-fixture');
+    el.innerHTML='<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
+    try{
+      const snap=await get(ref(db,CLUB_PATH+'/config/fixture'));
+      const data=snap.exists()?snap.val():{};
+      // Convertir a array ordenado
+      const rows=Object.entries(data).map(([k,v])=>({fecha:parseInt(k),...v})).sort((a,b)=>a.fecha-b.fecha);
+      let h='<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">Fixture del club</div>';
+
+      // Botón cargar desde texto
+      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:14px">
+        <div style="font-size:0.72rem;font-weight:700;margin-bottom:8px">📋 Cargar desde texto</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px">Pegá el fixture en formato "1,LA PLATA V,V" (fecha,rival,L/V/-) — una por línea</div>
+        <textarea id="fixtureTextInput" style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px;font-size:0.78rem;font-family:monospace;resize:vertical" placeholder="1,LA PLATA V,V&#10;2,DEF.SAN LORENZO,L&#10;3,CATELLA,V..."></textarea>
+        <button onclick="window.coordParseFix()" style="margin-top:8px;background:#4d73f5;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:0.78rem;font-weight:700;cursor:pointer;width:100%">Parsear e importar</button>
+      </div>`;
+
+      // Tabla editable
+      h+='<div id="fixtureRows">';
+      rows.forEach(r=>{
+        const condOpts=['L','V','-'].map(c=>`<option value="${c}"${r.cond===c?' selected':''}>${c==='L'?'Local':c==='V'?'Visitante':'Libre'}</option>`).join('');
+        h+=`<div style="display:grid;grid-template-columns:40px 1fr 100px 40px;gap:6px;align-items:center;margin-bottom:6px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--muted);text-align:center">F${r.fecha}</div>
+          <input type="text" value="${r.rival}" id="fix-rival-${r.fecha}" style="padding:6px 10px;font-size:0.78rem">
+          <select id="fix-cond-${r.fecha}" style="padding:6px;font-size:0.78rem">${condOpts}</select>
+          <button onclick="window.coordDelFecha(${r.fecha})" style="background:transparent;border:1px solid var(--border);color:var(--red);border-radius:6px;padding:4px;cursor:pointer;font-size:0.75rem">✕</button>
+        </div>`;
+      });
+      h+='</div>';
+
+      // Agregar fecha
+      h+=`<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+        <div style="font-size:0.68rem;color:var(--muted);font-weight:700;margin-bottom:8px">+ AGREGAR FECHA</div>
+        <div style="display:grid;grid-template-columns:60px 1fr 100px;gap:6px">
+          <input type="number" id="newFechaNum" placeholder="N°" style="padding:6px 8px;font-size:0.78rem" min="1" max="30">
+          <input type="text" id="newFechaRival" placeholder="Rival" style="padding:6px 10px;font-size:0.78rem">
+          <select id="newFechaCond" style="padding:6px;font-size:0.78rem">
+            <option value="L">Local</option><option value="V">Visitante</option><option value="-">Libre</option>
+          </select>
+        </div>
+        <button onclick="window.coordAddFecha()" style="margin-top:8px;background:rgba(77,115,245,0.15);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:7px 14px;font-size:0.78rem;font-weight:700;cursor:pointer;width:100%">+ Agregar</button>
+      </div>`;
+      h+=`<button onclick="window.coordSaveFix()" style="margin-top:14px;background:var(--green);color:#000;border:none;border-radius:9px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%">💾 Guardar fixture</button>`;
+      el.innerHTML=h;
+    }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
+  }
+
+  window.coordSaveFix=async function(){
+    const snap=await get(ref(db,CLUB_PATH+'/config/fixture'));
+    const data=snap.exists()?snap.val():{};
+    const obj={};
+    Object.keys(data).forEach(k=>{
+      const rv=document.getElementById('fix-rival-'+k);
+      const cd=document.getElementById('fix-cond-'+k);
+      if(rv&&cd) obj[k]={rival:rv.value.trim().toUpperCase(),cond:cd.value};
+    });
+    await set(ref(db,CLUB_PATH+'/config/fixture'),obj);
+    // Actualizar FIXTURE en memoria
+    FIXTURE=Object.entries(obj).map(([k,v])=>({fecha:parseInt(k),rival:v.rival,cond:v.cond})).sort((a,b)=>a.fecha-b.fecha);
+    showCoordToast('✓ Fixture guardado');
+    renderCoordFixture();
+  };
+
+  window.coordAddFecha=async function(){
+    const n=parseInt(document.getElementById('newFechaNum').value);
+    const r=document.getElementById('newFechaRival').value.trim().toUpperCase();
+    const c=document.getElementById('newFechaCond').value;
+    if(!n||!r){ showCoordToast('Completá todos los campos'); return; }
+    await set(ref(db,CLUB_PATH+'/config/fixture/'+n),{rival:r,cond:c});
+    FIXTURE=FIXTURE.filter(f=>f.fecha!==n);
+    FIXTURE.push({fecha:n,rival:r,cond:c});
+    FIXTURE.sort((a,b)=>a.fecha-b.fecha);
+    showCoordToast('✓ Fecha agregada');
+    renderCoordFixture();
+  };
+
+  window.coordDelFecha=async function(n){
+    if(!confirm('¿Borrar F'+n+' del fixture?')) return;
+    await remove(ref(db,CLUB_PATH+'/config/fixture/'+n));
+    FIXTURE=FIXTURE.filter(f=>f.fecha!==n);
+    showCoordToast('✓ Fecha eliminada');
+    renderCoordFixture();
+  };
+
+  window.coordParseFix=async function(){
+    const txt=document.getElementById('fixtureTextInput').value;
+    if(!txt.trim()){ showCoordToast('Pegá el fixture primero'); return; }
+    const obj={};
+    txt.trim().split('\n').forEach(line=>{
+      const parts=line.split(',').map(s=>s.trim());
+      if(parts.length>=3){
+        const n=parseInt(parts[0]);
+        const r=parts[1].toUpperCase();
+        const c=parts[2].toUpperCase();
+        if(n&&r&&['L','V','-'].includes(c)) obj[n]={rival:r,cond:c};
+      }
+    });
+    if(!Object.keys(obj).length){ showCoordToast('Formato inválido. Usá: 1,LA PLATA V,V'); return; }
+    if(!confirm('Se va a reemplazar el fixture completo con '+Object.keys(obj).length+' fechas. ¿Continuar?')) return;
+    await set(ref(db,CLUB_PATH+'/config/fixture'),obj);
+    FIXTURE=Object.entries(obj).map(([k,v])=>({fecha:parseInt(k),rival:v.rival,cond:v.cond})).sort((a,b)=>a.fecha-b.fecha);
+    showCoordToast('✓ Fixture importado ('+FIXTURE.length+' fechas)');
+    renderCoordFixture();
+  };
+
+  // ── TAB HORARIOS ──
+  async function renderCoordHorarios(){
+    const el=document.getElementById('cv-horarios');
+    el.innerHTML='<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
+    try{
+      const snap=await get(ref(db,CLUB_PATH+'/config'));
+      const cfg=snap.exists()?snap.val():{};
+      const horarios=cfg.horarios||{};
+      const address=cfg.address||'';
+      const cats=['cat2017','cat2018','cat2019','cat2020','cat13','cat2014','cat2015','cat16'];
+      const catLabels={cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
+                       cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020'};
+      let h='<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">Horarios por categoría</div>';
+      cats.forEach(c=>{
+        const t=horarios[c]||'';
+        h+=`<div style="display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;margin-bottom:8px">
+          <div style="font-size:0.85rem;font-weight:600">${catLabels[c]||c}</div>
+          <input type="text" id="hora-${c}" value="${t}" placeholder="15:50" style="padding:6px 10px;font-size:0.85rem;text-align:center">
+        </div>`;
+      });
+      h+=`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Dirección de la cancha (local)</div>
+        <input type="text" id="clubAddress" value="${address}" placeholder="Av. 13 y 610 Villa Elvira" style="padding:8px 12px;font-size:0.85rem;width:100%;box-sizing:border-box">
+      </div>`;
+      h+=`<button onclick="window.coordSaveHorarios()" style="margin-top:14px;background:var(--green);color:#000;border:none;border-radius:9px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%">💾 Guardar</button>`;
+      el.innerHTML=h;
+    }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
+  }
+
+  window.coordSaveHorarios=async function(){
+    const cats=['cat2017','cat2018','cat2019','cat2020','cat13','cat2014','cat2015','cat16'];
+    const horarios={};
+    cats.forEach(c=>{ const v=document.getElementById('hora-'+c); if(v&&v.value.trim()) horarios[c]=v.value.trim(); });
+    const address=document.getElementById('clubAddress').value.trim();
+    await set(ref(db,CLUB_PATH+'/config/horarios'),horarios);
+    if(address) await set(ref(db,CLUB_PATH+'/config/address'),address);
+    // Actualizar CFG en memoria
+    const catKey=DB_PREFIX.split('/').pop();
+    if(horarios[catKey]) CFG.matchTime=horarios[catKey];
+    if(address) CFG.address=address;
+    showCoordToast('✓ Horarios guardados');
+  };
+
+  // ── TAB PROFES ──
+  async function renderCoordProfes(){
+    const el=document.getElementById('cv-profes');
+    el.innerHTML='<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
+    try{
+      const snap=await get(ref(db,'users'));
+      const users=snap.exists()?snap.val():{};
+      const clubId=CLUB_PATH.split('/').pop();
+      const profes=Object.entries(users).filter(([,u])=>u.club===clubId&&(u.role==='profe'||u.role==='coordinator'));
+      const cats={cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
+                  cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
+      let h='<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">'+profes.length+' usuario'+(profes.length!==1?'s':'')+' del club</div>';
+      if(!profes.length){
+        h+='<div class="coord-ok-box" style="text-align:center;padding:20px;color:var(--muted)">No hay profes registrados aún</div>';
+      } else {
+        profes.forEach(([uid,u])=>{
+          const catList=u.cats?Object.values(u.cats).map(c=>cats[c]||c).join(', '):(u.cat?cats[u.cat]||u.cat:'—');
+          h+=`<div class="prow" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+              <div style="font-weight:700;font-size:0.88rem">${u.email||uid}</div>
+              <span style="font-size:0.68rem;padding:2px 8px;border-radius:10px;background:rgba(77,115,245,0.15);color:#4d73f5">${u.role==='coordinator'?'Coordinador':'Profe'}</span>
+            </div>
+            <div style="font-size:0.75rem;color:var(--muted)">${catList}</div>
+          </div>`;
+        });
+      }
+      // Alta de nuevo profe
+      h+=`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">+ AGREGAR PROFE</div>
+        <input type="email" id="newProfeEmail" placeholder="email@ejemplo.com" style="padding:8px 12px;font-size:0.85rem;margin-bottom:8px;width:100%;box-sizing:border-box">
+        <input type="password" id="newProfePass" placeholder="Contraseña inicial" style="padding:8px 12px;font-size:0.85rem;margin-bottom:8px;width:100%;box-sizing:border-box">
+        <select id="newProfeCat" style="padding:8px 12px;font-size:0.85rem;margin-bottom:8px;width:100%;box-sizing:border-box">
+          ${Object.entries(cats).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+        </select>
+        <button onclick="window.coordAddProfe()" style="background:#22cd78;color:#000;border:none;border-radius:9px;padding:10px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%">+ Crear profe</button>
+      </div>`;
+      el.innerHTML=h;
+    }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
+  }
+
+  window.coordAddProfe=async function(){
+    const email=document.getElementById('newProfeEmail').value.trim();
+    const pass=document.getElementById('newProfePass').value.trim();
+    const cat=document.getElementById('newProfeCat').value;
+    if(!email||!pass){ showCoordToast('Completá email y contraseña'); return; }
+    const clubId=CLUB_PATH.split('/').pop();
+    try{
+      // Crear usuario en Auth
+      const {createUserWithEmailAndPassword}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const cred=await createUserWithEmailAndPassword(auth,email,pass);
+      // Guardar en DB
+      await set(ref(db,'users/'+cred.user.uid),{email,role:'profe',club:clubId,cat});
+      showCoordToast('✓ Profe creado: '+email);
+      renderCoordProfes();
+    }catch(e){ showCoordToast('Error: '+e.message); }
+  };
+
+  function showCoordToast(msg){
+    const t=document.getElementById('toast'); if(!t)return;
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+
+
 }
 
 // ── PWA ──────────────────────────────────────────────────────────────
