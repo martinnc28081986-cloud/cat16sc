@@ -466,7 +466,9 @@
 <!-- TAB 5 — STATS CITACIONES -->
 <div id="view-cit-stats" class="view">
   <div id="citTimeline"></div>
-  <div class="stitle">% de Citaciones por jugador</div>
+  <div class="stitle">Partidos — más reciente primero</div>
+  <div id="citMatchList"></div>
+  <div class="stitle" style="margin-top:16px">% de Citaciones por jugador</div>
   <div id="citStatsList"></div>
 </div>
 
@@ -1742,13 +1744,12 @@ function renderCitStats(){
     const isLibre=f.cond==='-';
     const isSusp=_suspensions[f.fecha];
     let bg,col;
-    if(isLibre){bg='#1e3a9e';col='#7a9ccc';}
-    else if(isSusp){bg='rgba(255,23,68,0.3)';col='#ff1744';}
-    else if(isCitada){const res=saved.result;bg=res==='V'?'#22cd78':res==='L'?'#ff1744':res==='E'?'#ffab40':'#4d73f5';col=res==='E'?'#000':'#fff';}
-    else if(f.fecha===jugadas+1){bg='#ffab40';col='#000';}
-    else{bg='#1e3a9e';col='#7a9ccc';}
-    const sz=isLibre?16:20;
-    return '<div style="flex-shrink:0"><div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:'+(isLibre?7:8)+'px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
+    if(isCitada){const res=saved.result;bg=res==='V'?'#22cd78':res==='L'?'#ff1744':res==='E'?'#ffab40':'#4d73f5';col=res==='E'?'#000':'#fff';}
+    else if(isSusp){bg='rgba(255,23,68,0.2)';col='#ff5555';}
+    else if(isLibre){bg='#2a3a5e';col='#5a7aae';}
+    else if(f.fecha===jugadas+1){bg='#4d73f5';col='#fff';}
+    else{bg='#1a2535';col='#3a4a5e';}
+    return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
   }).join('');
 
   if(timelineEl) timelineEl.innerHTML=`
@@ -1761,23 +1762,35 @@ function renderCitStats(){
         <div style="height:100%;width:${pct}%;background:#4d73f5;border-radius:3px;transition:width 0.4s"></div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">${dotsHtml}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.62rem;color:var(--muted);margin-bottom:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.62rem;color:var(--muted)">
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78;margin-right:2px"></span>V</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40;margin-right:2px"></span>E/Prox.</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40;margin-right:2px"></span>E</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff1744;margin-right:2px"></span>L</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5;margin-right:2px"></span>Cit.</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1e3a9e;margin-right:2px"></span>Libre/Pend.</span>
-      </div>
-      <div style="display:flex;justify-content:space-around">
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#4d73f5">${jugadas}</div><div style="font-size:0.6rem;color:var(--muted)">Jugados</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--muted)">${totalFechas-jugadas}</div><div style="font-size:0.6rem;color:var(--muted)">Restantes</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#22cd78">${scW}</div><div style="font-size:0.6rem;color:var(--muted)">G</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--yellow)">${scE}</div><div style="font-size:0.6rem;color:var(--muted)">E</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--red)">${scL}</div><div style="font-size:0.6rem;color:var(--muted)">P</div></div>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5;margin-right:2px"></span>Próximo</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a3a5e;margin-right:2px"></span>Libre</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1a2535;margin-right:2px"></span>Pendiente</span>
       </div>
     </div>`;
 
-  if(!tot){ statsList.innerHTML='<div class="empty-msg">Sin citaciones guardadas aún</div>'; return; }
+  // Cards de partidos — más reciente primero
+  const matchList=document.getElementById('citMatchList');
+  if(matchList){
+    matchList.innerHTML='';
+    const allDesc=Object.entries(citaciones).filter(([,m])=>m.citados&&m.citados.length>0).sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
+    if(!allDesc.length){ matchList.innerHTML='<div class="empty-msg">Sin citaciones guardadas aún</div>'; }
+    allDesc.forEach(([key,saved])=>{
+      const resCls=saved.result==='V'?'rV':saved.result==='L'?'rL':saved.result==='E'?'rE':'';
+      const condLabel=saved.condicion==='L'?'Local':saved.condicion==='V'?'Visitante':'';
+      const condCls=saved.condicion==='L'?'fb-local':'fb-visit';
+      const noCitados=PLAYERS.filter(p=>!(saved.citados||[]).includes(p));
+      const camBadge=saved.camisetero?'<div style="font-size:0.72rem;color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
+      const c=document.createElement('div'); c.className='card';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>'+(saved.result?'<span class="rbadge '+resCls+'">'+saved.result+'</span>':'')+(saved.score?'<span style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;margin-left:5px;color:var(--text)">'+saved.score+'</span>':'')+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      matchList.appendChild(c);
+    });
+  }
+
+  if(!tot){ statsList.innerHTML=''; return; }
   const ps=PLAYERS.map(name=>{const count=allE.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:Math.round(count/tot*100)};}).sort((a,b)=>b.pct-a.pct);
   statsList.innerHTML='';
   ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+tot+' partidos</div>';statsList.appendChild(c);});
