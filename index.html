@@ -1921,22 +1921,27 @@ function renderCitStats(){
     return !c||!c.citados||c.citados.length===0;
   })||null;
 
+  // Resultados desde LIGA_DATA.scResults (los carga el scraper, son los reales)
+  const _catNumMapTL={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+  const _catKeyTL=DB_PREFIX.split('/').pop();
+  const _scResTL=LIGA_DATA.scResults[_catNumMapTL[_catKeyTL]||16]||[];
+  const _resByFecha={};
+  _scResTL.forEach(r=>{ _resByFecha[r.fecha]= r.gf>r.gc?'V':r.gf<r.gc?'L':'E'; });
+
   const dotsHtml=FIXTURE.map(f=>{
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const saved=citaciones[key];
     const isCitada=saved&&saved.citados&&saved.citados.length>0;
     const isLibre=f.cond==='-';
     const isSusp=_suspensions[f.fecha];
+    const res=_resByFecha[f.fecha]||''; // resultado real del scraper
     let bg,col;
-    if(isCitada){
-      const res=saved.result;
-      if(res==='V'){bg='#22cd78';col='#fff';}
-      else if(res==='L'){bg='#ff1744';col='#fff';}
-      else if(res==='E'){bg='#ffab40';col='#000';}
-      else{bg='#4d73f5';col='#fff';} // citada sin resultado aún
-    }
+    if(res==='V'){bg='#22cd78';col='#fff';}
+    else if(res==='L'){bg='#ff1744';col='#fff';}
+    else if(res==='E'){bg='#ffab40';col='#000';}
     else if(isSusp){bg='rgba(255,23,68,0.2)';col='#ff5555';}
     else if(isLibre){bg='#2a3a5e';col='#5a7aae';}
+    else if(isCitada){bg='#4d73f5';col='#fff';} // citada pero sin resultado aún
     else if(f===proximaFecha){bg='#4d73f5';col='#fff';}
     else{bg='#1a2535';col='#3a4a5e';}
     return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
