@@ -482,12 +482,8 @@
 
 <!-- TAB 7 — FORMACION -->
 <div id="view-formacion" class="view">
-  <div style="margin-bottom:10px">
-    <select id="formacionFechaSelect" onchange="window.loadFormacionFecha(this.value)" style="width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.85rem;outline:none;">
-      <option value="">-- Elegir partido --</option>
-    </select>
-  </div>
-  <div id="formacion-no-cit" class="empty-msg" style="display:none">Primero guardá una citación para armar la formación</div>
+  <div id="formacion-header" style="margin-bottom:10px"></div>
+  <div id="formacion-no-cit" class="empty-msg" style="display:none">Sin jugadores en el plantel</div>
   <div id="formacion-main" style="display:none">
     <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px">Arrastrá los jugadores desde el banco a la cancha. Tocá un jugador en la cancha para devolverlo al banco.</div>
     <div class="pitch-wrap">
@@ -1734,6 +1730,9 @@ function renderCitStats(){
 
   const totalFechas=FIXTURE.filter(f=>f.cond!=='-').length;
   const jugadas=tot;
+  const scW=allE.filter(([,r])=>r.result==='V').length;
+  const scE=allE.filter(([,r])=>r.result==='E').length;
+  const scL=allE.filter(([,r])=>r.result==='L').length;
   const pct=totalFechas?Math.round(jugadas/totalFechas*100):0;
 
   const dotsHtml=FIXTURE.map(f=>{
@@ -1748,7 +1747,8 @@ function renderCitStats(){
     else if(isCitada){const res=saved.result;bg=res==='V'?'#22cd78':res==='L'?'#ff1744':res==='E'?'#ffab40':'#4d73f5';col=res==='E'?'#000':'#fff';}
     else if(f.fecha===jugadas+1){bg='#ffab40';col='#000';}
     else{bg='#1e3a9e';col='#7a9ccc';}
-    return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
+    const sz=isLibre?16:20;
+    return '<div style="flex-shrink:0"><div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:'+(isLibre?7:8)+'px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
   }).join('');
 
   if(timelineEl) timelineEl.innerHTML=`
@@ -1761,12 +1761,19 @@ function renderCitStats(){
         <div style="height:100%;width:${pct}%;background:#4d73f5;border-radius:3px;transition:width 0.4s"></div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">${dotsHtml}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.62rem;color:var(--muted)">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.62rem;color:var(--muted);margin-bottom:10px">
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78;margin-right:2px"></span>V</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40;margin-right:2px"></span>E/Próx.</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40;margin-right:2px"></span>E/Prox.</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff1744;margin-right:2px"></span>L</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5;margin-right:2px"></span>Cit.</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1e3a9e;margin-right:2px"></span>Libre/Pend.</span>
+      </div>
+      <div style="display:flex;justify-content:space-around">
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#4d73f5">${jugadas}</div><div style="font-size:0.6rem;color:var(--muted)">Jugados</div></div>
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--muted)">${totalFechas-jugadas}</div><div style="font-size:0.6rem;color:var(--muted)">Restantes</div></div>
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#22cd78">${scW}</div><div style="font-size:0.6rem;color:var(--muted)">G</div></div>
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--yellow)">${scE}</div><div style="font-size:0.6rem;color:var(--muted)">E</div></div>
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--red)">${scL}</div><div style="font-size:0.6rem;color:var(--muted)">P</div></div>
       </div>
     </div>`;
 
@@ -1912,42 +1919,60 @@ window.reactivatePlayer = async function(nombre){
 };
 
 let _formacionCurrentKey = null;
+let _formacionViendoHistorial = false;
 
 function renderFormacion(){
-  const allE = Object.entries(citaciones)
-    .filter(([,m])=>m.citados&&m.citados.length>0)
-    .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
   const mainEl = document.getElementById('formacion-main');
   const noEl   = document.getElementById('formacion-no-cit');
+  const headerEl = document.getElementById('formacion-header');
 
-  // Poblar selector de partidos
-  const sel = document.getElementById('formacionFechaSelect');
-  if(sel){
-    const prevVal = sel.value;
-    sel.innerHTML = '<option value="">-- Elegir partido --</option>';
-    allE.forEach(([key,m])=>{
-      const resCls = m.result==='V'?'✓':m.result==='L'?'✗':m.result==='E'?'=':'·';
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = 'F'+m.fecha+' vs '+(m.rival||'?')+' '+resCls;
-      sel.appendChild(opt);
-    });
-    if(prevVal && [...sel.options].some(o=>o.value===prevVal)) sel.value=prevVal;
+  if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
+
+  // Determinar próximo partido
+  let proximoKey = null;
+  let proximoData = null;
+  for(const f of FIXTURE){
+    if(f.cond==='-') continue;
+    if(_suspensions[f.fecha]) continue;
+    const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+    const cit = citaciones[key];
+    if(!cit||!cit.citados||cit.citados.length===0){
+      proximoKey = key;
+      proximoData = {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:null};
+      break;
+    } else if(!cit.result) {
+      // Partido citado pero sin resultado aún = es el próximo
+      proximoKey = key;
+      proximoData = {...cit};
+      break;
+    }
   }
 
-  if(!allE.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
+  // Si no hay currentKey, usar el próximo
+  if(!_formacionCurrentKey) _formacionCurrentKey = proximoKey;
 
-  // Si no hay partido seleccionado, mostrar el más reciente
-  if(!_formacionCurrentKey || !citaciones[_formacionCurrentKey]){
-    _formacionCurrentKey = allE[0][0];
-    if(sel) sel.value = _formacionCurrentKey;
+  // Header con info del partido actual
+  if(headerEl){
+    const curData = _formacionCurrentKey ? (citaciones[_formacionCurrentKey]||proximoData) : null;
+    const condLabel = curData ? (curData.condicion==='L'?'Local':'Visitante') : '';
+    const condCls = curData ? (curData.condicion==='L'?'fb-local':'fb-visit') : '';
+    const esProximo = _formacionCurrentKey===proximoKey;
+    headerEl.innerHTML = curData ? `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px">${esProximo?'⟶ Próximo partido':'📋 Formación anterior'}</div>
+          <div style="font-weight:700">F${curData.fecha||'?'} vs ${curData.rival||'?'} <span class="fixture-badge ${condCls}">${condLabel}</span></div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${(curData.citados||[]).length?((curData.citados||[]).length+' citados'):'Sin citación — usando plantel completo'}</div>
+        </div>
+      </div>` : '';
   }
 
   mainEl.style.display='block'; noEl.style.display='none';
-  const saved = citaciones[_formacionCurrentKey];
-  const citados = saved ? saved.citados||[] : [];
 
-  // Cargar formación guardada si existe
+  const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
+  const citados = saved ? (saved.citados||[]) : PLAYERS;
+
+  // Cargar formación si no hay nada en la cancha
   if(Object.keys(pitchPlayers).length===0 && benchPlayers.length===0){
     if(saved && saved.formacion){
       pitchPlayers = saved.formacion.pitch||{};
@@ -1963,17 +1988,36 @@ function renderFormacion(){
   renderFormacionHistorial();
 }
 
-window.loadFormacionFecha = function(key){
-  _formacionCurrentKey = key || null;
+window.loadFormacionHistorial = function(key){
+  _formacionCurrentKey = key;
   pitchPlayers={}; benchPlayers=[]; selectedPlayer=null; pitchTapReady=false;
   renderFormacion();
+  // Scroll suave a la cancha
+  setTimeout(()=>{ document.getElementById('formacion-main')?.scrollIntoView({behavior:'smooth'}); }, 100);
 };
 
 window.saveFormacionExplicit = async function(){
-  if(!_formacionCurrentKey){ showToast('Elegí un partido primero'); return; }
+  if(!_formacionCurrentKey){
+    // Si no hay key, crear una entrada manual
+    const fecha = prompt('¿Qué número de fecha es?');
+    if(!fecha) return;
+    const rival = prompt('¿Vs quién jugaron?');
+    if(!rival) return;
+    const key = 'fecha'+String(fecha).padStart(2,'0')+'_'+rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+    _formacionCurrentKey = key;
+    const existing = {fecha:parseInt(fecha), rival:rival.toUpperCase(), condicion:'V', citados:PLAYERS, result:'', score:''};
+    try{
+      await set(ref(db,DB_PREFIX+'/citaciones/'+key),{...existing,formacion:{pitch:pitchPlayers,bench:benchPlayers}});
+      citaciones[key]={...existing,formacion:{pitch:pitchPlayers,bench:benchPlayers}};
+      showToast('✓ Formación guardada');
+      renderFormacion();
+    }catch(e){ showToast('Error al guardar'); }
+    return;
+  }
   const existing = {...(citaciones[_formacionCurrentKey]||{})};
   try{
     await set(ref(db,DB_PREFIX+'/citaciones/'+_formacionCurrentKey),{...existing,formacion:{pitch:pitchPlayers,bench:benchPlayers}});
+    if(citaciones[_formacionCurrentKey]) citaciones[_formacionCurrentKey].formacion={pitch:pitchPlayers,bench:benchPlayers};
     showToast('✓ Formación guardada');
     renderFormacionHistorial();
   }catch(e){ showToast('Error al guardar'); }
@@ -1982,21 +2026,21 @@ window.saveFormacionExplicit = async function(){
 function renderFormacionHistorial(){
   const el = document.getElementById('formacion-historial');
   if(!el) return;
-  // Mostrar otras citaciones con formación guardada
   const conForm = Object.entries(citaciones)
-    .filter(([key,m])=>m.formacion && m.citados && m.citados.length>0 && key!==_formacionCurrentKey)
-    .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0))
-    ;
+    .filter(([key,m])=>m.formacion && m.citados && m.citados.length>0)
+    .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
   if(!conForm.length){ el.innerHTML=''; return; }
-  let html = '<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Formaciones anteriores</div>';
+  let html = '<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:12px">Formaciones guardadas</div>';
   conForm.forEach(([key,m])=>{
     const enCancha = Object.keys(m.formacion.pitch||{}).length;
-    html += `<div class="prow" style="justify-content:space-between;margin-bottom:6px;cursor:pointer" onclick="window.loadFormacionFecha('${key}')">
+    const resCls=m.result==='V'?'rV':m.result==='L'?'rL':m.result==='E'?'rE':'';
+    const isActual = key===_formacionCurrentKey;
+    html += `<div class="prow" style="justify-content:space-between;margin-bottom:6px;cursor:pointer;${isActual?'border-color:var(--green);':''}" onclick="window.loadFormacionHistorial('${key}')">
       <div>
-        <div style="font-size:0.85rem;font-weight:600">F${m.fecha} vs ${m.rival||'?'}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${enCancha} en cancha</div>
+        <div style="font-size:0.85rem;font-weight:600">F${m.fecha||'?'} vs ${m.rival||'?'} ${m.result?'<span class="rbadge '+resCls+'">'+m.result+'</span>':''}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${enCancha} en cancha · ${(m.citados||[]).length} citados</div>
       </div>
-      <div style="font-size:0.75rem;color:var(--green)">Ver →</div>
+      <div style="font-size:0.75rem;color:${isActual?'var(--green)':'var(--muted)'};">${isActual?'● actual':'Ver →'}</div>
     </div>`;
   });
   el.innerHTML = html;
