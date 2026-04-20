@@ -33,6 +33,8 @@
   .tab-section-label { display:flex; align-items:center; gap:5px; padding:5px 12px 2px; font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; }
   .tsl-ent { color:#4a9eff; }
   .tsl-par { color:var(--yellow); border-top:1px solid var(--border); padding-top:4px; }
+  .tsl-plantel { color:#22cd78; border-top:1px solid var(--border); padding-top:4px; }
+  .tgl-dot-plantel { background:#22cd78; }
   .tgl-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; background:#4a9eff; }
   .tgl-dot-par { background:var(--yellow); }
   .tabs { display:flex; overflow-x:auto; padding:0 6px 6px; gap:4px; }
@@ -383,6 +385,10 @@
     <div class="tab" onclick="switchTab('citaciones')">Citaciones</div>
     <div class="tab" onclick="switchTab('formacion')">Formación</div>
   </div>
+  <div class="tab-section-label tsl-plantel"><span class="tgl-dot tgl-dot-plantel"></span>Plantel</div>
+  <div class="tabs tabs-plantel">
+    <div class="tab" onclick="switchTab('plantel')">Alta / Baja jugadores</div>
+  </div>
 </div>
 
 <!-- TAB 1 — LISTA -->
@@ -470,6 +476,11 @@
 <!-- TAB 6 — TABLAS & RESULTADOS -->
 <div id="view-tablas" class="view">
   <div id="tablas-content"></div>
+</div>
+
+<!-- TAB 8 — PLANTEL -->
+<div id="view-plantel" class="view">
+  <div id="plantelContent"></div>
 </div>
 
 <!-- TAB 7 — FORMACION -->
@@ -978,6 +989,28 @@ const FIXTURE = [
 ];
 
 let PLAYERS = [...(CFG.players||[])];
+let PLAYERS_INACTIVE = []; // jugadores dados de baja
+
+// Cargar jugadores desde Firebase (sobrescribe los hardcodeados si existen)
+async function loadPlayersFromDB(){
+  if(window._isEscuelita) return; // escuelita usa su propio sistema
+  try {
+    const snap = await get(ref(db, DB_PREFIX+'/players'));
+    if(snap.exists()){
+      const data = snap.val();
+      const activos = [], inactivos = [];
+      Object.entries(data).forEach(([,p])=>{
+        if(p.activo === false) inactivos.push(p.nombre);
+        else activos.push(p.nombre);
+      });
+      if(activos.length > 0 || inactivos.length > 0){
+        PLAYERS = activos;
+        PLAYERS_INACTIVE = inactivos;
+      }
+    }
+    // Si no hay nada en DB, usamos los hardcodeados de CFG.players
+  } catch(e){ console.warn('loadPlayersFromDB error:', e); }
+}
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DAYS_ES = ["Dom","Lun","Mar","Mie","Jue","Vie","Sab"];
 
@@ -1813,10 +1846,13 @@ window.switchTab=function(tab){
   activeTab=tab;
   const tabsEnt=['tomar','historial','stats'];
   const tabsPar=['tablas','cit-stats','citaciones','formacion'];
+  const tabsPlantel=['plantel'];
   const isEnt=tabsEnt.includes(tab);
-  const cls=isEnt?' ag':' ay';
-  document.querySelectorAll('.tabs-ent .tab').forEach((t,i)=>{ t.className='tab'+(tabsEnt[i]===tab?cls:''); });
-  document.querySelectorAll('.tabs-par .tab').forEach((t,i)=>{ t.className='tab'+(tabsPar[i]===tab?cls:''); });
+  const isPlantel=tabsPlantel.includes(tab);
+  const cls=isEnt?' ag':isPlantel?' ag':' ay';
+  document.querySelectorAll('.tabs-ent .tab').forEach((t,i)=>{ t.className='tab'+(tabsEnt[i]===tab?' ag':''); });
+  document.querySelectorAll('.tabs-par .tab').forEach((t,i)=>{ t.className='tab'+(tabsPar[i]===tab?' ay':''); });
+  document.querySelectorAll('.tabs-plantel .tab').forEach((t,i)=>{ t.className='tab'+(tabsPlantel[i]===tab?' ag':''); });
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+tab).classList.add('active');
   if(tab==='historial') renderHistory(selHistMonth);
@@ -1825,6 +1861,7 @@ window.switchTab=function(tab){
   if(tab==='citaciones') renderCitList();
   if(tab==='tablas') renderTablas(); // async, no necesita await aquí
   if(tab==='formacion') renderFormacion();
+  if(tab==='plantel') renderPlantel();
 };
 
 
@@ -1837,6 +1874,107 @@ function getDisplayName(name){
   if(duplicates.length > 1 && parts.length > 1) return firstName + ' ' + parts[parts.length-1][0] + '.';
   return firstName;
 }
+
+
+// ── PLANTEL: ALTA / BAJA JUGADORES ──
+
+async function _savePlayers(){
+  // Guarda PLAYERS (activos) y PLAYERS_INACTIVE en Firebase
+  const data = {};
+  PLAYERS.forEach(nombre => { data[nombre.replace(/[.#$/\[\]]/g,'_')] = {nombre, activo: true}; });
+  PLAYERS_INACTIVE.forEach(nombre => { data[nombre.replace(/[.#$/\[\]]/g,'_')] = {nombre, activo: false}; });
+  await set(ref(db, DB_PREFIX+'/players'), data);
+}
+
+function renderPlantel(){
+  const el = document.getElementById('plantelContent');
+  if(!el) return;
+
+  const activeCount = PLAYERS.length;
+  const inactiveCount = PLAYERS_INACTIVE.length;
+
+  let html = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px">${activeCount} jugador${activeCount!==1?'es':''} activo${activeCount!==1?'s':''} · ${inactiveCount} inactivo${inactiveCount!==1?'s':''}</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="newPlayerName" placeholder="Nombre y apellido" style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.9rem;outline:none;" autocomplete="off">
+        <button onclick="window.addPlayer()" style="background:#22cd78;color:#000;border:none;border-radius:9px;padding:10px 14px;font-size:0.85rem;font-weight:700;cursor:pointer;flex-shrink:0">+ Alta</button>
+      </div>
+    </div>`;
+
+  // Jugadores activos
+  html += `<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Activos</div>`;
+  if(!PLAYERS.length){
+    html += `<div style="color:var(--muted);font-size:0.85rem;margin-bottom:12px">Sin jugadores activos</div>`;
+  } else {
+    PLAYERS.forEach(nombre => {
+      html += `<div class="prow" style="justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:0.9rem;font-weight:600">${nombre}</div>
+        <button onclick="window.deactivatePlayer('${nombre.replace(/'/g,"\'")}')" style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.3);border-radius:7px;padding:4px 10px;font-size:0.72rem;font-weight:600;cursor:pointer">Baja</button>
+      </div>`;
+    });
+  }
+
+  // Jugadores inactivos
+  if(PLAYERS_INACTIVE.length){
+    html += `<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin:14px 0 8px;border-top:1px solid var(--border);padding-top:12px">Inactivos</div>`;
+    PLAYERS_INACTIVE.forEach(nombre => {
+      html += `<div class="prow" style="justify-content:space-between;margin-bottom:6px;opacity:0.6">
+        <div style="font-size:0.9rem">${nombre}</div>
+        <button onclick="window.reactivatePlayer('${nombre.replace(/'/g,"\'")}')" style="background:rgba(34,205,120,0.1);color:#22cd78;border:1px solid rgba(34,205,120,0.3);border-radius:7px;padding:4px 10px;font-size:0.72rem;font-weight:600;cursor:pointer">Reactivar</button>
+      </div>`;
+    });
+  }
+
+  el.innerHTML = html;
+
+  // Enter en el campo de nombre
+  document.getElementById('newPlayerName').addEventListener('keydown', e=>{ if(e.key==='Enter') window.addPlayer(); });
+}
+
+window.addPlayer = async function(){
+  const input = document.getElementById('newPlayerName');
+  const nombre = input.value.trim();
+  if(!nombre){ showToast('Ingresá el nombre del jugador'); return; }
+  if(PLAYERS.includes(nombre)){ showToast('El jugador ya está en el plantel'); return; }
+  // Si estaba inactivo, reactivarlo
+  if(PLAYERS_INACTIVE.includes(nombre)){
+    window.reactivatePlayer(nombre);
+    input.value='';
+    return;
+  }
+  PLAYERS.push(nombre);
+  input.value='';
+  try {
+    await _savePlayers();
+    showToast('✓ '+nombre+' agregado al plantel');
+    renderPlantel();
+    renderAtt();
+  } catch(e){ showToast('Error al guardar'); PLAYERS.pop(); renderPlantel(); }
+};
+
+window.deactivatePlayer = async function(nombre){
+  if(!confirm('¿Dar de baja a '+nombre+'? Su historial queda guardado.')) return;
+  PLAYERS = PLAYERS.filter(p=>p!==nombre);
+  PLAYERS_INACTIVE.push(nombre);
+  try {
+    await _savePlayers();
+    showToast('✓ '+nombre+' dado de baja');
+    renderPlantel();
+    renderAtt();
+  } catch(e){ showToast('Error al guardar'); PLAYERS.push(nombre); PLAYERS_INACTIVE=PLAYERS_INACTIVE.filter(p=>p!==nombre); renderPlantel(); }
+};
+
+window.reactivatePlayer = async function(nombre){
+  PLAYERS_INACTIVE = PLAYERS_INACTIVE.filter(p=>p!==nombre);
+  PLAYERS.push(nombre);
+  try {
+    await _savePlayers();
+    showToast('✓ '+nombre+' reactivado');
+    renderPlantel();
+    renderAtt();
+  } catch(e){ showToast('Error al guardar'); PLAYERS_INACTIVE.push(nombre); PLAYERS=PLAYERS.filter(p=>p!==nombre); renderPlantel(); }
+};
 
 function renderFormacion(){
   const allE = Object.entries(citaciones).sort((a,b)=>a[1].fecha-b[1].fecha);
@@ -1996,9 +2134,7 @@ window.shareFormacion = function(){
 };
 
 // INIT
-loadAttMarks(today());
-renderAtt();
-renderNextMatch();
+loadPlayersFromDB().then(()=>{ loadAttMarks(today()); renderAtt(); renderNextMatch(); });
 
 
 async function renderTablas(){
