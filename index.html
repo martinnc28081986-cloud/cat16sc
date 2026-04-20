@@ -1057,16 +1057,25 @@ async function _getActiveFecha(fixture, suspensions){
       allCits[cat] = snaps[i].exists() ? snaps[i].val() : {};
     });
 
-    // Encontrar la primera fecha donde alguna cat no tiene citados
+    // Solo considerar categorías que tienen al menos UNA citación guardada (activas)
+    const activeCats = COMP_CAT_PATHS.filter(cat => Object.keys(allCits[cat]).length > 0);
+    const catsToCheck = activeCats.length > 0 ? activeCats : COMP_CAT_PATHS.slice(0,1);
+
+    // Helper: buscar citación por número de fecha (independiente del rival)
+    // Porque cada cat puede tener distinto rival para la misma fecha
+    function catCitedFechaNum(cat, fechaNum){
+      const cits = allCits[cat];
+      return Object.values(cits).some(cit =>
+        cit.fecha === fechaNum && cit.citados && cit.citados.length > 0
+      );
+    }
+
+    // Encontrar la primera fecha donde alguna cat activa no citó
     const active = fixture.find(f => {
       if(f.cond === '-') return false;
       if(suspensions[f.fecha]) return false;
-      const key = 'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-      // La fecha es "activa" si al menos una cat competitiva no citó
-      return COMP_CAT_PATHS.some(cat => {
-        const cit = allCits[cat][key];
-        return !cit || !cit.citados || cit.citados.length === 0;
-      });
+      // La fecha es "activa" si al menos una cat ACTIVA no citó aún
+      return catsToCheck.some(cat => !catCitedFechaNum(cat, f.fecha));
     });
 
     window._activeFechaCache = active || null;
