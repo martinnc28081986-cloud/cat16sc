@@ -1837,7 +1837,7 @@ window.switchTab=function(tab){
   if(tab==='historial') renderHistory(selHistMonth);
   if(tab==='stats'){ renderStats(selStatsMonth); if(window._isEscuelita) renderPlantelMgr(); }
   if(tab==='cit-stats') renderCitStats();
-  if(tab==='citaciones') renderCitList();
+  if(tab==='citaciones'){ renderCitList(); renderCamSelector(); }
   if(tab==='tablas') renderTablas(); // async, no necesita await aquí
   if(tab==='formacion') renderFormacion();
   if(tab==='plantel') renderPlantel();
@@ -1985,8 +1985,8 @@ function renderFormacion(){
     }
   }
 
-  // Si no hay currentKey, usar el próximo
-  if(!_formacionCurrentKey) _formacionCurrentKey = proximoKey;
+  // Siempre usar el próximo partido al entrar (no persistir entre sesiones)
+  _formacionCurrentKey = proximoKey;
 
   // Header con info del partido actual
   if(headerEl){
