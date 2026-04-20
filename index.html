@@ -1589,7 +1589,7 @@ function renderCamSelector(){
     const btn=document.createElement('button');
     btn.className='cam-btn'+(selectedCamisetero===name?' selected':'');
     const veces=camCounts[name];
-    btn.innerHTML=name+(veces>0?` <span style="font-size:0.65rem;opacity:0.7;font-weight:400">${veces}x</span>`:'');
+    btn.innerHTML=name+(veces>0?' <span style="font-size:0.65rem;opacity:0.7;font-weight:400">'+veces+'x</span>':'');
     btn.onclick=()=>{selectedCamisetero=selectedCamisetero===name?null:name;renderCamSelector();};
     el.appendChild(btn);
   });
@@ -1807,7 +1807,9 @@ function renderCitStats(){
       const noCitados=PLAYERS.filter(p=>!(saved.citados||[]).includes(p));
       const camBadge=saved.camisetero?'<div style="font-size:0.72rem;color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
       const c=document.createElement('div'); c.className='card';
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px" onclick="window.shareCit('"+key+"')">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.dataset.citKey = key;
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
       matchList.appendChild(c);
     });
   }
@@ -2061,29 +2063,31 @@ window.saveFormacionExplicit = async function(){
 function renderFormacionHistorial(){
   const el = document.getElementById('formacion-historial');
   if(!el) return;
-  // Todos los partidos citados, con o sin formación guardada
   const todosCitados = Object.entries(citaciones)
     .filter(([,m])=>m.citados&&m.citados.length>0)
     .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
   if(!todosCitados.length){ el.innerHTML=''; return; }
-  let html = '<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:12px">Todos los partidos</div>';
+  el.innerHTML='<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:12px">Todos los partidos</div>';
   todosCitados.forEach(([key,m])=>{
     const enCancha = m.formacion ? Object.keys(m.formacion.pitch||{}).length : null;
     const resCls=m.result==='V'?'rV':m.result==='L'?'rL':m.result==='E'?'rE':'';
     const isActual = key===_formacionCurrentKey;
     const tieneForm = !!m.formacion;
-    const rowStyle = 'justify-content:space-between;margin-bottom:6px;cursor:pointer;'+(isActual?'border-color:var(--green);':'');
     const resHtml = m.result?('<span class="rbadge '+resCls+'">'+m.result+'</span>'):'';
     const subTxt = (tieneForm?(enCancha+' en cancha · '):'Sin formación · ')+(m.citados||[]).length+' citados';
     const accion = isActual?'● actual':tieneForm?'Ver →':'+ Agregar';
     const accionCol = isActual?'var(--green)':tieneForm?'var(--muted)':'#4d73f5';
-    html += '<div class="prow" style="'+rowStyle+'" onclick="window.loadFormacionHistorial(\''+key+'\')">'
-      +'<div><div style="font-size:0.85rem;font-weight:600">F'+(m.fecha||'?')+' vs '+(m.rival||'?')+' '+resHtml+'</div>'
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'prow';
+    rowDiv.style.cssText = 'justify-content:space-between;margin-bottom:6px;cursor:pointer;'+(isActual?'border-color:var(--green);':'');
+    rowDiv.innerHTML = '<div><div style="font-size:0.85rem;font-weight:600">F'+(m.fecha||'?')+' vs '+(m.rival||'?')+' '+resHtml+'</div>'
       +'<div style="font-size:0.72rem;color:var(--muted)">'+subTxt+'</div></div>'
-      +'<div style="font-size:0.75rem;color:'+accionCol+'">'+accion+'</div></div>';
+      +'<div style="font-size:0.75rem;color:'+accionCol+'">'+accion+'</div>';
+    rowDiv.addEventListener('click', function(){ window.loadFormacionHistorial(key); });
+    el.appendChild(rowDiv);
   });
-  el.innerHTML = html;
 }
+
 
 function drawPitch(){
   const g = document.getElementById('pitchTokens');
