@@ -737,8 +737,9 @@ function _launchByRole(profile){
   document.getElementById('logoutBtn').style.display='inline-block';
   if(role==='super-admin'){
     window._updatePresenceCat('super-admin');
-    if(!window._appStarted){ window._appStarted=true; startSuperAdminApp(); }
-    else { document.getElementById('loadingScreen').style.display='none'; }
+    if(!window._appStarted || !document.getElementById('superadmin-app') || document.getElementById('superadmin-app').style.display==='none'){
+      window._appStarted=true; window._isSuperAdmin=true; startSuperAdminApp();
+    } else { document.getElementById('loadingScreen').style.display='none'; }
   } else if(role==='coordinator'){
     window._updatePresenceCat('coord');
     if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
@@ -1034,19 +1035,61 @@ function setSS(s) {
   document.getElementById('offlineBanner').classList.toggle('show', s==='error');
 }
 
+// ── FECHA ACTIVA GLOBAL ──
+// La fecha activa es la primera donde al menos UNA categoría competitiva no citó
+const COMP_CAT_PATHS = ['cat13','cat14','cat15','cat16','cat17','cat18','cat19','cat20'];
+
+window._activeFechaCache = null;
+window._activeFechaTs = 0;
+
+async function _getActiveFecha(fixture, suspensions){
+  // Cache de 60 segundos para no consultar Firebase en cada render
+  if(window._activeFechaCache !== null && Date.now() - window._activeFechaTs < 60000){
+    return window._activeFechaCache;
+  }
+  try {
+    // Leer citaciones de todas las cats competitivas en paralelo
+    const snaps = await Promise.all(
+      COMP_CAT_PATHS.map(cat => get(ref(db, CLUB_PATH+'/'+cat+'/citaciones')))
+    );
+    const allCits = {};
+    COMP_CAT_PATHS.forEach((cat, i) => {
+      allCits[cat] = snaps[i].exists() ? snaps[i].val() : {};
+    });
+
+    // Encontrar la primera fecha donde alguna cat no tiene citados
+    const active = fixture.find(f => {
+      if(f.cond === '-') return false;
+      if(suspensions[f.fecha]) return false;
+      const key = 'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+      // La fecha es "activa" si al menos una cat competitiva no citó
+      return COMP_CAT_PATHS.some(cat => {
+        const cit = allCits[cat][key];
+        return !cit || !cit.citados || cit.citados.length === 0;
+      });
+    });
+
+    window._activeFechaCache = active || null;
+    window._activeFechaTs = Date.now();
+    return window._activeFechaCache;
+  } catch(e) {
+    console.warn('_getActiveFecha error:', e);
+    return null;
+  }
+}
+
+// Invalidar cache cuando se guarda una citación
+window._invalidateActiveFecha = function(){ window._activeFechaCache = null; };
+
 function renderNextMatch(){
   const el=document.getElementById('nextMatchEl'); if(!el)return;
   if(window._isEscuelita){ el.textContent=''; return; }
-  const next=FIXTURE.find(f=>{
-    if(f.cond==='-') return false;
-    if(_suspensions[f.fecha]) return false;
-    const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-    return !citaciones[key];
+  _getActiveFecha(FIXTURE, _suspensions).then(next => {
+    if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
+    const condLabel=next.cond==='L'?'Local':'Visitante';
+    const condColor=next.cond==='L'?'#448aff':'var(--yellow)';
+    el.innerHTML='Pr\u00f3x: <span style="color:var(--text)">F'+next.fecha+' vs '+next.rival+'</span> <span style="color:'+condColor+';font-size:0.6rem">('+condLabel+')</span>';
   });
-  if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
-  const condLabel=next.cond==='L'?'Local':'Visitante';
-  const condColor=next.cond==='L'?'#448aff':'var(--yellow)';
-  el.innerHTML='Pr\u00f3x: <span style="color:var(--text)">F'+next.fecha+' vs '+next.rival+'</span> <span style="color:'+condColor+';font-size:0.6rem">('+condLabel+')</span>';
 }
 
 // Limpiar TODOS los datos anteriores antes de cargar los nuevos
@@ -1618,6 +1661,7 @@ window.saveCitacion=async function(){
   const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
   try{
     await set(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,score,result,citados,camisetero:selectedCamisetero||null});
+    window._invalidateActiveFecha();
     showToast('Partido guardado');
     btn.textContent='&#10003; Guardado';
     setTimeout(()=>{ btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; },1500);
@@ -1823,7 +1867,7 @@ window.switchTab=function(tab){
   if(tab==='stats'){ renderStats(selStatsMonth); if(window._isEscuelita) renderPlantelMgr(); }
   if(tab==='cit-stats') renderCitStats();
   if(tab==='citaciones') renderCitList();
-  if(tab==='tablas') renderTablas();
+  if(tab==='tablas') renderTablas(); // async, no necesita await aquí
   if(tab==='formacion') renderFormacion();
 };
 
@@ -2001,7 +2045,7 @@ renderAtt();
 renderNextMatch();
 
 
-function renderTablas(){
+async function renderTablas(){
   const el=document.getElementById('tablas-content');
   if(!el)return;
   const _catNumMap2 = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
@@ -2010,12 +2054,7 @@ function renderTablas(){
   const scRes = LIGA_DATA.scResults[catNum]||[];
   const pos   = LIGA_DATA.posiciones[catNum]||[];
 
-  const nextF = FIXTURE.find(f=>{
-    if(f.cond==='-') return false;
-    if(_suspensions[f.fecha]) return false;
-    const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-    return !citaciones[key];
-  });
+  const nextF = await _getActiveFecha(FIXTURE, _suspensions);
   const rivalKey = nextF ? nextF.rival : null;
 
   const scW=scRes.filter(r=>r.gf>r.gc).length;
@@ -2731,11 +2770,22 @@ window.saEntrarComo = function(cat){
     backBtn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9990;background:rgba(255,171,64,0.9);color:#000;border:none;border-radius:9px;padding:10px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.3)';
     backBtn.onclick = function(){
       backBtn.remove();
+      // Limpiar listeners de la categoría
+      if(window._unsub1) try{window._unsub1();}catch(e){}
+      if(window._unsub2) try{window._unsub2();}catch(e){}
+      window._unsub1=null; window._unsub2=null;
+      if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{try{u();}catch(e){}});  window._coordUnsubs=null; }
+      // Ocultar todo
       document.getElementById('coord-app').style.display='none';
       document.querySelector('.tabs-wrapper').style.display='none';
-      document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
+      document.querySelectorAll('.view').forEach(v=>{ v.style.display='none'; });
+      // Limpiar badges
+      const cb=document.getElementById('catBadge'); if(cb) cb.textContent='SUPER ADMIN';
+      const sw=document.getElementById('catSwitchBtn'); if(sw) sw.remove();
+      // Volver al panel SA sin resetear _appStarted (evita que onAuthStateChanged relance)
+      window._appStarted = true;
+      window._isSuperAdmin = true;
       document.getElementById('superadmin-app').style.display='block';
-      window._appStarted = false;
     };
     document.body.appendChild(backBtn);
   }
