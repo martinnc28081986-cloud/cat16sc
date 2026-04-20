@@ -1572,17 +1572,24 @@ function renderCitList(){
 
 function renderCamSelector(){
   const el=document.getElementById('camSelector'); if(!el)return;
+  // Contar veces que cada jugador llevó las camisetas
+  const camCounts={};
+  PLAYERS.forEach(p=>camCounts[p]=0);
+  Object.values(citaciones).forEach(m=>{
+    if(m.camisetero && camCounts[m.camisetero]!==undefined) camCounts[m.camisetero]++;
+  });
   el.innerHTML='';
-  // Botón "Ninguno"
   const none=document.createElement('button');
   none.className='cam-btn'+(selectedCamisetero===null?' selected':'');
   none.textContent='Ninguno';
   none.onclick=()=>{selectedCamisetero=null;renderCamSelector();};
   el.appendChild(none);
-  PLAYERS.forEach(name=>{
+  // Ordenar por menos veces primero (para facilitar la rotación)
+  [...PLAYERS].sort((a,b)=>camCounts[a]-camCounts[b]).forEach(name=>{
     const btn=document.createElement('button');
     btn.className='cam-btn'+(selectedCamisetero===name?' selected':'');
-    btn.textContent=name;
+    const veces=camCounts[name];
+    btn.innerHTML=name+(veces>0?` <span style="font-size:0.65rem;opacity:0.7;font-weight:400">${veces}x</span>`:'');
     btn.onclick=()=>{selectedCamisetero=selectedCamisetero===name?null:name;renderCamSelector();};
     el.appendChild(btn);
   });
@@ -1737,6 +1744,15 @@ function renderCitStats(){
   const scL=allE.filter(([,r])=>r.result==='L').length;
   const pct=totalFechas?Math.round(jugadas/totalFechas*100):0;
 
+  // Primera fecha sin citar y sin suspender (no libre)
+  const proximaFecha = FIXTURE.find(f=>{
+    if(f.cond==='-') return false;
+    if(_suspensions[f.fecha]) return false;
+    const k='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+    const c=citaciones[k];
+    return !c||!c.citados||c.citados.length===0;
+  })||null;
+
   const dotsHtml=FIXTURE.map(f=>{
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const saved=citaciones[key];
@@ -1744,10 +1760,16 @@ function renderCitStats(){
     const isLibre=f.cond==='-';
     const isSusp=_suspensions[f.fecha];
     let bg,col;
-    if(isCitada){const res=saved.result;bg=res==='V'?'#22cd78':res==='L'?'#ff1744':res==='E'?'#ffab40':'#4d73f5';col=res==='E'?'#000':'#fff';}
+    if(isCitada){
+      const res=saved.result;
+      if(res==='V'){bg='#22cd78';col='#fff';}
+      else if(res==='L'){bg='#ff1744';col='#fff';}
+      else if(res==='E'){bg='#ffab40';col='#000';}
+      else{bg='#4d73f5';col='#fff';} // citada sin resultado aún
+    }
     else if(isSusp){bg='rgba(255,23,68,0.2)';col='#ff5555';}
     else if(isLibre){bg='#2a3a5e';col='#5a7aae';}
-    else if(f.fecha===jugadas+1){bg='#4d73f5';col='#fff';}
+    else if(f===proximaFecha){bg='#4d73f5';col='#fff';}
     else{bg='#1a2535';col='#3a4a5e';}
     return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
   }).join('');
@@ -1785,7 +1807,7 @@ function renderCitStats(){
       const noCitados=PLAYERS.filter(p=>!(saved.citados||[]).includes(p));
       const camBadge=saved.camisetero?'<div style="font-size:0.72rem;color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
       const c=document.createElement('div'); c.className='card';
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>'+(saved.result?'<span class="rbadge '+resCls+'">'+saved.result+'</span>':'')+(saved.score?'<span style="font-family:Bebas Neue,sans-serif;font-size:0.95rem;margin-left:5px;color:var(--text)">'+saved.score+'</span>':'')+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px" onclick="window.shareCit('"+key+"')">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       matchList.appendChild(c);
     });
   }
@@ -2039,21 +2061,23 @@ window.saveFormacionExplicit = async function(){
 function renderFormacionHistorial(){
   const el = document.getElementById('formacion-historial');
   if(!el) return;
-  const conForm = Object.entries(citaciones)
-    .filter(([key,m])=>m.formacion && m.citados && m.citados.length>0)
+  // Todos los partidos citados, con o sin formación guardada
+  const todosCitados = Object.entries(citaciones)
+    .filter(([,m])=>m.citados&&m.citados.length>0)
     .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
-  if(!conForm.length){ el.innerHTML=''; return; }
-  let html = '<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:12px">Formaciones guardadas</div>';
-  conForm.forEach(([key,m])=>{
-    const enCancha = Object.keys(m.formacion.pitch||{}).length;
+  if(!todosCitados.length){ el.innerHTML=''; return; }
+  let html = '<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:12px">Todos los partidos</div>';
+  todosCitados.forEach(([key,m])=>{
+    const enCancha = m.formacion ? Object.keys(m.formacion.pitch||{}).length : null;
     const resCls=m.result==='V'?'rV':m.result==='L'?'rL':m.result==='E'?'rE':'';
     const isActual = key===_formacionCurrentKey;
+    const tieneForm = !!m.formacion;
     html += `<div class="prow" style="justify-content:space-between;margin-bottom:6px;cursor:pointer;${isActual?'border-color:var(--green);':''}" onclick="window.loadFormacionHistorial('${key}')">
       <div>
         <div style="font-size:0.85rem;font-weight:600">F${m.fecha||'?'} vs ${m.rival||'?'} ${m.result?'<span class="rbadge '+resCls+'">'+m.result+'</span>':''}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${enCancha} en cancha · ${(m.citados||[]).length} citados</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${tieneForm?(enCancha+' en cancha · '):'Sin formación · '}${(m.citados||[]).length} citados</div>
       </div>
-      <div style="font-size:0.75rem;color:${isActual?'var(--green)':'var(--muted)'};">${isActual?'● actual':'Ver →'}</div>
+      <div style="font-size:0.75rem;color:${isActual?'var(--green)':tieneForm?'var(--muted)':'#4d73f5'};">${isActual?'● actual':tieneForm?'Ver →':'+ Agregar'}</div>
     </div>`;
   });
   el.innerHTML = html;
