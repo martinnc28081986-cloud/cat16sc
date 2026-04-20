@@ -2072,13 +2072,15 @@ function renderFormacionHistorial(){
     const resCls=m.result==='V'?'rV':m.result==='L'?'rL':m.result==='E'?'rE':'';
     const isActual = key===_formacionCurrentKey;
     const tieneForm = !!m.formacion;
-    html += `<div class="prow" style="justify-content:space-between;margin-bottom:6px;cursor:pointer;${isActual?'border-color:var(--green);':''}" onclick="window.loadFormacionHistorial('${key}')">
-      <div>
-        <div style="font-size:0.85rem;font-weight:600">F${m.fecha||'?'} vs ${m.rival||'?'} ${m.result?'<span class="rbadge '+resCls+'">'+m.result+'</span>':''}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${tieneForm?(enCancha+' en cancha · '):'Sin formación · '}${(m.citados||[]).length} citados</div>
-      </div>
-      <div style="font-size:0.75rem;color:${isActual?'var(--green)':tieneForm?'var(--muted)':'#4d73f5'};">${isActual?'● actual':tieneForm?'Ver →':'+ Agregar'}</div>
-    </div>`;
+    const rowStyle = 'justify-content:space-between;margin-bottom:6px;cursor:pointer;'+(isActual?'border-color:var(--green);':'');
+    const resHtml = m.result?('<span class="rbadge '+resCls+'">'+m.result+'</span>'):'';
+    const subTxt = (tieneForm?(enCancha+' en cancha · '):'Sin formación · ')+(m.citados||[]).length+' citados';
+    const accion = isActual?'● actual':tieneForm?'Ver →':'+ Agregar';
+    const accionCol = isActual?'var(--green)':tieneForm?'var(--muted)':'#4d73f5';
+    html += '<div class="prow" style="'+rowStyle+'" onclick="window.loadFormacionHistorial(\''+key+'\')">'
+      +'<div><div style="font-size:0.85rem;font-weight:600">F'+(m.fecha||'?')+' vs '+(m.rival||'?')+' '+resHtml+'</div>'
+      +'<div style="font-size:0.72rem;color:var(--muted)">'+subTxt+'</div></div>'
+      +'<div style="font-size:0.75rem;color:'+accionCol+'">'+accion+'</div></div>';
   });
   el.innerHTML = html;
 }
