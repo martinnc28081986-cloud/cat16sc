@@ -826,55 +826,71 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     sub: 'LISFI II Zona B 2026',
     players: ["Ciro","Juan Cruz","William","Pedro","Santi","Camilo","Vicente","Benja","Ramiro","Rafa","Mateo","Feli","Faustino"],
-    dbPath: 'cat16'
+    dbPath: 'cat16',
+    matchTime: '15:50',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   cat13: {
     label: 'MI PLANTEL',
     sub: 'LISFI II Zona B 2026',
     players: ["Villanueva Manuel","Benitez Bastian","Celis Juan Pablo","Fontela Severino","Coronel Salvador","Tortorelli Junior","Gil Marin Genaro","Torres Guillermo","Volpi Juan Ignacio","Baraglia Romeo","Baldoni Thiago","Auricchio Felipe","Scotto Lucio","Gulino Mendieta Lisandro","Albasi Ignacio"],
-    dbPath: 'cat13'
+    dbPath: 'cat13',
+    matchTime: '13:20',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   cat2020: {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Baldini Felipe","Ramirez Fausto","Campañaro Lucca","Olivetto Tomas","Picone Santino","Miron Amaro","Martinez Liam","Rodriguez Bruno","Cerecedo Benicio","Violini Gabriel","De Franco Bruno","Villafañe Bahiano","Parente Juan Ignacio","Roberto Aaron"],
-    dbPath: 'cat2020'
+    dbPath: 'cat2020',
+    matchTime: '12:30',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   cat2019: {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Benítez Álvaro","Cardoso Felipe","Chiarlo Manuel","Costa Gaspar","Etchepare Juan Pedro","López Machado Milo","Loredo Camilo","Pochettino Vico","Ranieri Gino"],
-    dbPath: 'cat2019'
+    dbPath: 'cat2019',
+    matchTime: '11:40',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   cat2018: {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Vicente","Bautista F","Felipe P","Simón","Ciro T","Francisco C","Baltazar","Lautaro","Felipe R","Osman"],
-    dbPath: 'cat2018'
+    dbPath: 'cat2018',
+    matchTime: '10:50',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   cat2017: {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Jaume","De Angelis","Dante","Ismael","Lorenzo","Guarda","Juan","Recio","Fadel","Simon","Fermin","Pedro","Carmelo","Burruchaga","Aurichio"],
-    dbPath: 'cat2017'
+    dbPath: 'cat2017',
+    matchTime: '10:00',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   cat2015: {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Regalado Ciro","Arona Ciro","Recio Matias","La Rosa Valentin","Agristola Felipe","Valbruni Thiago","Pereyra Thiago","Arona Thiago","Cantaleano Miqueas","Baldini Santino","Baraglia Felipe","Merelles Matias"],
-    dbPath: 'cat2015'
+    dbPath: 'cat2015',
+    matchTime: '15:00',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   cat2014: {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     players: ["Baseggio Bertino","Tartaruga Bautista","Sosa Ciriaco","Colque Bautista","Vitali Juan Ignacio","Traversaro Bautista","De Francisco Pedro","Costa Blas","Silvero Mateo","Di Pietro Vicente","Castillo Miqueas","Sagarra Salvador","Seranggioli Francisco","Macías Felipe"],
-    dbPath: 'cat2014'
+    dbPath: 'cat2014',
+    matchTime: '14:10',
+    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
   },
   escuelita: {
     label: 'MI PLANTEL',
@@ -1721,6 +1737,101 @@ window.saveCitacion=async function(){
   } catch(e){ showToast('Error'); btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; }
 };
 
+
+window.shareCit = async function(key){
+  const cit = citaciones[key];
+  if(!cit||!cit.citados||!cit.citados.length){ showToast('Sin citados para compartir'); return; }
+  const condLabel = cit.condicion==='L'?'LOCAL':'VISITANTE';
+  const matchTime = CFG.matchTime||'';
+  // Direcciones de canchas LISFI Zona II
+  const RIVAL_ADDRESSES = {
+    'ADAFI': '10 y 508 M. B. Gonnet',
+    'ATENEO JUVENIL': 'Cno. Ing. Humet (43) y Guido Spano Eda.',
+    'AUTONOMIA': '115 y 524 Tolosa',
+    'VILLA PROGRESO': '82 y 126 Berisso',
+    'JOSE HERNANDEZ': 'Av 31 e/510 y 511 José Hernández',
+    'CAMBACERES': 'Cno. Alte. Brown Col. 342 Punta Lara',
+    'CAPITAL CHICA': '156 e/ 66 y 67 Los Hornos',
+    'CAP. CHICA': '156 e/ 66 y 67 Los Hornos',
+    'CAPCHICA': '156 e/ 66 y 67 Los Hornos',
+    'CATELLA': '532 y 127 Ensenada',
+    'CRI CATELLA': '532 y 127 Ensenada',
+    'CRIM': 'Dr. Brenan y Cajaraville, Magdalena',
+    'CRISFA': '71 e/14 y 15 La Plata',
+    'CRISFA V': '71 e/14 y 15 La Plata',
+    'DEFENSA Y JUSTICIA': '229 y 54 Etcheverry',
+    'DEFENSORES DE S.L.': '23 Bis y 80 (CRI Fátima)',
+    'DEFSAN LORENZO': '23 Bis y 80 (CRI Fátima)',
+    'EL CARMEN': '98 e/128 y 129 Berisso',
+    'ESTUDIANTES': '70 e/ 141 y 142 Los Hornos',
+    'EVERTON': '7 y 629 Siccardi',
+    'FATIMA': '23 y 80 Bis Altos de San Lorenzo',
+    'FIE 25': '12 e/ 511 y 512 Ringuelet',
+    'FUNDACION EMA': '60 y 156 Los Hornos',
+    'LA CURVA': 'M. de Aviles y Bossinga, Ensenada',
+    'LA PLATA V': '17 e/529 y 530 Ringuelet',
+    'LIBERTAD': '38 y 150 El Retiro',
+    'NUEVA FUERZA': '38 y 150 El Retiro',
+    'NUEVA FUERZAS': '38 y 150 El Retiro',
+    'NSL': '522 y 21 Ringuelet',
+    'NUESTRA SEÑORA DE LUJAN': '522 y 21 Ringuelet',
+    'NUEVA ALBA': '604 e/ 126 y 127 Villa Elvira',
+    'PEDRO BENOIT': '526 bis e/ 15 y 16 bis Ringuelet',
+    'REAL INFANTIL': '29 y 79 La Plata',
+    'SAN JUAN BAUTISTA': '146 y 515 Romero',
+    'SPORT CLUB': 'Tapalque y Lavalle, Magdalena',
+    'TALLERES': '131 y 52 La Plata',
+    'UNIVERSITARIO': 'Av. 60 y 126 Berisso',
+    'VILLA SAN CARLOS': '26 y 173 Berisso',
+  };
+  const localAddr = CFG.address || 'Av. 13 y 610 Villa Elvira';
+  const rivalKey = (cit.rival||'').toUpperCase().trim();
+  const visitaAddr = RIVAL_ADDRESSES[rivalKey] || '';
+  const address = cit.condicion==='L' ? localAddr : visitaAddr;
+
+  // Horario de citación = 40 min antes del partido
+  let citTime = '';
+  if(matchTime){
+    const [hh,mm] = matchTime.split(':').map(Number);
+    const total = hh*60+mm-40;
+    citTime = String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+  }
+
+  // Fecha del partido formateada
+  const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MESES_S = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  let fechaStr = '';
+  const dateStr = FIXTURE_DATES[cit.fecha];
+  if(dateStr){
+    const d = new Date(dateStr+'T12:00:00');
+    fechaStr = DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  }
+
+  // Categoría
+  const catKey = DB_PREFIX.split('/').pop();
+  const catNames = {cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
+                    cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020'};
+  const catLabel = catNames[catKey] || catKey;
+
+  let lines = [];
+  lines.push('⚽ *SAGRADO CORAZÓN — '+catLabel+' — Fecha '+cit.fecha+'*');
+  lines.push('🆚 vs '+cit.rival+' | '+condLabel);
+  if(fechaStr) lines.push('📅 '+fechaStr);
+  if(matchTime) lines.push('⏰ Partido: '+matchTime+' hs');
+  if(citTime) lines.push('🕑 Horario de citación: '+citTime+' hs');
+  if(address) lines.push('📍 Cancha: '+address);
+  lines.push('');
+  lines.push('👥 *Citados ('+cit.citados.length+'):*');
+  cit.citados.forEach((p,i)=>lines.push('  '+(i+1)+'. '+p));
+  if(cit.camisetero){ lines.push(''); lines.push('👕 Camisetas: *'+cit.camisetero+'*'); }
+  lines.push('');
+  lines.push('✅ Confirmar asistencia respondiendo este mensaje');
+
+  // Marcar como compartido
+  try{ await set(ref(db,DB_PREFIX+'/citaciones/'+key),{...cit,whatsappShared:true}); }catch(e){}
+  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
+};
+
 // ── STATS CITACIONES ──
 function renderCitStats(){
   const timelineEl=document.getElementById('citTimeline');
@@ -1965,7 +2076,7 @@ function renderFormacion(){
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
-  // Determinar próximo partido
+  // Determinar próximo partido — primera fecha sin resultado cargado (citada o no)
   let proximoKey = null;
   let proximoData = null;
   for(const f of FIXTURE){
@@ -1973,20 +2084,16 @@ function renderFormacion(){
     if(_suspensions[f.fecha]) continue;
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
-    if(!cit||!cit.citados||cit.citados.length===0){
+    // Si no tiene resultado guardado, es el próximo
+    if(!cit || !cit.result || cit.result===''){
       proximoKey = key;
-      proximoData = {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:null};
-      break;
-    } else if(!cit.result) {
-      // Partido citado pero sin resultado aún = es el próximo
-      proximoKey = key;
-      proximoData = {...cit};
+      proximoData = cit ? {...cit} : {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
       break;
     }
   }
 
-  // Siempre usar el próximo partido al entrar (no persistir entre sesiones)
-  _formacionCurrentKey = proximoKey;
+  // Siempre arrancar en el próximo partido
+  _formacionCurrentKey = proximoKey || null;
 
   // Header con info del partido actual
   if(headerEl){
