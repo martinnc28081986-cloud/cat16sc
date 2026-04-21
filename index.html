@@ -2263,9 +2263,6 @@ window.applyFormPreset = function(name){
   }
   const coords = FORM7[name];
   if(!coords) return;
-  // Usar citados del partido actual
-  const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
-  const citados = saved ? (saved.citados||[]) : PLAYERS;
   pitchPlayers = {};
   benchPlayers = [...citados];
   coords.forEach((pos, i) => {
