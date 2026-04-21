@@ -2127,27 +2127,22 @@ window.reactivatePlayer = async function(nombre){
 let _formacionCurrentKey = null;
 let _formacionViendoHistorial = false;
 
-function renderFormacion(){
+async function renderFormacion(){
   const mainEl = document.getElementById('formacion-main');
   const noEl   = document.getElementById('formacion-no-cit');
   const headerEl = document.getElementById('formacion-header');
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
-  // Determinar próximo partido — primera fecha sin resultado cargado (citada o no)
+  // Usar _getActiveFecha — misma lógica que el header y tablas
+  const proximaFechaGlobal = await _getActiveFecha(FIXTURE, _suspensions);
   let proximoKey = null;
   let proximoData = null;
-  for(const f of FIXTURE){
-    if(f.cond==='-') continue;
-    if(_suspensions[f.fecha]) continue;
-    const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-    const cit = citaciones[key];
-    // Si no tiene resultado guardado, es el próximo
-    if(!cit || !cit.result || cit.result===''){
-      proximoKey = key;
-      proximoData = cit ? {...cit} : {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
-      break;
-    }
+  if(proximaFechaGlobal){
+    const f = proximaFechaGlobal;
+    proximoKey = 'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+    const cit = citaciones[proximoKey];
+    proximoData = cit ? {...cit} : {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
   }
 
   // Siempre arrancar en el próximo partido
