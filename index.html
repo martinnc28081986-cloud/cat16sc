@@ -1254,6 +1254,20 @@ async function _getActiveFecha(fixture, suspensions){
 // Invalidar cache cuando se guarda una citación
 window._invalidateActiveFecha = function(){ window._activeFechaCache = null; };
 
+// Formateador de nombres de rivales para display (no afecta keys de Firebase)
+function _fmtRival(rival){
+  if(!rival) return '';
+  const MAP = {
+    'N.FUERZA':       'Nueva Fuerza',
+    'DEF.SAN LORENZO':'Def. San Lorenzo',
+    'CAP.CHICA':      'Cap. Chica',
+    'VILLA PROGRESO': 'Villa Progreso',
+  };
+  if(MAP[rival]) return MAP[rival];
+  // Capitalizar normalmente cualquier otro
+  return rival.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+}
+
 function renderNextMatch(){
   const el=document.getElementById('nextMatchEl'); if(!el)return;
   if(window._isEscuelita){ el.textContent=''; return; }
@@ -1261,7 +1275,7 @@ function renderNextMatch(){
     if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
     const condLabel=next.cond==='L'?'Local':'Visitante';
     const condColor=next.cond==='L'?'#448aff':'var(--yellow)';
-    el.innerHTML='Pr\u00f3x: <span style="color:var(--text)">F'+next.fecha+' vs '+next.rival+'</span> <span style="color:'+condColor+';font-size:0.6rem">('+condLabel+')</span>';
+    el.innerHTML='Pr\u00f3x: <span style="color:var(--text)">F'+next.fecha+' vs '+_fmtRival(next.rival)+'</span> <span style="color:'+condColor+';font-size:0.6rem">('+condLabel+')</span>';
   });
 }
 
@@ -1653,7 +1667,7 @@ window.loadFecha=function(val){
   // ── FECHA SUSPENDIDA ──
   if(_suspensions[f.fecha]){
     info.style.display='block';
-    document.getElementById('fixtureTitleEl').innerHTML='Fecha '+f.fecha+' &mdash; vs '+f.rival+' <span class="fixture-badge fb-libre">SUSPENDIDA</span>';
+    document.getElementById('fixtureTitleEl').innerHTML='Fecha '+f.fecha+' &mdash; vs '+_fmtRival(f.rival)+' <span class="fixture-badge fb-libre">SUSPENDIDA</span>';
     document.getElementById('fixtureSubEl').innerHTML='<span style="color:var(--red);font-weight:600">⛔ Esta fecha fue suspendida por el coordinador. No se puede citar.</span>';
     markedCit={}; selectedCamisetero=null;
     renderCitList(); renderCamSelector();
@@ -1665,7 +1679,7 @@ window.loadFecha=function(val){
   if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='💾 Guardar partido'; }
   const condLabel=f.cond==='L'?'Local':f.cond==='V'?'Visitante':'Libre';
   const condCls=f.cond==='L'?'fb-local':f.cond==='V'?'fb-visit':'fb-libre';
-  document.getElementById('fixtureTitleEl').innerHTML='Fecha '+f.fecha+' &mdash; vs '+f.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
+  document.getElementById('fixtureTitleEl').innerHTML='Fecha '+f.fecha+' &mdash; vs '+_fmtRival(f.rival)+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
   document.getElementById('fixtureSubEl').textContent='Marcá los jugadores citados para este partido';
 
   // pre-load existing data if already saved
@@ -1931,7 +1945,7 @@ window.shareCit = async function(key){
 
   let lines = [];
   lines.push('⚽ *SAGRADO CORAZÓN — '+catLabel+' — Fecha '+cit.fecha+'*');
-  lines.push('🆚 vs '+cit.rival+' | '+condLabel);
+  lines.push('🆚 vs '+_fmtRival(cit.rival)+' | '+condLabel);
   if(fechaStr) lines.push('📅 '+fechaStr);
   if(matchTime) lines.push('⏰ Partido: '+matchTime+' hs');
   if(citTime) lines.push('🕑 Horario de citación: '+citTime+' hs');
@@ -2040,7 +2054,7 @@ function renderCitStats(){
       const camBadge=saved.camisetero?'<div style="font-size:0.72rem;color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
       const c=document.createElement('div'); c.className='card';
       c.dataset.citKey = key;
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+_fmtRival(saved.rival)+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
       matchList.appendChild(c);
     });
@@ -2264,19 +2278,28 @@ let _formacionCurrentKey = null;
 function _getResultData(key){
   const cit = citaciones[key];
   if(!cit) return null;
+  let gf=null, gc=null, result=null, score=null;
   // Intentar desde la citación guardada
-  if(cit.score && cit.result) return {score: cit.score, result: cit.result};
-  // Cruzar con LIGA_DATA.scResults por número de fecha
+  if(cit.score && cit.result){
+    score = cit.score; result = cit.result;
+    const parts = cit.score.split('-');
+    if(parts.length===2){ gf=parseInt(parts[0]); gc=parseInt(parts[1]); }
+  }
+  // Cruzar con LIGA_DATA.scResults por número de fecha (fuente de verdad)
   const _catNumMap = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const catNum = _catNumMap[DB_PREFIX.split('/').pop()] || 16;
   const scRes = (LIGA_DATA && LIGA_DATA.scResults && LIGA_DATA.scResults[catNum]) || [];
-  const match = scRes.find(r => r.fecha === cit.fecha);
-  if(match){
-    const gf = match.gf, gc = match.gc;
-    const result = gf > gc ? 'V' : gf < gc ? 'L' : 'E';
-    return {score: gf+'-'+gc, result};
+  const match = scRes.find(r => Number(r.fecha) === Number(cit.fecha));
+  if(match){ gf=match.gf; gc=match.gc; }
+  if(gf!==null && gc!==null){
+    result = gf > gc ? 'V' : gf < gc ? 'L' : 'E';
+    score = gf+'-'+gc;
   }
-  return null;
+  if(!result) return null;
+  // Colores semánticos reales (igual que res-score en tablas)
+  const color = result==='V'?'#22cd78': result==='L'?'#ff1744': '#ffab40';
+  const bg    = result==='V'?'rgba(34,205,120,0.12)': result==='L'?'rgba(255,23,68,0.12)': 'rgba(255,171,64,0.12)';
+  return {score, result, color, bg};
 }
 
 function renderFormacion(){
@@ -2318,12 +2341,11 @@ function renderFormacion(){
       const condCls = curData.condicion==='L'?'fb-local':'fb-visit';
       const esProximo = _formacionCurrentKey===proximoKey;
       const rd = _formacionCurrentKey ? _getResultData(_formacionCurrentKey) : null;
-      const resCls = rd ? (rd.result==='V'?'rV':rd.result==='L'?'rL':'rE') : '';
-      const resHtml = rd ? `<span class="rbadge ${resCls}" style="margin-left:4px">${rd.score}</span>` : '';
+      const resHtml = rd ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;display:inline-block;margin-left:5px;vertical-align:middle;background:${rd.bg};color:${rd.color};">${rd.score}</span>` : '';
       const citCount = (curData.citados||[]).length;
       headerEl.innerHTML = `
         <div style="font-size:0.62rem;color:var(--muted);margin-bottom:2px;">${esProximo?'⟶ Próximo partido':'📋 Partido anterior'}</div>
-        <div style="font-weight:700;font-size:.88rem;">F${curData.fecha||'?'} vs ${curData.rival||'?'} <span class="fixture-badge ${condCls}">${condLabel}</span>${resHtml}</div>
+        <div style="font-weight:700;font-size:.88rem;">F${curData.fecha||'?'} vs ${_fmtRival(curData.rival||'?')} <span class="fixture-badge ${condCls}">${condLabel}</span>${resHtml}</div>
         <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${citCount?citCount+' citados':'Sin citación'}</div>`;
     } else {
       headerEl.innerHTML = '<div style="font-size:.75rem;color:var(--muted);">Sin partidos programados</div>';
@@ -2336,6 +2358,14 @@ function renderFormacion(){
   if(saved && saved.formacion){
     pitchPlayers = JSON.parse(JSON.stringify(saved.formacion.pitch||{}));
     benchPlayers = [...(saved.formacion.bench||[])];
+    // Sync: los citados son la fuente de verdad
+    // 1. Agregar al banco los citados que no están ni en cancha ni en banco
+    const enFormacion = new Set([...Object.keys(pitchPlayers), ...benchPlayers]);
+    citados.forEach(p=>{ if(!enFormacion.has(p)) benchPlayers.push(p); });
+    // 2. Quitar de cancha/banco jugadores que ya no están en la citación
+    const citSet = new Set(citados);
+    Object.keys(pitchPlayers).forEach(p=>{ if(!citSet.has(p)) delete pitchPlayers[p]; });
+    benchPlayers = benchPlayers.filter(p=>citSet.has(p));
   } else if(Object.keys(pitchPlayers).length===0 && benchPlayers.length===0){
     pitchPlayers={}; benchPlayers=[...citados];
   }
@@ -2401,8 +2431,7 @@ function renderFormacionHistorial(){
     const isActual = key===_formacionCurrentKey;
     const tieneForm = !!m.formacion;
     const rd = _getResultData(key);
-    const resCls = rd ? (rd.result==='V'?'rV':rd.result==='L'?'rL':'rE') : '';
-    const resHtml = rd ? `<span class="rbadge ${resCls}" style="font-size:.7rem;">${rd.score}</span>` : '';
+    const resHtml = rd ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:.78rem;letter-spacing:1px;padding:1px 7px;border-radius:4px;display:inline-block;margin-left:3px;vertical-align:middle;background:${rd.bg};color:${rd.color};">${rd.score}</span>` : '';
     const condLabel = m.condicion==='L'?'Local':'Visita';
     const condCls = m.condicion==='L'?'fb-local':'fb-visit';
     const tag = tieneForm
@@ -2411,7 +2440,7 @@ function renderFormacionHistorial(){
     html += `<div onclick="window.loadFormacionHistorial('${key}')" style="padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:${isActual?'rgba(77,115,245,.15)':'transparent'};${isActual?'border-left:2px solid var(--green);':''}" onmouseover="this.style.background='rgba(77,115,245,.1)'" onmouseout="this.style.background='${isActual?'rgba(77,115,245,.15)':'transparent'}'">
       <div>
         <div style="font-size:.6rem;color:var(--muted);margin-bottom:1px;">F${m.fecha||'?'} · <span class="fixture-badge ${condCls}" style="font-size:.58rem;">${condLabel}</span></div>
-        <div style="font-weight:600;font-size:.82rem;">vs ${m.rival||'?'} ${resHtml}</div>
+        <div style="font-weight:600;font-size:.82rem;">vs ${_fmtRival(m.rival||'?')} ${resHtml}</div>
         <div style="font-size:.6rem;color:var(--muted);margin-top:1px;">${(m.citados||[]).length} citados · ${tag}</div>
       </div>
       <div style="font-size:.7rem;color:${isActual?'var(--green)':'var(--muted)'};">${isActual?'●':'›'}</div>
