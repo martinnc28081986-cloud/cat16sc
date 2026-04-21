@@ -29,18 +29,37 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
   .header-right { display:flex; align-items:center; font-size:0.72rem; color:var(--muted); }
 
+  /* ── BOTTOM NAV ── */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:#050f3d; border-top:1px solid #1e3a9e; display:flex; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
+  .bnav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; border-radius:14px; padding:8px 4px 6px; border:1px solid transparent; transition:all 0.2s; }
+  .bnav-item .bnav-icon { font-size:20px; line-height:1; }
+  .bnav-item .bnav-lbl { font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#3a4a6a; }
+  .bnav-item .bnav-dot { width:5px; height:5px; border-radius:50%; background:transparent; }
+  .bnav-item.active-b { background:rgba(77,115,245,0.18); border-color:rgba(77,115,245,0.35); }
+  .bnav-item.active-b .bnav-lbl { color:#4d73f5; }
+  .bnav-item.active-b .bnav-dot { background:#4d73f5; }
+  .bnav-item.active-y { background:rgba(255,171,64,0.15); border-color:rgba(255,171,64,0.35); }
+  .bnav-item.active-y .bnav-lbl { color:#ffab40; }
+  .bnav-item.active-y .bnav-dot { background:#ffab40; }
+  .bnav-item.active-g { background:rgba(34,205,120,0.12); border-color:rgba(34,205,120,0.3); }
+  .bnav-item.active-g .bnav-lbl { color:#22cd78; }
+  .bnav-item.active-g .bnav-dot { background:#22cd78; }
+  /* ── SUBTABS (arriba, dentro de cada sección) ── */
   .tabs-wrapper { background:var(--surface); border-bottom:1px solid var(--border); }
   .tab-section-label { display:flex; align-items:center; gap:5px; padding:5px 12px 2px; font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; }
   .tsl-ent { color:#4a9eff; }
-  .tsl-par { color:var(--yellow); border-top:1px solid var(--border); padding-top:4px; }
-  .tsl-plantel { color:#22cd78; border-top:1px solid var(--border); padding-top:4px; }
-  .tgl-dot-plantel { background:#22cd78; }
+  .tsl-par { color:var(--yellow); }
+  .tsl-plantel { color:#22cd78; }
   .tgl-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; background:#4a9eff; }
   .tgl-dot-par { background:var(--yellow); }
+  .tgl-dot-plantel { background:#22cd78; }
   .tabs { display:flex; overflow-x:auto; padding:0 6px 6px; gap:4px; }
   .tab { flex-shrink:0; padding:5px 10px; border-radius:20px; font-size:0.68rem; font-weight:600; letter-spacing:0.3px; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; transition:all 0.2s; white-space:nowrap; }
   .tab.ag { color:#4a9eff; background:rgba(74,158,255,0.12); border-color:rgba(74,158,255,0.3); }
   .tab.ay { color:var(--yellow); background:rgba(255,171,64,0.12); border-color:rgba(255,171,64,0.3); }
+  .tab.agg { color:#22cd78; background:rgba(34,205,120,0.12); border-color:rgba(34,205,120,0.3); }
+  /* padding inferior para no quedar tapado por bottom-nav */
+  .view { padding-bottom:80px !important; }
 
   .view { display:none; padding:14px; }
   .view.active { display:block; }
@@ -270,9 +289,10 @@
   .cam-bar-fill { height:100%; border-radius:3px; background:var(--yellow); transition:width 0.6s ease; }
 
   /* ── COORDINADOR ── */
-  .coord-tabs { display:flex; overflow-x:auto; background:var(--surface); border-bottom:1px solid var(--border); }
-  .coord-tab { flex:1; min-width:72px; padding:12px 4px; text-align:center; font-size:0.66rem; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; white-space:nowrap; }
-  .coord-tab.cta { color:#4a9eff; border-bottom-color:#4a9eff; }
+  .coord-tabs { display:flex; position:fixed; bottom:0; left:0; right:0; z-index:100; background:#050f3d; border-top:1px solid #1e3a9e; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
+  .coord-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; border-radius:14px; padding:8px 4px 6px; border:1px solid transparent; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#3a4a6a; white-space:nowrap; transition:all 0.2s; }
+  .coord-tab.cta { background:rgba(77,115,245,0.18); border-color:rgba(77,115,245,0.35); color:#4d73f5; }
+  .coord-view { padding-bottom:80px !important; }
   .coord-view { display:none; padding:14px; max-width:720px; margin:0 auto; }
   .coord-view.active { display:block; }
   .kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:12px; }
@@ -371,23 +391,42 @@
 
 <div class="offline-banner" id="offlineBanner">&#128535; Sin conexi&#243;n &middot; los cambios se guardar&#225;n al reconectar</div>
 
-<div class="tabs-wrapper">
-  <div class="tab-section-label tsl-ent"><span class="tgl-dot"></span>Entrenamiento</div>
-  <div class="tabs tabs-ent">
+<div class="tabs-wrapper" id="subtabsWrapper">
+  <div class="tab-section-label tsl-ent" id="subtabLabelEnt"><span class="tgl-dot"></span>Entrenamiento</div>
+  <div class="tabs tabs-ent" id="subtabsEnt">
     <div class="tab ag" onclick="switchTab('tomar')">Asistencia</div>
     <div class="tab" onclick="switchTab('historial')">Historial</div>
     <div class="tab" onclick="switchTab('stats')">Estadísticas</div>
   </div>
-  <div class="tab-section-label tsl-par"><span class="tgl-dot tgl-dot-par"></span>Partido</div>
-  <div class="tabs tabs-par">
+  <div class="tab-section-label tsl-par" id="subtabLabelPar" style="display:none"><span class="tgl-dot tgl-dot-par"></span>Partido</div>
+  <div class="tabs tabs-par" id="subtabsPar" style="display:none">
     <div class="tab" onclick="switchTab('tablas')">Tablas</div>
     <div class="tab" onclick="switchTab('cit-stats')">Hist. Cit.</div>
     <div class="tab" onclick="switchTab('citaciones')">Citaciones</div>
     <div class="tab" onclick="switchTab('formacion')">Formación</div>
   </div>
-  <div class="tab-section-label tsl-plantel"><span class="tgl-dot tgl-dot-plantel"></span>Plantel</div>
-  <div class="tabs tabs-plantel">
+  <div class="tab-section-label tsl-plantel" id="subtabLabelPlantel" style="display:none"><span class="tgl-dot tgl-dot-plantel"></span>Plantel</div>
+  <div class="tabs tabs-plantel" id="subtabsPlantel" style="display:none">
     <div class="tab" onclick="switchTab('plantel')">Alta / Baja jugadores</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV — profe/escuelita -->
+<div class="bottom-nav" id="bottomNavProfe">
+  <div class="bnav-item active-b" id="bnav-ent" onclick="switchSection('ent')">
+    <div class="bnav-icon">🏃</div>
+    <div class="bnav-lbl">Entreno</div>
+    <div class="bnav-dot"></div>
+  </div>
+  <div class="bnav-item" id="bnav-par" onclick="switchSection('par')">
+    <div class="bnav-icon">⚽</div>
+    <div class="bnav-lbl">Partido</div>
+    <div class="bnav-dot"></div>
+  </div>
+  <div class="bnav-item" id="bnav-plantel" onclick="switchSection('plantel')">
+    <div class="bnav-icon">👥</div>
+    <div class="bnav-lbl">Plantel</div>
+    <div class="bnav-dot"></div>
   </div>
 </div>
 
@@ -544,9 +583,9 @@
 <!-- SUPER ADMIN -->
 <div id="superadmin-app" style="display:none">
   <div class="coord-tabs" id="saTabsEl">
-    <div class="coord-tab cta" onclick="window.saTab('clubes')">🏟️ Clubes</div>
-    <div class="coord-tab" onclick="window.saTab('facturacion')">💳 Facturación</div>
-    <div class="coord-tab" onclick="window.saTab('usuarios')">👥 Usuarios</div>
+    <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:18px;line-height:1">🏟️</span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:#4d73f5;display:block"></span></div>
+    <div class="coord-tab" onclick="window.saTab('facturacion')"><span style="font-size:18px;line-height:1">💳</span>Facturación<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab" onclick="window.saTab('usuarios')"><span style="font-size:18px;line-height:1">👥</span>Usuarios<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="sa-clubes"      class="coord-view active"></div>
   <div id="sa-facturacion" class="coord-view"></div>
@@ -556,17 +595,18 @@
 <!-- COORDINADOR -->
 <div id="coord-app" style="display:none">
   <div class="coord-tabs" id="coordTabsEl">
-    <div class="coord-tab cta" onclick="window.coordTab('resumen')">📊 Resumen</div>
-    <div class="coord-tab"     onclick="window.coordTab('presencias')">🏃 Presencias</div>
-    <div class="coord-tab"     onclick="window.coordTab('citaciones')">⭐ Citaciones</div>
-    <div class="coord-tab"     onclick="window.coordTab('liga')">🏆 Liga</div>
-
+    <div class="coord-tab cta" onclick="window.coordTab('resumen')"><span style="font-size:18px;line-height:1">📊</span>Resumen<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:#4d73f5;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('presencias')"><span style="font-size:18px;line-height:1">🏃</span>Presencias<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('citaciones')"><span style="font-size:18px;line-height:1">⭐</span>Citaciones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('liga')"><span style="font-size:18px;line-height:1">🏆</span>Liga<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="cv-resumen"    class="coord-view active"></div>
   <div id="cv-presencias" class="coord-view"></div>
   <div id="cv-citaciones" class="coord-view"></div>
   <div id="cv-liga"       class="coord-view"></div>
-
+  <div id="cv-fixture"    class="coord-view"></div>
+  <div id="cv-horarios"   class="coord-view"></div>
+  <div id="cv-profes"     class="coord-view"></div>
 </div>
 
 <script type="module">
@@ -1990,6 +2030,25 @@ function renderCitStats(){
 }
 
 
+window.switchSection=function(sec){
+  // Mostrar/ocultar subtabs según sección
+  const isEnt=sec==='ent', isPar=sec==='par', isPlantel=sec==='plantel';
+  document.getElementById('subtabLabelEnt').style.display=isEnt?'':'none';
+  document.getElementById('subtabsEnt').style.display=isEnt?'':'none';
+  document.getElementById('subtabLabelPar').style.display=isPar?'':'none';
+  document.getElementById('subtabsPar').style.display=isPar?'':'none';
+  document.getElementById('subtabLabelPlantel').style.display=isPlantel?'':'none';
+  document.getElementById('subtabsPlantel').style.display=isPlantel?'':'none';
+  // Actualizar bottom nav
+  document.getElementById('bnav-ent').className='bnav-item'+(isEnt?' active-b':'');
+  document.getElementById('bnav-par').className='bnav-item'+(isPar?' active-y':'');
+  document.getElementById('bnav-plantel').className='bnav-item'+(isPlantel?' active-g':'');
+  // Activar primera tab de la sección
+  if(isEnt) switchTab('tomar');
+  if(isPar) switchTab('tablas');
+  if(isPlantel) switchTab('plantel');
+};
+
 window.switchTab=function(tab){
   activeTab=tab;
   const tabsEnt=['tomar','historial','stats'];
@@ -1997,10 +2056,9 @@ window.switchTab=function(tab){
   const tabsPlantel=['plantel'];
   const isEnt=tabsEnt.includes(tab);
   const isPlantel=tabsPlantel.includes(tab);
-  const cls=isEnt?' ag':isPlantel?' ag':' ay';
   document.querySelectorAll('.tabs-ent .tab').forEach((t,i)=>{ t.className='tab'+(tabsEnt[i]===tab?' ag':''); });
   document.querySelectorAll('.tabs-par .tab').forEach((t,i)=>{ t.className='tab'+(tabsPar[i]===tab?' ay':''); });
-  document.querySelectorAll('.tabs-plantel .tab').forEach((t,i)=>{ t.className='tab'+(tabsPlantel[i]===tab?' ag':''); });
+  document.querySelectorAll('.tabs-plantel .tab').forEach((t,i)=>{ t.className='tab'+(tabsPlantel[i]===tab?' agg':''); });
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+tab).classList.add('active');
   if(tab==='historial') renderHistory(selHistMonth);
@@ -2127,22 +2185,27 @@ window.reactivatePlayer = async function(nombre){
 let _formacionCurrentKey = null;
 let _formacionViendoHistorial = false;
 
-async function renderFormacion(){
+function renderFormacion(){
   const mainEl = document.getElementById('formacion-main');
   const noEl   = document.getElementById('formacion-no-cit');
   const headerEl = document.getElementById('formacion-header');
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
-  // Usar _getActiveFecha — misma lógica que el header y tablas
-  const proximaFechaGlobal = await _getActiveFecha(FIXTURE, _suspensions);
+  // Determinar próximo partido — primera fecha sin resultado cargado (citada o no)
   let proximoKey = null;
   let proximoData = null;
-  if(proximaFechaGlobal){
-    const f = proximaFechaGlobal;
-    proximoKey = 'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-    const cit = citaciones[proximoKey];
-    proximoData = cit ? {...cit} : {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
+  for(const f of FIXTURE){
+    if(f.cond==='-') continue;
+    if(_suspensions[f.fecha]) continue;
+    const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+    const cit = citaciones[key];
+    // Si no tiene resultado guardado, es el próximo
+    if(!cit || !cit.result || cit.result===''){
+      proximoKey = key;
+      proximoData = cit ? {...cit} : {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
+      break;
+    }
   }
 
   // Siempre arrancar en el próximo partido
@@ -3059,114 +3122,34 @@ async function renderSAUsuarios(){
   const el = document.getElementById('sa-usuarios');
   el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
   try {
-    const [usersSnap, clubsSnap] = await Promise.all([
-      get(ref(db, 'users')),
-      get(ref(db, 'clubs'))
-    ]);
-    const users = usersSnap.exists() ? usersSnap.val() : {};
-    const clubs = clubsSnap.exists() ? clubsSnap.val() : {};
-    const clubIds = Object.keys(clubs).filter(id=>id!=='hernandez'||true); // todos los clubs
+    const snap = await get(ref(db, 'users'));
+    if(!snap.exists()) throw new Error('no_data');
+    const users = snap.exists() ? snap.val() : {};
     const uids = Object.keys(users);
 
     const roleLabel = { 'super-admin':'Super Admin', 'coordinator':'Coordinador', 'profe':'Profe' };
-    const roleColor = { 'super-admin':'var(--yellow)', 'coordinator':'#22cd78', 'profe':'var(--text)' };
-    const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
-                       cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
-    const allCats = Object.keys(catLabels);
+    const roleColor = { 'super-admin':'var(--yellow)', 'coordinator':'var(--green)', 'profe':'var(--text)' };
 
-    let html = `<div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">${uids.length} usuario${uids.length!==1?'s':''} registrado${uids.length!==1?'s':''}</div>`;
+    let html = `
+      <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">${uids.length} usuario${uids.length!==1?'s':''} registrado${uids.length!==1?'s':''}</div>`;
 
-    // Lista de usuarios
     uids.forEach(uid=>{
       const u = users[uid];
-      if(u.role==='super-admin') return; // no mostrar super-admin
-      const catList = u.cats ? Object.values(u.cats).map(c=>catLabels[c]||c).join(', ') : (u.cat ? (catLabels[u.cat]||u.cat) : '—');
-      html += `<div class="prow" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-          <div style="font-size:0.85rem;font-weight:600;word-break:break-all">${u.email||uid}</div>
-          <span style="font-size:0.68rem;font-weight:700;color:${roleColor[u.role]||'var(--muted)'};white-space:nowrap;margin-left:8px">${roleLabel[u.role]||u.role||'—'}</span>
-        </div>
-        <div style="font-size:0.72rem;color:var(--muted)">${u.clubId||u.club||'—'} · ${catList}</div>
-        <button onclick="window.saEditUser('${uid}')" style="font-size:0.68rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;cursor:pointer;margin-top:2px">✏️ Editar</button>
-      </div>`;
+      html += `
+        <div class="prow" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <div style="font-size:0.85rem;font-weight:600;word-break:break-all">${u.email||uid}</div>
+            <span style="font-size:0.68rem;font-weight:700;color:${roleColor[u.role]||'var(--muted)'};white-space:nowrap;margin-left:8px">${roleLabel[u.role]||u.role||'—'}</span>
+          </div>
+          ${u.cat?`<div style="font-size:0.72rem;color:var(--muted)">${u.cat} · ${u.clubId||'—'}</div>`:''}
+          ${u.clubId&&!u.cat?`<div style="font-size:0.72rem;color:var(--muted)">${u.clubId}</div>`:''}
+        </div>`;
     });
-
-    // Formulario alta de usuario
-    const clubOpts = clubIds.map(id=>`<option value="${id}">${clubs[id]?.nombre||id}</option>`).join('');
-    const catOpts = allCats.map(c=>`<option value="${c}">${catLabels[c]}</option>`).join('');
-
-    html += `<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
-      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">+ NUEVO USUARIO</div>
-      <input type="email" id="saNewEmail" placeholder="email@ejemplo.com" style="margin-bottom:8px">
-      <input type="password" id="saNewPass" placeholder="Contraseña inicial" style="margin-bottom:8px">
-      <select id="saNewRole" style="margin-bottom:8px">
-        <option value="profe">Profe</option>
-        <option value="coordinator">Coordinador</option>
-      </select>
-      <select id="saNewClub" style="margin-bottom:8px">${clubOpts}</select>
-      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:4px">Categorías (seleccioná una o más):</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="saNewCatList">
-        ${allCats.map(c=>`<label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;cursor:pointer">
-          <input type="checkbox" value="${c}" name="saNewCat"> ${catLabels[c]}
-        </label>`).join('')}
-      </div>
-      <button onclick="window.saCrearUsuario()" style="background:#22cd78;color:#000;border:none;border-radius:9px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%">+ Crear usuario</button>
-    </div>`;
 
     el.innerHTML = html;
   } catch(e){
     el.innerHTML = `<div class="coord-alert-box">Error: ${e.message}</div>`;
   }
-}
-
-window.saCrearUsuario = async function(){
-  const email = document.getElementById('saNewEmail').value.trim();
-  const pass  = document.getElementById('saNewPass').value.trim();
-  const role  = document.getElementById('saNewRole').value;
-  const clubId= document.getElementById('saNewClub').value;
-  const cats  = [...document.querySelectorAll('input[name="saNewCat"]:checked')].map(c=>c.value);
-  if(!email||!pass){ showToastSA('Completá email y contraseña'); return; }
-  if(!clubId){ showToastSA('Seleccioná un club'); return; }
-  try {
-    // Crear en Firebase Auth (requiere re-auth con admin SDK — usamos REST API)
-    const apiKey = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
-    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password:pass, returnSecureToken:true})
-    });
-    const data = await res.json();
-    if(data.error) throw new Error(data.error.message);
-    const uid = data.localId;
-    // Guardar en DB
-    const userData = {email, role, clubId};
-    if(cats.length===1) userData.cat = cats[0];
-    if(cats.length>1){ userData.cats={}; cats.forEach((c,i)=>userData.cats[i]=c); }
-    await set(ref(db,'users/'+uid), userData);
-    showToastSA('✓ Usuario creado: '+email);
-    document.getElementById('saNewEmail').value='';
-    document.getElementById('saNewPass').value='';
-    document.querySelectorAll('input[name="saNewCat"]').forEach(c=>c.checked=false);
-    renderSAUsuarios();
-  } catch(e){ showToastSA('Error: '+e.message); }
-};
-
-window.saEditUser = async function(uid){
-  const snap = await get(ref(db,'users/'+uid));
-  if(!snap.exists()) return;
-  const u = snap.val();
-  const newRole = prompt('Rol (profe/coordinator):', u.role||'profe');
-  if(!newRole) return;
-  const newCat = prompt('Categoría (ej: cat16):', u.cat||'');
-  if(newCat===null) return;
-  await set(ref(db,'users/'+uid),{...u, role:newRole, cat:newCat||u.cat});
-  showToastSA('✓ Usuario actualizado');
-  renderSAUsuarios();
-};
-
-function showToastSA(msg){
-  const t=document.getElementById('toast'); if(!t)return;
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
 // ── ACCIONES ──
@@ -3373,8 +3356,12 @@ async function startCoordApp(){
 
   window.coordTab=function(tab){
     coordActiveTab=tab;
-    const tabs=['resumen','presencias','citaciones','liga'];
-    document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{ t.className='coord-tab'+(tabs[i]===tab?' cta':''); });
+    const tabs=['resumen','presencias','citaciones','liga','fixture','horarios','profes'];
+    document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{
+      const isActive=tabs[i]===tab;
+      t.className='coord-tab'+(isActive?' cta':'');
+      const dot=t.querySelector('.ctdot'); if(dot) dot.style.background=isActive?'#4d73f5':'transparent';
+    });
     document.querySelectorAll('#coord-app .coord-view').forEach(v=>v.classList.remove('active'));
     const vEl=document.getElementById('cv-'+tab); if(vEl) vEl.classList.add('active');
     renderCoordTab(tab);
@@ -3387,7 +3374,9 @@ async function startCoordApp(){
     if(tab==='presencias') renderPresencias();
     if(tab==='citaciones') renderCitaciones();
     if(tab==='liga')       renderLiga();
-
+    if(tab==='fixture')    renderCoordFixture();
+    if(tab==='horarios')   renderCoordHorarios();
+    if(tab==='profes')     renderCoordProfes();
   }
 
   // ── TAB RESUMEN ──
