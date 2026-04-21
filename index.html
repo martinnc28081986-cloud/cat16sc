@@ -560,17 +560,13 @@
     <div class="coord-tab"     onclick="window.coordTab('presencias')">🏃 Presencias</div>
     <div class="coord-tab"     onclick="window.coordTab('citaciones')">⭐ Citaciones</div>
     <div class="coord-tab"     onclick="window.coordTab('liga')">🏆 Liga</div>
-    <div class="coord-tab"     onclick="window.coordTab('fixture')">📋 Fixture</div>
-    <div class="coord-tab"     onclick="window.coordTab('horarios')">⏰ Horarios</div>
-    <div class="coord-tab"     onclick="window.coordTab('profes')">👥 Profes</div>
+
   </div>
   <div id="cv-resumen"    class="coord-view active"></div>
   <div id="cv-presencias" class="coord-view"></div>
   <div id="cv-citaciones" class="coord-view"></div>
   <div id="cv-liga"       class="coord-view"></div>
-  <div id="cv-fixture"    class="coord-view"></div>
-  <div id="cv-horarios"   class="coord-view"></div>
-  <div id="cv-profes"     class="coord-view"></div>
+
 </div>
 
 <script type="module">
@@ -3068,34 +3064,114 @@ async function renderSAUsuarios(){
   const el = document.getElementById('sa-usuarios');
   el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Cargando...</div>';
   try {
-    const snap = await get(ref(db, 'users'));
-    if(!snap.exists()) throw new Error('no_data');
-    const users = snap.exists() ? snap.val() : {};
+    const [usersSnap, clubsSnap] = await Promise.all([
+      get(ref(db, 'users')),
+      get(ref(db, 'clubs'))
+    ]);
+    const users = usersSnap.exists() ? usersSnap.val() : {};
+    const clubs = clubsSnap.exists() ? clubsSnap.val() : {};
+    const clubIds = Object.keys(clubs).filter(id=>id!=='hernandez'||true); // todos los clubs
     const uids = Object.keys(users);
 
     const roleLabel = { 'super-admin':'Super Admin', 'coordinator':'Coordinador', 'profe':'Profe' };
-    const roleColor = { 'super-admin':'var(--yellow)', 'coordinator':'var(--green)', 'profe':'var(--text)' };
+    const roleColor = { 'super-admin':'var(--yellow)', 'coordinator':'#22cd78', 'profe':'var(--text)' };
+    const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
+                       cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
+    const allCats = Object.keys(catLabels);
 
-    let html = `
-      <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">${uids.length} usuario${uids.length!==1?'s':''} registrado${uids.length!==1?'s':''}</div>`;
+    let html = `<div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">${uids.length} usuario${uids.length!==1?'s':''} registrado${uids.length!==1?'s':''}</div>`;
 
+    // Lista de usuarios
     uids.forEach(uid=>{
       const u = users[uid];
-      html += `
-        <div class="prow" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-            <div style="font-size:0.85rem;font-weight:600;word-break:break-all">${u.email||uid}</div>
-            <span style="font-size:0.68rem;font-weight:700;color:${roleColor[u.role]||'var(--muted)'};white-space:nowrap;margin-left:8px">${roleLabel[u.role]||u.role||'—'}</span>
-          </div>
-          ${u.cat?`<div style="font-size:0.72rem;color:var(--muted)">${u.cat} · ${u.clubId||'—'}</div>`:''}
-          ${u.clubId&&!u.cat?`<div style="font-size:0.72rem;color:var(--muted)">${u.clubId}</div>`:''}
-        </div>`;
+      if(u.role==='super-admin') return; // no mostrar super-admin
+      const catList = u.cats ? Object.values(u.cats).map(c=>catLabels[c]||c).join(', ') : (u.cat ? (catLabels[u.cat]||u.cat) : '—');
+      html += `<div class="prow" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <div style="font-size:0.85rem;font-weight:600;word-break:break-all">${u.email||uid}</div>
+          <span style="font-size:0.68rem;font-weight:700;color:${roleColor[u.role]||'var(--muted)'};white-space:nowrap;margin-left:8px">${roleLabel[u.role]||u.role||'—'}</span>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted)">${u.clubId||u.club||'—'} · ${catList}</div>
+        <button onclick="window.saEditUser('${uid}')" style="font-size:0.68rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 8px;cursor:pointer;margin-top:2px">✏️ Editar</button>
+      </div>`;
     });
+
+    // Formulario alta de usuario
+    const clubOpts = clubIds.map(id=>`<option value="${id}">${clubs[id]?.nombre||id}</option>`).join('');
+    const catOpts = allCats.map(c=>`<option value="${c}">${catLabels[c]}</option>`).join('');
+
+    html += `<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">+ NUEVO USUARIO</div>
+      <input type="email" id="saNewEmail" placeholder="email@ejemplo.com" style="margin-bottom:8px">
+      <input type="password" id="saNewPass" placeholder="Contraseña inicial" style="margin-bottom:8px">
+      <select id="saNewRole" style="margin-bottom:8px">
+        <option value="profe">Profe</option>
+        <option value="coordinator">Coordinador</option>
+      </select>
+      <select id="saNewClub" style="margin-bottom:8px">${clubOpts}</select>
+      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:4px">Categorías (seleccioná una o más):</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="saNewCatList">
+        ${allCats.map(c=>`<label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;cursor:pointer">
+          <input type="checkbox" value="${c}" name="saNewCat"> ${catLabels[c]}
+        </label>`).join('')}
+      </div>
+      <button onclick="window.saCrearUsuario()" style="background:#22cd78;color:#000;border:none;border-radius:9px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%">+ Crear usuario</button>
+    </div>`;
 
     el.innerHTML = html;
   } catch(e){
     el.innerHTML = `<div class="coord-alert-box">Error: ${e.message}</div>`;
   }
+}
+
+window.saCrearUsuario = async function(){
+  const email = document.getElementById('saNewEmail').value.trim();
+  const pass  = document.getElementById('saNewPass').value.trim();
+  const role  = document.getElementById('saNewRole').value;
+  const clubId= document.getElementById('saNewClub').value;
+  const cats  = [...document.querySelectorAll('input[name="saNewCat"]:checked')].map(c=>c.value);
+  if(!email||!pass){ showToastSA('Completá email y contraseña'); return; }
+  if(!clubId){ showToastSA('Seleccioná un club'); return; }
+  try {
+    // Crear en Firebase Auth (requiere re-auth con admin SDK — usamos REST API)
+    const apiKey = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password:pass, returnSecureToken:true})
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const uid = data.localId;
+    // Guardar en DB
+    const userData = {email, role, clubId};
+    if(cats.length===1) userData.cat = cats[0];
+    if(cats.length>1){ userData.cats={}; cats.forEach((c,i)=>userData.cats[i]=c); }
+    await set(ref(db,'users/'+uid), userData);
+    showToastSA('✓ Usuario creado: '+email);
+    document.getElementById('saNewEmail').value='';
+    document.getElementById('saNewPass').value='';
+    document.querySelectorAll('input[name="saNewCat"]').forEach(c=>c.checked=false);
+    renderSAUsuarios();
+  } catch(e){ showToastSA('Error: '+e.message); }
+};
+
+window.saEditUser = async function(uid){
+  const snap = await get(ref(db,'users/'+uid));
+  if(!snap.exists()) return;
+  const u = snap.val();
+  const newRole = prompt('Rol (profe/coordinator):', u.role||'profe');
+  if(!newRole) return;
+  const newCat = prompt('Categoría (ej: cat16):', u.cat||'');
+  if(newCat===null) return;
+  await set(ref(db,'users/'+uid),{...u, role:newRole, cat:newCat||u.cat});
+  showToastSA('✓ Usuario actualizado');
+  renderSAUsuarios();
+};
+
+function showToastSA(msg){
+  const t=document.getElementById('toast'); if(!t)return;
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
 }
 
 // ── ACCIONES ──
@@ -3302,7 +3378,7 @@ async function startCoordApp(){
 
   window.coordTab=function(tab){
     coordActiveTab=tab;
-    const tabs=['resumen','presencias','citaciones','liga','fixture','horarios','profes'];
+    const tabs=['resumen','presencias','citaciones','liga'];
     document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{ t.className='coord-tab'+(tabs[i]===tab?' cta':''); });
     document.querySelectorAll('#coord-app .coord-view').forEach(v=>v.classList.remove('active'));
     const vEl=document.getElementById('cv-'+tab); if(vEl) vEl.classList.add('active');
@@ -3316,9 +3392,7 @@ async function startCoordApp(){
     if(tab==='presencias') renderPresencias();
     if(tab==='citaciones') renderCitaciones();
     if(tab==='liga')       renderLiga();
-    if(tab==='fixture')    renderCoordFixture();
-    if(tab==='horarios')   renderCoordHorarios();
-    if(tab==='profes')     renderCoordProfes();
+
   }
 
   // ── TAB RESUMEN ──
