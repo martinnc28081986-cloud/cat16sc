@@ -2066,7 +2066,10 @@ window.switchTab=function(tab){
   if(tab==='cit-stats') renderCitStats();
   if(tab==='citaciones'){ renderCitList(); renderCamSelector(); }
   if(tab==='tablas') renderTablas(); // async, no necesita await aquí
-  if(tab==='formacion') renderFormacion();
+  if(tab==='formacion'){
+    window._activeFechaCache = null; // forzar recarga desde Firebase
+    renderFormacion();
+  }
   if(tab==='plantel') renderPlantel();
 };
 
@@ -3175,7 +3178,7 @@ window.saEntrarComo = function(cat){
     backBtn = document.createElement('button');
     backBtn.id = 'saBackBtn';
     backBtn.textContent = '← Super Admin';
-    backBtn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:9990;background:rgba(255,171,64,0.9);color:#000;border:none;border-radius:9px;padding:10px 16px;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.3)';
+    backBtn.style.cssText = 'position:fixed;top:8px;right:8px;z-index:9990;background:rgba(255,171,64,0.9);color:#000;border:none;border-radius:9px;padding:6px 12px;font-size:0.75rem;font-weight:700;cursor:pointer;';
     backBtn.onclick = function(){
       backBtn.remove();
       // Limpiar listeners de la categoría
