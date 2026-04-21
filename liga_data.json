@@ -1,5 +1,5 @@
 {
-  "updatedAt": "19/04/2026",
+  "updatedAt": "21/04/2026",
   "scResults": {
     "13": [
       {
@@ -405,8 +405,8 @@
         "fecha": 7,
         "rival": "Hernandez",
         "cond": "V",
-        "gf": 0,
-        "gc": 5
+        "gf": 5,
+        "gc": 0
       }
     ]
   },
@@ -4061,12 +4061,12 @@
         "pts": 14
       },
       {
-        "eq": "Hernandez",
-        "pj": 6,
+        "eq": "Sagr. Corazón",
+        "pj": 7,
         "pg": 5,
         "pe": 0,
-        "pp": 1,
-        "gf": 14,
+        "pp": 2,
+        "gf": 13,
         "gc": 4,
         "pts": 10
       },
@@ -4091,12 +4091,12 @@
         "pts": 8
       },
       {
-        "eq": "Sagr. Corazón",
-        "pj": 7,
+        "eq": "Hernandez",
+        "pj": 6,
         "pg": 4,
         "pe": 0,
-        "pp": 3,
-        "gf": 8,
+        "pp": 2,
+        "gf": 9,
         "gc": 9,
         "pts": 8
       },
