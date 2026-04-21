@@ -326,7 +326,7 @@
   .stbl tr.sc-row td { color:var(--green); font-weight:700; background:rgba(34,85,238,0.08); }
 </style>
 </head>
-<body>
+<body style="background:#07186b">
 
 <!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
@@ -368,7 +368,7 @@
 </div>
 
 
-<div class="loading-screen" id="loadingScreen" style="display:none">
+<div class="loading-screen" id="loadingScreen">
   <div class="loading-logo">&#9917; MI PLANTEL</div>
   <div style="font-size:0.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase">LISFI II Zona B 2026</div>
   <div class="spinner"></div>
@@ -3627,7 +3627,7 @@ async function startCoordApp(){
       h+=`</div>`;
     });
     // ── HISTORIAL POR FECHA ──
-    const allF=[...new Set(COMP_CATS.flatMap(c=>Object.values(D[c.key].cit).map(x=>x.fecha)))].filter(Boolean).sort((a,b)=>a-b);
+    const allF=[...new Set(COMP_CATS.flatMap(c=>Object.values(D[c.key].cit).map(x=>x.fecha)))].filter(Boolean).sort((a,b)=>b-a);
     if(allF.length){
       h+=`<div class="csec" style="margin-top:24px">Historial por fecha</div>`;
       allF.forEach(f=>{
