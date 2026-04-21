@@ -2220,7 +2220,8 @@ function renderFormacion(){
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
-  // Determinar próximo partido — primera fecha sin resultado cargado (citada o no)
+  // Próximo partido = primera fecha donde esta categoría no tiene citados guardados
+  // (misma lógica que el header "Próx:" — sin async, sin Firebase)
   let proximoKey = null;
   let proximoData = null;
   for(const f of FIXTURE){
@@ -2228,10 +2229,9 @@ function renderFormacion(){
     if(_suspensions[f.fecha]) continue;
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
-    // Si no tiene resultado guardado, es el próximo
-    if(!cit || !cit.result || cit.result===''){
+    if(!cit || !cit.citados || cit.citados.length===0){
       proximoKey = key;
-      proximoData = cit ? {...cit} : {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
+      proximoData = {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
       break;
     }
   }
