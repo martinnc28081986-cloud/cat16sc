@@ -525,26 +525,23 @@
 <div id="view-formacion" class="view">
   <div id="formacion-no-cit" class="empty-msg" style="display:none">Sin jugadores en el plantel</div>
   <div id="formacion-main" style="display:none">
-    <!-- Barra: info partido + dropdown historial -->
     <div style="display:flex;gap:7px;align-items:stretch;margin-bottom:10px;">
       <div id="formacion-header" style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;flex:1;min-width:0;"></div>
       <div style="position:relative;flex-shrink:0;" id="formHistWrap">
         <div id="formHistBtn" onclick="window.toggleFormHist()" style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:100%;">
-          <span style="font-size:1.1rem;line-height:1;">📋</span>
+          <span style="font-size:1.1rem;line-height:1;">&#128203;</span>
           <span style="font-size:0.55rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;">Historial</span>
-          <span id="formHistArr" style="font-size:.6rem;color:var(--muted);">▾</span>
+          <span id="formHistArr" style="font-size:.6rem;color:var(--muted);">&#9660;</span>
         </div>
         <div id="formHistDD" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:220px;z-index:200;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.5);"></div>
       </div>
     </div>
-    <!-- Presets de formación 7 -->
     <div id="formPresetPills" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;"></div>
-    <!-- Cancha vertical 7 -->
     <div class="pitch-wrap">
       <svg id="pitchSvg" class="pitch-svg" viewBox="0 0 300 390" xmlns="http://www.w3.org/2000/svg">
         <rect width="300" height="390" fill="#1a5718"/>
-        <rect x="0" y="0"   width="300" height="39" fill="rgba(0,0,0,.055)"/>
-        <rect x="0" y="78"  width="300" height="39" fill="rgba(0,0,0,.055)"/>
+        <rect x="0" y="0" width="300" height="39" fill="rgba(0,0,0,.055)"/>
+        <rect x="0" y="78" width="300" height="39" fill="rgba(0,0,0,.055)"/>
         <rect x="0" y="156" width="300" height="39" fill="rgba(0,0,0,.055)"/>
         <rect x="0" y="234" width="300" height="39" fill="rgba(0,0,0,.055)"/>
         <rect x="0" y="312" width="300" height="39" fill="rgba(0,0,0,.055)"/>
@@ -560,7 +557,7 @@
         <rect x="106" y="357" width="88" height="28" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.1"/>
         <rect x="118" y="384" width="64" height="6" fill="none" stroke="white" stroke-width="2"/>
         <circle cx="150" cy="336" r="2.5" fill="rgba(255,255,255,.55)"/>
-        <text x="150" y="20" text-anchor="middle" fill="rgba(255,255,255,.25)" font-size="9" font-family="DM Sans,Arial" font-weight="600" letter-spacing="2">▲  ATAQUE</text>
+        <text x="150" y="20" text-anchor="middle" fill="rgba(255,255,255,.25)" font-size="9" font-family="DM Sans,Arial" font-weight="600" letter-spacing="2">&#9650; ATAQUE</text>
         <g id="pitchTokens"></g>
         <text id="pitchHint" x="150" y="378" text-anchor="middle" fill="rgba(255,171,64,.95)" font-size="10.5" font-family="DM Sans,Arial,sans-serif" font-weight="600" pointer-events="none"></text>
       </svg>
@@ -1254,20 +1251,6 @@ async function _getActiveFecha(fixture, suspensions){
 // Invalidar cache cuando se guarda una citación
 window._invalidateActiveFecha = function(){ window._activeFechaCache = null; };
 
-// Formateador de nombres de rivales para display (no afecta keys de Firebase)
-function _fmtRival(rival){
-  if(!rival) return '';
-  const MAP = {
-    'N.FUERZA':       'Nueva Fuerza',
-    'DEF.SAN LORENZO':'Def. San Lorenzo',
-    'CAP.CHICA':      'Cap. Chica',
-    'VILLA PROGRESO': 'Villa Progreso',
-  };
-  if(MAP[rival]) return MAP[rival];
-  // Capitalizar normalmente cualquier otro
-  return rival.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
-}
-
 function renderNextMatch(){
   const el=document.getElementById('nextMatchEl'); if(!el)return;
   if(window._isEscuelita){ el.textContent=''; return; }
@@ -1945,7 +1928,7 @@ window.shareCit = async function(key){
 
   let lines = [];
   lines.push('⚽ *SAGRADO CORAZÓN — '+catLabel+' — Fecha '+cit.fecha+'*');
-  lines.push('🆚 vs '+_fmtRival(cit.rival)+' | '+condLabel);
+  lines.push('🆚 vs '+cit.rival+' | '+condLabel);
   if(fechaStr) lines.push('📅 '+fechaStr);
   if(matchTime) lines.push('⏰ Partido: '+matchTime+' hs');
   if(citTime) lines.push('🕑 Horario de citación: '+citTime+' hs');
@@ -2054,7 +2037,7 @@ function renderCitStats(){
       const camBadge=saved.camisetero?'<div style="font-size:0.72rem;color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
       const c=document.createElement('div'); c.className='card';
       c.dataset.citKey = key;
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+_fmtRival(saved.rival)+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
       matchList.appendChild(c);
     });
@@ -2231,9 +2214,7 @@ window.reactivatePlayer = async function(nombre){
   } catch(e){ showToast('Error al guardar'); PLAYERS_INACTIVE.push(nombre); PLAYERS=PLAYERS.filter(p=>p!==nombre); renderPlantel(); }
 };
 
-
 // ── FORMACIONES 7 JUGADORES ──
-// viewBox 300x390, GK abajo (nuestra área), ataque hacia arriba
 const FORM7 = {
   '2-3-1': [[150,352],[88,280],[212,280],[50,202],[150,195],[250,202],[150,112]],
   '3-2-1': [[150,352],[65,282],[150,275],[235,282],[100,202],[200,202],[150,112]],
@@ -2248,27 +2229,33 @@ window.renderFormPresetPills = function(){
   const el = document.getElementById('formPresetPills');
   if(!el) return;
   const names = [...Object.keys(FORM7), 'Libre'];
-  el.innerHTML = names.map(name =>
-    `<button onclick="window.applyFormPreset('${name}')" style="padding:4px 10px;border-radius:20px;font-size:.68rem;font-weight:700;background:${_currentFormPreset===name?'rgba(77,115,245,.2)':'transparent'};border:1px solid ${_currentFormPreset===name?'var(--green)':'var(--border)'};color:${_currentFormPreset===name?'var(--green)':'var(--muted)'};cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px;">${name}</button>`
-  ).join('');
+  el.innerHTML = '';
+  names.forEach(function(name){
+    const active = _currentFormPreset===name;
+    const btn = document.createElement('button');
+    btn.textContent = name;
+    btn.style.cssText = 'padding:4px 10px;border-radius:20px;font-size:.68rem;font-weight:700;background:'+(active?'rgba(77,115,245,.2)':'transparent')+';border:1px solid '+(active?'var(--green)':'var(--border)')+';color:'+(active?'var(--green)':'var(--muted)')+';cursor:pointer;font-family:DM Sans,sans-serif;letter-spacing:.3px;';
+    btn.addEventListener('click', function(){ window.applyFormPreset(name); });
+    el.appendChild(btn);
+  });
 };
 
 window.applyFormPreset = function(name){
   _currentFormPreset = name;
-  const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
-  const citados = saved ? (saved.citados||[]) : PLAYERS;
+  const _saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
+  const _citados = _saved ? (_saved.citados||[]) : PLAYERS;
   if(name === 'Libre'){
-    pitchPlayers={}; benchPlayers=[...citados]; selectedPlayer=null;
+    pitchPlayers={}; benchPlayers=[..._citados]; selectedPlayer=null;
     window.renderFormPresetPills(); drawPitch(); drawBench(); return;
   }
   const coords = FORM7[name];
   if(!coords) return;
   pitchPlayers = {};
-  benchPlayers = [...citados];
-  coords.forEach((pos, i) => {
-    if(i < citados.length){
-      pitchPlayers[citados[i]] = {x:pos[0], y:pos[1]};
-      benchPlayers = benchPlayers.filter(n => n !== citados[i]);
+  benchPlayers = [..._citados];
+  coords.forEach(function(pos, i){
+    if(i < _citados.length){
+      pitchPlayers[_citados[i]] = {x:pos[0], y:pos[1]};
+      benchPlayers = benchPlayers.filter(function(n){ return n !== _citados[i]; });
     }
   });
   selectedPlayer = null;
@@ -2276,35 +2263,33 @@ window.applyFormPreset = function(name){
   drawPitch(); drawBench();
 };
 
-let _formacionCurrentKey = null;
+// Formateador de nombres de rivales para display
+function _fmtRival(rival){
+  if(!rival) return '';
+  const MAP = {'N.FUERZA':'Nueva Fuerza','DEF.SAN LORENZO':'Def. San Lorenzo','CAP.CHICA':'Cap. Chica','VILLA PROGRESO':'Villa Progreso'};
+  if(MAP[rival]) return MAP[rival];
+  return rival.split(' ').map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase(); }).join(' ');
+}
 
-// Helper: obtener resultado de un partido desde LIGA_DATA o desde citaciones
+// Obtener resultado desde LIGA_DATA
 function _getResultData(key){
   const cit = citaciones[key];
   if(!cit) return null;
-  let gf=null, gc=null, result=null, score=null;
-  // Intentar desde la citación guardada
-  if(cit.score && cit.result){
-    score = cit.score; result = cit.result;
-    const parts = cit.score.split('-');
-    if(parts.length===2){ gf=parseInt(parts[0]); gc=parseInt(parts[1]); }
-  }
-  // Cruzar con LIGA_DATA.scResults por número de fecha (fuente de verdad)
   const _catNumMap = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const catNum = _catNumMap[DB_PREFIX.split('/').pop()] || 16;
   const scRes = (LIGA_DATA && LIGA_DATA.scResults && LIGA_DATA.scResults[catNum]) || [];
-  const match = scRes.find(r => Number(r.fecha) === Number(cit.fecha));
+  const match = scRes.find(function(r){ return Number(r.fecha) === Number(cit.fecha); });
+  let gf=null, gc=null;
   if(match){ gf=match.gf; gc=match.gc; }
-  if(gf!==null && gc!==null){
-    result = gf > gc ? 'V' : gf < gc ? 'L' : 'E';
-    score = gf+'-'+gc;
-  }
-  if(!result) return null;
-  // Colores semánticos reales (igual que res-score en tablas)
-  const color = result==='V'?'#22cd78': result==='L'?'#ff1744': '#ffab40';
-  const bg    = result==='V'?'rgba(34,205,120,0.12)': result==='L'?'rgba(255,23,68,0.12)': 'rgba(255,171,64,0.12)';
-  return {score, result, color, bg};
+  else if(cit.score){ const p=cit.score.split('-'); if(p.length===2){ gf=parseInt(p[0]); gc=parseInt(p[1]); } }
+  if(gf===null || gc===null) return null;
+  const result = gf>gc?'V':gf<gc?'L':'E';
+  const color = result==='V'?'#22cd78':result==='L'?'#ff1744':'#ffab40';
+  const bg = result==='V'?'rgba(34,205,120,0.12)':result==='L'?'rgba(255,23,68,0.12)':'rgba(255,171,64,0.12)';
+  return {score:gf+'-'+gc, result, color, bg};
 }
+
+let _formacionCurrentKey = null;
 
 function renderFormacion(){
   const mainEl = document.getElementById('formacion-main');
@@ -2313,69 +2298,54 @@ function renderFormacion(){
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
-  // Próximo partido = primera fecha sin citados en esta categoría (misma lógica que el resto de la app)
-  let proximoKey = null;
-  let proximoData = null;
+  let proximoKey = null, proximoF = null;
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
     if(_suspensions[f.fecha]) continue;
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
-    const tieneCitados = cit && cit.citados && cit.citados.length>0;
-    if(!tieneCitados){
-      proximoKey = key;
-      proximoData = {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
-      break;
-    }
+    if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey=key; proximoF=f; break; }
   }
 
-  // Validar que el partido actual pertenece al fixture de ESTA categoría
-  // (la variable persiste entre categorías y puede quedar apuntando a una key vieja)
+  // Validar key actual pertenece a este fixture
   const _curCit = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
-  const _curFechaValida = _curCit && _curCit.fecha &&
-    FIXTURE.some(f => f.fecha === _curCit.fecha);
-  const _curEsProximo = _formacionCurrentKey === proximoKey;
-  if(!_formacionCurrentKey || (!_curFechaValida && !_curEsProximo)){
+  const _curValida = _curCit && _curCit.fecha && FIXTURE.some(function(f){ return f.fecha===_curCit.fecha; });
+  if(!_formacionCurrentKey || (!_curValida && _formacionCurrentKey!==proximoKey)){
     _formacionCurrentKey = proximoKey || null;
   }
 
   mainEl.style.display='block'; noEl.style.display='none';
 
-  // ── Header: info del partido seleccionado ──
   if(headerEl){
-    const curData = _formacionCurrentKey ? (citaciones[_formacionCurrentKey]||proximoData) : null;
-    if(curData){
+    const curData = _formacionCurrentKey ? (citaciones[_formacionCurrentKey]||{fecha:proximoF&&proximoF.fecha,rival:proximoF&&proximoF.rival,condicion:proximoF&&proximoF.cond,citados:[]}) : null;
+    if(curData && curData.fecha){
       const condLabel = curData.condicion==='L'?'Local':'Visitante';
       const condCls = curData.condicion==='L'?'fb-local':'fb-visit';
       const esProximo = _formacionCurrentKey===proximoKey;
-      const rd = _formacionCurrentKey ? _getResultData(_formacionCurrentKey) : null;
-      const resHtml = rd ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;display:inline-block;margin-left:5px;vertical-align:middle;background:${rd.bg};color:${rd.color};">${rd.score}</span>` : '';
+      const rd = _getResultData(_formacionCurrentKey);
+      const resHtml = rd ? '<span style="font-family:Bebas Neue,sans-serif;font-size:.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;display:inline-block;margin-left:5px;vertical-align:middle;background:'+rd.bg+';color:'+rd.color+';">'+rd.score+'</span>' : '';
       const citCount = (curData.citados||[]).length;
-      const volverBtn = (!esProximo && proximoKey) ? `<button onclick="window.loadFormacionHistorial('${proximoKey}')" style="margin-top:5px;background:rgba(34,205,120,.12);border:1px solid rgba(34,205,120,.3);color:#22cd78;font-size:.62rem;font-weight:700;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px;">⟶ Ir al próximo (F${proximoF?proximoF.fecha:'?'} vs ${proximoF?_fmtRival(proximoF.rival):'?'})</button>` : '';
-      headerEl.innerHTML = `
-        <div style="font-size:0.62rem;color:var(--muted);margin-bottom:2px;">${esProximo?'⟶ Próximo partido':'📋 Partido anterior'}</div>
-        <div style="font-weight:700;font-size:.88rem;">F${curData.fecha||'?'} vs ${_fmtRival(curData.rival||'?')} <span class="fixture-badge ${condCls}">${condLabel}</span>${resHtml}</div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${citCount?citCount+' citados':'Sin citación'}</div>
-        ${volverBtn}`;
+      const volverLabel = proximoF ? 'F'+proximoF.fecha+' vs '+_fmtRival(proximoF.rival) : '';
+      const volverBtn = (!esProximo && proximoKey) ? '<button id="formVolverBtn" style="margin-top:5px;background:rgba(34,205,120,.12);border:1px solid rgba(34,205,120,.3);color:#22cd78;font-size:.62rem;font-weight:700;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:DM Sans,sans-serif;">&#8594; Ir al próximo ('+volverLabel+')</button>' : '';
+      headerEl.innerHTML = '<div style="font-size:.62rem;color:var(--muted);margin-bottom:2px;">'+(esProximo?'⟶ Próximo partido':'📋 Partido anterior')+'</div>'
+        +'<div style="font-weight:700;font-size:.88rem;">F'+curData.fecha+' vs '+_fmtRival(curData.rival||'')+' <span class="fixture-badge '+condCls+'">'+condLabel+'</span>'+resHtml+'</div>'
+        +'<div style="font-size:.68rem;color:var(--muted);margin-top:2px;">'+(citCount?citCount+' citados':'Sin citación')+'</div>'
+        +volverBtn;
     } else {
       headerEl.innerHTML = '<div style="font-size:.75rem;color:var(--muted);">Sin partidos programados</div>';
     }
   }
 
-  // ── Cargar jugadores de cancha/banco para este partido ──
   const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
   const citados = saved ? (saved.citados||[]) : PLAYERS;
   if(saved && saved.formacion){
     pitchPlayers = JSON.parse(JSON.stringify(saved.formacion.pitch||{}));
     benchPlayers = [...(saved.formacion.bench||[])];
-    // Sync: los citados son la fuente de verdad
-    // 1. Agregar al banco los citados que no están ni en cancha ni en banco
-    const enFormacion = new Set([...Object.keys(pitchPlayers), ...benchPlayers]);
-    citados.forEach(p=>{ if(!enFormacion.has(p)) benchPlayers.push(p); });
-    // 2. Quitar de cancha/banco jugadores que ya no están en la citación
+    const enF = new Set([...Object.keys(pitchPlayers),...benchPlayers]);
+    citados.forEach(function(p){ if(!enF.has(p)) benchPlayers.push(p); });
     const citSet = new Set(citados);
-    Object.keys(pitchPlayers).forEach(p=>{ if(!citSet.has(p)) delete pitchPlayers[p]; });
-    benchPlayers = benchPlayers.filter(p=>citSet.has(p));
+    Object.keys(pitchPlayers).forEach(function(p){ if(!citSet.has(p)) delete pitchPlayers[p]; });
+    benchPlayers = benchPlayers.filter(function(p){ return citSet.has(p); });
   } else if(Object.keys(pitchPlayers).length===0 && benchPlayers.length===0){
     pitchPlayers={}; benchPlayers=[...citados];
   }
@@ -2385,10 +2355,12 @@ function renderFormacion(){
   if(!pitchTapReady){ setupPitchClick(); pitchTapReady=true; }
   window.renderFormPresetPills();
   renderFormacionHistorial();
+  // Listener para el botón volver al próximo
+  const _vBtn = document.getElementById('formVolverBtn');
+  if(_vBtn && proximoKey){ _vBtn.onclick = function(){ window.loadFormacionHistorial(proximoKey); }; }
 }
 
 window.loadFormacionHistorial = function(key){
-  // Cerrar dropdown
   const dd = document.getElementById('formHistDD');
   const arr = document.getElementById('formHistArr');
   if(dd) dd.style.display='none';
@@ -2396,7 +2368,7 @@ window.loadFormacionHistorial = function(key){
   _formacionCurrentKey = key;
   pitchPlayers={}; benchPlayers=[]; selectedPlayer=null; pitchTapReady=false;
   renderFormacion();
-  setTimeout(()=>{ document.getElementById('formacion-main')?.scrollIntoView({behavior:'smooth'}); }, 100);
+  setTimeout(function(){ const el=document.getElementById('formacion-main'); if(el) el.scrollIntoView({behavior:'smooth'}); }, 100);
 };
 
 window.saveFormacionExplicit = async function(){
@@ -2430,85 +2402,87 @@ function renderFormacionHistorial(){
   const dd = document.getElementById('formHistDD');
   if(!dd) return;
 
-  // Calcular próximo partido sin citar (misma lógica que renderFormacion)
-  let proximoKey = null, proximoF = null;
+  let proximoKey2 = null, proximoF2 = null;
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
     if(_suspensions[f.fecha]) continue;
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
-    if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey=key; proximoF=f; break; }
+    if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey2=key; proximoF2=f; break; }
   }
 
   const todosCitados = Object.entries(citaciones)
-    .filter(([,m])=>m.citados&&m.citados.length>0)
-    .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
+    .filter(function(_ref){ return _ref[1].citados && _ref[1].citados.length>0; })
+    .sort(function(a,b){ return (b[1].fecha||0)-(a[1].fecha||0); });
 
-  let html = '';
+  dd.innerHTML = '';
 
-  // Siempre mostrar el próximo partido arriba del todo
-  if(proximoF){
-    const isActual = proximoKey===_formacionCurrentKey;
-    const condLabel = proximoF.cond==='L'?'Local':'Visita';
-    const condCls = proximoF.cond==='L'?'fb-local':'fb-visit';
-    html += `<div onclick="window.loadFormacionHistorial('${proximoKey}')" style="padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--border);background:${isActual?'rgba(77,115,245,.15)':'rgba(34,205,120,0.06)'};${isActual?'border-left:2px solid var(--green);':''}" onmouseover="this.style.background='rgba(77,115,245,.1)'" onmouseout="this.style.background='${isActual?'rgba(77,115,245,.15)':'rgba(34,205,120,0.06)'}'">
-      <div>
-        <div style="font-size:.6rem;font-weight:700;color:#22cd78;margin-bottom:1px;">⟶ PRÓXIMO PARTIDO</div>
-        <div style="font-weight:600;font-size:.82rem;">F${proximoF.fecha} vs ${_fmtRival(proximoF.rival)} <span class="fixture-badge ${condCls}" style="font-size:.58rem;">${condLabel}</span></div>
-        <div style="font-size:.6rem;color:var(--muted);margin-top:1px;">Sin citación aún</div>
-      </div>
-      <div style="font-size:.7rem;color:${isActual?'var(--green)':'#22cd78'};">${isActual?'●':'›'}</div>
-    </div>`;
+  function makeItem(key, fecha, rival, condicion, citCount, tieneForm, rd, isActual, labelTop){
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:'+(isActual?'rgba(77,115,245,.15)':'transparent')+';'+(isActual?'border-left:2px solid var(--green);':'');
+    const condLabel = condicion==='L'?'Local':'Visita';
+    const condCls = condicion==='L'?'fb-local':'fb-visit';
+    const resHtml = rd ? '<span style="font-family:Bebas Neue,sans-serif;font-size:.78rem;letter-spacing:1px;padding:1px 7px;border-radius:4px;display:inline-block;margin-left:3px;vertical-align:middle;background:'+rd.bg+';color:'+rd.color+';">'+rd.score+'</span>' : '';
+    const tag = tieneForm ? '<span style="font-size:.58rem;color:#22cd78;font-weight:700;">&#10003; guardada</span>' : '<span style="font-size:.58rem;color:var(--muted);">sin form.</span>';
+    const left = document.createElement('div');
+    left.innerHTML = '<div style="font-size:.6rem;font-weight:700;color:'+( labelTop?'#22cd78':'var(--muted)')+';margin-bottom:1px;">'+(labelTop||'F'+fecha+' &middot; <span class="fixture-badge '+condCls+'" style="font-size:.58rem;">'+condLabel+'</span>')+'</div>'
+      +'<div style="font-weight:600;font-size:.82rem;">'+(labelTop?'F'+fecha+' vs ':'' )+_fmtRival(rival||'?')+' '+(labelTop?'<span class="fixture-badge '+condCls+'" style="font-size:.58rem;">'+condLabel+'</span>':'')+resHtml+'</div>'
+      +'<div style="font-size:.6rem;color:var(--muted);margin-top:1px;">'+(citCount!==null?citCount+' citados &middot; '+tag:'Sin citación aún')+'</div>';
+    const right = document.createElement('div');
+    right.style.cssText = 'font-size:.7rem;color:'+(isActual?'var(--green)':'#22cd78')+';';
+    right.textContent = isActual ? '●' : '›';
+    div.appendChild(left); div.appendChild(right);
+    div.addEventListener('click', function(){ window.loadFormacionHistorial(key); });
+    return div;
   }
 
-  if(!todosCitados.length && !proximoF){
-    dd.innerHTML='<div style="padding:12px;font-size:.75rem;color:var(--muted);text-align:center;">Sin partidos programados</div>';
+  // Próximo partido arriba
+  if(proximoF2){
+    const isActual = proximoKey2===_formacionCurrentKey;
+    dd.appendChild(makeItem(proximoKey2, proximoF2.fecha, proximoF2.rival, proximoF2.cond, null, false, null, isActual, '&#8594; PRÓXIMO PARTIDO'));
+  }
+
+  if(!todosCitados.length && !proximoF2){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:12px;font-size:.75rem;color:var(--muted);text-align:center;';
+    empty.textContent = 'Sin partidos programados';
+    dd.appendChild(empty);
     return;
   }
 
   if(todosCitados.length){
-    html += '<div style="padding:6px 12px;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Partidos anteriores</div>';
+    const sep = document.createElement('div');
+    sep.style.cssText = 'padding:6px 12px;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);';
+    sep.textContent = 'Partidos anteriores';
+    dd.appendChild(sep);
   }
-  todosCitados.forEach(([key,m])=>{
+
+  todosCitados.forEach(function(_ref2){
+    const key = _ref2[0], m = _ref2[1];
     const isActual = key===_formacionCurrentKey;
-    const tieneForm = !!m.formacion;
-    const rd = _getResultData(key);
-    const resHtml = rd ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:.78rem;letter-spacing:1px;padding:1px 7px;border-radius:4px;display:inline-block;margin-left:3px;vertical-align:middle;background:${rd.bg};color:${rd.color};">${rd.score}</span>` : '';
-    const condLabel = m.condicion==='L'?'Local':'Visita';
-    const condCls = m.condicion==='L'?'fb-local':'fb-visit';
-    const tag = tieneForm
-      ? `<span style="font-size:.58rem;color:#22cd78;font-weight:700;">✓ guardada</span>`
-      : `<span style="font-size:.58rem;color:var(--muted);">sin form.</span>`;
-    html += `<div onclick="window.loadFormacionHistorial('${key}')" style="padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:${isActual?'rgba(77,115,245,.15)':'transparent'};${isActual?'border-left:2px solid var(--green);':''}" onmouseover="this.style.background='rgba(77,115,245,.1)'" onmouseout="this.style.background='${isActual?'rgba(77,115,245,.15)':'transparent'}'">
-      <div>
-        <div style="font-size:.6rem;color:var(--muted);margin-bottom:1px;">F${m.fecha||'?'} · <span class="fixture-badge ${condCls}" style="font-size:.58rem;">${condLabel}</span></div>
-        <div style="font-weight:600;font-size:.82rem;">vs ${_fmtRival(m.rival||'?')} ${resHtml}</div>
-        <div style="font-size:.6rem;color:var(--muted);margin-top:1px;">${(m.citados||[]).length} citados · ${tag}</div>
-      </div>
-      <div style="font-size:.7rem;color:${isActual?'var(--green)':'var(--muted)'};">${isActual?'●':'›'}</div>
-    </div>`;
+    dd.appendChild(makeItem(key, m.fecha, m.rival, m.condicion, (m.citados||[]).length, !!m.formacion, _getResultData(key), isActual, null));
   });
-  dd.innerHTML = html;
 }
 
 window.toggleFormHist = function(){
   const dd = document.getElementById('formHistDD');
-  const btn = document.getElementById('formHistBtn');
   const arr = document.getElementById('formHistArr');
-  const isOpen = dd.style.display !== 'none';
-  dd.style.display = isOpen ? 'none' : 'block';
-  arr.textContent = isOpen ? '▾' : '▴';
+  const isOpen = dd && dd.style.display !== 'none';
+  if(dd) dd.style.display = isOpen ? 'none' : 'block';
+  if(arr) arr.textContent = isOpen ? '▾' : '▴';
+  if(!isOpen) renderFormacionHistorial();
 };
 
-// Cerrar dropdown al tocar afuera
-document.addEventListener('click', function(e){
-  if(!e.target.closest('#formHistWrap')){
-    const dd = document.getElementById('formHistDD');
-    const arr = document.getElementById('formHistArr');
-    if(dd){ dd.style.display='none'; }
-    if(arr){ arr.textContent='▾'; }
-  }
-});
+if(!window._formHistClickAdded){
+  window._formHistClickAdded = true;
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('#formHistWrap')){
+      const dd = document.getElementById('formHistDD');
+      const arr = document.getElementById('formHistArr');
+      if(dd && dd.style.display!=='none'){ dd.style.display='none'; if(arr) arr.textContent='▾'; }
+    }
+  });
+}
 
 
 function drawPitch(){
@@ -2522,7 +2496,7 @@ function drawPitch(){
     g2.style.cursor='pointer';
     // Sombra
     const sh = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    sh.setAttribute('cx', pos.x+1.5); sh.setAttribute('cy', pos.y+2.5);
+    sh.setAttribute('cx',pos.x+1.5); sh.setAttribute('cy',pos.y+2.5);
     sh.setAttribute('r','28'); sh.setAttribute('fill','rgba(0,0,0,0.32)');
     g2.appendChild(sh);
     // Círculo r=28
@@ -2533,15 +2507,14 @@ function drawPitch(){
     c.setAttribute('stroke', isSelected?'white':'rgba(255,255,255,0.8)');
     c.setAttribute('stroke-width','2.5');
     g2.appendChild(c);
-    // Nombre
     const t = document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('x', pos.x); t.setAttribute('y', pos.y);
     t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','central');
     t.setAttribute('fill', isSelected?'#000':'white');
+    t.setAttribute('pointer-events','none');
     t.setAttribute('font-size', display.length>6?'10.5':display.length>4?'12.5':'14');
     t.setAttribute('font-family','DM Sans,Arial,sans-serif');
     t.setAttribute('font-weight','700');
-    t.setAttribute('pointer-events','none');
     t.textContent = display;
     g2.appendChild(t);
     g2.addEventListener('click', function(e){
