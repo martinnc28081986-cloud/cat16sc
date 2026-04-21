@@ -2239,8 +2239,12 @@ function renderFormacion(){
   }
   console.log('[FORMACION] proximoKey:', proximoKey);
 
-  // Siempre arrancar en el próximo partido
-  _formacionCurrentKey = proximoKey || null;
+  // Solo ir al próximo si no hay ninguno seleccionado ya
+  if(!_formacionCurrentKey) _formacionCurrentKey = proximoKey || null;
+  // Si el key actual ya no existe en citaciones ni coincide con el próximo, resetear
+  if(_formacionCurrentKey && !citaciones[_formacionCurrentKey] && _formacionCurrentKey !== proximoKey){
+    _formacionCurrentKey = proximoKey || null;
+  }
 
   // Header con info del partido actual
   if(headerEl){
@@ -2263,14 +2267,12 @@ function renderFormacion(){
   const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
   const citados = saved ? (saved.citados||[]) : PLAYERS;
 
-  // Cargar formación si no hay nada en la cancha
-  if(Object.keys(pitchPlayers).length===0 && benchPlayers.length===0){
-    if(saved && saved.formacion){
-      pitchPlayers = saved.formacion.pitch||{};
-      benchPlayers = saved.formacion.bench||[];
-    } else {
-      pitchPlayers={}; benchPlayers=[...citados];
-    }
+  // Siempre cargar la formación guardada del partido seleccionado
+  if(saved && saved.formacion){
+    pitchPlayers = JSON.parse(JSON.stringify(saved.formacion.pitch||{}));
+    benchPlayers = [...(saved.formacion.bench||[])];
+  } else if(Object.keys(pitchPlayers).length===0 && benchPlayers.length===0){
+    pitchPlayers={}; benchPlayers=[...citados];
   }
 
   drawPitch();
@@ -3334,17 +3336,18 @@ async function startCoordApp(){
   const REASON_COLORS = {lesionado:'#ff6d00',enfermedad:'#aa00ff',personal:'#00b0ff',suspendido:'#ff1744',sinaviso:'#666'};
   function pCol(p){ return p>=75?'var(--green)':p>=50?'var(--yellow)':'var(--red)'; }
   function citKey(f){ return 'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase(); }
-  function nextUncited(cits){ return FIXTURE_C.find(f=>{ if(f.cond==='-') return false; if(_suspensions[f.fecha]) return false; return !cits[citKey(f)]; }); }
+  function hasCitados(entry){ return !!(entry && entry.citados && entry.citados.length>0); }
+  function nextUncited(cits){ return FIXTURE_C.find(f=>{ if(f.cond==='-') return false; if(_suspensions[f.fecha]) return false; return !hasCitados(cits[citKey(f)]); }); }
   function globalActiveFecha(){
     for(const f of FIXTURE_C){
       if(f.cond==='-') continue;
       if(_suspensions[f.fecha]) continue;
       const key=citKey(f);
-      if(!COMP_CATS.every(cat=>!!D[cat.key].cit[key])) return f;
+      if(!COMP_CATS.every(cat=>hasCitados(D[cat.key].cit[key]))) return f;
     }
     return null;
   }
-  function catCitedFecha(catKey,f){ return f ? !!D[catKey].cit[citKey(f)] : false; }
+  function catCitedFecha(catKey,f){ return f ? hasCitados(D[catKey].cit[citKey(f)]) : false; }
   function isSC(eq){ return eq.toLowerCase().includes('sagr')||eq.toLowerCase().includes('coraz'); }
 
   // ── DATA STATE ──
