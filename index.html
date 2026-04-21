@@ -2307,10 +2307,8 @@ function renderFormacion(){
     if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey=key; proximoF=f; break; }
   }
 
-  // Validar key actual pertenece a este fixture
-  const _curCit = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
-  const _curValida = _curCit && _curCit.fecha && FIXTURE.some(function(f){ return f.fecha===_curCit.fecha; });
-  if(!_formacionCurrentKey || (!_curValida && _formacionCurrentKey!==proximoKey)){
+  // Resetear solo si la key no existe en citaciones y tampoco es el próximo
+  if(!_formacionCurrentKey || (!citaciones[_formacionCurrentKey] && _formacionCurrentKey!==proximoKey)){
     _formacionCurrentKey = proximoKey || null;
   }
 
