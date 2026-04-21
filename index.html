@@ -378,7 +378,7 @@
   <div style="display:flex;align-items:center;gap:10px">
     <div>
       <div class="logo">MI PLANTEL</div>
-      <div style="font-size:0.62rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px">LISFI II Zona B 2026</div>
+      <div id="headerSubEl" style="font-size:0.62rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px">LISFI II Zona B 2026</div>
       <div id="nextMatchEl" class="next-match"></div>
     </div>
   </div>
@@ -963,6 +963,22 @@ if(!catBadge){
 }
 const _catLabels = {cat16:'CAT 2016',cat13:'CAT 2013',cat2015:'CAT 2015',cat2014:'CAT 2014',cat2017:'CAT 2017',cat2018:'CAT 2018',cat2019:'CAT 2019',cat2020:'CAT 2020',escuelita:'ESCUELITA'};
 catBadge.textContent = _catLabels[cat] || cat.toUpperCase();
+
+// Actualizar subtítulo del header con nombre del club
+(async()=>{
+  try{
+    const clubId = CLUB_PATH.split('/').pop();
+    const snap = await get(ref(db,'clubs/'+clubId+'/config'));
+    const cfg = snap.exists()?snap.val():{};
+    const clubSnap = await get(ref(db,'clubs/'+clubId));
+    const clubData = clubSnap.exists()?clubSnap.val():{};
+    const nombreClub = clubData.nombre || (clubId.charAt(0).toUpperCase()+clubId.slice(1).replace(/-/g,' '));
+    const liga = cfg.liga||'LISFI';
+    const zona = cfg.zona||'';
+    const subEl = document.getElementById('headerSubEl');
+    if(subEl) subEl.textContent = (nombreClub + (liga?' · '+liga:''+(zona?' '+zona:''))).toUpperCase();
+  }catch(e){}
+})();
 
 // ── ESCUELITA: adaptar UI ──
 window._isEscuelita = !!CFG.escuelita;
@@ -2043,9 +2059,18 @@ window.switchSection=function(sec){
   document.getElementById('bnav-ent').className='bnav-item'+(isEnt?' active-b':'');
   document.getElementById('bnav-par').className='bnav-item'+(isPar?' active-y':'');
   document.getElementById('bnav-plantel').className='bnav-item'+(isPlantel?' active-g':'');
+  // Para escuelita: re-ocultar tablas y formacion si aparecen
+  if(window._isEscuelita && isPar){
+    document.querySelectorAll('.tabs-par .tab').forEach(t=>{
+      const oc=t.getAttribute('onclick')||'';
+      if(oc.includes('tablas')||oc.includes('formacion')) t.style.display='none';
+    });
+  }
+  // Asegurar que todas las views estén ocultas antes de activar la nueva
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   // Activar primera tab de la sección
   if(isEnt) switchTab('tomar');
-  if(isPar) switchTab('tablas');
+  if(isPar) switchTab(window._isEscuelita?'cit-stats':'tablas');
   if(isPlantel) switchTab('plantel');
 };
 
