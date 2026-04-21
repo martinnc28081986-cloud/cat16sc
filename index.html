@@ -2220,21 +2220,24 @@ function renderFormacion(){
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
-  // Próximo partido = primera fecha donde esta categoría no tiene citados guardados
-  // (misma lógica que el header "Próx:" — sin async, sin Firebase)
+  // Próximo partido = primera fecha sin citados en esta categoría
   let proximoKey = null;
   let proximoData = null;
+  console.log('[FORMACION] FIXTURE length:', FIXTURE.length, 'citaciones keys:', Object.keys(citaciones).length);
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
     if(_suspensions[f.fecha]) continue;
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
-    if(!cit || !cit.citados || cit.citados.length===0){
+    const tieneCitados = cit && cit.citados && cit.citados.length>0;
+    console.log('[FORMACION] F'+f.fecha, f.rival, '→ key:', key, '→ citados:', tieneCitados ? cit.citados.length : 0);
+    if(!tieneCitados){
       proximoKey = key;
       proximoData = {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
       break;
     }
   }
+  console.log('[FORMACION] proximoKey:', proximoKey);
 
   // Siempre arrancar en el próximo partido
   _formacionCurrentKey = proximoKey || null;
