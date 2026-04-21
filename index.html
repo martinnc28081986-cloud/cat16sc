@@ -2247,13 +2247,20 @@ let _currentFormPreset = '2-3-1';
 window.renderFormPresetPills = function(){
   const el = document.getElementById('formPresetPills');
   if(!el) return;
-  el.innerHTML = Object.keys(FORM7).map(name =>
+  const names = [...Object.keys(FORM7), 'Libre'];
+  el.innerHTML = names.map(name =>
     `<button onclick="window.applyFormPreset('${name}')" style="padding:4px 10px;border-radius:20px;font-size:.68rem;font-weight:700;background:${_currentFormPreset===name?'rgba(77,115,245,.2)':'transparent'};border:1px solid ${_currentFormPreset===name?'var(--green)':'var(--border)'};color:${_currentFormPreset===name?'var(--green)':'var(--muted)'};cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px;">${name}</button>`
   ).join('');
 };
 
 window.applyFormPreset = function(name){
   _currentFormPreset = name;
+  const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
+  const citados = saved ? (saved.citados||[]) : PLAYERS;
+  if(name === 'Libre'){
+    pitchPlayers={}; benchPlayers=[...citados]; selectedPlayer=null;
+    window.renderFormPresetPills(); drawPitch(); drawBench(); return;
+  }
   const coords = FORM7[name];
   if(!coords) return;
   // Usar citados del partido actual
@@ -2325,9 +2332,13 @@ function renderFormacion(){
     }
   }
 
-  // Mantener partido seleccionado; resetear solo si la key ya no existe
-  if(!_formacionCurrentKey) _formacionCurrentKey = proximoKey || null;
-  if(_formacionCurrentKey && !citaciones[_formacionCurrentKey] && _formacionCurrentKey !== proximoKey){
+  // Validar que el partido actual pertenece al fixture de ESTA categoría
+  // (la variable persiste entre categorías y puede quedar apuntando a una key vieja)
+  const _curCit = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
+  const _curFechaValida = _curCit && _curCit.fecha &&
+    FIXTURE.some(f => f.fecha === _curCit.fecha);
+  const _curEsProximo = _formacionCurrentKey === proximoKey;
+  if(!_formacionCurrentKey || (!_curFechaValida && !_curEsProximo)){
     _formacionCurrentKey = proximoKey || null;
   }
 
@@ -2343,10 +2354,12 @@ function renderFormacion(){
       const rd = _formacionCurrentKey ? _getResultData(_formacionCurrentKey) : null;
       const resHtml = rd ? `<span style="font-family:'Bebas Neue',sans-serif;font-size:.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;display:inline-block;margin-left:5px;vertical-align:middle;background:${rd.bg};color:${rd.color};">${rd.score}</span>` : '';
       const citCount = (curData.citados||[]).length;
+      const volverBtn = (!esProximo && proximoKey) ? `<button onclick="window.loadFormacionHistorial('${proximoKey}')" style="margin-top:5px;background:rgba(34,205,120,.12);border:1px solid rgba(34,205,120,.3);color:#22cd78;font-size:.62rem;font-weight:700;padding:3px 9px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px;">⟶ Ir al próximo (F${proximoF?proximoF.fecha:'?'} vs ${proximoF?_fmtRival(proximoF.rival):'?'})</button>` : '';
       headerEl.innerHTML = `
         <div style="font-size:0.62rem;color:var(--muted);margin-bottom:2px;">${esProximo?'⟶ Próximo partido':'📋 Partido anterior'}</div>
         <div style="font-weight:700;font-size:.88rem;">F${curData.fecha||'?'} vs ${_fmtRival(curData.rival||'?')} <span class="fixture-badge ${condCls}">${condLabel}</span>${resHtml}</div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${citCount?citCount+' citados':'Sin citación'}</div>`;
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${citCount?citCount+' citados':'Sin citación'}</div>
+        ${volverBtn}`;
     } else {
       headerEl.innerHTML = '<div style="font-size:.75rem;color:var(--muted);">Sin partidos programados</div>';
     }
@@ -2419,14 +2432,46 @@ window.saveFormacionExplicit = async function(){
 function renderFormacionHistorial(){
   const dd = document.getElementById('formHistDD');
   if(!dd) return;
+
+  // Calcular próximo partido sin citar (misma lógica que renderFormacion)
+  let proximoKey = null, proximoF = null;
+  for(const f of FIXTURE){
+    if(f.cond==='-') continue;
+    if(_suspensions[f.fecha]) continue;
+    const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+    const cit = citaciones[key];
+    if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey=key; proximoF=f; break; }
+  }
+
   const todosCitados = Object.entries(citaciones)
     .filter(([,m])=>m.citados&&m.citados.length>0)
     .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
-  if(!todosCitados.length){
-    dd.innerHTML='<div style="padding:12px;font-size:.75rem;color:var(--muted);text-align:center;">Sin partidos citados aún</div>';
+
+  let html = '';
+
+  // Siempre mostrar el próximo partido arriba del todo
+  if(proximoF){
+    const isActual = proximoKey===_formacionCurrentKey;
+    const condLabel = proximoF.cond==='L'?'Local':'Visita';
+    const condCls = proximoF.cond==='L'?'fb-local':'fb-visit';
+    html += `<div onclick="window.loadFormacionHistorial('${proximoKey}')" style="padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--border);background:${isActual?'rgba(77,115,245,.15)':'rgba(34,205,120,0.06)'};${isActual?'border-left:2px solid var(--green);':''}" onmouseover="this.style.background='rgba(77,115,245,.1)'" onmouseout="this.style.background='${isActual?'rgba(77,115,245,.15)':'rgba(34,205,120,0.06)'}'">
+      <div>
+        <div style="font-size:.6rem;font-weight:700;color:#22cd78;margin-bottom:1px;">⟶ PRÓXIMO PARTIDO</div>
+        <div style="font-weight:600;font-size:.82rem;">F${proximoF.fecha} vs ${_fmtRival(proximoF.rival)} <span class="fixture-badge ${condCls}" style="font-size:.58rem;">${condLabel}</span></div>
+        <div style="font-size:.6rem;color:var(--muted);margin-top:1px;">Sin citación aún</div>
+      </div>
+      <div style="font-size:.7rem;color:${isActual?'var(--green)':'#22cd78'};">${isActual?'●':'›'}</div>
+    </div>`;
+  }
+
+  if(!todosCitados.length && !proximoF){
+    dd.innerHTML='<div style="padding:12px;font-size:.75rem;color:var(--muted);text-align:center;">Sin partidos programados</div>';
     return;
   }
-  let html = '<div style="padding:6px 12px;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Partidos con citación</div>';
+
+  if(todosCitados.length){
+    html += '<div style="padding:6px 12px;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Partidos anteriores</div>';
+  }
   todosCitados.forEach(([key,m])=>{
     const isActual = key===_formacionCurrentKey;
     const tieneForm = !!m.formacion;
