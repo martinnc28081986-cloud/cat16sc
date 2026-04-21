@@ -523,48 +523,55 @@
 
 <!-- TAB 7 — FORMACION -->
 <div id="view-formacion" class="view">
-  <div id="formacion-header" style="margin-bottom:10px"></div>
   <div id="formacion-no-cit" class="empty-msg" style="display:none">Sin jugadores en el plantel</div>
   <div id="formacion-main" style="display:none">
-    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px">Arrastrá los jugadores desde el banco a la cancha. Tocá un jugador en la cancha para devolverlo al banco.</div>
+    <!-- Barra: info partido + dropdown historial -->
+    <div style="display:flex;gap:7px;align-items:stretch;margin-bottom:10px;">
+      <div id="formacion-header" style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:9px 12px;flex:1;min-width:0;"></div>
+      <div style="position:relative;flex-shrink:0;" id="formHistWrap">
+        <div id="formHistBtn" onclick="window.toggleFormHist()" style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:100%;">
+          <span style="font-size:1.1rem;line-height:1;">📋</span>
+          <span style="font-size:0.55rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;">Historial</span>
+          <span id="formHistArr" style="font-size:.6rem;color:var(--muted);">▾</span>
+        </div>
+        <div id="formHistDD" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;min-width:220px;z-index:200;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.5);"></div>
+      </div>
+    </div>
+    <!-- Presets de formación 7 -->
+    <div id="formPresetPills" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;"></div>
+    <!-- Cancha vertical 7 -->
     <div class="pitch-wrap">
-      <svg id="pitchSvg" class="pitch-svg" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
-        <!-- Campo -->
-        <rect width="600" height="380" fill="#2d5a27" rx="8"/>
-        <!-- Líneas del campo -->
-        <rect x="10" y="10" width="580" height="360" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" rx="4"/>
-        <!-- Línea central vertical -->
-        <line x1="300" y1="10" x2="300" y2="370" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-        <!-- Círculo central -->
-        <circle cx="300" cy="190" r="45" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-        <circle cx="300" cy="190" r="3" fill="rgba(255,255,255,0.7)"/>
-        <!-- Área izquierda (nuestra) -->
-        <rect x="10" y="120" width="80" height="140" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-        <rect x="10" y="155" width="35" height="70" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-        <!-- Área derecha (rival) -->
-        <rect x="510" y="120" width="80" height="140" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-        <rect x="555" y="155" width="35" height="70" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-        <!-- Puntos penalty -->
-        <circle cx="70" cy="190" r="3" fill="rgba(255,255,255,0.6)"/>
-        <circle cx="530" cy="190" r="3" fill="rgba(255,255,255,0.6)"/>
-        <!-- Arcos -->
-        <rect x="3" y="163" width="7" height="54" fill="none" stroke="white" stroke-width="2"/>
-        <rect x="590" y="163" width="7" height="54" fill="none" stroke="white" stroke-width="2"/>
-        <!-- Dirección de ataque -->
-        <text x="300" y="26" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="9" font-family="Arial">ATAQUE →</text>
-        <!-- Tokens se renderizan por JS -->
+      <svg id="pitchSvg" class="pitch-svg" viewBox="0 0 300 390" xmlns="http://www.w3.org/2000/svg">
+        <rect width="300" height="390" fill="#1a5718"/>
+        <rect x="0" y="0"   width="300" height="39" fill="rgba(0,0,0,.055)"/>
+        <rect x="0" y="78"  width="300" height="39" fill="rgba(0,0,0,.055)"/>
+        <rect x="0" y="156" width="300" height="39" fill="rgba(0,0,0,.055)"/>
+        <rect x="0" y="234" width="300" height="39" fill="rgba(0,0,0,.055)"/>
+        <rect x="0" y="312" width="300" height="39" fill="rgba(0,0,0,.055)"/>
+        <rect x="5" y="5" width="290" height="380" fill="none" stroke="rgba(255,255,255,.48)" stroke-width="1.8" rx="4"/>
+        <line x1="5" y1="195" x2="295" y2="195" stroke="rgba(255,255,255,.45)" stroke-width="1.4"/>
+        <circle cx="150" cy="195" r="38" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.4"/>
+        <circle cx="150" cy="195" r="3" fill="rgba(255,255,255,.65)"/>
+        <rect x="72" y="5" width="156" height="65" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="1.4"/>
+        <rect x="106" y="5" width="88" height="28" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.1"/>
+        <rect x="118" y="0" width="64" height="6" fill="none" stroke="white" stroke-width="2"/>
+        <circle cx="150" cy="54" r="2.5" fill="rgba(255,255,255,.55)"/>
+        <rect x="72" y="320" width="156" height="65" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="1.4"/>
+        <rect x="106" y="357" width="88" height="28" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.1"/>
+        <rect x="118" y="384" width="64" height="6" fill="none" stroke="white" stroke-width="2"/>
+        <circle cx="150" cy="336" r="2.5" fill="rgba(255,255,255,.55)"/>
+        <text x="150" y="20" text-anchor="middle" fill="rgba(255,255,255,.25)" font-size="9" font-family="DM Sans,Arial" font-weight="600" letter-spacing="2">▲  ATAQUE</text>
         <g id="pitchTokens"></g>
-        <text id="pitchHint" x="300" y="362" text-anchor="middle" fill="rgba(255,171,64,0.95)" font-size="11" font-family="DM Sans,Arial,sans-serif" pointer-events="none"></text>
+        <text id="pitchHint" x="150" y="378" text-anchor="middle" fill="rgba(255,171,64,.95)" font-size="10.5" font-family="DM Sans,Arial,sans-serif" font-weight="600" pointer-events="none"></text>
       </svg>
     </div>
-    <div class="stitle">Banco de suplentes</div>
+    <div class="stitle" style="margin-top:10px;">Banco de suplentes</div>
     <div class="bench-wrap" id="benchWrap"></div>
     <div class="form-actions">
       <button class="btn btn-ol" onclick="window.clearFormacion()">&#10005; Limpiar</button>
       <button class="btn btn-g" onclick="window.saveFormacionExplicit()" style="font-weight:700">&#128190; Guardar</button>
       <button class="btn btn-ol" style="border-color:#25D366;color:#25D366" onclick="window.shareFormacion()">&#128279; WhatsApp</button>
     </div>
-    <div id="formacion-historial" style="margin-top:16px"></div>
   </div>
 </div>
 
@@ -2210,8 +2217,67 @@ window.reactivatePlayer = async function(nombre){
   } catch(e){ showToast('Error al guardar'); PLAYERS_INACTIVE.push(nombre); PLAYERS=PLAYERS.filter(p=>p!==nombre); renderPlantel(); }
 };
 
+
+// ── FORMACIONES 7 JUGADORES ──
+// viewBox 300x390, GK abajo (nuestra área), ataque hacia arriba
+const FORM7 = {
+  '2-3-1': [[150,352],[88,280],[212,280],[50,202],[150,195],[250,202],[150,112]],
+  '3-2-1': [[150,352],[65,282],[150,275],[235,282],[100,202],[200,202],[150,112]],
+  '2-2-2': [[150,352],[90,287],[210,287],[90,207],[210,207],[90,118],[210,118]],
+  '1-3-2': [[150,352],[150,287],[62,210],[150,202],[238,210],[100,118],[200,118]],
+  '3-1-2': [[150,352],[68,284],[150,278],[232,284],[150,207],[96,118],[204,118]],
+  '2-1-2-1': [[150,352],[96,294],[204,294],[150,230],[88,164],[212,164],[150,96]],
+};
+let _currentFormPreset = '2-3-1';
+
+window.renderFormPresetPills = function(){
+  const el = document.getElementById('formPresetPills');
+  if(!el) return;
+  el.innerHTML = Object.keys(FORM7).map(name =>
+    `<button onclick="window.applyFormPreset('${name}')" style="padding:4px 10px;border-radius:20px;font-size:.68rem;font-weight:700;background:${_currentFormPreset===name?'rgba(77,115,245,.2)':'transparent'};border:1px solid ${_currentFormPreset===name?'var(--green)':'var(--border)'};color:${_currentFormPreset===name?'var(--green)':'var(--muted)'};cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px;">${name}</button>`
+  ).join('');
+};
+
+window.applyFormPreset = function(name){
+  _currentFormPreset = name;
+  const coords = FORM7[name];
+  if(!coords) return;
+  // Usar citados del partido actual
+  const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
+  const citados = saved ? (saved.citados||[]) : PLAYERS;
+  pitchPlayers = {};
+  benchPlayers = [...citados];
+  coords.forEach((pos, i) => {
+    if(i < citados.length){
+      pitchPlayers[citados[i]] = {x:pos[0], y:pos[1]};
+      benchPlayers = benchPlayers.filter(n => n !== citados[i]);
+    }
+  });
+  selectedPlayer = null;
+  window.renderFormPresetPills();
+  drawPitch(); drawBench();
+};
+
 let _formacionCurrentKey = null;
-let _formacionViendoHistorial = false;
+
+// Helper: obtener resultado de un partido desde LIGA_DATA o desde citaciones
+function _getResultData(key){
+  const cit = citaciones[key];
+  if(!cit) return null;
+  // Intentar desde la citación guardada
+  if(cit.score && cit.result) return {score: cit.score, result: cit.result};
+  // Cruzar con LIGA_DATA.scResults por número de fecha
+  const _catNumMap = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+  const catNum = _catNumMap[DB_PREFIX.split('/').pop()] || 16;
+  const scRes = (LIGA_DATA && LIGA_DATA.scResults && LIGA_DATA.scResults[catNum]) || [];
+  const match = scRes.find(r => r.fecha === cit.fecha);
+  if(match){
+    const gf = match.gf, gc = match.gc;
+    const result = gf > gc ? 'V' : gf < gc ? 'L' : 'E';
+    return {score: gf+'-'+gc, result};
+  }
+  return null;
+}
 
 function renderFormacion(){
   const mainEl = document.getElementById('formacion-main');
@@ -2220,54 +2286,53 @@ function renderFormacion(){
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
-  // Próximo partido = primera fecha sin citados en esta categoría
+  // Próximo partido = primera fecha sin citados en esta categoría (misma lógica que el resto de la app)
   let proximoKey = null;
   let proximoData = null;
-  console.log('[FORMACION] FIXTURE length:', FIXTURE.length, 'citaciones keys:', Object.keys(citaciones).length);
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
     if(_suspensions[f.fecha]) continue;
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
     const tieneCitados = cit && cit.citados && cit.citados.length>0;
-    console.log('[FORMACION] F'+f.fecha, f.rival, '→ key:', key, '→ citados:', tieneCitados ? cit.citados.length : 0);
     if(!tieneCitados){
       proximoKey = key;
       proximoData = {fecha:f.fecha, rival:f.rival, condicion:f.cond, citados:[]};
       break;
     }
   }
-  console.log('[FORMACION] proximoKey:', proximoKey);
 
-  // Solo ir al próximo si no hay ninguno seleccionado ya
+  // Mantener partido seleccionado; resetear solo si la key ya no existe
   if(!_formacionCurrentKey) _formacionCurrentKey = proximoKey || null;
-  // Si el key actual ya no existe en citaciones ni coincide con el próximo, resetear
   if(_formacionCurrentKey && !citaciones[_formacionCurrentKey] && _formacionCurrentKey !== proximoKey){
     _formacionCurrentKey = proximoKey || null;
   }
 
-  // Header con info del partido actual
-  if(headerEl){
-    const curData = _formacionCurrentKey ? (citaciones[_formacionCurrentKey]||proximoData) : null;
-    const condLabel = curData ? (curData.condicion==='L'?'Local':'Visitante') : '';
-    const condCls = curData ? (curData.condicion==='L'?'fb-local':'fb-visit') : '';
-    const esProximo = _formacionCurrentKey===proximoKey;
-    headerEl.innerHTML = curData ? `
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px">${esProximo?'⟶ Próximo partido':'📋 Formación anterior'}</div>
-          <div style="font-weight:700">F${curData.fecha||'?'} vs ${curData.rival||'?'} <span class="fixture-badge ${condCls}">${condLabel}</span></div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${(curData.citados||[]).length?((curData.citados||[]).length+' citados'):'Sin citación — usando plantel completo'}</div>
-        </div>
-      </div>` : '';
-  }
-
   mainEl.style.display='block'; noEl.style.display='none';
 
+  // ── Header: info del partido seleccionado ──
+  if(headerEl){
+    const curData = _formacionCurrentKey ? (citaciones[_formacionCurrentKey]||proximoData) : null;
+    if(curData){
+      const condLabel = curData.condicion==='L'?'Local':'Visitante';
+      const condCls = curData.condicion==='L'?'fb-local':'fb-visit';
+      const esProximo = _formacionCurrentKey===proximoKey;
+      const rd = _formacionCurrentKey ? _getResultData(_formacionCurrentKey) : null;
+      const resCls = rd ? (rd.result==='V'?'rV':rd.result==='L'?'rL':'rE') : '';
+      const resHtml = rd ? `<span class="rbadge ${resCls}" style="margin-left:4px">${rd.score}</span>` : '';
+      const citCount = (curData.citados||[]).length;
+      headerEl.innerHTML = `
+        <div style="font-size:0.62rem;color:var(--muted);margin-bottom:2px;">${esProximo?'⟶ Próximo partido':'📋 Partido anterior'}</div>
+        <div style="font-weight:700;font-size:.88rem;">F${curData.fecha||'?'} vs ${curData.rival||'?'} <span class="fixture-badge ${condCls}">${condLabel}</span>${resHtml}</div>
+        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">${citCount?citCount+' citados':'Sin citación'}</div>`;
+    } else {
+      headerEl.innerHTML = '<div style="font-size:.75rem;color:var(--muted);">Sin partidos programados</div>';
+    }
+  }
+
+  // ── Cargar jugadores de cancha/banco para este partido ──
   const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
   const citados = saved ? (saved.citados||[]) : PLAYERS;
-
-  // Siempre cargar la formación guardada del partido seleccionado
   if(saved && saved.formacion){
     pitchPlayers = JSON.parse(JSON.stringify(saved.formacion.pitch||{}));
     benchPlayers = [...(saved.formacion.bench||[])];
@@ -2278,14 +2343,19 @@ function renderFormacion(){
   drawPitch();
   drawBench();
   if(!pitchTapReady){ setupPitchClick(); pitchTapReady=true; }
+  window.renderFormPresetPills();
   renderFormacionHistorial();
 }
 
 window.loadFormacionHistorial = function(key){
+  // Cerrar dropdown
+  const dd = document.getElementById('formHistDD');
+  const arr = document.getElementById('formHistArr');
+  if(dd) dd.style.display='none';
+  if(arr) arr.textContent='▾';
   _formacionCurrentKey = key;
   pitchPlayers={}; benchPlayers=[]; selectedPlayer=null; pitchTapReady=false;
   renderFormacion();
-  // Scroll suave a la cancha
   setTimeout(()=>{ document.getElementById('formacion-main')?.scrollIntoView({behavior:'smooth'}); }, 100);
 };
 
@@ -2317,32 +2387,57 @@ window.saveFormacionExplicit = async function(){
 };
 
 function renderFormacionHistorial(){
-  const el = document.getElementById('formacion-historial');
-  if(!el) return;
+  const dd = document.getElementById('formHistDD');
+  if(!dd) return;
   const todosCitados = Object.entries(citaciones)
     .filter(([,m])=>m.citados&&m.citados.length>0)
     .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
-  if(!todosCitados.length){ el.innerHTML=''; return; }
-  el.innerHTML='<div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;margin-top:8px;border-top:1px solid var(--border);padding-top:12px">Todos los partidos</div>';
+  if(!todosCitados.length){
+    dd.innerHTML='<div style="padding:12px;font-size:.75rem;color:var(--muted);text-align:center;">Sin partidos citados aún</div>';
+    return;
+  }
+  let html = '<div style="padding:6px 12px;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Partidos con citación</div>';
   todosCitados.forEach(([key,m])=>{
-    const enCancha = m.formacion ? Object.keys(m.formacion.pitch||{}).length : null;
-    const resCls=m.result==='V'?'rV':m.result==='L'?'rL':m.result==='E'?'rE':'';
     const isActual = key===_formacionCurrentKey;
     const tieneForm = !!m.formacion;
-    const resHtml = m.result?('<span class="rbadge '+resCls+'">'+m.result+'</span>'):'';
-    const subTxt = (tieneForm?(enCancha+' en cancha · '):'Sin formación · ')+(m.citados||[]).length+' citados';
-    const accion = isActual?'● actual':tieneForm?'Ver →':'+ Agregar';
-    const accionCol = isActual?'var(--green)':tieneForm?'var(--muted)':'#4d73f5';
-    const rowDiv = document.createElement('div');
-    rowDiv.className = 'prow';
-    rowDiv.style.cssText = 'justify-content:space-between;margin-bottom:6px;cursor:pointer;'+(isActual?'border-color:var(--green);':'');
-    rowDiv.innerHTML = '<div><div style="font-size:0.85rem;font-weight:600">F'+(m.fecha||'?')+' vs '+(m.rival||'?')+' '+resHtml+'</div>'
-      +'<div style="font-size:0.72rem;color:var(--muted)">'+subTxt+'</div></div>'
-      +'<div style="font-size:0.75rem;color:'+accionCol+'">'+accion+'</div>';
-    rowDiv.addEventListener('click', function(){ window.loadFormacionHistorial(key); });
-    el.appendChild(rowDiv);
+    const rd = _getResultData(key);
+    const resCls = rd ? (rd.result==='V'?'rV':rd.result==='L'?'rL':'rE') : '';
+    const resHtml = rd ? `<span class="rbadge ${resCls}" style="font-size:.7rem;">${rd.score}</span>` : '';
+    const condLabel = m.condicion==='L'?'Local':'Visita';
+    const condCls = m.condicion==='L'?'fb-local':'fb-visit';
+    const tag = tieneForm
+      ? `<span style="font-size:.58rem;color:#22cd78;font-weight:700;">✓ guardada</span>`
+      : `<span style="font-size:.58rem;color:var(--muted);">sin form.</span>`;
+    html += `<div onclick="window.loadFormacionHistorial('${key}')" style="padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:${isActual?'rgba(77,115,245,.15)':'transparent'};${isActual?'border-left:2px solid var(--green);':''}" onmouseover="this.style.background='rgba(77,115,245,.1)'" onmouseout="this.style.background='${isActual?'rgba(77,115,245,.15)':'transparent'}'">
+      <div>
+        <div style="font-size:.6rem;color:var(--muted);margin-bottom:1px;">F${m.fecha||'?'} · <span class="fixture-badge ${condCls}" style="font-size:.58rem;">${condLabel}</span></div>
+        <div style="font-weight:600;font-size:.82rem;">vs ${m.rival||'?'} ${resHtml}</div>
+        <div style="font-size:.6rem;color:var(--muted);margin-top:1px;">${(m.citados||[]).length} citados · ${tag}</div>
+      </div>
+      <div style="font-size:.7rem;color:${isActual?'var(--green)':'var(--muted)'};">${isActual?'●':'›'}</div>
+    </div>`;
   });
+  dd.innerHTML = html;
 }
+
+window.toggleFormHist = function(){
+  const dd = document.getElementById('formHistDD');
+  const btn = document.getElementById('formHistBtn');
+  const arr = document.getElementById('formHistArr');
+  const isOpen = dd.style.display !== 'none';
+  dd.style.display = isOpen ? 'none' : 'block';
+  arr.textContent = isOpen ? '▾' : '▴';
+};
+
+// Cerrar dropdown al tocar afuera
+document.addEventListener('click', function(e){
+  if(!e.target.closest('#formHistWrap')){
+    const dd = document.getElementById('formHistDD');
+    const arr = document.getElementById('formHistArr');
+    if(dd){ dd.style.display='none'; }
+    if(arr){ arr.textContent='▾'; }
+  }
+});
 
 
 function drawPitch(){
@@ -2354,31 +2449,39 @@ function drawPitch(){
     const isSelected = selectedPlayer===name;
     const g2 = document.createElementNS('http://www.w3.org/2000/svg','g');
     g2.style.cursor='pointer';
+    // Sombra
+    const sh = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    sh.setAttribute('cx', pos.x+1.5); sh.setAttribute('cy', pos.y+2.5);
+    sh.setAttribute('r','28'); sh.setAttribute('fill','rgba(0,0,0,0.32)');
+    g2.appendChild(sh);
+    // Círculo r=28
     const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
     c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
     c.setAttribute('r','28');
     c.setAttribute('fill', isSelected?'#ffab40':'#2255ee');
-    c.setAttribute('stroke','white'); c.setAttribute('stroke-width','2.5');
+    c.setAttribute('stroke', isSelected?'white':'rgba(255,255,255,0.8)');
+    c.setAttribute('stroke-width','2.5');
+    g2.appendChild(c);
+    // Nombre
     const t = document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('x', pos.x); t.setAttribute('y', pos.y);
     t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','central');
-    t.setAttribute('fill','white'); t.setAttribute('pointer-events','none');
-    t.setAttribute('font-size', display.length>7?'14':display.length>5?'16':'18');
+    t.setAttribute('fill', isSelected?'#000':'white');
+    t.setAttribute('font-size', display.length>6?'10.5':display.length>4?'12.5':'14');
     t.setAttribute('font-family','DM Sans,Arial,sans-serif');
     t.setAttribute('font-weight','700');
+    t.setAttribute('pointer-events','none');
     t.textContent = display;
-    g2.appendChild(c); g2.appendChild(t);
+    g2.appendChild(t);
     g2.addEventListener('click', function(e){
       e.stopPropagation();
-      if(selectedPlayer===name){ selectedPlayer=null; }
-      else { selectedPlayer=name; }
+      selectedPlayer = selectedPlayer===name ? null : name;
       drawPitch(); drawBench();
     });
     g.appendChild(g2);
   });
-  // Hint text
   const hint = document.getElementById('pitchHint');
-  if(hint) hint.textContent = selectedPlayer ? 'Tocá la cancha para colocar a '+getDisplayName(selectedPlayer) : '';
+  if(hint) hint.textContent = selectedPlayer ? 'Tocá la cancha → colocar a '+getDisplayName(selectedPlayer) : '';
 }
 
 function drawBench(){
@@ -2408,12 +2511,12 @@ function setupPitchClick(){
   svg.addEventListener('click', function(e){
     if(!selectedPlayer) return;
     const rect = svg.getBoundingClientRect();
-    const scaleX = 600/rect.width;
-    const scaleY = 380/rect.height;
+    const scaleX = 300/rect.width;
+    const scaleY = 390/rect.height;
     const x = Math.round((e.clientX-rect.left)*scaleX);
     const y = Math.round((e.clientY-rect.top)*scaleY);
-    const cx = Math.max(32,Math.min(568,x));
-    const cy = Math.max(32,Math.min(348,y));
+    const cx = Math.max(30,Math.min(270,x));
+    const cy = Math.max(30,Math.min(362,y));
     benchPlayers = benchPlayers.filter(p=>p!==selectedPlayer);
     pitchPlayers[selectedPlayer]={x:cx,y:cy};
     selectedPlayer=null;
@@ -2443,11 +2546,10 @@ window.saveFormacion = async function(){
 };
 
 window.clearFormacion = function(){
-  const allE = Object.entries(citaciones).sort((a,b)=>a[1].fecha-b[1].fecha);
-  const lastCit = allE.filter(([,m])=>m.citados&&m.citados.length).pop();
-  if(!lastCit) return;
+  const saved = _formacionCurrentKey ? citaciones[_formacionCurrentKey] : null;
+  const citados = saved ? (saved.citados||[]) : PLAYERS;
   pitchPlayers={}; selectedPlayer=null;
-  benchPlayers=[...(lastCit[1].citados||[])];
+  benchPlayers=[...citados];
   drawPitch(); drawBench();
   autoSaveFormacion();
 };
