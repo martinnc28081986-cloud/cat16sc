@@ -786,6 +786,7 @@ window.doLogout = async function(){
 
 // ── MANEJO DE ESTADO DE AUTH ──
 function _launchByRole(profile){
+  console.log('[MI PLANTEL] Role:', profile.role, 'Cat:', profile.cat, 'Club:', profile.clubId);
   const { role, cat } = profile;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('loginPass').value='';
@@ -824,6 +825,7 @@ function _launchByRole(profile){
 
 onAuthStateChanged(auth, async user => {
   if(user){
+    console.log('[MI PLANTEL] Auth OK, uid:', user.uid);
     try {
       const snap = await get(ref(db, 'users/' + user.uid));
       if(snap.exists()){
@@ -1305,6 +1307,8 @@ try {
     clearTimeout(_loadTimeout);
     setSS('error');
     document.getElementById('loadingScreen').style.display='none';
+    console.error('[MI PLANTEL] Error Firebase attendance:', err.code, err.message);
+    showToast('Error Firebase: '+err.code);
   });
 
   window._unsub2 = onValue(ref(db,DB_PREFIX+'/citaciones'), snap => {
