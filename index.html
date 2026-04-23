@@ -1281,7 +1281,6 @@ markedCit={};
 markedReasons={};
 selHistMonth=null;
 selStatsMonth=null;
-_histCache=null;
 activeTab='tomar';
 currentFecha=null;
 selectedCamisetero=null;
@@ -2676,7 +2675,7 @@ function _ppResultData(key){
 }
 
 // Cache de históricos de Firebase
-let _histCache = null;
+let _histCache = null; // se resetea al cambiar de categoría arriba via _ppCache reset
 
 async function _loadHistoricos(){
   if(_histCache !== null) return _histCache;
