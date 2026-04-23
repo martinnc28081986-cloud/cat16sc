@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Subir Stats 2026 — MI PLANTEL</title>
+<style>
+body{font-family:sans-serif;background:#07186b;color:#e8efff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;}
+.card{background:#0d2280;border:1px solid #1e3ab0;border-radius:14px;padding:24px;max-width:480px;width:100%;text-align:center;}
+h1{font-size:1.3rem;margin:0 0 6px;color:#4d73f5;}
+p{font-size:.85rem;color:#7a9ccc;margin:0 0 20px;}
+button{background:#22cd78;color:#000;border:none;border-radius:9px;padding:12px 28px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:8px;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+#log{margin-top:16px;text-align:left;font-size:.75rem;color:#7a9ccc;max-height:320px;overflow-y:auto;background:#07186b;border-radius:8px;padding:10px;}
+.ok{color:#22cd78;} .err{color:#ff1744;} .info{color:#ffab40;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⚽ Stats Goleadores 2026</h1>
+  <p>Carga los goles de cada partido 2026 a Firebase por categoría.</p>
+  <button id="btn" onclick="window.subirStats()">Subir a Firebase</button>
+  <div id="log"></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
+  authDomain:"presentes-20226-cat-16-sc.firebaseapp.com",
+  databaseURL:"https://presentes-20226-cat-16-sc-default-rtdb.firebaseio.com",
+  projectId:"presentes-20226-cat-16-sc",
+  storageBucket:"presentes-20226-cat-16-sc.firebasestorage.app",
+  messagingSenderId:"567718455944",
+  appId:"1:567718455944:web:96db233da5d1c8a97e8d3d"
+});
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const STATS = {
+  "cat13": {
+    "fecha05_capchica": {
+      "jugadores": {
+        "Baraglia Romeo": {
+          "goles": 1
+        },
+        "Auricchio Felipe": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha06_cambaceres": {
+      "jugadores": {
+        "Baraglia Romeo": {
+          "goles": 1
+        },
+        "Auricchio Felipe": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha07_hernandez": {
+      "jugadores": {
+        "Baraglia Romeo": {
+          "goles": 1
+        },
+        "Tortorelli Junior": {
+          "goles": 1
+        },
+        "Baldoni Thiago": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "Auricchio Felipe": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Auricchio Felipe": {
+          "goles": 2
+        },
+        "Torres Guillermo": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha04_crisfa_v": {
+      "jugadores": {
+        "Auricchio Felipe": {
+          "goles": 1
+        },
+        "Coronel Salvador": {
+          "goles": 2
+        }
+      }
+    }
+  },
+  "cat2014": {
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "Seranggioli Francisco": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Seranggioli Francisco": {
+          "goles": 2
+        },
+        "Sosa Ciriaco": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha05_capchica": {
+      "jugadores": {
+        "Seranggioli Francisco": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha07_hernandez": {
+      "jugadores": {
+        "Seranggioli Francisco": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha03_catella": {
+      "jugadores": {
+        "Castillo Miqueas": {
+          "goles": 1
+        }
+      }
+    }
+  },
+  "cat2015": {
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Baraglia Felipe": {
+          "goles": 2
+        }
+      }
+    },
+    "fecha04_crisfa_v": {
+      "jugadores": {
+        "Baraglia Felipe": {
+          "goles": 1
+        },
+        "Pereyra Thiago": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha05_capchica": {
+      "jugadores": {
+        "Baraglia Felipe": {
+          "goles": 1
+        },
+        "Arona Thiago": {
+          "goles": 1
+        },
+        "La Rosa Valentin": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha06_cambaceres": {
+      "jugadores": {
+        "Baraglia Felipe": {
+          "goles": 1
+        },
+        "Pereyra Thiago": {
+          "goles": 2
+        },
+        "Baldini Santino": {
+          "goles": 2
+        },
+        "La Rosa Valentin": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha07_hernandez": {
+      "jugadores": {
+        "Baldini Santino": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "La Rosa Valentin": {
+          "goles": 1
+        }
+      }
+    }
+  },
+  "cat16": {
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "Feli": {
+          "goles": 1
+        },
+        "Ramiro": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha03_catella": {
+      "jugadores": {
+        "Benja": {
+          "goles": 1
+        },
+        "William": {
+          "goles": 1
+        },
+        "Ramiro": {
+          "goles": 1
+        },
+        "Camilo": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Santi": {
+          "goles": 2
+        },
+        "Faustino": {
+          "goles": 1
+        },
+        "Camilo": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha04_crisfa_v": {
+      "jugadores": {
+        "Mateo": {
+          "goles": 1
+        }
+      }
+    }
+  },
+  "cat2017": {
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Recio Bautista": {
+          "goles": 1
+        },
+        "Fermin": {
+          "goles": 2
+        },
+        "Aurichio Kuki": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha03_catella": {
+      "jugadores": {
+        "Fermin": {
+          "goles": 2
+        },
+        "Carmelo": {
+          "goles": 1
+        },
+        "Simon": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha06_cambaceres": {
+      "jugadores": {
+        "Lorenzo": {
+          "goles": 1
+        },
+        "Simon": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha05_capchica": {
+      "jugadores": {
+        "Guarda Genaro": {
+          "goles": 2
+        }
+      }
+    },
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "Carmelo": {
+          "goles": 1
+        },
+        "Pedro": {
+          "goles": 1
+        },
+        "Simon": {
+          "goles": 1
+        },
+        "Aurichio Kuki": {
+          "goles": 3
+        }
+      }
+    },
+    "fecha07_hernandez": {
+      "jugadores": {
+        "Carmelo": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha04_crisfa_v": {
+      "jugadores": {
+        "Simon": {
+          "goles": 1
+        }
+      }
+    }
+  },
+  "cat2018": {
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "Bautista F": {
+          "goles": 1
+        },
+        "Felipe P": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Bautista F": {
+          "goles": 1
+        },
+        "Lautaro": {
+          "goles": 2
+        },
+        "Felipe P": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha04_crisfa_v": {
+      "jugadores": {
+        "Bautista F": {
+          "goles": 3
+        },
+        "Lautaro": {
+          "goles": 1
+        },
+        "Felipe P": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha06_cambaceres": {
+      "jugadores": {
+        "Bautista F": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha05_capchica": {
+      "jugadores": {
+        "Lautaro": {
+          "goles": 1
+        },
+        "Ciro T": {
+          "goles": 1
+        },
+        "Felipe P": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha03_catella": {
+      "jugadores": {
+        "Simon": {
+          "goles": 1
+        }
+      }
+    }
+  },
+  "cat2019": {
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "Pochettino Vico": {
+          "goles": 1
+        },
+        "Lopez Machado Milo": {
+          "goles": 1
+        },
+        "Loredo Camilo": {
+          "goles": 1
+        },
+        "Lucca": {
+          "goles": 2
+        },
+        "Chiarlo Manuel": {
+          "goles": 1
+        },
+        "Cardoso Felipe": {
+          "goles": 3
+        }
+      }
+    },
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Pochettino Vico": {
+          "goles": 1
+        },
+        "Chiarlo Manuel": {
+          "goles": 2
+        }
+      }
+    },
+    "fecha05_capchica": {
+      "jugadores": {
+        "Pochettino Vico": {
+          "goles": 1
+        },
+        "Lopez Machado Milo": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha06_cambaceres": {
+      "jugadores": {
+        "Pochettino Vico": {
+          "goles": 1
+        },
+        "Ranieri Gino": {
+          "goles": 2
+        },
+        "Etchepare Juan Pedro": {
+          "goles": 2
+        }
+      }
+    },
+    "fecha04_crisfa_v": {
+      "jugadores": {
+        "Lopez Machado Milo": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha03_catella": {
+      "jugadores": {
+        "Cardoso Felipe": {
+          "goles": 1
+        }
+      }
+    }
+  },
+  "cat2020": {
+    "fecha01_la_plata_v": {
+      "jugadores": {
+        "Campanaro Lucca": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha02_defsan_lorenzo": {
+      "jugadores": {
+        "Campanaro Lucca": {
+          "goles": 2
+        }
+      }
+    },
+    "fecha04_crisfa_v": {
+      "jugadores": {
+        "Campanaro Lucca": {
+          "goles": 1
+        },
+        "Miron Amaro": {
+          "goles": 1
+        }
+      }
+    },
+    "fecha05_capchica": {
+      "jugadores": {
+        "Campanaro Lucca": {
+          "goles": 2
+        }
+      }
+    },
+    "fecha07_hernandez": {
+      "jugadores": {
+        "Campanaro Lucca": {
+          "goles": 4
+        },
+        "Miron Amaro": {
+          "goles": 1
+        }
+      }
+    }
+  }
+};
+
+function log(msg, cls){
+  const d = document.getElementById('log');
+  d.innerHTML += '<div'+(cls?' class="'+cls+'"':'')+'>'+msg+'</div>';
+  d.scrollTop = d.scrollHeight;
+}
+
+window.subirStats = async function(){
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  btn.textContent = 'Subiendo...';
+  const user = auth.currentUser;
+  if(!user){ log('Sin sesión activa.','err'); btn.disabled=false; return; }
+  log('Sesión: '+user.email,'info');
+  let ok=0, errCount=0;
+  for(const [catKey, partidos] of Object.entries(STATS)){
+    for(const [matchKey, data] of Object.entries(partidos)){
+      const path = 'clubs/sagrado-corazon/'+catKey+'/stats/'+matchKey;
+      try{
+        await set(ref(db, path), data);
+        const total = Object.values(data.jugadores||{}).reduce((s,j)=>s+(j.goles||0),0);
+        log('✓ '+catKey+' / '+matchKey+' — '+total+' goles','ok');
+        ok++;
+      } catch(e){
+        log('✗ '+catKey+'/'+matchKey+': '+e.message,'err');
+        errCount++;
+      }
+    }
+  }
+  log('');
+  log(errCount===0 ? 'Listo — '+ok+' partidos subidos.' : ok+' OK, '+errCount+' errores.', errCount>0?'err':'ok');
+  btn.textContent = errCount===0 ? '✅ Completado' : 'Reintentar';
+  if(errCount>0) btn.disabled=false;
+};
+
+onAuthStateChanged(auth, user=>{
+  if(user) log('Listo. Sesión: '+user.email,'ok');
+  else log('Sin sesión. Logueate en app.miplantel.com.ar primero.','err');
+});
+</script>
+</body>
+</html>
