@@ -1281,6 +1281,7 @@ markedCit={};
 markedReasons={};
 selHistMonth=null;
 selStatsMonth=null;
+_histCache=null;
 activeTab='tomar';
 currentFecha=null;
 selectedCamisetero=null;
@@ -2674,9 +2675,32 @@ function _ppResultData(key){
   return null;
 }
 
-function renderPosPartido(){
+// Cache de históricos de Firebase
+let _histCache = null;
+
+async function _loadHistoricos(){
+  if(_histCache !== null) return _histCache;
+  try{
+    const catKey = DB_PREFIX.split('/').pop();
+    const snap = await get(ref(db, DB_PREFIX+'/goleadores_historicos'));
+    if(snap.exists()){
+      _histCache = {};
+      snap.forEach(child => {
+        const d = child.val();
+        if(d.nombre && d.anios) _histCache[d.nombre] = d.anios;
+      });
+    } else { _histCache = {}; }
+  } catch(e){ _histCache = {}; }
+  return _histCache;
+}
+
+async function renderPosPartido(){
   const el=document.getElementById('pospartido-content');
   if(!el) return;
+  el.innerHTML='<div style="padding:32px;text-align:center;"><div class="spinner" style="margin:0 auto;"></div></div>';
+
+  const hist = await _loadHistoricos();
+
   const partidos=Object.entries(citaciones)
     .filter(([,m])=>m.citados&&m.citados.length>0&&m.fecha)
     .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
@@ -2686,7 +2710,7 @@ function renderPosPartido(){
     return;
   }
 
-  // Tabla acumulada
+  // Tabla acumulada 2026
   const golesAcum={}, tarAcum={};
   let enContraTotal=0;
   partidos.forEach(([key])=>{
@@ -2765,43 +2789,52 @@ function renderPosPartido(){
     h+=`</div>`;
   });
 
-  // Tabla de goleadores
-  const goleadores=Object.entries(golesAcum).sort((a,b)=>b[1]-a[1]).filter(([,g])=>g>0);
+  // Tabla de goleadores con histórico por año
+  const AÑOS_HIST = ['2022','2023','2024','2025'];
+  // Unir jugadores de 2026 y de histórico
+  const todosJug = new Set([...Object.keys(golesAcum), ...Object.keys(hist)]);
+  const goleadores = [...todosJug].map(nombre => {
+    const g2026 = golesAcum[nombre]||0;
+    const histAnios = hist[nombre]||{};
+    const histTotal = Object.values(histAnios).reduce((a,b)=>a+b,0);
+    return {nombre, g2026, histAnios, histTotal, total: g2026+histTotal};
+  }).filter(j=>j.total>0).sort((a,b)=>b.total-a.total);
+
   if(goleadores.length>0||enContraTotal>0){
-    h+=`<div class="stitle" style="margin-top:16px;">Goleadores 2026</div>`;
-    h+=`<table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+    h+=`<div class="stitle" style="margin-top:16px;">Goleadores</div>`;
+    const thStyle=`color:var(--muted);font-size:.55rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 4px;border-bottom:1px solid var(--border);text-align:center;`;
+    h+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:.75rem;">
       <thead><tr>
-        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:center;width:22px;">#</th>
-        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:left;">Jugador</th>
-        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:center;">Goles</th>
-        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:center;">Tar.</th>
+        <th style="${thStyle}width:18px;">#</th>
+        <th style="${thStyle}text-align:left;">Jugador</th>
+        <th style="${thStyle}">2026</th>
+        ${AÑOS_HIST.map(y=>`<th style="${thStyle}">${y}</th>`).join('')}
+        <th style="${thStyle}color:#22cd78;">Total</th>
       </tr></thead><tbody>`;
 
     const posCol=['','#c8800a','#778899','#a0622b'];
-    goleadores.forEach(([nombre,goles],i)=>{
+    goleadores.forEach((j,i)=>{
       const pos=i+1;
       const col=posCol[pos]||'var(--muted)';
-      const tar=tarAcum[nombre]||{a:0,r:0};
-      const tarHtml=(tar.a||tar.r)
-        ?`${tar.a?`<span style="display:inline-block;width:10px;height:14px;background:#e8b400;border-radius:1.5px;vertical-align:middle;"></span><span style="font-size:.68rem;color:var(--muted);margin-left:1px;">${tar.a}</span> `:''}${tar.r?`<span style="display:inline-block;width:10px;height:14px;background:#d83030;border-radius:1.5px;vertical-align:middle;"></span><span style="font-size:.68rem;color:var(--muted);margin-left:1px;">${tar.r}</span>`:''}`
-        :'—';
+      const tar=tarAcum[j.nombre]||{a:0,r:0};
+      const tarStr=(tar.a||tar.r)?` <span style="font-size:.6rem;color:var(--muted);">${tar.a?'A'+tar.a:''}${tar.r?' R'+tar.r:''}</span>`:'';
       h+=`<tr>
-        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-weight:700;color:${col};">${pos}</td>
-        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);font-weight:500;">${nombre}</td>
-        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;">${goles}</span></td>
-        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;">${tarHtml}</td>
+        <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-weight:700;color:${col};">${pos}</td>
+        <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);font-weight:500;white-space:nowrap;">${j.nombre}${tarStr}</td>
+        <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;">${j.g2026||'—'}</span></td>
+        ${AÑOS_HIST.map(y=>`<td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-size:.75rem;color:var(--muted);">${j.histAnios[y]||'—'}</td>`).join('')}
+        <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:#22cd78;">${j.total}</span></td>
       </tr>`;
     });
 
     if(enContraTotal>0){
       h+=`<tr>
-        <td style="padding:7px 5px;text-align:center;color:var(--muted);">—</td>
-        <td style="padding:7px 5px;font-size:.75rem;color:var(--muted);">En contra</td>
-        <td style="padding:7px 5px;text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--red);">${enContraTotal}</span></td>
-        <td style="padding:7px 5px;">—</td>
+        <td style="padding:6px 4px;text-align:center;color:var(--muted);">—</td>
+        <td style="padding:6px 4px;font-size:.72rem;color:var(--muted);" colspan="${2+AÑOS_HIST.length}">En contra (2026)</td>
+        <td style="padding:6px 4px;text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--red);">${enContraTotal}</span></td>
       </tr>`;
     }
-    h+=`</tbody></table>`;
+    h+=`</tbody></table></div>`;
   }
 
   el.innerHTML=h;
