@@ -2709,6 +2709,13 @@ async function renderPosPartido(){
     return;
   }
 
+  // Cargar stats 2026 desde Firebase para todos los partidos que no estén en cache
+  await Promise.all(partidos.map(async ([key])=>{
+    if(_ppCache[key]===undefined){
+      _ppCache[key] = await _ppGetStats(key);
+    }
+  }));
+
   // Tabla acumulada 2026
   const golesAcum={}, tarAcum={};
   let enContraTotal=0;
@@ -2789,7 +2796,7 @@ async function renderPosPartido(){
   });
 
   // Tabla de goleadores con histórico por año
-  const AÑOS_HIST = ['2022','2023','2024','2025'];
+  const AÑOS_HIST = ['2025','2024','2023','2022'];
   // Unir jugadores de 2026 y de histórico
   const todosJug = new Set([...Object.keys(golesAcum), ...Object.keys(hist)]);
   const goleadores = [...todosJug].map(nombre => {
