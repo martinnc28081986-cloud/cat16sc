@@ -195,8 +195,13 @@
   .logout-btn { background:transparent; border:1px solid #333; color:#666; font-size:0.65rem; padding:4px 9px; border-radius:6px; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:600; margin-left:8px; transition:all 0.15s; }
   .logout-btn:hover { border-color:var(--red); color:var(--red); }
 
-  .loading-screen { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:9999; }
-  .loading-logo { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:4px; color:var(--green); }
+  .loading-screen { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; z-index:9999; }
+  .loading-logo { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:5px; color:var(--text); margin-bottom:6px; }
+  .loading-accent { width:32px; height:3px; background:var(--green); border-radius:2px; margin-bottom:18px; }
+  .loading-sub { font-size:0.6rem; color:var(--green); letter-spacing:3px; text-transform:uppercase; margin-bottom:24px; }
+  .loading-bar { width:80px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .loading-bar-fill { width:40%; height:100%; background:var(--green); border-radius:2px; animation:barslide 1.2s ease-in-out infinite; }
+  @keyframes barslide { 0%{transform:translateX(-100%);} 100%{transform:translateX(250%);} }
   .spinner { width:30px; height:30px; border:3px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
 
@@ -369,9 +374,10 @@
 
 
 <div class="loading-screen" id="loadingScreen">
-  <div class="loading-logo">&#9917; MI PLANTEL</div>
-  <div style="font-size:0.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase">LISFI II Zona B 2026</div>
-  <div class="spinner"></div>
+  <div class="loading-logo">MI PLANTEL</div>
+  <div class="loading-accent"></div>
+  <div class="loading-sub">El fútbol empieza acá</div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
 </div>
 
 <header>
@@ -404,6 +410,7 @@
     <div class="tab" onclick="switchTab('cit-stats')">Hist. Cit.</div>
     <div class="tab" onclick="switchTab('citaciones')">Citaciones</div>
     <div class="tab" onclick="switchTab('formacion')">Formación</div>
+    <div class="tab" onclick="switchTab('pospartido')">Pos partido</div>
   </div>
   <div class="tab-section-label tsl-plantel" id="subtabLabelPlantel" style="display:none"><span class="tgl-dot tgl-dot-plantel"></span>Plantel</div>
   <div class="tabs tabs-plantel" id="subtabsPlantel" style="display:none">
@@ -522,6 +529,8 @@
 </div>
 
 <!-- TAB 7 — FORMACION -->
+<div id="view-pospartido" class="view"><div id="pospartido-content" style="padding:12px 14px 80px;"></div></div>
+
 <div id="view-formacion" class="view">
   <div id="formacion-no-cit" class="empty-msg" style="display:none">Sin jugadores en el plantel</div>
   <div id="formacion-main" style="display:none">
@@ -2085,7 +2094,7 @@ window.switchSection=function(sec){
 window.switchTab=function(tab){
   activeTab=tab;
   const tabsEnt=['tomar','historial','stats'];
-  const tabsPar=['tablas','cit-stats','citaciones','formacion'];
+  const tabsPar=['tablas','cit-stats','citaciones','formacion','pospartido'];
   const tabsPlantel=['plantel'];
   const isEnt=tabsEnt.includes(tab);
   const isPlantel=tabsPlantel.includes(tab);
@@ -2103,6 +2112,7 @@ window.switchTab=function(tab){
     window._activeFechaCache = null; // forzar recarga desde Firebase
     renderFormacion();
   }
+  if(tab==='pospartido') renderPosPartido();
   if(tab==='plantel') renderPlantel();
 };
 
@@ -2628,6 +2638,228 @@ window.shareFormacion = function(){
     },'image/png');
   };
   img.src=url;
+};
+
+
+// ══════════════════════════════════════════════════════════
+// POS PARTIDO — goles, tarjetas y tabla de goleadores
+// ══════════════════════════════════════════════════════════
+
+async function _ppGetStats(key){
+  try{ const s=await get(ref(db,DB_PREFIX+'/stats/'+key)); return s.exists()?s.val():{}; }
+  catch(e){ return {}; }
+}
+async function _ppSaveStats(key,stats){
+  await set(ref(db,DB_PREFIX+'/stats/'+key),stats);
+}
+
+const _ppCache={};
+let _ppEditKey=null, _ppEditStats={};
+
+function _ppResultData(key){
+  const cit=citaciones[key]; if(!cit) return null;
+  const map={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+  const catNum=map[DB_PREFIX.split('/').pop()]||16;
+  const scRes=(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[];
+  const m=scRes.find(r=>Number(r.fecha)===Number(cit.fecha));
+  if(m){
+    const res=m.gf>m.gc?'V':m.gf<m.gc?'L':'E';
+    const col=res==='V'?'#22cd78':res==='L'?'var(--red)':'var(--yellow)';
+    return{score:m.gf+'-'+m.gc,res,col};
+  }
+  if(cit.score&&cit.result){
+    const col=cit.result==='V'?'#22cd78':cit.result==='L'?'var(--red)':'var(--yellow)';
+    return{score:cit.score,res:cit.result,col};
+  }
+  return null;
+}
+
+function renderPosPartido(){
+  const el=document.getElementById('pospartido-content');
+  if(!el) return;
+  const partidos=Object.entries(citaciones)
+    .filter(([,m])=>m.citados&&m.citados.length>0&&m.fecha)
+    .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
+
+  if(!partidos.length){
+    el.innerHTML='<div class="empty-msg">Sin partidos citados aún</div>';
+    return;
+  }
+
+  // Tabla acumulada
+  const golesAcum={}, tarAcum={};
+  let enContraTotal=0;
+  partidos.forEach(([key])=>{
+    const st=_ppCache[key]; if(!st||!st.jugadores) return;
+    Object.entries(st.jugadores).forEach(([n,d])=>{
+      golesAcum[n]=(golesAcum[n]||0)+(d.goles||0);
+      if(!tarAcum[n]) tarAcum[n]={a:0,r:0};
+      tarAcum[n].a+=(d.amarilla||0); tarAcum[n].r+=(d.roja||0);
+    });
+    enContraTotal+=(st.enContra||0);
+  });
+
+  let h=`<div class="stitle">Partidos</div>`;
+
+  partidos.forEach(([key,m])=>{
+    const rd=_ppResultData(key);
+    const condCls=m.condicion==='L'?'fb-local':'fb-visit';
+    const condLbl=m.condicion==='L'?'Local':'Visita';
+    const st=_ppCache[key];
+    const cargado=st&&st.jugadores&&Object.keys(st.jugadores).length>0;
+    const isEdit=_ppEditKey===key;
+    const scoreHtml=rd?`<span style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;letter-spacing:2px;color:${rd.col};">${rd.score}</span>`:'';
+    const badgeHtml=cargado
+      ?`<span style="font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(34,205,120,.12);color:#22cd78;border:1px solid rgba(34,205,120,.3);">&#10003; Cargado</span>`
+      :`<span style="font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(255,171,64,.12);color:var(--yellow);border:1px solid rgba(255,171,64,.3);">Cargar &#9660;</span>`;
+
+    h+=`<div class="card" style="margin-bottom:8px;">`;
+    h+=`<div class="ctop pp-toggle" data-key="${key}" style="cursor:pointer;">
+      <div>
+        <div style="font-family:Bebas Neue,sans-serif;font-size:.8rem;letter-spacing:1px;color:var(--muted);">F${m.fecha||'?'} &middot; ${_fmtRival(m.rival)}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+          <span class="fixture-badge ${condCls}" style="font-size:.6rem;">${condLbl}</span>
+          ${scoreHtml}
+        </div>
+      </div>
+      ${badgeHtml}
+    </div>`;
+
+    if(isEdit){
+      h+=`<div style="border-top:1px solid var(--border);padding:10px 0 4px;">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;">${(m.citados||[]).length} citados</div>`;
+
+      (m.citados||[]).forEach(nombre=>{
+        const st2=(_ppEditStats.jugadores||{})[nombre]||{};
+        const g=st2.goles||0;
+        const am=st2.amarilla||0;
+        const ro=st2.roja||0;
+        const enc=nombre.replace(/&/g,'&amp;');
+        h+=`<div class="prow" style="margin-bottom:5px;">
+          <div style="font-weight:500;font-size:.85rem;flex:1;">${nombre}</div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <button data-pp-menos="${enc}" style="width:26px;height:26px;border-radius:50%;border:1px solid ${g>0?'var(--red)':'var(--border)'};background:transparent;color:${g>0?'var(--red)':'var(--text)'};font-size:1rem;cursor:pointer;line-height:1;">&#8722;</button>
+            <span style="width:16px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:1.1rem;">${g}</span>
+            <button data-pp-mas="${enc}" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green);color:#000;font-size:1rem;cursor:pointer;font-weight:700;line-height:1;">+</button>
+          </div>
+          <div style="display:flex;gap:4px;margin-left:4px;">
+            <button data-pp-card-a="${enc}" style="width:19px;height:25px;border-radius:3px;font-size:.7rem;font-weight:700;border:1px solid ${am?'#c8980a':'var(--border)'};background:${am?'#e8b400':'transparent'};color:${am?'#3a2800':'var(--muted)'};cursor:pointer;">A</button>
+            <button data-pp-card-r="${enc}" style="width:19px;height:25px;border-radius:3px;font-size:.7rem;font-weight:700;border:1px solid ${ro?'#9a1a1a':'var(--border)'};background:${ro?'#d83030':'transparent'};color:${ro?'#fff':'var(--muted)'};cursor:pointer;">R</button>
+          </div>
+        </div>`;
+      });
+
+      const ec=_ppEditStats.enContra||0;
+      h+=`<div style="margin-bottom:6px;padding:8px 11px;background:var(--bg);border:1px dashed var(--border);border-radius:9px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:.85rem;color:var(--muted);flex:1;">En contra</span>
+        <div style="display:flex;align-items:center;gap:5px;">
+          <button data-pp-ec-menos="1" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text);font-size:1rem;cursor:pointer;line-height:1;">&#8722;</button>
+          <span style="width:16px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:1.1rem;color:var(--red);">${ec}</span>
+          <button data-pp-ec-mas="1" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green);color:#000;font-size:1rem;cursor:pointer;font-weight:700;line-height:1;">+</button>
+        </div>
+      </div>`;
+
+      h+=`<button data-pp-guardar="1" style="width:100%;padding:9px;border-radius:8px;border:none;background:var(--yellow);color:#000;font-family:DM Sans,sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;margin-top:6px;">Guardar estadísticas</button>`;
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  });
+
+  // Tabla de goleadores
+  const goleadores=Object.entries(golesAcum).sort((a,b)=>b[1]-a[1]).filter(([,g])=>g>0);
+  if(goleadores.length>0||enContraTotal>0){
+    h+=`<div class="stitle" style="margin-top:16px;">Goleadores 2026</div>`;
+    h+=`<table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+      <thead><tr>
+        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:center;width:22px;">#</th>
+        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:left;">Jugador</th>
+        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:center;">Goles</th>
+        <th style="color:var(--muted);font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 5px;border-bottom:1px solid var(--border);text-align:center;">Tar.</th>
+      </tr></thead><tbody>`;
+
+    const posCol=['','#c8800a','#778899','#a0622b'];
+    goleadores.forEach(([nombre,goles],i)=>{
+      const pos=i+1;
+      const col=posCol[pos]||'var(--muted)';
+      const tar=tarAcum[nombre]||{a:0,r:0};
+      const tarHtml=(tar.a||tar.r)
+        ?`${tar.a?`<span style="display:inline-block;width:10px;height:14px;background:#e8b400;border-radius:1.5px;vertical-align:middle;"></span><span style="font-size:.68rem;color:var(--muted);margin-left:1px;">${tar.a}</span> `:''}${tar.r?`<span style="display:inline-block;width:10px;height:14px;background:#d83030;border-radius:1.5px;vertical-align:middle;"></span><span style="font-size:.68rem;color:var(--muted);margin-left:1px;">${tar.r}</span>`:''}`
+        :'—';
+      h+=`<tr>
+        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-weight:700;color:${col};">${pos}</td>
+        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);font-weight:500;">${nombre}</td>
+        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;">${goles}</span></td>
+        <td style="padding:7px 5px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;">${tarHtml}</td>
+      </tr>`;
+    });
+
+    if(enContraTotal>0){
+      h+=`<tr>
+        <td style="padding:7px 5px;text-align:center;color:var(--muted);">—</td>
+        <td style="padding:7px 5px;font-size:.75rem;color:var(--muted);">En contra</td>
+        <td style="padding:7px 5px;text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1.05rem;color:var(--red);">${enContraTotal}</span></td>
+        <td style="padding:7px 5px;">—</td>
+      </tr>`;
+    }
+    h+=`</tbody></table>`;
+  }
+
+  el.innerHTML=h;
+
+  // Bind toggle de partidos
+  el.querySelectorAll('.pp-toggle').forEach(btn=>{
+    btn.addEventListener('click',function(){ window._ppToggle(this.dataset.key); });
+  });
+}
+
+window._ppToggle=async function(key){
+  if(_ppEditKey===key){ _ppEditKey=null; _ppEditStats={}; }
+  else{
+    _ppEditKey=key;
+    const existing=await _ppGetStats(key);
+    _ppCache[key]=existing;
+    _ppEditStats=JSON.parse(JSON.stringify(existing));
+    if(!_ppEditStats.jugadores) _ppEditStats.jugadores={};
+  }
+  renderPosPartido();
+};
+
+// Event delegation para botones del panel
+document.addEventListener('click',function(e){
+  const t=e.target;
+  if(t.dataset.ppMas){ _ppAdjust(t.dataset.ppMas,1); return; }
+  if(t.dataset.ppMenos){ _ppAdjust(t.dataset.ppMenos,-1); return; }
+  if(t.dataset.ppCardA){ _ppToggleCard(t.dataset.ppCardA,'amarilla'); return; }
+  if(t.dataset.ppCardR){ _ppToggleCard(t.dataset.ppCardR,'roja'); return; }
+  if(t.dataset.ppEcMas){ _ppEditStats.enContra=(_ppEditStats.enContra||0)+1; renderPosPartido(); return; }
+  if(t.dataset.ppEcMenos){ _ppEditStats.enContra=Math.max(0,(_ppEditStats.enContra||0)-1); renderPosPartido(); return; }
+  if(t.dataset.ppGuardar){ window._ppGuardar(); return; }
+});
+
+function _ppAdjust(nombre,delta){
+  if(!_ppEditStats.jugadores) _ppEditStats.jugadores={};
+  if(!_ppEditStats.jugadores[nombre]) _ppEditStats.jugadores[nombre]={};
+  const g=(_ppEditStats.jugadores[nombre].goles||0)+delta;
+  _ppEditStats.jugadores[nombre].goles=Math.max(0,g);
+  renderPosPartido();
+}
+
+function _ppToggleCard(nombre,tipo){
+  if(!_ppEditStats.jugadores) _ppEditStats.jugadores={};
+  if(!_ppEditStats.jugadores[nombre]) _ppEditStats.jugadores[nombre]={};
+  _ppEditStats.jugadores[nombre][tipo]=_ppEditStats.jugadores[nombre][tipo]?0:1;
+  renderPosPartido();
+}
+
+window._ppGuardar=async function(){
+  if(!_ppEditKey) return;
+  try{
+    await _ppSaveStats(_ppEditKey,_ppEditStats);
+    _ppCache[_ppEditKey]=JSON.parse(JSON.stringify(_ppEditStats));
+    _ppEditKey=null; _ppEditStats={};
+    showToast('&#10003; Estadísticas guardadas');
+    renderPosPartido();
+  }catch(e){ showToast('Error al guardar'); }
 };
 
 // INIT
