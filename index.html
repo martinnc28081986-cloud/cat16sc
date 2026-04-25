@@ -53,8 +53,8 @@
   .tgl-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; background:#4a9eff; }
   .tgl-dot-par { background:var(--yellow); }
   .tgl-dot-plantel { background:#22cd78; }
-  .tabs { display:flex; overflow-x:auto; padding:0 6px 6px; gap:4px; }
-  .tab { flex-shrink:0; padding:5px 10px; border-radius:20px; font-size:0.68rem; font-weight:600; letter-spacing:0.3px; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; transition:all 0.2s; white-space:nowrap; }
+  .tabs { display:flex; overflow-x:auto; padding:0 6px 6px; gap:3px; justify-content:center; }
+  .tab { flex-shrink:0; padding:5px 8px; border-radius:20px; font-size:0.62rem; font-weight:600; letter-spacing:0.1px; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; transition:all 0.2s; white-space:nowrap; }
   .tab.ag { color:#4a9eff; background:rgba(74,158,255,0.12); border-color:rgba(74,158,255,0.3); }
   .tab.ay { color:var(--yellow); background:rgba(255,171,64,0.12); border-color:rgba(255,171,64,0.3); }
   .tab.agg { color:#22cd78; background:rgba(34,205,120,0.12); border-color:rgba(34,205,120,0.3); }
@@ -405,9 +405,9 @@
     <div class="tab" onclick="switchTab('stats')">Estadísticas</div>
   </div>
   <div class="tab-section-label tsl-par" id="subtabLabelPar" style="display:none"><span class="tgl-dot tgl-dot-par"></span>Partido</div>
-  <div class="tabs tabs-par" id="subtabsPar" style="display:none">
+  <div class="tabs-par-grid" id="subtabsPar" style="display:none">
     <div class="tab" onclick="switchTab('tablas')">Tablas</div>
-    <div class="tab" onclick="switchTab('cit-stats')">Hist. Cit.</div>
+    <div class="tab" onclick="switchTab('cit-stats')">Historial</div>
     <div class="tab" onclick="switchTab('citaciones')">Citaciones</div>
     <div class="tab" onclick="switchTab('formacion')">Formación</div>
     <div class="tab" onclick="switchTab('pospartido')">Pos partido</div>
@@ -2078,7 +2078,7 @@ window.switchSection=function(sec){
   document.getElementById('bnav-plantel').className='bnav-item'+(isPlantel?' active-g':'');
   // Para escuelita: re-ocultar tablas y formacion si aparecen
   if(window._isEscuelita && isPar){
-    document.querySelectorAll('.tabs-par .tab').forEach(t=>{
+    document.querySelectorAll('.tabs-par-grid .tab-icon-btn').forEach(t=>{
       const oc=t.getAttribute('onclick')||'';
       if(oc.includes('tablas')||oc.includes('formacion')) t.style.display='none';
     });
@@ -2099,7 +2099,7 @@ window.switchTab=function(tab){
   const isEnt=tabsEnt.includes(tab);
   const isPlantel=tabsPlantel.includes(tab);
   document.querySelectorAll('.tabs-ent .tab').forEach((t,i)=>{ t.className='tab'+(tabsEnt[i]===tab?' ag':''); });
-  document.querySelectorAll('.tabs-par .tab').forEach((t,i)=>{ t.className='tab'+(tabsPar[i]===tab?' ay':''); });
+  document.querySelectorAll('.tabs-par-grid .tab-icon-btn').forEach((t,i)=>{ t.className='tab-icon-btn'+(tabsPar[i]===tab?' ay':''); });
   document.querySelectorAll('.tabs-plantel .tab').forEach((t,i)=>{ t.className='tab'+(tabsPlantel[i]===tab?' agg':''); });
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+tab).classList.add('active');
