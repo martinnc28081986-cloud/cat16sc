@@ -2646,8 +2646,8 @@ window.shareFormacion = function(){
 // ══════════════════════════════════════════════════════════
 
 async function _ppGetStats(key){
-  try{ const s=await get(ref(db,DB_PREFIX+'/stats/'+key)); return s.exists()?s.val():{}; }
-  catch(e){ return {}; }
+  try{ const s=await get(ref(db,DB_PREFIX+'/stats/'+key)); return s.exists()?s.val():null; }
+  catch(e){ return null; }
 }
 async function _ppSaveStats(key,stats){
   await set(ref(db,DB_PREFIX+'/stats/'+key),stats);
@@ -2901,6 +2901,17 @@ window._ppGuardar=async function(){
   }catch(e){ showToast('Error al guardar'); }
 };
 
+
+window.markAll = function(type, val){
+  if(type==='att'){
+    PLAYERS.forEach(p=>{ markedAtt[p]=val; });
+    renderAtt();
+  } else if(type==='cit'){
+    PLAYERS.forEach(p=>{ markedCit[p]=val; });
+    renderCitList();
+    updateCitCountBar();
+  }
+};
 // INIT
 loadClubConfig().then(()=> loadPlayersFromDB()).then(()=>{ loadAttMarks(today()); renderAtt(); renderNextMatch(); });
 
