@@ -2869,7 +2869,7 @@ window._ppToggle=async function(key){
     _ppEditStats=JSON.parse(JSON.stringify(existing));
     if(!_ppEditStats.jugadores) _ppEditStats.jugadores={};
   }
-  renderPosPartido();
+  await renderPosPartido();
 };
 
 // Event delegation para botones del panel
@@ -2906,7 +2906,7 @@ window._ppGuardar=async function(){
     _ppCache[_ppEditKey]=JSON.parse(JSON.stringify(_ppEditStats));
     _ppEditKey=null; _ppEditStats={};
     showToast('&#10003; Estadísticas guardadas');
-    renderPosPartido();
+    await renderPosPartido();
   }catch(e){ showToast('Error al guardar'); }
 };
 
