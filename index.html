@@ -600,6 +600,18 @@
 
 <!-- SUPER ADMIN -->
 <div id="superadmin-app" style="display:none">
+
+<!-- MODAL NUEVO CLUB -->
+<div id="saClubModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;overflow-y:auto;padding:16px;">
+  <div style="background:#07186b;border:1px solid #1e3ab0;border-radius:14px;max-width:480px;margin:0 auto;">
+    <div style="background:#0d2280;border-bottom:1px solid #1e3ab0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:14px 14px 0 0;">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5;" id="saModalTitle">Nuevo Club</div>
+      <button onclick="window.saCloseModal()" style="background:transparent;border:none;color:#7a9ccc;font-size:1.2rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:16px;" id="saModalBody">
+    </div>
+  </div>
+</div>
   <div class="coord-tabs" id="saTabsEl">
     <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:18px;line-height:1">🏟️</span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:#4d73f5;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('facturacion')"><span style="font-size:18px;line-height:1">💳</span>Facturación<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
@@ -3674,22 +3686,304 @@ window.saEntrarComo = function(cat, clubId){
 };
 
 window.saAltaClub = function(){
-  const nombre = prompt('Nombre del club:');
-  if(!nombre) return;
-  const ciudad = prompt('Ciudad:') || '';
-  const clubId = nombre.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  const trialEnd = Date.now() + (30*24*60*60*1000);
-  set(ref(db, 'clubs/'+clubId), {
-    nombre, ciudad,
-    plan: 'trial',
-    trialStart: Date.now(),
-    trialEnd,
-    createdAt: Date.now()
-  }).then(()=>{
-    alert('Club creado. Trial de 30 días activado.');
-    renderSATab('clubes');
-  }).catch(e=>alert('Error: '+e.message));
+  window._saModal = { step: 1, clubId: null, isNew: false, nombre: '', cats: [], usuarios: {} };
+  document.getElementById('saClubModal').style.display = 'block';
+  window.saRenderStep(1);
 };
+
+window.saCloseModal = function(){
+  document.getElementById('saClubModal').style.display = 'none';
+};
+
+window.saRenderStep = async function(step){
+  window._saModal.step = step;
+  const body = document.getElementById('saModalBody');
+  const title = document.getElementById('saModalTitle');
+
+  // ── STEPPER ──
+  const stepperHtml = function(cur){
+    const steps = ['Club','Categorías','Usuarios'];
+    let h = '<div style="display:flex;align-items:center;gap:0;margin-bottom:20px;">';
+    steps.forEach(function(lbl, i){
+      const n = i+1;
+      const done = n < cur;
+      const active = n === cur;
+      const dotStyle = done
+        ? 'background:#22cd78;border-color:#22cd78;color:#000;'
+        : active
+          ? 'background:#4d73f5;border-color:#4d73f5;color:#fff;'
+          : 'background:#0d2280;border-color:#1e3ab0;color:#7a9ccc;';
+      const lblStyle = active ? 'color:#4d73f5;' : 'color:#7a9ccc;';
+      h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;">';
+      h += '<div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;border:2px solid;'+dotStyle+'">'+(done?'✓':n)+'</div>';
+      h += '<div style="font-size:.52rem;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;'+lblStyle+'">'+lbl+'</div>';
+      h += '</div>';
+      if(i < steps.length-1){
+        const lineColor = done ? '#22cd78' : '#1e3ab0';
+        h += '<div style="flex:1;height:1px;background:'+lineColor+';margin-bottom:18px;"></div>';
+      }
+    });
+    h += '</div>';
+    return h;
+  };
+
+  if(step === 1){
+    title.textContent = 'Nuevo Club';
+    // Cargar clubs existentes desde Firebase
+    let clubsOpts = '<option value="__nuevo__">+ Crear club nuevo</option>';
+    try {
+      const snap = await get(ref(db, 'clubs'));
+      if(snap.exists()){
+        snap.forEach(function(child){
+          const d = child.val();
+          const nombre = d.nombre || child.key;
+          clubsOpts += '<option value="'+child.key+'">'+nombre+'</option>';
+        });
+      }
+    } catch(e){ console.log('Error cargando clubs:', e); }
+
+    body.innerHTML = stepperHtml(1) + `
+      <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">Seleccioná o creá un club</label>
+      <select id="saClubSelect" onchange="window.saOnClubSelect()" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;margin-bottom:14px;">
+        ${clubsOpts}
+      </select>
+      <div id="saNewClubFields" style="display:none;">
+        <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">Nombre del club</label>
+        <input id="saClubNombre" oninput="window.saGenId()" placeholder="Ej: Club Atlético San Martín" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:10px;">
+        <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">ID del club</label>
+        <div id="saClubIdPreview" style="width:100%;background:#0d2280;border:1px solid rgba(77,115,245,.3);border-radius:8px;padding:7px 12px;color:#4d73f5;font-size:.78rem;font-family:DM Sans,sans-serif;margin-bottom:14px;">se genera automáticamente</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button onclick="window.saCloseModal()" style="flex:1;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Cancelar</button>
+        <button onclick="window.saStep1Next()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#4d73f5;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Siguiente →</button>
+      </div>`;
+
+    window.saOnClubSelect();
+
+  } else if(step === 2){
+    title.textContent = 'Categorías activas';
+    const allCats = ['2013','2014','2015','2016','2017','2018','2019','2020','Escuelita'];
+    const sel = window._saModal.cats;
+    let catsHtml = '';
+    allCats.forEach(function(c){
+      const on = sel.includes(c);
+      catsHtml += `<div onclick="window.saToggleCat('${c}')" style="background:${on?'rgba(77,115,245,.15)':'#112896'};border:1px solid ${on?'#4d73f5':'#1e3ab0'};border-radius:8px;padding:10px 4px;text-align:center;cursor:pointer;"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:${on?'#4d73f5':'#e8efff'};">${c}</div><div style="font-size:.55rem;color:${on?'#22cd78':'#7a9ccc'};margin-top:2px;">${on?'✓ activa':'inactiva'}</div></div>`;
+    });
+
+    body.innerHTML = stepperHtml(2)
+      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;">' + catsHtml + '</div>'
+      + '<div style="display:flex;gap:8px;">'
+      + '<button onclick="window.saRenderStep(1)" style="flex:1;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>'
+      + '<button onclick="window.saStep2Next()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#4d73f5;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Siguiente →</button>'
+      + '</div>';
+
+  } else if(step === 3){
+    title.textContent = 'Usuarios';
+    const cats3 = window._saModal.cats;
+    const uData = window._saModal.usuarios;
+
+    if(!cats3.length){
+      body.innerHTML = stepperHtml(3)
+        + '<div style="text-align:center;padding:20px;color:#7a9ccc;font-size:.85rem;">No hay categorías seleccionadas.</div>'
+        + '<button onclick="window.saRenderStep(2)" style="width:100%;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>';
+      return;
+    }
+
+    let uHtml = '';
+    cats3.forEach(function(cat){
+      const u = uData[cat] || { email:'', rol:'profe', invitar: true };
+      uData[cat] = u;
+      const rolesHtml = ['profe','coordinador','profe+coord'].map(function(r){
+        const on = (u.rol||'profe') === r;
+        const lbl = r==='profe'?'Profe':r==='coordinador'?'Coord':'Profe+Coord';
+        return `<div onclick="window.saSetRol('${cat}','${r}')" style="padding:4px 8px;border-radius:20px;font-size:.58rem;font-weight:700;text-transform:uppercase;border:1px solid ${on?'#22cd78':'#1e3ab0'};color:${on?'#22cd78':'#7a9ccc'};cursor:pointer;background:${on?'rgba(34,205,120,.12)':'transparent'};">${lbl}</div>`;
+      }).join('');
+      const toggleStyle = `width:36px;height:20px;border-radius:10px;background:${u.invitar!==false?'#22cd78':'#1e3ab0'};position:relative;cursor:pointer;flex-shrink:0;`;
+      const thumbSide = u.invitar!==false ? 'right' : 'left';
+      uHtml += `<div style="background:#112896;border:1px solid #1e3ab0;border-radius:10px;padding:12px;margin-bottom:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-family:Bebas Neue,sans-serif;font-size:.78rem;padding:2px 8px;border-radius:4px;background:rgba(77,115,245,.15);color:#4d73f5;border:1px solid rgba(77,115,245,.3);">CAT ${cat}</span>
+        </div>
+        <div style="display:flex;gap:5px;margin-bottom:10px;">${rolesHtml}</div>
+        <input id="saEmail_${cat}" placeholder="email@club.com" value="${u.email||''}" oninput="window.saSetEmail('${cat}',this.value)" style="width:100%;background:#0d2280;border:1px solid #1e3ab0;border-radius:8px;padding:8px 12px;color:#e8efff;font-size:.82rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #1e3ab0;">
+          <div><div style="font-size:.72rem;color:#e8efff;">Enviar invitación</div><div style="font-size:.58rem;color:#7a9ccc;">Email con link para crear contraseña</div></div>
+          <div onclick="window.saToggleInvitar('${cat}')" style="${toggleStyle}"><div style="position:absolute;top:2px;${thumbSide}:2px;width:16px;height:16px;border-radius:50%;background:#fff;"></div></div>
+        </div>
+      </div>`;
+    });
+
+    body.innerHTML = stepperHtml(3) + uHtml
+      + '<div style="display:flex;gap:8px;margin-top:8px;">'
+      + '<button onclick="window.saRenderStep(2)" style="flex:1;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>'
+      + '<button onclick="window.saCrearClubFinal()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#22cd78;color:#000;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">✓ Crear club</button>'
+      + '</div>';
+  }
+};
+
+window.saOnClubSelect = function(){
+  const sel = document.getElementById('saClubSelect');
+  const fields = document.getElementById('saNewClubFields');
+  if(!sel) return;
+  const val = sel.value;
+  if(val === '__nuevo__'){
+    fields.style.display = 'block';
+    window._saModal.isNew = true;
+    window._saModal.clubId = null;
+  } else {
+    fields.style.display = 'none';
+    window._saModal.isNew = false;
+    window._saModal.clubId = val;
+  }
+};
+
+window.saGenId = function(){
+  const nombre = document.getElementById('saClubNombre')?.value || '';
+  const id = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  const prev = document.getElementById('saClubIdPreview');
+  if(prev) prev.textContent = id || 'se genera automáticamente';
+  window._saModal.clubId = id;
+  window._saModal.nombre = nombre;
+};
+
+window.saStep1Next = function(){
+  const sel = document.getElementById('saClubSelect');
+  if(!sel) return;
+  const val = sel.value;
+  if(val === '__nuevo__'){
+    const nombre = document.getElementById('saClubNombre')?.value?.trim();
+    if(!nombre){ showToast('Ingresá el nombre del club'); return; }
+    window._saModal.isNew = true;
+    window._saModal.nombre = nombre;
+    window._saModal.clubId = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  } else {
+    window._saModal.isNew = false;
+    window._saModal.clubId = val;
+    window._saModal.nombre = val;
+  }
+  window.saRenderStep(2);
+};
+
+window.saToggleCat = function(cat){
+  const arr = window._saModal.cats;
+  const idx = arr.indexOf(cat);
+  if(idx >= 0) arr.splice(idx, 1);
+  else arr.push(cat);
+  window.saRenderStep(2);
+};
+
+window.saStep2Next = function(){
+  if(!window._saModal.cats.length){ showToast('Seleccioná al menos una categoría'); return; }
+  window.saRenderStep(3);
+};
+
+window.saSetRol = function(cat, rol){
+  if(!window._saModal.usuarios[cat]) window._saModal.usuarios[cat] = {};
+  window._saModal.usuarios[cat].rol = rol;
+  window.saRenderStep(3);
+};
+
+window.saSetEmail = function(cat, val){
+  if(!window._saModal.usuarios[cat]) window._saModal.usuarios[cat] = {};
+  window._saModal.usuarios[cat].email = val;
+};
+
+window.saToggleInvitar = function(cat){
+  if(!window._saModal.usuarios[cat]) window._saModal.usuarios[cat] = {};
+  const u = window._saModal.usuarios[cat];
+  u.invitar = u.invitar === false ? true : false;
+  window.saRenderStep(3);
+};
+
+window.saCrearClubFinal = async function(){
+  const m = window._saModal;
+  if(!m.clubId){ showToast('Error: sin club seleccionado'); return; }
+
+  const btnCrear = document.querySelector('#saModalBody button:last-child');
+  if(btnCrear){ btnCrear.disabled = true; btnCrear.textContent = 'Creando...'; }
+
+  try {
+    // 1. Crear/actualizar el club en Firebase
+    if(m.isNew){
+      const existing = await get(ref(db, 'clubs/'+m.clubId+'/plan'));
+      if(!existing.exists()){
+        await set(ref(db, 'clubs/'+m.clubId), {
+          nombre: m.nombre,
+          plan: 'trial',
+          planStart: Date.now(),
+          planEnd: Date.now() + (30*24*60*60*1000),
+          createdAt: Date.now()
+        });
+      }
+    }
+
+    // 2. Crear usuarios y enviar invitaciones via Firebase Auth REST
+    const API_KEY = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
+    let usuariosCreados = 0;
+    let errores = [];
+
+    for(const [cat, u] of Object.entries(m.usuarios)){
+      if(!u.email || !u.email.includes('@')) continue;
+
+      // Determinar roles
+      const roles = u.rol === 'profe+coord' ? ['profe','coordinator'] : [u.rol || 'profe'];
+
+      try {
+        // Crear usuario en Firebase Auth via REST API
+        const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+API_KEY, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ email: u.email, password: Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken: true })
+        });
+        const data = await resp.json();
+
+        if(data.error){
+          errores.push(cat+': '+data.error.message);
+          continue;
+        }
+
+        const uid = data.localId;
+
+        // Guardar perfil en users/
+        const perfil = {
+          email: u.email,
+          clubId: m.clubId,
+          role: roles.length > 1 ? 'coordinator' : roles[0],
+          cat: 'cat'+cat.toLowerCase().replace('escuelita','escuelita')
+        };
+        if(roles.includes('coordinator')) perfil.role = 'coordinator';
+        if(roles.length > 1) perfil.isProfeCoord = true;
+
+        await set(ref(db, 'users/'+uid), perfil);
+
+        // Enviar email de reset (invitación para crear contraseña)
+        if(u.invitar !== false){
+          await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+API_KEY, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ requestType: 'PASSWORD_RESET', email: u.email })
+          });
+        }
+
+        usuariosCreados++;
+      } catch(e){
+        errores.push(cat+': '+e.message);
+      }
+    }
+
+    // Resultado
+    window.saCloseModal();
+    renderSATab('clubes');
+
+    let msg = '✓ Club listo. '+usuariosCreados+' usuario(s) creado(s).';
+    if(errores.length) msg += ' Errores: '+errores.join(', ');
+    showToast(msg);
+
+  } catch(e){
+    showToast('Error: '+e.message);
+    if(btnCrear){ btnCrear.disabled = false; btnCrear.textContent = '✓ Crear club'; }
+  }
+};;
 
 window.saGestionarPlan = function(clubId){
   const accion = prompt('Acciones disponibles:\n1 - Activar plan pago (30 días)\n2 - Extender trial (30 días)\n3 - Marcar como vencido\n\nIngresá el número:');
