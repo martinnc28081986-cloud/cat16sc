@@ -2866,7 +2866,7 @@ window._ppToggle=async function(key){
     _ppEditKey=key;
     const existing=await _ppGetStats(key);
     _ppCache[key]=existing;
-    _ppEditStats=JSON.parse(JSON.stringify(existing));
+    _ppEditStats=existing ? JSON.parse(JSON.stringify(existing)) : {};
     if(!_ppEditStats.jugadores) _ppEditStats.jugadores={};
   }
   await renderPosPartido();
