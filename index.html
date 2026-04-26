@@ -378,6 +378,24 @@
 </div>
 
 
+<div id="resetPasswordScreen" style="display:none;position:fixed;inset:0;background:#07186b;z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div style="max-width:400px;width:100%;">
+    <div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:4px;color:#e8efff;margin-bottom:4px;">MI PLANTEL</div>
+    <div style="width:32px;height:3px;background:#4d73f5;border-radius:2px;margin-bottom:24px;"></div>
+    <div style="font-size:.7rem;color:#22cd78;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;">Bienvenido</div>
+    <div style="font-size:1.1rem;font-weight:600;color:#e8efff;margin-bottom:6px;">Creá tu contraseña</div>
+    <div style="font-size:.82rem;color:#7a9ccc;margin-bottom:24px;">Elegí una contraseña para acceder a la app.</div>
+    <div style="margin-bottom:12px;">
+      <input id="resetPass1" type="password" placeholder="Nueva contraseña" style="width:100%;background:#0d2280;border:1px solid #1e3ab0;border-radius:9px;padding:12px 14px;color:#e8efff;font-size:.9rem;font-family:DM Sans,sans-serif;outline:none;">
+    </div>
+    <div style="margin-bottom:20px;">
+      <input id="resetPass2" type="password" placeholder="Repetir contraseña" style="width:100%;background:#0d2280;border:1px solid #1e3ab0;border-radius:9px;padding:12px 14px;color:#e8efff;font-size:.9rem;font-family:DM Sans,sans-serif;outline:none;">
+    </div>
+    <div id="resetPassErr" style="color:#ff1744;font-size:.78rem;margin-bottom:12px;display:none;"></div>
+    <button id="resetPassBtn" onclick="window.doResetPassword()" style="width:100%;padding:13px;border-radius:9px;border:none;background:#22cd78;color:#000;font-size:.95rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Crear contraseña y entrar</button>
+  </div>
+</div>
+
 <div class="loading-screen" id="loadingScreen">
   <div class="loading-logo">MI PLANTEL</div>
   <div class="loading-accent"></div>
@@ -642,7 +660,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, remove, get, onValue, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const FC = {
   apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
@@ -852,6 +870,64 @@ function _launchByRole(profile){
     document.getElementById('loginScreen').style.display='flex';
   }
 }
+
+// ── MANEJO DE ACTION URL (reset password desde email) ──
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const mode = params.get('mode');
+  const oobCode = params.get('oobCode');
+  if(mode === 'resetPassword' && oobCode){
+    window._oobCode = oobCode;
+    // Verificar que el código sea válido
+    verifyPasswordResetCode(auth, oobCode).then(function(email){
+      window._resetEmail = email;
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'none';
+      const rs = document.getElementById('resetPasswordScreen');
+      rs.style.display = 'flex';
+    }).catch(function(){
+      // Código inválido o expirado
+      document.getElementById('loadingScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('loginErr').textContent = 'El link expiró o ya fue usado. Pedí uno nuevo.';
+    });
+  }
+})();
+
+window.doResetPassword = async function(){
+  const p1 = document.getElementById('resetPass1').value;
+  const p2 = document.getElementById('resetPass2').value;
+  const errEl = document.getElementById('resetPassErr');
+  const btn = document.getElementById('resetPassBtn');
+  errEl.style.display = 'none';
+
+  if(!p1 || p1.length < 6){
+    errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    errEl.style.display = 'block'; return;
+  }
+  if(p1 !== p2){
+    errEl.textContent = 'Las contraseñas no coinciden.';
+    errEl.style.display = 'block'; return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  try {
+    await confirmPasswordReset(auth, window._oobCode, p1);
+    // Loguear automáticamente
+    const cred = await signInWithEmailAndPassword(auth, window._resetEmail, p1);
+    // Limpiar la URL para evitar re-uso del oobCode
+    window.history.replaceState({}, document.title, window.location.pathname);
+    document.getElementById('resetPasswordScreen').style.display = 'none';
+    // El onAuthStateChanged se encarga del resto
+  } catch(e){
+    errEl.textContent = e.code === 'auth/weak-password' ? 'La contraseña es muy débil.' : 'Error: ' + e.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Crear contraseña y entrar';
+  }
+};
 
 onAuthStateChanged(auth, async user => {
   if(user){
