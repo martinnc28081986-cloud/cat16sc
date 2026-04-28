@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Configurar Hernández + Liga — MI PLANTEL</title>
+<style>
+body{font-family:sans-serif;background:#07186b;color:#e8efff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;}
+.card{background:#0d2280;border:1px solid #1e3ab0;border-radius:14px;padding:24px;max-width:480px;width:100%;text-align:center;}
+h1{font-size:1.3rem;margin:0 0 6px;color:#4d73f5;}
+p{font-size:.85rem;color:#7a9ccc;margin:0 0 20px;}
+button{background:#22cd78;color:#000;border:none;border-radius:9px;padding:12px 28px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;margin-bottom:8px;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+#log{margin-top:16px;text-align:left;font-size:.75rem;color:#7a9ccc;max-height:320px;overflow-y:auto;background:#07186b;border-radius:8px;padding:10px;}
+.ok{color:#22cd78;} .err{color:#ff1744;} .info{color:#ffab40;}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⚽ Config Hernández + Liga LISFI II B</h1>
+  <p>Carga el fixture de Hernández y la estructura de la liga compartida.</p>
+  <button id="btn" onclick="window.subir()">Subir a Firebase</button>
+  <div id="log"></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
+  authDomain:"presentes-20226-cat-16-sc.firebaseapp.com",
+  databaseURL:"https://presentes-20226-cat-16-sc-default-rtdb.firebaseio.com",
+  projectId:"presentes-20226-cat-16-sc",
+  storageBucket:"presentes-20226-cat-16-sc.firebasestorage.app",
+  messagingSenderId:"567718455944",
+  appId:"1:567718455944:web:96db233da5d1c8a97e8d3d"
+});
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const DATA = {
+  "ligas": {
+    "lisfi-ii-zona-b-2026": {
+      "nombre": "LISFI II Zona B",
+      "anio": 2026,
+      "equipos": [
+        "LA PLATA V",
+        "DEF.SAN LORENZO",
+        "CATELLA",
+        "CRISFA V",
+        "CAP.CHICA",
+        "CAMBACERES",
+        "SAGRADO CORAZON",
+        "N.FUERZA",
+        "LIBRE",
+        "ADAFI",
+        "VILLA PROGRESO",
+        "HERNANDEZ"
+      ],
+      "fixture": {
+        "1": {
+          "rival": "LA PLATA V"
+        },
+        "2": {
+          "rival": "DEF.SAN LORENZO"
+        },
+        "3": {
+          "rival": "CATELLA"
+        },
+        "4": {
+          "rival": "CRISFA V"
+        },
+        "5": {
+          "rival": "CAP.CHICA"
+        },
+        "6": {
+          "rival": "CAMBACERES"
+        },
+        "7": {
+          "rival": "HERNANDEZ"
+        },
+        "8": {
+          "rival": "N.FUERZA"
+        },
+        "9": {
+          "rival": "LIBRE"
+        },
+        "10": {
+          "rival": "ADAFI"
+        },
+        "11": {
+          "rival": "VILLA PROGRESO"
+        },
+        "12": {
+          "rival": "LA PLATA V"
+        },
+        "13": {
+          "rival": "DEF.SAN LORENZO"
+        },
+        "14": {
+          "rival": "CATELLA"
+        },
+        "15": {
+          "rival": "CRISFA V"
+        },
+        "16": {
+          "rival": "CAP.CHICA"
+        },
+        "17": {
+          "rival": "CAMBACERES"
+        },
+        "18": {
+          "rival": "HERNANDEZ"
+        },
+        "19": {
+          "rival": "N.FUERZA"
+        },
+        "20": {
+          "rival": "LIBRE"
+        },
+        "21": {
+          "rival": "ADAFI"
+        },
+        "22": {
+          "rival": "VILLA PROGRESO"
+        }
+      },
+      "suspensions": {
+        "8": true
+      }
+    }
+  },
+  "clubs": {
+    "hernandez": {
+      "config": {
+        "liga": "lisfi-ii-zona-b-2026",
+        "ligaNombre": "LISFI",
+        "zona": "II B",
+        "address": "Cancha de Hernández",
+        "fixture": {
+          "1": {
+            "cond": "L",
+            "rival": "LA PLATA V"
+          },
+          "2": {
+            "cond": "L",
+            "rival": "DEF.SAN LORENZO"
+          },
+          "3": {
+            "cond": "L",
+            "rival": "CATELLA"
+          },
+          "4": {
+            "cond": "V",
+            "rival": "CRISFA V"
+          },
+          "5": {
+            "cond": "L",
+            "rival": "CAP.CHICA"
+          },
+          "6": {
+            "cond": "V",
+            "rival": "CAMBACERES"
+          },
+          "7": {
+            "cond": "L",
+            "rival": "SAGRADO CORAZON"
+          },
+          "8": {
+            "cond": "V",
+            "rival": "N.FUERZA"
+          },
+          "9": {
+            "cond": "-",
+            "rival": "LIBRE"
+          },
+          "10": {
+            "cond": "L",
+            "rival": "ADAFI"
+          },
+          "11": {
+            "cond": "V",
+            "rival": "VILLA PROGRESO"
+          },
+          "12": {
+            "cond": "V",
+            "rival": "LA PLATA V"
+          },
+          "13": {
+            "cond": "L",
+            "rival": "DEF.SAN LORENZO"
+          },
+          "14": {
+            "cond": "V",
+            "rival": "CATELLA"
+          },
+          "15": {
+            "cond": "L",
+            "rival": "CRISFA V"
+          },
+          "16": {
+            "cond": "V",
+            "rival": "CAP.CHICA"
+          },
+          "17": {
+            "cond": "L",
+            "rival": "CAMBACERES"
+          },
+          "18": {
+            "cond": "V",
+            "rival": "SAGRADO CORAZON"
+          },
+          "19": {
+            "cond": "L",
+            "rival": "N.FUERZA"
+          },
+          "20": {
+            "cond": "-",
+            "rival": "LIBRE"
+          },
+          "21": {
+            "cond": "V",
+            "rival": "ADAFI"
+          },
+          "22": {
+            "cond": "L",
+            "rival": "VILLA PROGRESO"
+          }
+        },
+        "horarios": {
+          "cat13": "13:20",
+          "cat16": "15:50",
+          "cat2014": "14:10",
+          "cat2015": "15:00",
+          "cat2017": "10:00",
+          "cat2018": "10:50",
+          "cat2019": "11:40",
+          "cat2020": "12:30"
+        }
+      }
+    }
+  }
+};
+
+function log(msg, cls){
+  const d = document.getElementById('log');
+  d.innerHTML += '<div'+(cls?' class="'+cls+'"':'')+'>'+msg+'</div>';
+  d.scrollTop = d.scrollHeight;
+}
+
+window.subir = async function(){
+  const btn = document.getElementById('btn');
+  btn.disabled = true; btn.textContent = 'Subiendo...';
+  const user = auth.currentUser;
+  if(!user){ log('Sin sesión activa.','err'); btn.disabled=false; return; }
+  log('Sesión: '+user.email,'info');
+  try {
+    // Liga compartida
+    await set(ref(db, 'ligas/lisfi-ii-zona-b-2026'), DATA.ligas['lisfi-ii-zona-b-2026']);
+    log('✓ Liga LISFI II Zona B 2026 creada','ok');
+    // Config Hernandez
+    await set(ref(db, 'clubs/hernandez/config'), DATA.clubs.hernandez.config);
+    log('✓ Config de Hernández cargada','ok');
+    // Actualizar referencia en Sagrado también
+    await update(ref(db, 'clubs/sagrado-corazon/config'), { liga: 'lisfi-ii-zona-b-2026' });
+    log('✓ Sagrado Corazón vinculado a la liga','ok');
+    log('');
+    log('Todo listo ✓','ok');
+    btn.textContent = '✅ Completado';
+  } catch(e){
+    log('Error: '+e.message,'err');
+    btn.disabled=false; btn.textContent='Reintentar';
+  }
+};
+
+onAuthStateChanged(auth, user=>{
+  if(user) log('Listo. Sesión: '+user.email,'ok');
+  else log('Sin sesión. Logueate en app.miplantel.com.ar primero.','err');
+});
+</script>
+</body>
+</html>
