@@ -1188,26 +1188,67 @@ async function loadClubConfig(){
   if(window._isEscuelita) return;
   try {
     const snap = await get(ref(db, CLUB_PATH+'/config'));
-    if(snap.exists()){
-      const cfg = snap.val();
-      // Fixture
-      if(cfg.fixture){
-        const arr = Object.entries(cfg.fixture)
-          .map(([k,v])=>({fecha:parseInt(k), rival:v.rival, cond:v.cond}))
-          .sort((a,b)=>a.fecha-b.fecha);
-        if(arr.length) FIXTURE = arr;
-      }
-      // Horario de esta categoría
-      const catKey = DB_PREFIX.split('/').pop();
-      if(cfg.horarios && cfg.horarios[catKey]){
-        CFG.matchTime = cfg.horarios[catKey];
-      }
-      // Dirección
-      if(cfg.address) CFG.address = cfg.address;
-    } else {
+    const cfg = snap.exists() ? snap.val() : {};
+
+    // ── Leer datos de la liga compartida si existe ligaId ──
+    const ligaId = cfg.ligaId || cfg.liga_id || null;
+    let ligaData = null;
+    if(ligaId && ligaId.includes('-202')){
+      // Solo si ligaId tiene formato de liga compartida (ej: lisfi-ii-zona-b-2026)
+      try {
+        const ligaSnap = await get(ref(db, 'ligas/'+ligaId));
+        if(ligaSnap.exists()) ligaData = ligaSnap.val();
+      } catch(e){ console.warn('Error leyendo liga:', e); }
+    }
+
+    const catKey = DB_PREFIX.split('/').pop();
+
+    // ── FIXTURE ──
+    // Condiciones L/V vienen del club, rivales pueden venir de la liga
+    if(cfg.fixture){
+      const clubFixture = Object.entries(cfg.fixture)
+        .map(([k,v])=>({fecha:parseInt(k), rival:v.rival, cond:v.cond}))
+        .sort((a,b)=>a.fecha-b.fecha);
+      if(clubFixture.length) FIXTURE = clubFixture;
+    }
+    // Si la liga tiene fixture, combinar con condiciones del club
+    if(ligaData && ligaData.fixture && cfg.fixture){
+      const clubConds = cfg.fixture; // {fecha: {cond, rival}}
+      FIXTURE = Object.entries(ligaData.fixture)
+        .map(([k,v])=>{
+          const fecha = parseInt(k);
+          const clubF = clubConds[k];
+          return {
+            fecha,
+            rival: v.rival,
+            cond: clubF ? clubF.cond : (v.cond||'-')
+          };
+        })
+        .sort((a,b)=>a.fecha-b.fecha);
+    }
+
+    // ── HORARIOS ──
+    // Liga tiene prioridad, club puede sobreescribir
+    if(ligaData && ligaData.horarios && ligaData.horarios[catKey]){
+      CFG.matchTime = ligaData.horarios[catKey];
+    }
+    if(cfg.horarios && cfg.horarios[catKey]){
+      CFG.matchTime = cfg.horarios[catKey]; // club sobreescribe liga
+    }
+
+    // ── DIRECCIÓN ──
+    if(cfg.address) CFG.address = cfg.address;
+
+    // ── CANCHAS DE RIVALES (desde la liga) ──
+    if(ligaData && ligaData.canchas){
+      window._ligaCanchas = ligaData.canchas;
+    }
+
+    if(!snap.exists()){
       // Primera vez: guardar config hardcodeada en Firebase
       await _saveDefaultClubConfig();
     }
+
   } catch(e){ console.warn('loadClubConfig error:', e); }
 }
 
@@ -1967,15 +2008,17 @@ window.shareCit = async function(key){
   const condLabel = cit.condicion==='L'?'LOCAL':'VISITANTE';
   const matchTime = CFG.matchTime||'';
   // Direcciones de canchas LISFI Zona II
-  const RIVAL_ADDRESSES = {
+  const RIVAL_ADDRESSES_DEFAULT = {
     'ADAFI': '10 y 508 M. B. Gonnet',
     'ATENEO JUVENIL': 'Cno. Ing. Humet (43) y Guido Spano Eda.',
     'AUTONOMIA': '115 y 524 Tolosa',
     'VILLA PROGRESO': '82 y 126 Berisso',
     'JOSE HERNANDEZ': 'Av 31 e/510 y 511 José Hernández',
+    'HERNANDEZ': 'Av 31 e/510 y 511 José Hernández',
     'CAMBACERES': 'Cno. Alte. Brown Col. 342 Punta Lara',
     'CAPITAL CHICA': '156 e/ 66 y 67 Los Hornos',
     'CAP. CHICA': '156 e/ 66 y 67 Los Hornos',
+    'CAP.CHICA': '156 e/ 66 y 67 Los Hornos',
     'CAPCHICA': '156 e/ 66 y 67 Los Hornos',
     'CATELLA': '532 y 127 Ensenada',
     'CRI CATELLA': '532 y 127 Ensenada',
@@ -1985,6 +2028,7 @@ window.shareCit = async function(key){
     'DEFENSA Y JUSTICIA': '229 y 54 Etcheverry',
     'DEFENSORES DE S.L.': '23 Bis y 80 (CRI Fátima)',
     'DEFSAN LORENZO': '23 Bis y 80 (CRI Fátima)',
+    'DEF.SAN LORENZO': '23 Bis y 80 (CRI Fátima)',
     'EL CARMEN': '98 e/128 y 129 Berisso',
     'ESTUDIANTES': '70 e/ 141 y 142 Los Hornos',
     'EVERTON': '7 y 629 Siccardi',
@@ -1995,6 +2039,7 @@ window.shareCit = async function(key){
     'LA PLATA V': '17 e/529 y 530 Ringuelet',
     'LIBERTAD': '38 y 150 El Retiro',
     'NUEVA FUERZA': '38 y 150 El Retiro',
+    'N.FUERZA': '38 y 150 El Retiro',
     'NUEVA FUERZAS': '38 y 150 El Retiro',
     'NSL': '522 y 21 Ringuelet',
     'NUESTRA SEÑORA DE LUJAN': '522 y 21 Ringuelet',
@@ -2006,7 +2051,10 @@ window.shareCit = async function(key){
     'TALLERES': '131 y 52 La Plata',
     'UNIVERSITARIO': 'Av. 60 y 126 Berisso',
     'VILLA SAN CARLOS': '26 y 173 Berisso',
+    'SAGRADO CORAZON': 'Av. 13 y 610 Villa Elvira',
   };
+  // Usar canchas de la liga si están disponibles, sino el hardcodeado
+  const RIVAL_ADDRESSES = Object.assign({}, RIVAL_ADDRESSES_DEFAULT, window._ligaCanchas||{});
   const localAddr = CFG.address || 'Av. 13 y 610 Villa Elvira';
   const rivalKey = (cit.rival||'').toUpperCase().trim();
   const visitaAddr = RIVAL_ADDRESSES[rivalKey] || '';
