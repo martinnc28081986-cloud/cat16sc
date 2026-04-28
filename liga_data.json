@@ -1,5 +1,5 @@
 {
-  "updatedAt": "26/04/2026",
+  "updatedAt": "28/04/2026",
   "scResults": {
     "13": [
       {
@@ -630,6 +630,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "CRISFA V.": [
@@ -668,6 +674,12 @@
           "vs": "La Plata V",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Cambaceres": [
@@ -1024,6 +1036,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "CRISFA V.": [
@@ -1062,6 +1080,12 @@
           "vs": "La Plata V",
           "gf": 7,
           "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Cambaceres": [
@@ -1418,6 +1442,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 3,
+          "gc": 0
         }
       ],
       "CRISFA V.": [
@@ -1454,6 +1484,12 @@
         {
           "f": 7,
           "vs": "La Plata V",
+          "gf": 0,
+          "gc": 3
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
           "gf": 0,
           "gc": 3
         }
@@ -1812,6 +1848,12 @@
           "vs": "Catella",
           "gf": 2,
           "gc": 5
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 0,
+          "gc": 8
         }
       ],
       "CRISFA V.": [
@@ -1850,6 +1892,12 @@
           "vs": "La Plata V",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
+          "gf": 8,
+          "gc": 0
         }
       ],
       "Cambaceres": [
@@ -2206,6 +2254,12 @@
           "vs": "Catella",
           "gf": 1,
           "gc": 7
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 0,
+          "gc": 5
         }
       ],
       "CRISFA V.": [
@@ -2244,6 +2298,12 @@
           "vs": "La Plata V",
           "gf": 4,
           "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
+          "gf": 5,
+          "gc": 0
         }
       ],
       "Cambaceres": [
@@ -2600,6 +2660,12 @@
           "vs": "Catella",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 3,
+          "gc": 0
         }
       ],
       "CRISFA V.": [
@@ -2637,6 +2703,12 @@
           "f": 7,
           "vs": "La Plata V",
           "gf": 1,
+          "gc": 3
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
+          "gf": 0,
           "gc": 3
         }
       ],
@@ -2994,6 +3066,12 @@
           "vs": "Catella",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "CRISFA V.": [
@@ -3031,6 +3109,12 @@
           "f": 7,
           "vs": "La Plata V",
           "gf": 7,
+          "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
+          "gf": 2,
           "gc": 0
         }
       ],
@@ -3382,6 +3466,12 @@
           "vs": "Catella",
           "gf": 0,
           "gc": 7
+        },
+        {
+          "f": 8,
+          "vs": "CRISFA V.",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "CRISFA V.": [
@@ -3418,6 +3508,12 @@
         {
           "f": 7,
           "vs": "La Plata V",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "Def. S. Lorenzo",
           "gf": 2,
           "gc": 0
         }
@@ -3689,23 +3785,23 @@
         "pts": 4
       },
       {
-        "eq": "CRISFA V.",
-        "pj": 7,
-        "pg": 0,
-        "pe": 0,
-        "pp": 7,
-        "gf": 4,
-        "gc": 24,
-        "pts": 0
-      },
-      {
         "eq": "Def. S. Lorenzo",
-        "pj": 6,
-        "pg": 0,
+        "pj": 7,
+        "pg": 1,
         "pe": 0,
         "pp": 6,
-        "gf": 5,
+        "gf": 6,
         "gc": 26,
+        "pts": 2
+      },
+      {
+        "eq": "CRISFA V.",
+        "pj": 8,
+        "pg": 0,
+        "pe": 0,
+        "pp": 8,
+        "gf": 4,
+        "gc": 25,
         "pts": 0
       }
     ],
@@ -3732,13 +3828,13 @@
       },
       {
         "eq": "CRISFA V.",
-        "pj": 7,
-        "pg": 4,
+        "pj": 8,
+        "pg": 5,
         "pe": 1,
         "pp": 2,
-        "gf": 15,
+        "gf": 17,
         "gc": 9,
-        "pts": 9
+        "pts": 11
       },
       {
         "eq": "Sagr. Corazón",
@@ -3812,12 +3908,12 @@
       },
       {
         "eq": "Def. S. Lorenzo",
-        "pj": 6,
+        "pj": 7,
         "pg": 0,
         "pe": 1,
-        "pp": 5,
+        "pp": 6,
         "gf": 4,
-        "gc": 14,
+        "gc": 16,
         "pts": 1
       }
     ],
@@ -3893,6 +3989,16 @@
         "pts": 7
       },
       {
+        "eq": "Def. S. Lorenzo",
+        "pj": 7,
+        "pg": 2,
+        "pe": 1,
+        "pp": 4,
+        "gf": 13,
+        "gc": 11,
+        "pts": 5
+      },
+      {
         "eq": "Cap.Chica",
         "pj": 7,
         "pg": 2,
@@ -3903,23 +4009,13 @@
         "pts": 5
       },
       {
-        "eq": "Def. S. Lorenzo",
-        "pj": 6,
-        "pg": 1,
-        "pe": 1,
-        "pp": 4,
-        "gf": 10,
-        "gc": 11,
-        "pts": 3
-      },
-      {
         "eq": "CRISFA V.",
-        "pj": 7,
+        "pj": 8,
         "pg": 1,
         "pe": 1,
-        "pp": 5,
+        "pp": 6,
         "gf": 3,
-        "gc": 20,
+        "gc": 23,
         "pts": 3
       },
       {
@@ -3946,13 +4042,13 @@
       },
       {
         "eq": "CRISFA V.",
-        "pj": 7,
-        "pg": 5,
+        "pj": 8,
+        "pg": 6,
         "pe": 1,
         "pp": 1,
-        "gf": 19,
+        "gf": 27,
         "gc": 8,
-        "pts": 11
+        "pts": 13
       },
       {
         "eq": "Cap.Chica",
@@ -4025,16 +4121,6 @@
         "pts": 3
       },
       {
-        "eq": "Def. S. Lorenzo",
-        "pj": 6,
-        "pg": 0,
-        "pe": 1,
-        "pp": 5,
-        "gf": 5,
-        "gc": 28,
-        "pts": 1
-      },
-      {
         "eq": "N.Fuerza",
         "pj": 7,
         "pg": 0,
@@ -4042,6 +4128,16 @@
         "pp": 6,
         "gf": 8,
         "gc": 34,
+        "pts": 1
+      },
+      {
+        "eq": "Def. S. Lorenzo",
+        "pj": 7,
+        "pg": 0,
+        "pe": 1,
+        "pp": 6,
+        "gf": 5,
+        "gc": 36,
         "pts": 1
       }
     ],
@@ -4077,6 +4173,16 @@
         "pts": 10
       },
       {
+        "eq": "CRISFA V.",
+        "pj": 8,
+        "pg": 3,
+        "pe": 3,
+        "pp": 2,
+        "gf": 17,
+        "gc": 8,
+        "pts": 9
+      },
+      {
         "eq": "Sagr. Corazón",
         "pj": 8,
         "pg": 4,
@@ -4085,16 +4191,6 @@
         "gf": 23,
         "gc": 21,
         "pts": 9
-      },
-      {
-        "eq": "CRISFA V.",
-        "pj": 7,
-        "pg": 2,
-        "pe": 3,
-        "pp": 2,
-        "gf": 12,
-        "gc": 8,
-        "pts": 7
       },
       {
         "eq": "La Plata V",
@@ -4148,12 +4244,12 @@
       },
       {
         "eq": "Def. S. Lorenzo",
-        "pj": 6,
+        "pj": 7,
         "pg": 0,
         "pe": 0,
-        "pp": 6,
+        "pp": 7,
         "gf": 4,
-        "gc": 25,
+        "gc": 30,
         "pts": 0
       }
     ],
@@ -4200,13 +4296,13 @@
       },
       {
         "eq": "Def. S. Lorenzo",
-        "pj": 6,
-        "pg": 4,
+        "pj": 7,
+        "pg": 5,
         "pe": 0,
         "pp": 2,
-        "gf": 15,
+        "gf": 18,
         "gc": 10,
-        "pts": 8
+        "pts": 10
       },
       {
         "eq": "La Plata V",
@@ -4260,12 +4356,12 @@
       },
       {
         "eq": "CRISFA V.",
-        "pj": 7,
+        "pj": 8,
         "pg": 0,
         "pe": 1,
-        "pp": 6,
+        "pp": 7,
         "gf": 9,
-        "gc": 26,
+        "gc": 29,
         "pts": 1
       }
     ],
@@ -4291,6 +4387,16 @@
         "pts": 13
       },
       {
+        "eq": "CRISFA V.",
+        "pj": 8,
+        "pg": 6,
+        "pe": 0,
+        "pp": 2,
+        "gf": 32,
+        "gc": 9,
+        "pts": 12
+      },
+      {
         "eq": "Hernandez",
         "pj": 7,
         "pg": 5,
@@ -4299,16 +4405,6 @@
         "gf": 22,
         "gc": 5,
         "pts": 12
-      },
-      {
-        "eq": "CRISFA V.",
-        "pj": 7,
-        "pg": 5,
-        "pe": 0,
-        "pp": 2,
-        "gf": 30,
-        "gc": 9,
-        "pts": 10
       },
       {
         "eq": "Villa Progreso",
@@ -4342,12 +4438,12 @@
       },
       {
         "eq": "Def. S. Lorenzo",
-        "pj": 6,
+        "pj": 7,
         "pg": 1,
         "pe": 0,
-        "pp": 5,
+        "pp": 6,
         "gf": 2,
-        "gc": 9,
+        "gc": 11,
         "pts": 2
       },
       {
@@ -4404,13 +4500,13 @@
       },
       {
         "eq": "CRISFA V.",
-        "pj": 7,
-        "pg": 5,
+        "pj": 8,
+        "pg": 6,
         "pe": 0,
         "pp": 2,
-        "gf": 14,
+        "gf": 16,
         "gc": 6,
-        "pts": 10
+        "pts": 12
       },
       {
         "eq": "Hernandez",
@@ -4474,12 +4570,12 @@
       },
       {
         "eq": "Def. S. Lorenzo",
-        "pj": 6,
+        "pj": 7,
         "pg": 1,
         "pe": 0,
-        "pp": 5,
+        "pp": 6,
         "gf": 3,
-        "gc": 13,
+        "gc": 15,
         "pts": 2
       },
       {
