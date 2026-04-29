@@ -4267,7 +4267,10 @@ window.saEditarClub = async function(clubId){
       </select>
       <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">${catsHtml}</div>
-      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Usuarios (${clubUsers.length})</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700">Usuarios (${clubUsers.length})</div>
+        <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">+ Agregar usuario</button>
+      </div>
       <div style="margin-bottom:16px">${usersHtml}</div>
       <button onclick="window._saGuardarEdicion('${clubId}')" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar cambios</button>
       <button onclick="document.getElementById('saEditOverlay').remove()" style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">Cancelar</button>
@@ -4299,6 +4302,116 @@ window._saResetPass = async function(email){
     await sendPasswordResetEmail(auth, email);
     showToast('✓ Email de reset enviado a '+email);
   }catch(e){ showToast('Error: '+e.message); }
+};
+
+window._saAbrirAddUser = function(clubId){
+  const CAT_OPTS = [
+    {key:'cat13',label:'Cat 2013'},{key:'cat2014',label:'Cat 2014'},
+    {key:'cat2015',label:'Cat 2015'},{key:'cat16',label:'Cat 2016'},
+    {key:'cat2017',label:'Cat 2017'},{key:'cat2018',label:'Cat 2018'},
+    {key:'cat2019',label:'Cat 2019'},{key:'cat2020',label:'Cat 2020'},
+    {key:'escuelita',label:'Escuelita'}
+  ];
+
+  const overlay2 = document.createElement('div');
+  overlay2.id = 'saAddUserOverlay';
+  overlay2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+
+  overlay2.innerHTML = `
+    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:380px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5;margin-bottom:16px">➕ NUEVO USUARIO</div>
+
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Email</label>
+      <input id="addUserEmail" type="email" placeholder="profe@email.com"
+        style="width:100%;margin-bottom:12px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Categoría</label>
+      <select id="addUserCat" style="width:100%;margin-bottom:12px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.85rem;box-sizing:border-box">
+        ${CAT_OPTS.map(c=>`<option value="${c.key}">${c.label}</option>`).join('')}
+      </select>
+
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Rol</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px">
+        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 6px;cursor:pointer">
+          <input type="radio" name="addUserRol" value="profe" checked style="accent-color:#4d73f5">
+          <span style="font-size:0.72rem;text-align:center">Profe</span>
+        </label>
+        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 6px;cursor:pointer">
+          <input type="radio" name="addUserRol" value="coordinator" style="accent-color:#4d73f5">
+          <span style="font-size:0.72rem;text-align:center">Coordinador</span>
+        </label>
+        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 6px;cursor:pointer">
+          <input type="radio" name="addUserRol" value="profe+coord" style="accent-color:#4d73f5">
+          <span style="font-size:0.72rem;text-align:center">Profe + Coord</span>
+        </label>
+      </div>
+
+      <label style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer">
+        <input type="checkbox" id="addUserInvitar" checked style="accent-color:#4d73f5;width:18px;height:18px">
+        <span style="font-size:0.82rem">Enviar email de invitación</span>
+      </label>
+
+      <button id="addUserBtn" onclick="window._saCrearUsuario('${clubId}')"
+        style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">
+        ✓ Crear usuario
+      </button>
+      <button onclick="document.getElementById('saAddUserOverlay').remove()"
+        style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">
+        Cancelar
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay2);
+  overlay2.addEventListener('click', e=>{ if(e.target===overlay2) overlay2.remove(); });
+};
+
+window._saCrearUsuario = async function(clubId){
+  const email = document.getElementById('addUserEmail').value.trim();
+  const cat = document.getElementById('addUserCat').value;
+  const rol = document.querySelector('input[name="addUserRol"]:checked').value;
+  const invitar = document.getElementById('addUserInvitar').checked;
+
+  if(!email||!email.includes('@')){ showToast('Email inválido'); return; }
+
+  const btn = document.getElementById('addUserBtn');
+  btn.disabled = true; btn.textContent = 'Creando...';
+
+  const API_KEY = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
+  try{
+    // Crear en Firebase Auth
+    const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+API_KEY,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password: Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken:true})
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error.message);
+
+    const uid = data.localId;
+    const isCoord = rol==='coordinator'||rol==='profe+coord';
+    const perfil = {
+      email, clubId,
+      role: isCoord ? 'coordinator' : 'profe',
+      cat
+    };
+    if(rol==='profe+coord') perfil.isProfeCoord = true;
+    await set(ref(db,'users/'+uid), perfil);
+
+    // Enviar invitación
+    if(invitar){
+      await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+API_KEY,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({requestType:'PASSWORD_RESET', email})
+      });
+    }
+
+    document.getElementById('saAddUserOverlay')?.remove();
+    showToast('✓ Usuario creado' + (invitar?' — email enviado':''));
+    // Reabrir modal del club para ver el nuevo usuario
+    window.saEditarClub(clubId);
+  }catch(e){
+    btn.disabled=false; btn.textContent='✓ Crear usuario';
+    showToast('Error: '+e.message);
+  }
 };
 
 // ════════════════════════════════════════════════
