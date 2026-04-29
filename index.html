@@ -4109,29 +4109,197 @@ window.saCrearClubFinal = async function(){
   }
 };;
 
-window.saGestionarPlan = function(clubId){
-  const accion = prompt('Acciones disponibles:\n1 - Activar plan pago (30 días)\n2 - Extender trial (30 días)\n3 - Marcar como vencido\n\nIngresá el número:');
-  if(!accion) return;
-  const updates = {};
-  if(accion==='1'){
-    updates.plan = 'activo';
-    updates.planStart = Date.now();
-    updates.planEnd = Date.now() + (30*24*60*60*1000);
-  } else if(accion==='2'){
-    updates.plan = 'trial';
-    updates.trialEnd = Date.now() + (30*24*60*60*1000);
-  } else if(accion==='3'){
-    updates.plan = 'trial';
-    updates.trialEnd = Date.now() - 1;
-  } else return;
-  set(ref(db, 'clubs/'+clubId), {...updates}).then(()=>{
-    alert('Plan actualizado.');
-    renderSATab('facturacion');
-  }).catch(e=>alert('Error: '+e.message));
+window.saGestionarPlan = async function(clubId){
+  // Leer datos actuales del club
+  const snap = await get(ref(db,'clubs/'+clubId));
+  const club = snap.exists() ? snap.val() : {};
+  const nombre = club.nombre || clubId;
+  const planActual = club.plan || 'trial';
+  const endTs = planActual==='activo' ? (club.planEnd||0) : (club.trialEnd||0);
+  const endStr = endTs ? new Date(endTs).toLocaleDateString('es-AR') : '—';
+
+  // Crear modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+
+  overlay.innerHTML = `
+    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:380px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#4d73f5;margin-bottom:4px">💳 GESTIONAR PLAN</div>
+      <div style="font-size:0.85rem;font-weight:700;margin-bottom:4px">${nombre}</div>
+      <div style="font-size:0.72rem;color:#7a9ccc;margin-bottom:16px">
+        Plan actual: <b style="color:${planActual==='activo'?'#22cd78':'#ffab40'}">${planActual==='activo'?'ACTIVO':'TRIAL'}</b>
+        &nbsp;·&nbsp; Vence: <b>${endStr}</b>
+      </div>
+
+      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">Renovar plan activo</div>
+      <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:0.82rem;color:#e8efff;font-weight:600" id="planMesesLabel">1 mes</span>
+        <span style="font-size:0.72rem;color:#22cd78;font-weight:700" id="planFechaLabel"></span>
+      </div>
+      <input type="range" id="planSlider" min="1" max="12" value="1"
+        style="width:100%;accent-color:#22cd78;margin-bottom:4px;cursor:pointer"
+        oninput="
+          const v=parseInt(this.value);
+          document.getElementById('planMesesLabel').textContent=v===1?'1 mes':v===12?'1 año':v+' meses';
+          const base=(${endTs}>Date.now()?${endTs}:Date.now());
+          const d=new Date(base+v*30*24*60*60*1000);
+          document.getElementById('planFechaLabel').textContent='Vence: '+d.toLocaleDateString('es-AR');
+        ">
+      <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:#3a4a6a;margin-bottom:16px">
+        <span>1 mes</span><span>3</span><span>6</span><span>9</span><span>12</span>
+      </div>
+      <button onclick="window._saPlanRenovar('${clubId}',parseInt(document.getElementById('planSlider').value))"
+        style="width:100%;background:#22cd78;color:#000;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:12px">
+        ✓ Confirmar renovación
+      </button>
+
+      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Otras acciones</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="window._saPlanTrial('${clubId}')" style="flex:1;background:rgba(255,171,64,0.12);color:#ffab40;border:1px solid rgba(255,171,64,0.3);border-radius:8px;padding:9px;font-size:0.78rem;font-weight:700;cursor:pointer">🕐 Trial 30 días</button>
+        <button onclick="window._saPlanVencer('${clubId}')" style="flex:1;background:rgba(255,23,68,0.1);color:#ff1744;border:1px solid rgba(255,23,68,0.25);border-radius:8px;padding:9px;font-size:0.78rem;font-weight:700;cursor:pointer">⛔ Marcar vencido</button>
+      </div>
+
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:8px;padding:9px;font-size:0.82rem;cursor:pointer">Cancelar</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // Init fecha label
+  const base = (endTs > Date.now() ? endTs : Date.now());
+  const initD = new Date(base + 30*24*60*60*1000);
+  document.getElementById('planFechaLabel').textContent = 'Vence: ' + initD.toLocaleDateString('es-AR');
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
 };
 
-window.saVerClub   = function(id){ alert('Vista detallada del club — próximamente'); };
-window.saEditarClub = function(id){ alert('Edición de club — próximamente'); };
+window._saPlanRenovar = async function(clubId, meses){
+  const ms = meses * 30 * 24 * 60 * 60 * 1000;
+  // Si ya tiene planEnd futuro, extender desde ahí; sino desde ahora
+  const snap = await get(ref(db,'clubs/'+clubId+'/planEnd'));
+  const base = (snap.exists() && snap.val() > Date.now()) ? snap.val() : Date.now();
+  await set(ref(db,'clubs/'+clubId), {
+    ...(await get(ref(db,'clubs/'+clubId))).val(),
+    plan: 'activo',
+    planStart: Date.now(),
+    planEnd: base + ms
+  });
+  document.querySelector('div[style*="position:fixed"]')?.remove();
+  showToast(`✓ Plan renovado por ${meses} ${meses===1?'mes':'meses'}`);
+  renderSATab('facturacion');
+};
+
+window._saPlanTrial = async function(clubId){
+  const snap = await get(ref(db,'clubs/'+clubId));
+  await set(ref(db,'clubs/'+clubId), {
+    ...snap.val(),
+    plan: 'trial',
+    trialEnd: Date.now() + (30*24*60*60*1000)
+  });
+  document.querySelector('div[style*="position:fixed"]')?.remove();
+  showToast('✓ Trial extendido 30 días');
+  renderSATab('facturacion');
+};
+
+window._saPlanVencer = async function(clubId){
+  if(!confirm('¿Marcar como vencido?')) return;
+  const snap = await get(ref(db,'clubs/'+clubId));
+  await set(ref(db,'clubs/'+clubId), {
+    ...snap.val(),
+    plan: 'trial',
+    trialEnd: Date.now() - 1
+  });
+  document.querySelector('div[style*="position:fixed"]')?.remove();
+  showToast('Plan marcado como vencido');
+  renderSATab('facturacion');
+};
+
+window.saVerClub = function(id){ window.saEditarClub(id); };
+
+window.saEditarClub = async function(clubId){
+  const [clubSnap, ligasSnap, usersSnap] = await Promise.all([
+    get(ref(db,'clubs/'+clubId)),
+    get(ref(db,'ligas')),
+    get(ref(db,'users'))
+  ]);
+  const club = clubSnap.exists() ? clubSnap.val() : {};
+  const nombre = club.nombre || clubId;
+  const ligaActual = club.ligaId || club.liga_id || '';
+  const catsActivas = club.cats || [];
+  const ligas = ligasSnap.exists() ? Object.keys(ligasSnap.val()) : [];
+  const todosUsers = usersSnap.exists() ? usersSnap.val() : {};
+  const clubUsers = Object.entries(todosUsers).filter(([,u])=>u.clubId===clubId).map(([uid,u])=>({uid,...u}));
+
+  const CAT_OPTS = [
+    {key:'cat13',label:'Cat 2013'},{key:'cat2014',label:'Cat 2014'},
+    {key:'cat2015',label:'Cat 2015'},{key:'cat16',label:'Cat 2016'},
+    {key:'cat2017',label:'Cat 2017'},{key:'cat2018',label:'Cat 2018'},
+    {key:'cat2019',label:'Cat 2019'},{key:'cat2020',label:'Cat 2020'},
+    {key:'escuelita',label:'Escuelita'}
+  ];
+
+  const overlay = document.createElement('div');
+  overlay.id = 'saEditOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
+
+  const usersHtml = clubUsers.length ? clubUsers.map(u=>`
+    <div style="background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:0.82rem;font-weight:600">${u.email||u.uid}</div>
+        <div style="font-size:0.68rem;color:#7a9ccc">${u.role||'profe'} · ${u.cat||'—'}</div>
+      </div>
+      <button onclick="window._saResetPass('${u.email}')" style="background:rgba(77,115,245,0.15);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">Reset pwd</button>
+    </div>`).join('') : '<div style="color:#7a9ccc;font-size:0.82rem;text-align:center;padding:12px">Sin usuarios registrados</div>';
+
+  const ligasHtml = ligas.map(l=>`<option value="${l}" ${l===ligaActual?'selected':''}>${l}</option>`).join('');
+  const catsHtml = CAT_OPTS.map(c=>`
+    <label style="display:flex;align-items:center;gap:8px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:8px 10px;cursor:pointer">
+      <input type="checkbox" class="editCatCheck" value="${c.key}" ${catsActivas.includes(c.key)?'checked':''} style="accent-color:#4d73f5;width:16px;height:16px">
+      <span style="font-size:0.82rem">${c.label}</span>
+    </label>`).join('');
+
+  overlay.innerHTML = `
+    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:auto">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#4d73f5;margin-bottom:16px">✏️ EDITAR CLUB</div>
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Nombre del club</label>
+      <input id="editClubNombre" value="${nombre}" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Liga</label>
+      <select id="editClubLiga" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.85rem;box-sizing:border-box">
+        <option value="">— Sin liga —</option>
+        ${ligasHtml}
+      </select>
+      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">${catsHtml}</div>
+      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Usuarios (${clubUsers.length})</div>
+      <div style="margin-bottom:16px">${usersHtml}</div>
+      <button onclick="window._saGuardarEdicion('${clubId}')" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar cambios</button>
+      <button onclick="document.getElementById('saEditOverlay').remove()" style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">Cancelar</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+};
+
+window._saGuardarEdicion = async function(clubId){
+  const nombre = document.getElementById('editClubNombre').value.trim();
+  const liga = document.getElementById('editClubLiga').value;
+  const cats = [...document.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value);
+  if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
+  const snap = await get(ref(db,'clubs/'+clubId));
+  const current = snap.exists() ? snap.val() : {};
+  const updates = {...current, nombre, cats};
+  if(liga) updates.ligaId = liga; else delete updates.ligaId;
+  await set(ref(db,'clubs/'+clubId), updates);
+  document.getElementById('saEditOverlay')?.remove();
+  showToast('✓ Club actualizado');
+  renderSATab('clubes');
+};
+
+window._saResetPass = async function(email){
+  if(!email){ showToast('Sin email'); return; }
+  try{
+    const {sendPasswordResetEmail} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    await sendPasswordResetEmail(auth, email);
+    showToast('✓ Email de reset enviado a '+email);
+  }catch(e){ showToast('Error: '+e.message); }
+};
 
 // ════════════════════════════════════════════════
 // TABLERO COORDINADOR
