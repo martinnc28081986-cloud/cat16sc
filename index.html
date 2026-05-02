@@ -659,7 +659,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, remove, get, onValue, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, update, remove, get, onValue, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const FC = {
@@ -1989,11 +1989,11 @@ window.saveCitacion=async function(){
   if(!f){ btn.disabled=false; return; }
   if(_suspensions[f.fecha]){showToast('⛔ Fecha suspendida — no se puede guardar'); btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; return;}
   const citados=PLAYERS.filter(p=>markedCit[p]===true);
-  const score='';
-  const result='';
+
   const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
   try{
-    await set(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,score,result,citados,camisetero:selectedCamisetero||null});
+    // Usar update() en vez de set() para no pisar campos existentes (whatsappShared, score, result, etc.)
+    await update(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,citados,camisetero:selectedCamisetero||null});
     window._invalidateActiveFecha();
     showToast('Partido guardado');
     btn.textContent='&#10003; Guardado';
