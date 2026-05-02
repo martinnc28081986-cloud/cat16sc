@@ -4493,7 +4493,7 @@ async function startCoordApp(){
 
   // ── DATA STATE ──
   const D = {};
-  ALL_CATS.forEach(c=>{ D[c.key]={att:{},cit:{}}; });
+  ALL_CATS.forEach(c=>{ D[c.key]={att:{},cit:{},hist:{},stats:{}}; });
   let coordFirebaseLoaded=false, coordActiveTab='resumen', coordPresFilter=null, coordPresMode='month';
 
   function refresh(){ renderCoordTab(coordActiveTab); }
@@ -4520,7 +4520,9 @@ async function startCoordApp(){
   (async function loadCoordData(){
     try {
       const reads = ALL_CATS.flatMap(cat=>[
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{})
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{}),
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/goleadores_historicos')).then(s=>{ D[cat.key].hist=s.val()||{}; }).catch(()=>{}),
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/stats')).then(s=>{ D[cat.key].stats=s.val()||{}; }).catch(()=>{})
       ]);
       await Promise.all(reads);
     } catch(e){}
@@ -4843,6 +4845,90 @@ async function startCoordApp(){
         </div>`;
       });
     }
+
+    // ── GOLEADORES POR AÑO ──
+    const AÑOS_G = ['2026','2025','2024','2023','2022'];
+    const CAT_COL = {cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
+    // Acumular goles 2026 desde stats de cada cat
+    const goles2026 = {}; // catKey → {nombre: goles}
+    COMP_CATS.forEach(cat=>{
+      const catGoles = {};
+      Object.values(D[cat.key].stats||{}).forEach(st=>{
+        Object.entries(st.jugadores||{}).forEach(([n,d])=>{ catGoles[n]=(catGoles[n]||0)+(d.goles||0); });
+      });
+      goles2026[cat.key] = catGoles;
+    });
+    // Acumular histórico desde goleadores_historicos
+    const golesHist = {}; // catKey → año → {nombre: goles}
+    COMP_CATS.forEach(cat=>{
+      const byYear = {};
+      Object.values(D[cat.key].hist||{}).forEach(entry=>{
+        if(!entry.nombre||!entry.anios) return;
+        Object.entries(entry.anios).forEach(([año,g])=>{
+          if(!byYear[año]) byYear[año]={};
+          byYear[año][entry.nombre]=(byYear[año][entry.nombre]||0)+g;
+        });
+      });
+      golesHist[cat.key] = byYear;
+    });
+    // Construir ranking por año
+    function buildRanking(año, catFilter){
+      const out = {};
+      COMP_CATS.forEach(cat=>{
+        if(catFilter && cat.key !== catFilter) return;
+        let jugadores = {};
+        if(año==='2026'){ jugadores = goles2026[cat.key]||{}; }
+        else { jugadores = (golesHist[cat.key]||{})[año]||{}; }
+        Object.entries(jugadores).forEach(([nombre,g])=>{
+          if(g<=0) return;
+          const key = cat.key+'|'+nombre;
+          out[key]={nombre,cat:cat.key,g};
+        });
+      });
+      return Object.values(out).sort((a,b)=>b.g-a.g).slice(0,15);
+    }
+    const coordGolYear = window._coordGolYear||'2026';
+    const coordGolCat  = window._coordGolCat||'all';
+    window._coordGolYear = coordGolYear;
+    window._coordGolCat  = coordGolCat;
+    const ranking = buildRanking(coordGolYear, coordGolCat==='all'?null:coordGolCat);
+    const maxG = ranking.length ? ranking[0].g : 1;
+    h+=`<div class="csec" style="margin-top:24px">Goleadores por año</div>`;
+    // Selector categoría
+    h+=`<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+      <select onchange="window._coordGolCat=this.value;renderCoordTab('citaciones')" style="font-size:0.72rem;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
+        <option value="all" ${coordGolCat==='all'?'selected':''}>Todas las cats</option>
+        ${COMP_CATS.map(c=>`<option value="${c.key}" ${coordGolCat===c.key?'selected':''}>${c.label}</option>`).join('')}
+      </select>
+    </div>`;
+    // Tabs de años
+    h+=`<div style="display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap">`;
+    AÑOS_G.forEach(año=>{
+      const active = año===coordGolYear;
+      h+=`<button onclick="window._coordGolYear='${año}';renderCoordTab('citaciones')" style="font-size:0.72rem;padding:3px 12px;border-radius:20px;border:1px solid ${active?'rgba(77,115,245,0.5)':'var(--border)'};background:${active?'rgba(77,115,245,0.15)':'transparent'};color:${active?'var(--green)':'var(--muted)'};font-weight:${active?'700':'400'};cursor:pointer">${año}</button>`;
+    });
+    h+=`</div>`;
+    if(!ranking.length){
+      h+=`<div class="empty-msg">Sin goles registrados para ${coordGolYear}${coordGolCat!=='all'?' en esta categoría':''}</div>`;
+    } else {
+      ranking.forEach((p,i)=>{
+        const pct = maxG>0 ? Math.round(p.g/maxG*100) : 0;
+        const col = CAT_COL[p.cat]||'#4d73f5';
+        const isTop = i===0;
+        h+=`<div style="display:grid;grid-template-columns:80px 1fr 28px;align-items:center;gap:8px;margin-bottom:5px">
+          <div style="text-align:right">
+            <div style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+            <div style="font-size:0.62rem;color:${col};font-weight:600">${COMP_CATS.find(c=>c.key===p.cat)?.label||p.cat}</div>
+          </div>
+          <div style="position:relative;height:${isTop?'24px':'18px'};background:var(--surface2);border-radius:4px;overflow:hidden">
+            <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${col};border-radius:4px;opacity:${isTop?'1':'0.7'}"></div>
+            ${isTop?`<span style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;font-weight:700;color:#fff">⭐ Goleador ${coordGolYear}</span>`:''}
+          </div>
+          <span style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);text-align:right">${p.g}</span>
+        </div>`;
+      });
+    }
+
     el.innerHTML=h;
   }
   // Cats que suman para la tabla general (2013-2018 inclusive; 2019 y 2020 no cuentan)
