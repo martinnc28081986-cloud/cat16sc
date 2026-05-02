@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Stats F1-F7 — MI PLANTEL</title>
+<style>
+body{font-family:sans-serif;background:#07186b;color:#e8efff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;}
+.card{background:#0d2280;border:1px solid #1e3ab0;border-radius:14px;padding:24px;max-width:500px;width:100%;text-align:center;}
+h1{font-size:1.3rem;margin:0 0 6px;color:#4d73f5;}
+p{font-size:.82rem;color:#7a9ccc;margin:0 0 20px;}
+button{background:#22cd78;color:#000;border:none;border-radius:9px;padding:12px 28px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+#log{margin-top:16px;text-align:left;font-size:.73rem;color:#7a9ccc;max-height:400px;overflow-y:auto;background:#07186b;border-radius:8px;padding:10px;font-family:monospace;}
+.ok{color:#22cd78} .err{color:#ff1744} .info{color:#ffab40} .muted{color:#3a4a6a}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Stats F1-F7 desde Excel</h1>
+  <p>
+    1. Lee citaciones de Firebase para obtener las claves correctas<br>
+    2. Sube goles partido por partido (F1-F7)<br>
+    3. Limpia anio "2026" del historico (evita duplicados)
+  </p>
+  <button id="btn" onclick="run()">Ejecutar</button>
+  <div id="log"></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
+  authDomain:"presentes-20226-cat-16-sc.firebaseapp.com",
+  databaseURL:"https://presentes-20226-cat-16-sc-default-rtdb.firebaseio.com",
+  projectId:"presentes-20226-cat-16-sc"
+});
+const db = getDatabase(app);
+const auth = getAuth(app);
+const CLUB = 'clubs/sagrado-corazon';
+const CATS = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020'];
+const EXCEL = {"cat13": {"5": {"Baraglia Romeo": 1, "Auricchio Felipe": 1}, "6": {"Baraglia Romeo": 1, "Auricchio Felipe": 1}, "7": {"Baraglia Romeo": 1, "Tortorelli Junior": 1, "Baldoni Thiago": 1}, "1": {"Auricchio Felipe": 1}, "2": {"Auricchio Felipe": 2, "Torres Guillermo": 1}, "4": {"Auricchio Felipe": 1, "Coronel Salvador": 2}}, "cat2014": {"1": {"Seranggioli Francisco": 1}, "2": {"Seranggioli Francisco": 2, "Sosa Ciriaco": 1}, "5": {"Seranggioli Francisco": 1}, "7": {"Seranggioli Francisco": 1}, "3": {"Castillo Miqueas": 1}}, "cat2015": {"2": {"Agristola Felipe": 2}, "4": {"Agristola Felipe": 1, "Pereyra Thiago": 1}, "5": {"Agristola Felipe": 1, "Arona Thiago": 1, "La Rosa Valentin": 1}, "6": {"Agristola Felipe": 1, "Pereyra Thiago": 2, "Baldini Santino": 2, "La Rosa Valentin": 1}, "7": {"Baldini Santino": 1}, "1": {"La Rosa Valentin": 1}}, "cat16": {"1": {"Feli": 1, "Ramiro": 1}, "3": {"Benja": 1, "William": 1, "Ramiro": 1, "Camilo": 1}, "2": {"Santi": 2, "Faustino": 1, "Camilo": 1}, "4": {"Mateo": 1}}, "cat2017": {"2": {"Recio": 1, "Fermin": 2, "Aurichio": 1}, "3": {"Fermin": 2, "Carmelo": 1, "Simon": 1}, "6": {"Lorenzo": 1, "Simon": 1}, "5": {"Guarda": 2}, "1": {"Carmelo": 1, "Pedro": 1, "Simon": 1, "Aurichio": 3}, "7": {"Carmelo": 1}, "4": {"Simon": 1}}, "cat2018": {"1": {"Bautista F": 1, "Felipe P": 1}, "2": {"Bautista F": 1, "Lautaro": 2, "Felipe P": 1}, "4": {"Bautista F": 3, "Lautaro": 1, "Felipe P": 1}, "6": {"Bautista F": 1}, "5": {"Lautaro": 1, "Ciro T": 1, "Felipe P": 1}, "3": {"Simon": 1}}, "cat2019": {"1": {"Pochettino Vico": 1, "Lopez Machado Milo": 1, "Loredo Camilo": 1, "Chiarlo Manuel": 1, "Cardoso Felipe": 3}, "2": {"Pochettino Vico": 1, "Chiarlo Manuel": 2}, "5": {"Pochettino Vico": 1, "Lopez Machado Milo": 1}, "6": {"Pochettino Vico": 1, "Ranieri Gino": 2, "Etchepare Juan Pedro": 2}, "4": {"Lopez Machado Milo": 1}, "3": {"Cardoso Felipe": 1}}, "cat2020": {"1": {"Campañaro Lucca": 3}, "2": {"Campañaro Lucca": 1}, "4": {"Campañaro Lucca": 1, "Miron Amaro": 1}, "5": {"Campañaro Lucca": 2}, "7": {"Campañaro Lucca": 4, "Miron Amaro": 1}}};
+
+function log(msg,cls){ const d=document.getElementById('log'); d.innerHTML+='<div'+(cls?' class="'+cls+'"':'')+'>'+msg+'</div>'; d.scrollTop=d.scrollHeight; }
+onAuthStateChanged(auth, u => { if(u) log('Sesion: '+u.email,'ok'); else log('Sin sesion','err'); });
+
+window.run = async function(){
+  const btn=document.getElementById('btn');
+  btn.disabled=true; btn.textContent='Procesando...';
+
+  for(const catKey of CATS){
+    log('--- '+catKey+' ---','muted');
+    const excelCat = EXCEL[catKey];
+    if(!excelCat){ log('  Sin datos en Excel','muted'); continue; }
+
+    // Leer citaciones para obtener claves reales de F1-F7
+    const citSnap = await get(ref(db, CLUB+'/'+catKey+'/citaciones'));
+    if(!citSnap.exists()){ log('  Sin citaciones','muted'); continue; }
+
+    const clavePorFecha = {};
+    citSnap.forEach(child => {
+      const cit = child.val();
+      if(cit.fecha && cit.fecha >= 1 && cit.fecha <= 7){
+        clavePorFecha[cit.fecha] = child.key;
+      }
+    });
+
+    // Subir stats por fecha
+    for(const [fechaNumStr, jugadores] of Object.entries(excelCat)){
+      const fechaNum = parseInt(fechaNumStr);
+      const citKey = clavePorFecha[fechaNum];
+      if(!citKey){ log('  F'+fechaNum+': sin citacion en Firebase, skip','info'); continue; }
+      const jugsObj = {};
+      for(const [nombre, goles] of Object.entries(jugadores)){
+        jugsObj[nombre] = { goles };
+      }
+      const total = Object.values(jugadores).reduce((a,b)=>a+b,0);
+      await set(ref(db, CLUB+'/'+catKey+'/stats/'+citKey), { jugadores: jugsObj });
+      log('  OK F'+fechaNum+' '+citKey+': '+total+' goles','ok');
+    }
+
+    // Limpiar anio "2026" del historico
+    const histSnap = await get(ref(db, CLUB+'/'+catKey+'/goleadores_historicos'));
+    if(histSnap.exists()){
+      const updates = {};
+      histSnap.forEach(child => {
+        const entry = child.val();
+        if(entry.anios && entry.anios['2026'] !== undefined){
+          updates[CLUB+'/'+catKey+'/goleadores_historicos/'+child.key+'/anios/2026'] = null;
+        }
+      });
+      if(Object.keys(updates).length > 0){
+        await update(ref(db), updates);
+        log('  OK limpiado "2026" del historico','ok');
+      }
+    }
+  }
+
+  log('','muted');
+  log('Listo.','ok');
+  btn.textContent='Completado';
+};
+</script>
+</body>
+</html>
