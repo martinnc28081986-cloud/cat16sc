@@ -5011,7 +5011,7 @@ async function startCoordApp(){
       </div>`;
     }
     h+=`<div style="margin-bottom:10px">
-      <select onchange="window._coordGolCat2=this.value;renderCoordTab('goleadores')" style="font-size:0.72rem;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);width:100%">
+      <select onchange="window._coordGolCat2=this.value;window.coordTab('goleadores')" style="font-size:0.72rem;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);width:100%">
         <option value="all" ${golCat==='all'?'selected':''}>Todas las categorías</option>
         ${COMP_CATS.map(c=>`<option value="${c.key}" ${golCat===c.key?'selected':''}>${c.label}</option>`).join('')}
       </select>
@@ -5019,7 +5019,7 @@ async function startCoordApp(){
     h+=`<div style="display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap">`;
     [['total','Total'],['2026','2026'],['2025','2025'],['2024','2024'],['2023','2023'],['2022','2022']].forEach(([val,lbl])=>{
       const active=val===golAño;
-      h+=`<button onclick="window._coordGolYear='${val}';renderCoordTab('goleadores')" style="font-size:0.72rem;padding:3px 12px;border-radius:20px;border:1px solid ${active?'rgba(77,115,245,0.5)':'var(--border)'};background:${active?'rgba(77,115,245,0.15)':'transparent'};color:${active?'var(--green)':'var(--muted)'};font-weight:${active?'700':'400'};cursor:pointer">${lbl}</button>`;
+      h+=`<button onclick="window._coordGolYear='${val}';window.coordTab('goleadores')" style="font-size:0.72rem;padding:3px 12px;border-radius:20px;border:1px solid ${active?'rgba(77,115,245,0.5)':'var(--border)'};background:${active?'rgba(77,115,245,0.15)':'transparent'};color:${active?'var(--green)':'var(--muted)'};font-weight:${active?'700':'400'};cursor:pointer">${lbl}</button>`;
     });
     h+=`</div>`;
     if(!ranking.length){
