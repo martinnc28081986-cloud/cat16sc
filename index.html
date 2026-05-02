@@ -646,13 +646,11 @@
     <div class="coord-tab cta" onclick="window.coordTab('resumen')"><span style="font-size:18px;line-height:1">📊</span>Resumen<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:#4d73f5;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('presencias')"><span style="font-size:18px;line-height:1">🏃</span>Presencias<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('citaciones')"><span style="font-size:18px;line-height:1">⭐</span>Citaciones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('goleadores')"><span style="font-size:18px;line-height:1">⚽</span>Goles<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('liga')"><span style="font-size:18px;line-height:1">🏆</span>Liga<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="cv-resumen"    class="coord-view active"></div>
   <div id="cv-presencias" class="coord-view"></div>
   <div id="cv-citaciones" class="coord-view"></div>
-  <div id="cv-goleadores" class="coord-view"></div>
   <div id="cv-liga"       class="coord-view"></div>
   <div id="cv-fixture"    class="coord-view"></div>
   <div id="cv-horarios"   class="coord-view"></div>
@@ -4542,7 +4540,7 @@ async function startCoordApp(){
 
   window.coordTab=function(tab){
     coordActiveTab=tab;
-    const tabs=['resumen','presencias','citaciones','goleadores','liga','fixture','horarios','profes'];
+    const tabs=['resumen','presencias','citaciones','liga','fixture','horarios','profes'];
     document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{
       const isActive=tabs[i]===tab;
       t.className='coord-tab'+(isActive?' cta':'');
@@ -4559,7 +4557,6 @@ async function startCoordApp(){
     if(tab==='resumen')    renderResumen();
     if(tab==='presencias') renderPresencias();
     if(tab==='citaciones') renderCitaciones();
-    if(tab==='goleadores') renderGoleadores();
     if(tab==='liga')       renderLiga();
     if(tab==='fixture')    renderCoordFixture();
     if(tab==='horarios')   renderCoordHorarios();
@@ -4849,89 +4846,6 @@ async function startCoordApp(){
       });
     }
 
-    // ── GOLEADORES POR AÑO ──
-    const AÑOS_G = ['2026','2025','2024','2023','2022'];
-    const CAT_COL = {cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-    // Acumular goles 2026 desde stats de cada cat
-    const goles2026 = {}; // catKey → {nombre: goles}
-    COMP_CATS.forEach(cat=>{
-      const catGoles = {};
-      Object.values(D[cat.key].stats||{}).forEach(st=>{
-        Object.entries(st.jugadores||{}).forEach(([n,d])=>{ catGoles[n]=(catGoles[n]||0)+(d.goles||0); });
-      });
-      goles2026[cat.key] = catGoles;
-    });
-    // Acumular histórico desde goleadores_historicos
-    const golesHist = {}; // catKey → año → {nombre: goles}
-    COMP_CATS.forEach(cat=>{
-      const byYear = {};
-      Object.values(D[cat.key].hist||{}).forEach(entry=>{
-        if(!entry.nombre||!entry.anios) return;
-        Object.entries(entry.anios).forEach(([año,g])=>{
-          if(!byYear[año]) byYear[año]={};
-          byYear[año][entry.nombre]=(byYear[año][entry.nombre]||0)+g;
-        });
-      });
-      golesHist[cat.key] = byYear;
-    });
-    // Construir ranking por año
-    function buildRanking(año, catFilter){
-      const out = {};
-      COMP_CATS.forEach(cat=>{
-        if(catFilter && cat.key !== catFilter) return;
-        let jugadores = {};
-        if(año==='2026'){ jugadores = goles2026[cat.key]||{}; }
-        else { jugadores = (golesHist[cat.key]||{})[año]||{}; }
-        Object.entries(jugadores).forEach(([nombre,g])=>{
-          if(g<=0) return;
-          const key = cat.key+'|'+nombre;
-          out[key]={nombre,cat:cat.key,g};
-        });
-      });
-      return Object.values(out).sort((a,b)=>b.g-a.g).slice(0,15);
-    }
-    const coordGolYear = window._coordGolYear||'2026';
-    const coordGolCat  = window._coordGolCat||'all';
-    window._coordGolYear = coordGolYear;
-    window._coordGolCat  = coordGolCat;
-    const ranking = buildRanking(coordGolYear, coordGolCat==='all'?null:coordGolCat);
-    const maxG = ranking.length ? ranking[0].g : 1;
-    h+=`<div class="csec" style="margin-top:24px">Goleadores por año</div>`;
-    // Selector categoría
-    h+=`<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
-      <select onchange="window._coordGolCat=this.value;renderCoordTab('citaciones')" style="font-size:0.72rem;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text)">
-        <option value="all" ${coordGolCat==='all'?'selected':''}>Todas las cats</option>
-        ${COMP_CATS.map(c=>`<option value="${c.key}" ${coordGolCat===c.key?'selected':''}>${c.label}</option>`).join('')}
-      </select>
-    </div>`;
-    // Tabs de años
-    h+=`<div style="display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap">`;
-    AÑOS_G.forEach(año=>{
-      const active = año===coordGolYear;
-      h+=`<button onclick="window._coordGolYear='${año}';renderCoordTab('citaciones')" style="font-size:0.72rem;padding:3px 12px;border-radius:20px;border:1px solid ${active?'rgba(77,115,245,0.5)':'var(--border)'};background:${active?'rgba(77,115,245,0.15)':'transparent'};color:${active?'var(--green)':'var(--muted)'};font-weight:${active?'700':'400'};cursor:pointer">${año}</button>`;
-    });
-    h+=`</div>`;
-    if(!ranking.length){
-      h+=`<div class="empty-msg">Sin goles registrados para ${coordGolYear}${coordGolCat!=='all'?' en esta categoría':''}</div>`;
-    } else {
-      ranking.forEach((p,i)=>{
-        const pct = maxG>0 ? Math.round(p.g/maxG*100) : 0;
-        const col = CAT_COL[p.cat]||'#4d73f5';
-        const isTop = i===0;
-        h+=`<div style="display:grid;grid-template-columns:80px 1fr 28px;align-items:center;gap:8px;margin-bottom:5px">
-          <div style="text-align:right">
-            <div style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-            <div style="font-size:0.62rem;color:${col};font-weight:600">${COMP_CATS.find(c=>c.key===p.cat)?.label||p.cat}</div>
-          </div>
-          <div style="position:relative;height:${isTop?'24px':'18px'};background:var(--surface2);border-radius:4px;overflow:hidden">
-            <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${col};border-radius:4px;opacity:${isTop?'1':'0.7'}"></div>
-            ${isTop?`<span style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:0.6rem;font-weight:700;color:#fff">⭐ Goleador ${coordGolYear}</span>`:''}
-          </div>
-          <span style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);text-align:right">${p.g}</span>
-        </div>`;
-      });
-    }
-
     el.innerHTML=h;
   }
   // Cats que suman para la tabla general (2013-2018 inclusive; 2019 y 2020 no cuentan)
@@ -4952,98 +4866,6 @@ async function startCoordApp(){
       .map(t => ({...t, pts: t.pg*2 + t.pe}))
       .sort((a,b) => b.pts - a.pts || (b.gf-b.gc) - (a.gf-a.gc) || b.gf - a.gf);
   })();
-
-  // ── TAB GOLEADORES ──
-  function renderGoleadores(){
-    const el=document.getElementById('cv-goleadores');
-    if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando…</div>'; return; }
-    const CAT_COL={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-    const golAño=window._coordGolYear||'total';
-    const golCat=window._coordGolCat2||'all';
-    // Acumular 2026 desde stats
-    const g26={};
-    COMP_CATS.forEach(cat=>{
-      const g={};
-      Object.values(D[cat.key].stats||{}).forEach(st=>{ Object.entries(st.jugadores||{}).forEach(([n,d])=>{ g[n]=(g[n]||0)+(d.goles||0); }); });
-      g26[cat.key]=g;
-    });
-    // Histórico por año
-    const gHist={};
-    COMP_CATS.forEach(cat=>{
-      const byY={};
-      Object.values(D[cat.key].hist||{}).forEach(entry=>{
-        if(!entry.nombre||!entry.anios) return;
-        Object.entries(entry.anios).forEach(([año,g])=>{ if(!byY[año]) byY[año]={}; byY[año][entry.nombre]=(byY[año][entry.nombre]||0)+g; });
-      });
-      gHist[cat.key]=byY;
-    });
-    function buildRanking(año,catFilter){
-      const out={};
-      COMP_CATS.forEach(cat=>{
-        if(catFilter&&cat.key!==catFilter) return;
-        let jugs={};
-        if(año==='total'){ jugs={...(g26[cat.key]||{})}; Object.values(gHist[cat.key]||{}).forEach(yD=>{ Object.entries(yD).forEach(([n,g])=>{ jugs[n]=(jugs[n]||0)+g; }); }); }
-        else if(año==='2026'){ jugs=g26[cat.key]||{}; }
-        else { jugs=(gHist[cat.key]||{})[año]||{}; }
-        Object.entries(jugs).forEach(([nombre,g])=>{
-          if(g<=0) return;
-          const key=cat.key+'|'+nombre;
-          if(!out[key]) out[key]={nombre,cat:cat.key,g:0};
-          out[key].g+=g;
-        });
-      });
-      return Object.values(out).sort((a,b)=>b.g-a.g).slice(0,20);
-    }
-    const ranking=buildRanking(golAño,golCat==='all'?null:golCat);
-    const maxG=ranking.length?ranking[0].g:1;
-    const top=buildRanking('total',null)[0];
-    let h='';
-    if(top){
-      const col=CAT_COL[top.cat]||'#4d73f5';
-      const catLbl=COMP_CATS.find(c=>c.key===top.cat)?.label||top.cat;
-      h+=`<div style="background:${col}22;border:1px solid ${col}55;border-radius:12px;padding:13px 15px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
-        <div style="font-size:2rem">&#11088;</div>
-        <div>
-          <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:2px">Goleador histórico del club</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text)">${top.nombre}</div>
-          <div style="font-size:0.72rem;color:${col};font-weight:700">${catLbl} &middot; ${top.g} goles totales</div>
-        </div>
-      </div>`;
-    }
-    h+=`<div style="margin-bottom:10px">
-      <select onchange="window._coordGolCat2=this.value;window.coordTab('goleadores')" style="font-size:0.72rem;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--text);width:100%">
-        <option value="all" ${golCat==='all'?'selected':''}>Todas las categorías</option>
-        ${COMP_CATS.map(c=>`<option value="${c.key}" ${golCat===c.key?'selected':''}>${c.label}</option>`).join('')}
-      </select>
-    </div>`;
-    h+=`<div style="display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap">`;
-    [['total','Total'],['2026','2026'],['2025','2025'],['2024','2024'],['2023','2023'],['2022','2022']].forEach(([val,lbl])=>{
-      const active=val===golAño;
-      h+=`<button onclick="window._coordGolYear='${val}';window.coordTab('goleadores')" style="font-size:0.72rem;padding:3px 12px;border-radius:20px;border:1px solid ${active?'rgba(77,115,245,0.5)':'var(--border)'};background:${active?'rgba(77,115,245,0.15)':'transparent'};color:${active?'var(--green)':'var(--muted)'};font-weight:${active?'700':'400'};cursor:pointer">${lbl}</button>`;
-    });
-    h+=`</div>`;
-    if(!ranking.length){
-      h+=`<div class="empty-msg">Sin datos para este filtro</div>`;
-    } else {
-      ranking.forEach((p,i)=>{
-        const pct=maxG>0?Math.round(p.g/maxG*100):0;
-        const col=CAT_COL[p.cat]||'#4d73f5';
-        const isTop=i===0;
-        const catLbl=COMP_CATS.find(c=>c.key===p.cat)?.label||p.cat;
-        h+=`<div style="display:grid;grid-template-columns:90px 1fr 28px;align-items:center;gap:8px;margin-bottom:6px">
-          <div style="text-align:right">
-            <div style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-            <div style="font-size:0.62rem;color:${col};font-weight:600">${catLbl}</div>
-          </div>
-          <div style="position:relative;height:${isTop?'26px':'20px'};background:var(--surface2);border-radius:4px;overflow:hidden">
-            <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${col};border-radius:4px;opacity:${isTop?'1':'0.75'}"></div>
-          </div>
-          <span style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);text-align:right">${p.g}</span>
-        </div>`;
-      });
-    }
-    el.innerHTML=h;
-  }
 
   function renderLiga(){
     const el=document.getElementById('cv-liga');
