@@ -4804,10 +4804,10 @@ async function startCoordApp(){
       h+=`<div class="csec" style="margin-top:24px">Historial por fecha</div>`;
       allF.forEach(f=>{
         const fx=FIXTURE_C.find(x=>x.fecha===f),rival=fx?fx.rival:'F'+f;
-        h+=`<div class="fecha-bar"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-weight:600;font-size:0.82rem">Fecha ${f} — ${rival}</span><span style="font-size:0.72rem;color:var(--muted)">${COMP_CATS.filter(c=>Object.values(D[c.key].cit).some(x=>x.fecha===f)).length}/${COMP_CATS.length} cats</span></div><div style="display:flex;flex-wrap:wrap;gap:4px">`;
+        h+=`<div class="fecha-bar"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-weight:600;font-size:0.82rem">Fecha ${f} — ${rival}</span><span style="font-size:0.72rem;color:var(--muted)">${COMP_CATS.filter(c=>Object.values(D[c.key].cit).some(x=>x.fecha===f && x.citados && x.citados.length>0)).length}/${COMP_CATS.length} cats</span></div><div style="display:flex;flex-wrap:wrap;gap:4px">`;
         COMP_CATS.forEach(cat=>{
           const ce=Object.values(D[cat.key].cit).find(x=>x.fecha===f);
-          const cited=!!ce,wa=ce&&ce.whatsappShared;
+          const cited=hasCitados(ce),wa=ce&&ce.whatsappShared;
           const bg=cited?'rgba(34,85,238,0.1)':'rgba(255,23,68,0.07)',bdr=cited?'rgba(34,85,238,0.3)':'rgba(255,23,68,0.15)',col=cited?'var(--green)':'rgba(200,80,80,0.6)';
           h+=`<span style="font-size:0.7rem;padding:3px 9px;border-radius:5px;background:${bg};border:1px solid ${bdr};color:${col}">${cat.label.replace('Cat ','')} ${cited?'✓':'—'}${wa?' 📱':''}</span>`;
         });
