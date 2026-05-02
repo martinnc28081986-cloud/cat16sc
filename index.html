@@ -677,6 +677,10 @@ const app = initializeApp(FC);
 const db  = getDatabase(app);
 const auth = getAuth(app);
 let CLUB_PATH = 'clubs/sagrado-corazon'; // Prefijo multitenant — se actualiza al login
+// Variables globales de torneo — accesibles desde profe y coordinador
+let TORNEO_ID = 'default';
+let DB_PREFIX = CLUB_PATH+'/cat16/torneos/'+TORNEO_ID; // se actualiza en loadClubConfig y startCoordApp
+const CAT_PREFIX = () => DB_PREFIX.split('/torneos/')[0]; // nivel cat sin torneo
 
 // ── PRESENCIA EN TIEMPO REAL ──
 let _connectedUsers = 0;
@@ -1060,10 +1064,8 @@ const CAT_CONFIG = {
 };
 
 const CFG = CAT_CONFIG[cat] || CAT_CONFIG['cat16'];
-// DB_PREFIX incluye el torneo activo — se actualiza al cargar config
-let TORNEO_ID = 'default'; // se sobreescribe al login
-let DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath+'/torneos/'+TORNEO_ID;
-const CAT_PREFIX = () => CLUB_PATH+'/'+CFG.dbPath; // players y goleadores_historicos siempre a nivel cat
+// DB_PREFIX y TORNEO_ID se definen globalmente antes de startApp
+// (ver declaración global arriba del módulo)
 
 // Update header — siempre MI PLANTEL arriba, club abajo
 document.querySelector('.logo').textContent = 'MI PLANTEL';
