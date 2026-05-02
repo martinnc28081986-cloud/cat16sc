@@ -1060,7 +1060,10 @@ const CAT_CONFIG = {
 };
 
 const CFG = CAT_CONFIG[cat] || CAT_CONFIG['cat16'];
-const DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath;
+// DB_PREFIX incluye el torneo activo — se actualiza al cargar config
+let TORNEO_ID = 'default'; // se sobreescribe al login
+let DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath+'/torneos/'+TORNEO_ID;
+const CAT_PREFIX = () => CLUB_PATH+'/'+CFG.dbPath; // players y goleadores_historicos siempre a nivel cat
 
 // Update header — siempre MI PLANTEL arriba, club abajo
 document.querySelector('.logo').textContent = 'MI PLANTEL';
@@ -1193,6 +1196,9 @@ async function loadClubConfig(){
     const cfg = snap.exists() ? snap.val() : {};
 
     // ── Leer datos de la liga compartida si existe ligaId ──
+    // Actualizar torneo activo
+    TORNEO_ID = cfg.torneoActivo || 'default';
+    DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath+'/torneos/'+TORNEO_ID;
     const ligaId = cfg.ligaId || cfg.liga_id || null;
     let ligaData = null;
     if(ligaId && ligaId.includes('-202')){
@@ -1264,6 +1270,7 @@ async function _saveDefaultClubConfig(){
     };
     await set(ref(db, CLUB_PATH+'/config'), {
       fixture: fixtureObj,
+      torneoActivo: 'lisfi-2026-zona2b',
       horarios,
       address: 'Av. 13 y 610 Villa Elvira',
       liga: 'LISFI',
@@ -1276,7 +1283,7 @@ async function _saveDefaultClubConfig(){
 async function loadPlayersFromDB(){
   if(window._isEscuelita) return; // escuelita usa su propio sistema
   try {
-    const snap = await get(ref(db, DB_PREFIX+'/players'));
+    const snap = await get(ref(db, CAT_PREFIX()+'/players'));
     if(snap.exists()){
       const data = snap.val();
       const activos = [], inactivos = [];
@@ -1362,7 +1369,7 @@ async function _getActiveFecha(fixture, suspensions){
   try {
     // Leer citaciones de todas las cats competitivas en paralelo
     const snaps = await Promise.all(
-      COMP_CAT_PATHS.map(cat => get(ref(db, CLUB_PATH+'/'+cat+'/citaciones')))
+      COMP_CAT_PATHS.map(cat => get(ref(db, CLUB_PATH+'/'+cat+'/torneos/'+TORNEO_ID+'/citaciones')))
     );
     const allCits = {};
     COMP_CAT_PATHS.forEach((cat, i) => {
@@ -2283,7 +2290,7 @@ async function _savePlayers(){
   const data = {};
   PLAYERS.forEach(nombre => { data[nombre.replace(/[.#$/\[\]]/g,'_')] = {nombre, activo: true}; });
   PLAYERS_INACTIVE.forEach(nombre => { data[nombre.replace(/[.#$/\[\]]/g,'_')] = {nombre, activo: false}; });
-  await set(ref(db, DB_PREFIX+'/players'), data);
+  await set(ref(db, CAT_PREFIX()+'/players'), data);
 }
 
 function renderPlantel(){
@@ -2829,7 +2836,7 @@ async function _loadHistoricos(){
   if(_histCache !== null) return _histCache;
   try{
     const catKey = DB_PREFIX.split('/').pop();
-    const snap = await get(ref(db, DB_PREFIX+'/goleadores_historicos'));
+    const snap = await get(ref(db, CAT_PREFIX()+'/goleadores_historicos'));
     if(snap.exists()){
       _histCache = {};
       snap.forEach(child => {
@@ -4522,15 +4529,15 @@ async function startCoordApp(){
   (async function loadCoordData(){
     try {
       const reads = ALL_CATS.flatMap(cat=>[
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{}),
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{}),
         get(ref(db, CLUB_PATH+'/'+cat.key+'/goleadores_historicos')).then(s=>{ D[cat.key].hist=s.val()||{}; }).catch(()=>{}),
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/stats')).then(s=>{ D[cat.key].stats=s.val()||{}; }).catch(()=>{})
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/stats')).then(s=>{ D[cat.key].stats=s.val()||{}; }).catch(()=>{})
       ]);
       await Promise.all(reads);
     } catch(e){}
     // Citaciones con onValue para reflejar actualizaciones en tiempo real (ej: whatsappShared)
     ALL_CATS.forEach(cat=>{
-      const unsub = onValue(ref(db, CLUB_PATH+'/'+cat.key+'/citaciones'), s=>{
+      const unsub = onValue(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/citaciones'), s=>{
         D[cat.key].cit = s.val()||{};
         if(coordFirebaseLoaded) refresh();
       }, ()=>{});
