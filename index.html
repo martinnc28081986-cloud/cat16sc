@@ -1257,7 +1257,8 @@ async function loadClubConfig(){
       await _saveDefaultClubConfig();
     }
 
-  } catch(e){ console.warn('loadClubConfig error:', e); }
+    _startFirebaseListeners();
+  } catch(e){ console.warn('loadClubConfig error:', e); _startFirebaseListeners(); }
 }
 
 async function _saveDefaultClubConfig(){
@@ -1448,33 +1449,33 @@ const _loadTimeout = setTimeout(()=>{
   setSS('error');
 }, 8000);
 
-// Desuscribir listeners anteriores si existen
-if(window._unsub1) try{window._unsub1();}catch(e){}
-if(window._unsub2) try{window._unsub2();}catch(e){}
-
-try {
-  window._unsub1 = onValue(ref(db,DB_PREFIX+'/attendance'), snap => {
+// Los listeners se inician después de loadClubConfig (ver _startFirebaseListeners)
+function _startFirebaseListeners(){
+  if(window._unsub1) try{window._unsub1();}catch(e){}
+  if(window._unsub2) try{window._unsub2();}catch(e){}
+  try {
+    window._unsub1 = onValue(ref(db,DB_PREFIX+'/attendance'), snap => {
+      clearTimeout(_loadTimeout);
+      attendance=snap.val()||{};
+      setSS('live');
+      document.getElementById('loadingScreen').style.display='none';
+      refresh();
+    }, (err)=>{
+      clearTimeout(_loadTimeout);
+      setSS('error');
+      document.getElementById('loadingScreen').style.display='none';
+      console.error('[MI PLANTEL] Error Firebase attendance:', err.code, err.message);
+      showToast('Error Firebase: '+err.code);
+    });
+    window._unsub2 = onValue(ref(db,DB_PREFIX+'/citaciones'), snap => {
+      citaciones=snap.val()||{};
+      refresh();
+    }, ()=>{});
+  } catch(e) {
     clearTimeout(_loadTimeout);
-    attendance=snap.val()||{};
-    setSS('live');
     document.getElementById('loadingScreen').style.display='none';
-    refresh();
-  }, (err)=>{
-    clearTimeout(_loadTimeout);
     setSS('error');
-    document.getElementById('loadingScreen').style.display='none';
-    console.error('[MI PLANTEL] Error Firebase attendance:', err.code, err.message);
-    showToast('Error Firebase: '+err.code);
-  });
-
-  window._unsub2 = onValue(ref(db,DB_PREFIX+'/citaciones'), snap => {
-    citaciones=snap.val()||{};
-    refresh();
-  }, ()=>{});
-} catch(e) {
-  clearTimeout(_loadTimeout);
-  document.getElementById('loadingScreen').style.display='none';
-  setSS('error');
+  }
 }
 
 // ── OFFLINE / ONLINE ──
