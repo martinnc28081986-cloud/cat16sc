@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Migrar a Torneos — MI PLANTEL</title>
+<style>
+body{font-family:sans-serif;background:#07186b;color:#e8efff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;}
+.card{background:#0d2280;border:1px solid #1e3ab0;border-radius:14px;padding:24px;max-width:520px;width:100%;}
+h1{font-size:1.3rem;margin:0 0 6px;color:#4d73f5;}
+p{font-size:.82rem;color:#7a9ccc;margin:0 0 16px;}
+.warn{background:rgba(255,171,64,.08);border:1px solid rgba(255,171,64,.25);border-radius:8px;padding:12px;font-size:.8rem;color:#ffab40;margin-bottom:16px;}
+button{background:#22cd78;color:#000;border:none;border-radius:9px;padding:12px 28px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+#log{margin-top:16px;text-align:left;font-size:.73rem;color:#7a9ccc;max-height:380px;overflow-y:auto;background:#07186b;border-radius:8px;padding:10px;font-family:monospace;}
+.ok{color:#22cd78} .err{color:#ff1744} .info{color:#ffab40} .muted{color:#3a4a6a}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Migrar datos a estructura de torneos</h1>
+  <p>Copia citaciones, stats y attendance de cada categoría al nuevo path con torneos. Los datos originales quedan intactos hasta confirmar que todo funciona.</p>
+  <div class="warn">Ejecutar una sola vez. Verificar la app antes de borrar los datos del path viejo.</div>
+  <button id="btn" onclick="migrar()">Iniciar migración</button>
+  <div id="log"></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
+  authDomain:"presentes-20226-cat-16-sc.firebaseapp.com",
+  databaseURL:"https://presentes-20226-cat-16-sc-default-rtdb.firebaseio.com",
+  projectId:"presentes-20226-cat-16-sc"
+});
+const db = getDatabase(app);
+const auth = getAuth(app);
+const CLUB = 'clubs/sagrado-corazon';
+const TORNEO = 'lisfi-2026-zona2b';
+const CATS = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020','escuelita'];
+const NODOS = ['citaciones','stats','attendance'];
+
+function log(msg,cls){ const d=document.getElementById('log'); d.innerHTML+='<div'+(cls?' class="'+cls+'"':'')+'>'+msg+'</div>'; d.scrollTop=d.scrollHeight; }
+onAuthStateChanged(auth, u => { if(u) log('Sesion: '+u.email,'ok'); else log('Sin sesion','err'); });
+
+window.migrar = async function(){
+  const btn=document.getElementById('btn');
+  btn.disabled=true; btn.textContent='Migrando...';
+  let total=0, errores=0;
+
+  // 1. Migrar datos por categoria
+  for(const cat of CATS){
+    log('\n-- '+cat+' --','muted');
+    for(const nodo of NODOS){
+      const oldPath = CLUB+'/'+cat+'/'+nodo;
+      const newPath = CLUB+'/'+cat+'/torneos/'+TORNEO+'/'+nodo;
+      try{
+        const snap = await get(ref(db, oldPath));
+        if(!snap.exists()){ log('  '+nodo+': vacio, skip','muted'); continue; }
+        await set(ref(db, newPath), snap.val());
+        log('  OK '+nodo+' ('+Object.keys(snap.val()).length+' registros)','ok');
+        total++;
+      } catch(e){
+        log('  ERR '+nodo+': '+e.message,'err');
+        errores++;
+      }
+    }
+  }
+
+  // 2. Actualizar config del club con torneoActivo
+  log('\n-- config --','muted');
+  try{
+    await update(ref(db, CLUB+'/config'), { torneoActivo: TORNEO });
+    log('  OK torneoActivo = '+TORNEO,'ok');
+  } catch(e){
+    log('  ERR config: '+e.message,'err');
+    errores++;
+  }
+
+  log('\n=============================','muted');
+  log('Completado: '+total+' nodos migrados, '+errores+' errores.', errores===0?'ok':'err');
+  log('Proba la app con el nuevo index.html. Si todo funciona, podes borrar los paths viejos.','info');
+  btn.textContent = errores===0 ? 'Completado' : 'Reintentar';
+  btn.disabled = errores===0;
+};
+</script>
+</body>
+</html>
