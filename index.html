@@ -4429,6 +4429,14 @@ window._saCrearUsuario = async function(clubId){
 // TABLERO COORDINADOR
 // ════════════════════════════════════════════════
 async function startCoordApp(){
+  // Leer torneoActivo del config antes de cargar datos
+  try {
+    const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
+    if(cfgSnap.exists() && cfgSnap.val().torneoActivo){
+      TORNEO_ID = cfgSnap.val().torneoActivo;
+    }
+  } catch(e){ console.warn('startCoordApp: error leyendo torneoActivo', e); }
+
   // Esperar que el fetch de liga_data.json termine (max 5s)
   await Promise.race([
     window._ligaDataReady,
