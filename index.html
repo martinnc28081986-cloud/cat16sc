@@ -2946,8 +2946,8 @@ async function renderPosPartido(){
   // Unir jugadores de 2026 y de histórico
   const todosJug = new Set([...Object.keys(golesAcum), ...Object.keys(hist)]);
   const goleadores = [...todosJug].map(nombre => {
-    const g2026 = golesAcum[nombre]||0;
-    const histAnios = hist[nombre]||{};
+    const g2026 = (golesAcum[nombre]||0) + ((hist[nombre]||{})["2026"]||0);
+    const histAnios = Object.fromEntries(Object.entries(hist[nombre]||{}).filter(([y])=>y!=="2026"));
     const histTotal = Object.values(histAnios).reduce((a,b)=>a+b,0);
     return {nombre, g2026, histAnios, histTotal, total: g2026+histTotal};
   }).filter(j=>j.total>0).sort((a,b)=>b.total-a.total);
