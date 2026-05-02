@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Subir Goles 2026 — MI PLANTEL</title>
+<style>
+body{font-family:sans-serif;background:#07186b;color:#e8efff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px;box-sizing:border-box;}
+.card{background:#0d2280;border:1px solid #1e3ab0;border-radius:14px;padding:24px;max-width:480px;width:100%;text-align:center;}
+h1{font-size:1.3rem;margin:0 0 6px;color:#4d73f5;}
+p{font-size:.82rem;color:#7a9ccc;margin:0 0 20px;}
+button{background:#22cd78;color:#000;border:none;border-radius:9px;padding:12px 28px;font-size:1rem;font-weight:700;cursor:pointer;width:100%;}
+button:disabled{opacity:.5;cursor:not-allowed;}
+#log{margin-top:16px;text-align:left;font-size:.75rem;color:#7a9ccc;max-height:300px;overflow-y:auto;background:#07186b;border-radius:8px;padding:10px;font-family:monospace;}
+.ok{color:#22cd78} .err{color:#ff1744} .info{color:#ffab40}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>⚽ Goles 2026 — F1 a F7</h1>
+  <p>Agrega los goles 2026 del Excel (hasta Hernandez) en el histórico de cada categoría. No toca los stats de N.FUERZA.</p>
+  <button id="btn" onclick="subir()">Subir a Firebase</button>
+  <div id="log"></div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
+  authDomain:"presentes-20226-cat-16-sc.firebaseapp.com",
+  databaseURL:"https://presentes-20226-cat-16-sc-default-rtdb.firebaseio.com",
+  projectId:"presentes-20226-cat-16-sc"
+});
+const db = getDatabase(app);
+const auth = getAuth(app);
+const CLUB = 'clubs/sagrado-corazon';
+
+const DATA_2026 = {"cat13": {"Baraglia Romeo": 3, "Auricchio Felipe": 6, "Coronel Salvador": 2, "Tortorelli Junior": 1, "Torres Guillermo": 1, "Baldoni Thiago": 1}, "cat2014": {"Seranggioli Francisco": 5, "Sosa Ciriaco": 1, "Castillo Miqueas": 1}, "cat2015": {"Agristola Felipe": 5, "Pereyra Thiago": 3, "Baldini Santino": 3, "Arona Thiago": 1, "La Rosa Valentin": 3}, "cat16": {"Feli": 1, "Benja": 1, "Santi": 2, "Mateo": 1, "Faustino": 1, "William": 1, "Ramiro": 2, "Camilo": 2}, "cat2017": {"Recio": 1, "Fermin": 4, "Lorenzo": 1, "Guarda": 2, "Carmelo": 3, "Pedro": 1, "Simon": 4, "Aurichio": 4}, "cat2018": {"Bautista F": 6, "Lautaro": 4, "Ciro T": 1, "Simon": 1, "Felipe P": 4}, "cat2019": {"Pochettino Vico": 4, "Lopez Machado Milo": 3, "Loredo Camilo": 1, "Chiarlo Manuel": 3, "Ranieri Gino": 2, "Cardoso Felipe": 4, "Etchepare Juan Pedro": 2}, "cat2020": {"Campañaro Lucca": 12, "Miron Amaro": 2}};
+
+function log(msg,cls){ const d=document.getElementById('log'); d.innerHTML+='<div'+(cls?' class="'+cls+'"':'')+'>'+msg+'</div>'; d.scrollTop=d.scrollHeight; }
+onAuthStateChanged(auth, u => { if(u) log('✓ Sesión: '+u.email,'ok'); else log('Sin sesión','err'); });
+
+window.subir = async function(){
+  const btn=document.getElementById('btn');
+  btn.disabled=true; btn.textContent='Subiendo...';
+
+  for(const [catKey, jugadores] of Object.entries(DATA_2026)){
+    try{
+      const snap = await get(ref(db, CLUB+'/'+catKey+'/goleadores_historicos'));
+      const hist = snap.exists() ? snap.val() : {};
+
+      for(const [nombre, goles] of Object.entries(jugadores)){
+        const key = nombre.replace(/[.#$\[\]/]/g,'_');
+        if(hist[key]){
+          hist[key].anios = hist[key].anios || {};
+          hist[key].anios['2026'] = goles;
+        } else {
+          hist[key] = { nombre, anios: { '2026': goles } };
+        }
+      }
+
+      await set(ref(db, CLUB+'/'+catKey+'/goleadores_historicos'), hist);
+      const total = Object.values(jugadores).reduce((a,b)=>a+b,0);
+      log('✓ '+catKey+' — '+Object.keys(jugadores).length+' jugadores, '+total+' goles','ok');
+    } catch(e){
+      log('✗ '+catKey+': '+e.message,'err');
+    }
+  }
+  log('\nListo.','ok');
+  btn.textContent='✅ Completado';
+};
+</script>
+</body>
+</html>
