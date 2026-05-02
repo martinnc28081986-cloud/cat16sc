@@ -2098,9 +2098,10 @@ window.shareCit = async function(key){
   lines.push('');
   lines.push('✅ Confirmar asistencia respondiendo este mensaje');
 
+  // Abrir WhatsApp ANTES del await para no romper la cadena de gesto en Safari/iOS
+  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
   // Marcar como compartido
   try{ await set(ref(db,DB_PREFIX+'/citaciones/'+key),{...cit,whatsappShared:true}); }catch(e){}
-  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
 };
 
 // ── STATS CITACIONES ──
