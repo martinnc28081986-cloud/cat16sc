@@ -1211,7 +1211,7 @@ async function loadClubConfig(){
       } catch(e){ console.warn('Error leyendo liga:', e); }
     }
 
-    const catKey = DB_PREFIX.split('/').pop();
+    const catKey = CFG.dbPath;
 
     // ── FIXTURE ──
     // Condiciones L/V vienen del club, rivales pueden venir de la liga
@@ -2091,7 +2091,7 @@ window.shareCit = async function(key){
   }
 
   // Categoría
-  const catKey = DB_PREFIX.split('/').pop();
+  const catKey = CFG.dbPath;
   const catNames = {cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
                     cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020'};
   const catLabel = catNames[catKey] || catKey;
@@ -2150,7 +2150,7 @@ function renderCitStats(){
 
   // Resultados desde LIGA_DATA.scResults (los carga el scraper, son los reales)
   const _catNumMapTL={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
-  const _catKeyTL=DB_PREFIX.split('/').pop();
+  const _catKeyTL=CFG.dbPath;
   const _scResTL=LIGA_DATA.scResults[_catNumMapTL[_catKeyTL]||16]||[];
   const _resByFecha={};
   _scResTL.forEach(r=>{ _resByFecha[r.fecha]= r.gf>r.gc?'V':r.gf<r.gc?'L':'E'; });
@@ -2448,7 +2448,7 @@ function _getResultData(key){
   const cit = citaciones[key];
   if(!cit) return null;
   const _catNumMap = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
-  const catNum = _catNumMap[DB_PREFIX.split('/').pop()] || 16;
+  const catNum = _catNumMap[CFG.dbPath] || 16;
   const scRes = (LIGA_DATA && LIGA_DATA.scResults && LIGA_DATA.scResults[catNum]) || [];
   const match = scRes.find(function(r){ return Number(r.fecha) === Number(cit.fecha); });
   let gf=null, gc=null;
@@ -2817,7 +2817,7 @@ let _ppEditKey=null, _ppEditStats={};
 function _ppResultData(key){
   const cit=citaciones[key]; if(!cit) return null;
   const map={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
-  const catNum=map[DB_PREFIX.split('/').pop()]||16;
+  const catNum=map[CFG.dbPath]||16;
   const scRes=(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[];
   const m=scRes.find(r=>Number(r.fecha)===Number(cit.fecha));
   if(m){
@@ -2838,7 +2838,7 @@ let _histCache = null; // se resetea al cambiar de categoría arriba via _ppCach
 async function _loadHistoricos(){
   if(_histCache !== null) return _histCache;
   try{
-    const catKey = DB_PREFIX.split('/').pop();
+    const catKey = CFG.dbPath;
     const snap = await get(ref(db, CAT_PREFIX()+'/goleadores_historicos'));
     if(snap.exists()){
       _histCache = {};
@@ -3078,7 +3078,7 @@ async function renderTablas(){
   const el=document.getElementById('tablas-content');
   if(!el)return;
   const _catNumMap2 = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
-  const _catKey2 = DB_PREFIX.split('/').pop();
+  const _catKey2 = CFG.dbPath;
   const catNum = _catNumMap2[_catKey2] || 16;
   const scRes = LIGA_DATA.scResults[catNum]||[];
   const pos   = LIGA_DATA.posiciones[catNum]||[];
@@ -5193,7 +5193,7 @@ async function startCoordApp(){
     await set(ref(db,CLUB_PATH+'/config/horarios'),horarios);
     if(address) await set(ref(db,CLUB_PATH+'/config/address'),address);
     // Actualizar CFG en memoria
-    const catKey=DB_PREFIX.split('/').pop();
+    const catKey=CFG.dbPath;
     if(horarios[catKey]) CFG.matchTime=horarios[catKey];
     if(address) CFG.address=address;
     showCoordToast('✓ Horarios guardados');
