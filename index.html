@@ -2100,8 +2100,8 @@ window.shareCit = async function(key){
 
   // Abrir WhatsApp ANTES del await para no romper la cadena de gesto en Safari/iOS
   window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
-  // Marcar como compartido
-  try{ await set(ref(db,DB_PREFIX+'/citaciones/'+key),{...cit,whatsappShared:true}); }catch(e){}
+  // Marcar como compartido — solo actualiza ese campo, sin tocar el resto
+  try{ await update(ref(db,DB_PREFIX+'/citaciones/'+key),{whatsappShared:true}); }catch(e){ console.warn('shareCit: error al marcar whatsappShared',e); }
 };
 
 // ── STATS CITACIONES ──
@@ -4520,11 +4520,18 @@ async function startCoordApp(){
   (async function loadCoordData(){
     try {
       const reads = ALL_CATS.flatMap(cat=>[
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{}),
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/citaciones')).then(s=>{ D[cat.key].cit=s.val()||{}; }).catch(()=>{})
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{})
       ]);
       await Promise.all(reads);
     } catch(e){}
+    // Citaciones con onValue para reflejar actualizaciones en tiempo real (ej: whatsappShared)
+    ALL_CATS.forEach(cat=>{
+      const unsub = onValue(ref(db, CLUB_PATH+'/'+cat.key+'/citaciones'), s=>{
+        D[cat.key].cit = s.val()||{};
+        if(coordFirebaseLoaded) refresh();
+      }, ()=>{});
+      window._coordUnsubs.push(unsub);
+    });
     coordFirebaseLoaded=true;
     refresh();
   })();
