@@ -1500,7 +1500,7 @@ function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMon
 function fmtD(d){ const o=new Date(d+'T12:00:00'); return DAYS_ES[o.getDay()]+' '+o.getDate()+' de '+MONTHS_ES[o.getMonth()]+' '+o.getFullYear(); }
 function fmtM(m){ const [y,mo]=m.split('-'); return MONTHS_ES[parseInt(mo)-1]+' '+y; }
 function pClass(p){ return p>=75?'hi':p>=50?'mid':'low'; }
-function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+window.showToast = function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
 function getResult(n,e){ if(n===''||e==='') return ''; const ni=parseInt(n),ei=parseInt(e); if(isNaN(ni)||isNaN(ei)) return ''; return ni>ei?'V':ni<ei?'L':'E'; }
 
 const REASONS = ['lesionado','enfermedad','personal','suspendido','sinaviso'];
@@ -4109,7 +4109,7 @@ window.saCrearClubFinal = async function(){
         const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+API_KEY, {
           method: 'POST',
           headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ email: u.email, password: Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken: true })
+          body: JSON.stringify({ email: u.email, password: Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken: true })
         });
         const data = await resp.json();
 
@@ -4473,7 +4473,7 @@ window._saCrearUsuario = async function(clubId){
     // Crear en Firebase Auth
     const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+API_KEY,{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password: Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken:true})
+      body: JSON.stringify({email, password: Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken:true})
     });
     const data = await resp.json();
     if(data.error) throw new Error(data.error.message);
