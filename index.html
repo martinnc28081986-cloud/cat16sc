@@ -3823,7 +3823,7 @@ window.saEntrarComo = function(cat, clubId){
 };
 
 window.saAltaClub = function(){
-  window._saModal = { step: 1, clubId: null, isNew: false, nombre: '', cats: [], usuarios: {} };
+  window._saModal = { step: 1, clubId: null, isNew: false, nombre: '', cats: [], usuarios: {}, torneoId: 'lisfi-2026-zona2b' };
   document.getElementById('saClubModal').style.display = 'block';
   window.saRenderStep(1);
 };
@@ -3889,6 +3889,14 @@ window.saRenderStep = async function(step){
         <input id="saClubNombre" oninput="window.saGenId()" placeholder="Ej: Club Atlético San Martín" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:10px;">
         <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">ID del club</label>
         <div id="saClubIdPreview" style="width:100%;background:#0d2280;border:1px solid rgba(77,115,245,.3);border-radius:8px;padding:7px 12px;color:#4d73f5;font-size:.78rem;font-family:DM Sans,sans-serif;margin-bottom:14px;">se genera automáticamente</div>
+      </div>
+      <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;margin-top:4px;">Torneo activo</label>
+      <div id="saTorneoFields">
+        <select id="saTorneoSelect" onchange="window.saOnTorneoSelect()" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;margin-bottom:8px;">
+          <option value="lisfi-2026-zona2b">LISFI 2026 Zona II B</option>
+          <option value="__nuevo__">+ Crear torneo nuevo</option>
+        </select>
+        <input id="saTorneoNuevo" placeholder="ID del torneo (ej: lisfi-2026-zona2c)" style="display:none;width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:8px;">
       </div>
       <div style="display:flex;gap:8px;margin-top:8px;">
         <button onclick="window.saCloseModal()" style="flex:1;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Cancelar</button>
@@ -3958,6 +3966,19 @@ window.saRenderStep = async function(step){
   }
 };
 
+window.saOnTorneoSelect = function(){
+  const sel = document.getElementById('saTorneoSelect');
+  const inp = document.getElementById('saTorneoNuevo');
+  if(!sel || !inp) return;
+  if(sel.value === '__nuevo__'){
+    inp.style.display = 'block';
+    window._saModal.torneoId = '';
+  } else {
+    inp.style.display = 'none';
+    window._saModal.torneoId = sel.value;
+  }
+};
+
 window.saOnClubSelect = function(){
   const sel = document.getElementById('saClubSelect');
   const fields = document.getElementById('saNewClubFields');
@@ -4006,6 +4027,18 @@ window.saToggleCat = function(cat){
   const idx = arr.indexOf(cat);
   if(idx >= 0) arr.splice(idx, 1);
   else arr.push(cat);
+  // Leer torneoId
+  const tSel = document.getElementById('saTorneoSelect');
+  const tInp = document.getElementById('saTorneoNuevo');
+  if(tSel && tInp){
+    if(tSel.value === '__nuevo__'){
+      const tid = tInp.value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      if(!tid){ showToast('Ingresá el ID del torneo'); return; }
+      window._saModal.torneoId = tid;
+    } else {
+      window._saModal.torneoId = tSel.value;
+    }
+  }
   window.saRenderStep(2);
 };
 
@@ -4049,9 +4082,15 @@ window.saCrearClubFinal = async function(){
           plan: 'trial',
           planStart: Date.now(),
           planEnd: Date.now() + (30*24*60*60*1000),
-          createdAt: Date.now()
+          createdAt: Date.now(),
+          config: { torneoActivo: m.torneoId || 'default' }
         });
       }
+    }
+
+    // Actualizar torneoActivo en config si se especificó
+    if(m.torneoId){
+      await update(ref(db, 'clubs/'+m.clubId+'/config'), { torneoActivo: m.torneoId });
     }
 
     // 2. Crear usuarios y enviar invitaciones via Firebase Auth REST
