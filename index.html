@@ -677,6 +677,7 @@ const app = initializeApp(FC);
 const db  = getDatabase(app);
 const auth = getAuth(app);
 let CLUB_PATH = 'clubs/sagrado-corazon'; // Prefijo multitenant — se actualiza al login
+window.showToast = function(msg){ const t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
 // Variables globales de torneo — accesibles desde profe y coordinador
 let TORNEO_ID = 'default';
 let DB_PREFIX = CLUB_PATH+'/cat16/torneos/'+TORNEO_ID; // se actualiza en loadClubConfig y startCoordApp
@@ -1500,7 +1501,7 @@ function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMon
 function fmtD(d){ const o=new Date(d+'T12:00:00'); return DAYS_ES[o.getDay()]+' '+o.getDate()+' de '+MONTHS_ES[o.getMonth()]+' '+o.getFullYear(); }
 function fmtM(m){ const [y,mo]=m.split('-'); return MONTHS_ES[parseInt(mo)-1]+' '+y; }
 function pClass(p){ return p>=75?'hi':p>=50?'mid':'low'; }
-window.showToast = function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
+// showToast moved to global scope
 function getResult(n,e){ if(n===''||e==='') return ''; const ni=parseInt(n),ei=parseInt(e); if(isNaN(ni)||isNaN(ei)) return ''; return ni>ei?'V':ni<ei?'L':'E'; }
 
 const REASONS = ['lesionado','enfermedad','personal','suspendido','sinaviso'];
