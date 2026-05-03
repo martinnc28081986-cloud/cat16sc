@@ -4502,7 +4502,14 @@ window._saCrearUsuario = async function(clubId){
     window.saEditarClub(clubId);
   }catch(e){
     btn.disabled=false; btn.textContent='✓ Crear usuario';
-    showToast('Error: '+e.message);
+    const errEl = document.getElementById('addUserError');
+    if(errEl){
+      const msg = e.message==='EMAIL_EXISTS' ? 'Este email ya está registrado en el sistema.' : e.message;
+      errEl.textContent = '⚠️ ' + msg;
+      errEl.style.display = 'block';
+    } else {
+      showToast('Error: '+e.message);
+    }
   }
 };
 
