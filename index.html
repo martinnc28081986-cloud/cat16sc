@@ -4470,15 +4470,29 @@ window._saCrearUsuario = async function(clubId){
 
   const API_KEY = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
   try{
-    // Crear en Firebase Auth
+    let uid;
+
+    // Intentar crear en Firebase Auth
     const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+API_KEY,{
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({email, password: Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken:true})
     });
     const data = await resp.json();
-    if(data.error) throw new Error(data.error.message);
 
-    const uid = data.localId;
+    if(data.error && data.error.message === 'EMAIL_EXISTS'){
+      // Usuario ya existe — buscar UID en /users/ por email
+      const usersSnap = await get(ref(db,'users'));
+      if(usersSnap.exists()){
+        usersSnap.forEach(child=>{ if(child.val().email===email) uid=child.key; });
+      }
+      if(!uid) throw new Error('El email ya existe en Auth pero no tiene perfil en la app. Contactá soporte.');
+    } else if(data.error){
+      throw new Error(data.error.message);
+    } else {
+      uid = data.localId;
+    }
+
+    // Guardar/actualizar perfil
     const isCoord = rol==='coordinator'||rol==='profe+coord';
     const perfil = {
       email, clubId,
@@ -4488,24 +4502,26 @@ window._saCrearUsuario = async function(clubId){
     if(rol==='profe+coord') perfil.isProfeCoord = true;
     await set(ref(db,'users/'+uid), perfil);
 
-    // Enviar invitación
+    // Enviar email de invitación (reset de contraseña)
     if(invitar){
-      await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+API_KEY,{
+      const oobResp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+API_KEY,{
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({requestType:'PASSWORD_RESET', email})
       });
+      const oobData = await oobResp.json();
+      if(oobData.error) console.warn('Error enviando invitación:', oobData.error.message);
     }
 
+    // Cerrar modal y volver al club
     document.getElementById('saAddUserOverlay')?.remove();
-    showToast('✓ Usuario creado' + (invitar?' — email enviado':''));
-    // Reabrir modal del club para ver el nuevo usuario
+    showToast('✓ Usuario listo' + (invitar?' — email de invitación enviado':''));
     window.saEditarClub(clubId);
+
   }catch(e){
     btn.disabled=false; btn.textContent='✓ Crear usuario';
     const errEl = document.getElementById('addUserError');
     if(errEl){
-      const msg = e.message==='EMAIL_EXISTS' ? 'Este email ya está registrado en el sistema.' : e.message;
-      errEl.textContent = '⚠️ ' + msg;
+      errEl.textContent = '⚠️ ' + e.message;
       errEl.style.display = 'block';
     } else {
       showToast('Error: '+e.message);
