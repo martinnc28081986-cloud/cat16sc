@@ -4313,10 +4313,15 @@ window.saEditarClub = async function(clubId){
       <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Nombre del club</label>
       <input id="editClubNombre" value="${nombre}" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
       <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Liga</label>
-      <select id="editClubLiga" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.85rem;box-sizing:border-box">
+      <select id="editClubLiga" onchange="window._saOnLigaChange()" style="width:100%;margin-bottom:8px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.85rem;box-sizing:border-box">
         <option value="">— Sin liga —</option>
         ${ligasHtml}
+        <option value="__nueva__">+ Nueva liga...</option>
       </select>
+      <div id="nuevaLigaFields" style="display:none;margin-bottom:12px">
+        <input id="nuevaLigaNombre" placeholder="Nombre (ej: LISFI 2026 Zona II C)" style="width:100%;margin-bottom:6px;background:#112896;border:1px solid #4d73f5;color:#e8efff;padding:8px 12px;border-radius:8px;font-size:0.82rem;box-sizing:border-box">
+        <div id="nuevaLigaIdPreview" style="font-size:0.7rem;color:#4d73f5;padding:2px 4px"></div>
+      </div>
       <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">${catsHtml}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -4332,6 +4337,25 @@ window.saEditarClub = async function(clubId){
   overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
 };
 
+window._saOnLigaChange = function(){
+  const sel = document.getElementById('editClubLiga');
+  const fields = document.getElementById('nuevaLigaFields');
+  const inp = document.getElementById('nuevaLigaNombre');
+  const preview = document.getElementById('nuevaLigaIdPreview');
+  if(!sel || !fields) return;
+  if(sel.value === '__nueva__'){
+    fields.style.display = 'block';
+    if(inp) inp.oninput = function(){
+      const id = inp.value.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+      if(preview) preview.textContent = id ? 'ID: ' + id : '';
+    };
+  } else {
+    fields.style.display = 'none';
+  }
+};
+
 window._saGuardarEdicion = async function(clubId){
   const nombre = document.getElementById('editClubNombre').value.trim();
   const liga = document.getElementById('editClubLiga').value;
@@ -4339,8 +4363,24 @@ window._saGuardarEdicion = async function(clubId){
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
   const current = snap.exists() ? snap.val() : {};
+  // Crear nueva liga si corresponde
+  let ligaFinal = liga;
+  if(liga === '__nueva__'){
+    const ligaNombre = document.getElementById('nuevaLigaNombre')?.value.trim();
+    if(!ligaNombre){ showToast('Ingresá el nombre de la liga'); return; }
+    const ligaId = ligaNombre.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    if(!ligaId){ showToast('Nombre de liga inválido'); return; }
+    await set(ref(db,'ligas/'+ligaId), { nombre: ligaNombre, creadaEn: Date.now() });
+    ligaFinal = ligaId;
+    showToast('✓ Liga "'+ligaNombre+'" creada');
+  }
   const updates = {...current, nombre, cats};
-  if(liga) updates.ligaId = liga; else delete updates.ligaId;
+  if(ligaFinal && ligaFinal !== '__nueva__') updates.ligaId = ligaFinal; else delete updates.ligaId;
+  // También actualizar torneoActivo en config
+  if(!updates.config) updates.config = {};
+  updates.config.torneoActivo = ligaFinal && ligaFinal !== '__nueva__' ? ligaFinal : (current.config?.torneoActivo || 'default');
   await set(ref(db,'clubs/'+clubId), updates);
   document.getElementById('saEditOverlay')?.remove();
   showToast('✓ Club actualizado');
