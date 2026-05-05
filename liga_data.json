@@ -1,5 +1,5 @@
 {
-  "updatedAt": "03/05/2026",
+  "updatedAt": "05/05/2026",
   "scResults": {
     "13": [
       {
@@ -628,6 +628,12 @@
           "vs": "Hernandez",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 0,
+          "gc": 3
         }
       ],
       "N.Fuerza": [
@@ -672,6 +678,12 @@
           "vs": "ADAFI",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
+          "gf": 3,
+          "gc": 0
         }
       ],
       "Def. S. Lorenzo": [
@@ -1130,6 +1142,12 @@
           "vs": "Hernandez",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "N.Fuerza": [
@@ -1174,6 +1192,12 @@
           "vs": "ADAFI",
           "gf": 1,
           "gc": 5
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Def. S. Lorenzo": [
@@ -1632,6 +1656,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "N.Fuerza": [
@@ -1676,6 +1706,12 @@
           "vs": "ADAFI",
           "gf": 1,
           "gc": 6
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "Def. S. Lorenzo": [
@@ -2134,6 +2170,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 7
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 0,
+          "gc": 3
         }
       ],
       "N.Fuerza": [
@@ -2178,6 +2220,12 @@
           "vs": "ADAFI",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
+          "gf": 3,
+          "gc": 0
         }
       ],
       "Def. S. Lorenzo": [
@@ -2636,6 +2684,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 4
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "N.Fuerza": [
@@ -2680,6 +2734,12 @@
           "vs": "ADAFI",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "Def. S. Lorenzo": [
@@ -3138,6 +3198,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 4,
+          "gc": 0
         }
       ],
       "N.Fuerza": [
@@ -3182,6 +3248,12 @@
           "vs": "ADAFI",
           "gf": 2,
           "gc": 8
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
+          "gf": 0,
+          "gc": 4
         }
       ],
       "Def. S. Lorenzo": [
@@ -3640,6 +3712,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "N.Fuerza": [
@@ -3684,6 +3762,12 @@
           "vs": "ADAFI",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Def. S. Lorenzo": [
@@ -4136,6 +4220,12 @@
           "vs": "Hernandez",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "f": 10,
+          "vs": "N.Fuerza",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "N.Fuerza": [
@@ -4166,6 +4256,12 @@
         {
           "f": 6,
           "vs": "Hernandez",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "f": 10,
+          "vs": "Villa Progreso",
           "gf": 0,
           "gc": 2
         }
@@ -4516,13 +4612,13 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 8,
-        "pg": 5,
+        "pj": 9,
+        "pg": 6,
         "pe": 1,
         "pp": 2,
-        "gf": 10,
+        "gf": 13,
         "gc": 7,
-        "pts": 11
+        "pts": 13
       },
       {
         "eq": "Catella",
@@ -4565,16 +4661,6 @@
         "pts": 9
       },
       {
-        "eq": "Villa Progreso",
-        "pj": 8,
-        "pg": 2,
-        "pe": 2,
-        "pp": 4,
-        "gf": 15,
-        "gc": 25,
-        "pts": 6
-      },
-      {
         "eq": "Cambaceres",
         "pj": 9,
         "pg": 3,
@@ -4582,6 +4668,16 @@
         "pp": 6,
         "gf": 12,
         "gc": 22,
+        "pts": 6
+      },
+      {
+        "eq": "Villa Progreso",
+        "pj": 9,
+        "pg": 2,
+        "pe": 2,
+        "pp": 5,
+        "gf": 15,
+        "gc": 28,
         "pts": 6
       },
       {
@@ -4678,13 +4774,13 @@
       },
       {
         "eq": "Villa Progreso",
-        "pj": 8,
-        "pg": 1,
+        "pj": 9,
+        "pg": 2,
         "pe": 3,
         "pp": 4,
-        "gf": 5,
+        "gf": 6,
         "gc": 18,
-        "pts": 5
+        "pts": 7
       },
       {
         "eq": "La Plata V",
@@ -4698,12 +4794,12 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 8,
+        "pj": 9,
         "pg": 1,
         "pe": 1,
-        "pp": 6,
+        "pp": 7,
         "gf": 9,
-        "gc": 27,
+        "gc": 28,
         "pts": 3
       },
       {
@@ -4750,13 +4846,13 @@
       },
       {
         "eq": "Villa Progreso",
-        "pj": 8,
-        "pg": 5,
+        "pj": 9,
+        "pg": 6,
         "pe": 1,
         "pp": 2,
-        "gf": 16,
-        "gc": 13,
-        "pts": 11
+        "gf": 18,
+        "gc": 14,
+        "pts": 13
       },
       {
         "eq": "Cambaceres",
@@ -4820,12 +4916,12 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 8,
+        "pj": 9,
         "pg": 0,
         "pe": 0,
-        "pp": 8,
-        "gf": 1,
-        "gc": 35,
+        "pp": 9,
+        "gf": 2,
+        "gc": 37,
         "pts": 0
       }
     ],
@@ -4911,24 +5007,24 @@
         "pts": 5
       },
       {
-        "eq": "Villa Progreso",
-        "pj": 8,
+        "eq": "N.Fuerza",
+        "pj": 9,
         "pg": 1,
         "pe": 1,
-        "pp": 6,
-        "gf": 3,
-        "gc": 40,
+        "pp": 7,
+        "gf": 11,
+        "gc": 37,
         "pts": 3
       },
       {
-        "eq": "N.Fuerza",
-        "pj": 8,
-        "pg": 0,
+        "eq": "Villa Progreso",
+        "pj": 9,
+        "pg": 1,
         "pe": 1,
         "pp": 7,
-        "gf": 8,
-        "gc": 37,
-        "pts": 1
+        "gf": 3,
+        "gc": 43,
+        "pts": 3
       },
       {
         "eq": "Def. S. Lorenzo",
@@ -4994,12 +5090,22 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 8,
+        "pj": 9,
         "pg": 4,
         "pe": 0,
+        "pp": 5,
+        "gf": 11,
+        "gc": 12,
+        "pts": 8
+      },
+      {
+        "eq": "Villa Progreso",
+        "pj": 9,
+        "pg": 3,
+        "pe": 2,
         "pp": 4,
-        "gf": 10,
-        "gc": 10,
+        "gf": 12,
+        "gc": 21,
         "pts": 8
       },
       {
@@ -5021,16 +5127,6 @@
         "gf": 11,
         "gc": 24,
         "pts": 7
-      },
-      {
-        "eq": "Villa Progreso",
-        "pj": 8,
-        "pg": 2,
-        "pe": 2,
-        "pp": 4,
-        "gf": 10,
-        "gc": 20,
-        "pts": 6
       },
       {
         "eq": "ADAFI",
@@ -5105,6 +5201,16 @@
         "pts": 12
       },
       {
+        "eq": "Villa Progreso",
+        "pj": 9,
+        "pg": 3,
+        "pe": 2,
+        "pp": 4,
+        "gf": 18,
+        "gc": 17,
+        "pts": 8
+      },
+      {
         "eq": "La Plata V",
         "pj": 9,
         "pg": 3,
@@ -5113,16 +5219,6 @@
         "gf": 11,
         "gc": 28,
         "pts": 7
-      },
-      {
-        "eq": "Villa Progreso",
-        "pj": 8,
-        "pg": 2,
-        "pe": 2,
-        "pp": 4,
-        "gf": 14,
-        "gc": 17,
-        "pts": 6
       },
       {
         "eq": "Catella",
@@ -5146,12 +5242,12 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 8,
+        "pj": 9,
         "pg": 1,
         "pe": 0,
-        "pp": 7,
+        "pp": 8,
         "gf": 7,
-        "gc": 22,
+        "gc": 26,
         "pts": 2
       },
       {
@@ -5208,12 +5304,12 @@
       },
       {
         "eq": "Villa Progreso",
-        "pj": 8,
+        "pj": 9,
         "pg": 4,
         "pe": 1,
-        "pp": 3,
+        "pp": 4,
         "gf": 12,
-        "gc": 13,
+        "gc": 14,
         "pts": 9
       },
       {
@@ -5247,6 +5343,16 @@
         "pts": 5
       },
       {
+        "eq": "N.Fuerza",
+        "pj": 9,
+        "pg": 1,
+        "pe": 1,
+        "pp": 7,
+        "gf": 2,
+        "gc": 21,
+        "pts": 3
+      },
+      {
         "eq": "Def. S. Lorenzo",
         "pj": 9,
         "pg": 1,
@@ -5265,16 +5371,6 @@
         "gf": 2,
         "gc": 39,
         "pts": 2
-      },
-      {
-        "eq": "N.Fuerza",
-        "pj": 8,
-        "pg": 0,
-        "pe": 1,
-        "pp": 7,
-        "gf": 1,
-        "gc": 21,
-        "pts": 1
       }
     ],
     "20": [
@@ -5309,6 +5405,16 @@
         "pts": 12
       },
       {
+        "eq": "Villa Progreso",
+        "pj": 9,
+        "pg": 6,
+        "pe": 0,
+        "pp": 3,
+        "gf": 15,
+        "gc": 8,
+        "pts": 12
+      },
+      {
         "eq": "Hernandez",
         "pj": 9,
         "pg": 6,
@@ -5317,16 +5423,6 @@
         "gf": 13,
         "gc": 10,
         "pts": 12
-      },
-      {
-        "eq": "Villa Progreso",
-        "pj": 8,
-        "pg": 5,
-        "pe": 0,
-        "pp": 3,
-        "gf": 13,
-        "gc": 8,
-        "pts": 10
       },
       {
         "eq": "Cambaceres",
@@ -5360,12 +5456,12 @@
       },
       {
         "eq": "N.Fuerza",
-        "pj": 6,
+        "pj": 7,
         "pg": 1,
         "pe": 0,
-        "pp": 5,
+        "pp": 6,
         "gf": 2,
-        "gc": 10,
+        "gc": 12,
         "pts": 2
       },
       {
