@@ -3620,8 +3620,11 @@ async function renderSAClubes(){
         <div style="font-size:0.8rem;color:var(--muted)">Agregá el primer club con el botón de arriba</div>
       </div>`;
     } else {
+      const _catLbl = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
       ids.forEach(id => {
         const c = clubs[id];
+        const catKeys = c.cats ? Object.values(c.cats) : [];
+        const catBtns = catKeys.map(k => `<button onclick="window.saEntrarComo('${k}','${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-size:0.7rem;cursor:pointer">${_catLbl[k]||k}</button>`).join('');
         html += `
         <div class="prow" style="flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:8px">
           <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
@@ -3636,6 +3639,11 @@ async function renderSAClubes(){
             <button onclick="window.saEditarClub('${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">✏️ Editar</button>
             <button onclick="window.saGestionarPlan('${id}')" style="background:rgba(255,171,64,0.15);color:var(--yellow);border:1px solid rgba(255,171,64,0.3);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">💳 Plan</button>
           </div>
+          ${catKeys.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;padding-top:2px;border-top:1px solid var(--border);width:100%">
+            <span style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;align-self:center;margin-right:2px">Entrar:</span>
+            <button onclick="window.saEntrarComo('coord','${id}')" style="background:rgba(77,115,245,0.15);color:var(--green);border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:4px 9px;font-size:0.7rem;font-weight:600;cursor:pointer">📊 Coord</button>
+            ${catBtns}
+          </div>` : ''}
         </div>`;
       });
     }
@@ -4400,6 +4408,10 @@ window._saResetPass = async function(email){
 
 window._saDeleteUser = async function(uid, email){
   if(!uid){ showToast('Sin UID'); return; }
+  // Protección: no permitir eliminar al propio usuario logueado
+  const {getAuth} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  const currentUid = getAuth().currentUser?.uid;
+  if(uid === currentUid){ showToast('⚠️ No podés eliminar tu propia cuenta'); return; }
   const display = email || uid;
   if(!confirm('¿Eliminar a ' + display + ' del sistema?\n\nEl usuario perderá el acceso de inmediato.')) return;
   try{
