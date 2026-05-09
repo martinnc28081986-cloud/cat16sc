@@ -788,6 +788,7 @@ window._selectCat = function(cat){
   const sel = document.getElementById('catSelectorScreen');
   if(sel) sel.style.display = 'none';
   window._updatePresenceCat(cat);
+  window._appStarted = false; // Permitir que startApp se ejecute con la nueva categoría
   launchCat(cat);
   // Mostrar botón switcher si tiene más de una categoría
   const profile = window._userProfile || {};
