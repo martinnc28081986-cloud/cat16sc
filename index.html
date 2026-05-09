@@ -3639,36 +3639,14 @@ async function renderSAClubes(){
             <button onclick="window.saEditarClub('${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">✏️ Editar</button>
             <button onclick="window.saGestionarPlan('${id}')" style="background:rgba(255,171,64,0.15);color:var(--yellow);border:1px solid rgba(255,171,64,0.3);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">💳 Plan</button>
           </div>
-          ${catKeys.length ? `<div style="display:flex;gap:5px;flex-wrap:wrap;padding-top:2px;border-top:1px solid var(--border);width:100%">
+          <div style="display:flex;gap:5px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--border);width:100%">
             <span style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;align-self:center;margin-right:2px">Entrar:</span>
             <button onclick="window.saEntrarComo('coord','${id}')" style="background:rgba(77,115,245,0.15);color:var(--green);border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:4px 9px;font-size:0.7rem;font-weight:600;cursor:pointer">📊 Coord</button>
             ${catBtns}
-          </div>` : ''}
+          </div>
         </div>`;
       });
     }
-
-    // Club actual (Sagrado Corazón) como acceso rápido
-    html += `
-      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
-        <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Acceso rápido — Club activo</div>
-        <div class="prow" style="flex-direction:column;align-items:flex-start;gap:8px">
-          <div style="font-weight:700">⚽ Sagrado Corazón</div>
-          <div style="font-size:0.75rem;color:var(--muted)">Entrá como coordinador o elegí una categoría</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-            <button onclick="window.saEntrarComo('coord','sagrado-corazon')" style="background:rgba(77,115,245,0.15);color:var(--green);border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:5px 12px;font-size:0.75rem;font-weight:600;cursor:pointer">📊 Coordinador</button>
-            <button onclick="window.saEntrarComo('cat16','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2016</button>
-            <button onclick="window.saEntrarComo('cat13','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2013</button>
-            <button onclick="window.saEntrarComo('cat2020','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2020</button>
-            <button onclick="window.saEntrarComo('cat2019','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2019</button>
-            <button onclick="window.saEntrarComo('cat2018','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2018</button>
-            <button onclick="window.saEntrarComo('cat2017','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2017</button>
-            <button onclick="window.saEntrarComo('cat2015','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2015</button>
-            <button onclick="window.saEntrarComo('cat2014','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Cat 2014</button>
-            <button onclick="window.saEntrarComo('escuelita','sagrado-corazon')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-size:0.72rem;cursor:pointer">Escuelita</button>
-          </div>
-        </div>
-      </div>`;
 
     el.innerHTML = html;
   } catch(e){
