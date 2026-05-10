@@ -989,7 +989,6 @@ const CAT_CONFIG = {
   cat16: {
     label: 'MI PLANTEL',
     sub: 'LISFI II Zona B 2026',
-    players: ["Ciro","Juan Cruz","William","Pedro","Santi","Camilo","Vicente","Benja","Ramiro","Rafa","Mateo","Feli","Faustino"],
     dbPath: 'cat16',
     matchTime: '15:50',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -997,7 +996,6 @@ const CAT_CONFIG = {
   cat13: {
     label: 'MI PLANTEL',
     sub: 'LISFI II Zona B 2026',
-    players: ["Villanueva Manuel","Benitez Bastian","Celis Juan Pablo","Fontela Severino","Coronel Salvador","Tortorelli Junior","Gil Marin Genaro","Torres Guillermo","Volpi Juan Ignacio","Baraglia Romeo","Baldoni Thiago","Auricchio Felipe","Scotto Lucio","Gulino Mendieta Lisandro","Albasi Ignacio"],
     dbPath: 'cat13',
     matchTime: '13:20',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -1006,7 +1004,6 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
-    players: ["Baldini Felipe","Ramirez Fausto","Campañaro Lucca","Olivetto Tomas","Picone Santino","Miron Amaro","Martinez Liam","Rodriguez Bruno","Cerecedo Benicio","Violini Gabriel","De Franco Bruno","Villafañe Bahiano","Parente Juan Ignacio","Roberto Aaron"],
     dbPath: 'cat2020',
     matchTime: '12:30',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -1015,7 +1012,6 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
-    players: ["Benítez Álvaro","Cardoso Felipe","Chiarlo Manuel","Costa Gaspar","Etchepare Juan Pedro","López Machado Milo","Loredo Camilo","Pochettino Vico","Ranieri Gino"],
     dbPath: 'cat2019',
     matchTime: '11:40',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -1024,7 +1020,6 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
-    players: ["Vicente","Bautista F","Felipe P","Simón","Ciro T","Francisco C","Baltazar","Lautaro","Felipe R","Osman"],
     dbPath: 'cat2018',
     matchTime: '10:50',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -1033,7 +1028,6 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
-    players: ["Jaume","De Angelis","Dante","Ismael","Lorenzo","Guarda","Juan","Recio","Fadel","Simon","Fermin","Pedro","Carmelo","Burruchaga","Aurichio"],
     dbPath: 'cat2017',
     matchTime: '10:00',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -1042,7 +1036,6 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
-    players: ["Regalado Ciro","Arona Ciro","Recio Matias","La Rosa Valentin","Agristola Felipe","Valbruni Thiago","Pereyra Thiago","Arona Thiago","Cantaleano Miqueas","Baldini Santino","Baraglia Felipe","Merelles Matias"],
     dbPath: 'cat2015',
     matchTime: '15:00',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -1051,7 +1044,6 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
-    players: ["Baseggio Bertino","Tartaruga Bautista","Sosa Ciriaco","Colque Bautista","Vitali Juan Ignacio","Traversaro Bautista","De Francisco Pedro","Costa Blas","Silvero Mateo","Di Pietro Vicente","Castillo Miqueas","Sagarra Salvador","Seranggioli Francisco","Macías Felipe"],
     dbPath: 'cat2014',
     matchTime: '14:10',
     address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
@@ -1060,7 +1052,6 @@ const CAT_CONFIG = {
     label: 'MI PLANTEL',
     club: 'Sagrado Corazón',
     sub: 'Escuela de Fútbol',
-    players: ["Benjamin Rasedo","Pedro Ezeiza","Juan Valenciano","Santino Castillo","Bastian Basegio","Fermin Montañes","Juan Martin Cacheri","Francisco Conocioto","Ciro Cerecedo","Thiago Torres"],
     playerCats: {"Benjamin Rasedo":2015,"Pedro Ezeiza":2014,"Juan Valenciano":2016,"Santino Castillo":2016,"Bastian Basegio":2016,"Fermin Montañes":2018,"Juan Martin Cacheri":2018,"Francisco Conocioto":2015,"Ciro Cerecedo":2020,"Thiago Torres":2014},
     dbPath: 'escuelita',
     escuelita: true
@@ -1188,7 +1179,7 @@ let FIXTURE = [
   { fecha:22, rival:"VILLA PROGRESO",  cond:"V" },
 ];
 
-let PLAYERS = [...(CFG.players||[])];
+let PLAYERS = [];
 let PLAYERS_INACTIVE = []; // jugadores dados de baja
 
 // Cargar jugadores desde Firebase (sobrescribe los hardcodeados si existen)
@@ -4277,6 +4268,16 @@ function renderSADatos(){
       <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:14px">📤 Carga de datos a Firebase</div>
 
       <div class="coord-ok-box" style="margin-bottom:12px">
+        <div style="font-weight:700;margin-bottom:4px">📋 Fixture LISFI II Zona B 2026 — Sagrado Corazón</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
+          22 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lisfi-ii-zona-b-2026/fixture</code><br>
+          Condiciones L/V → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">clubs/sagrado-corazon/config</code>
+        </div>
+        <button onclick="window.saSubirFixtureLISFI(this)" class="btn btn-g" style="width:100%">🚀 Subir fixture</button>
+        <div id="lisfiLog" style="margin-top:10px;font-size:0.8rem;line-height:1.8;display:none"></div>
+      </div>
+
+      <div class="coord-ok-box" style="margin-bottom:12px">
         <div style="font-weight:700;margin-bottom:4px">📋 Fixture LAFIR 2026 — El Ciclón</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
           15 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lafir-torneo-general-2026/fixture</code><br>
@@ -4288,6 +4289,49 @@ function renderSADatos(){
     </div>
   `;
 }
+
+window.saSubirFixtureLISFI = async function(btn){
+  btn.disabled = true; btn.textContent = 'Subiendo...';
+  const logEl = document.getElementById('lisfiLog');
+  logEl.style.display = 'block'; logEl.innerHTML = '';
+  const log = (msg, color='var(--muted)') => { logEl.innerHTML += `<div style="color:${color}">${msg}</div>`; };
+
+  const LIGA_ID = 'lisfi-ii-zona-b-2026';
+  const LIGA_FIXTURE = {
+    "1":{"rival":"LA PLATA V"},    "2":{"rival":"DEF.SAN LORENZO"},
+    "3":{"rival":"CATELLA"},        "4":{"rival":"CRISFA V"},
+    "5":{"rival":"CAP.CHICA"},      "6":{"rival":"CAMBACERES"},
+    "7":{"rival":"HERNANDEZ"},      "8":{"rival":"N.FUERZA"},
+    "9":{"rival":"LIBRE"},          "10":{"rival":"ADAFI"},
+    "11":{"rival":"VILLA PROGRESO"},"12":{"rival":"LA PLATA V"},
+    "13":{"rival":"DEF.SAN LORENZO"},"14":{"rival":"CATELLA"},
+    "15":{"rival":"CRISFA V"},      "16":{"rival":"CAP.CHICA"},
+    "17":{"rival":"CAMBACERES"},    "18":{"rival":"HERNANDEZ"},
+    "19":{"rival":"N.FUERZA"},      "20":{"rival":"LIBRE"},
+    "21":{"rival":"ADAFI"},         "22":{"rival":"VILLA PROGRESO"},
+  };
+  const SAGCOR_CONDS = {
+    "1":{"cond":"V"}, "2":{"cond":"V"}, "3":{"cond":"V"}, "4":{"cond":"L"},
+    "5":{"cond":"V"}, "6":{"cond":"L"}, "7":{"cond":"V"}, "8":{"cond":"L"},
+    "9":{"cond":"-"}, "10":{"cond":"V"},"11":{"cond":"L"},"12":{"cond":"L"},
+    "13":{"cond":"V"},"14":{"cond":"L"},"15":{"cond":"V"},"16":{"cond":"L"},
+    "17":{"cond":"V"},"18":{"cond":"L"},"19":{"cond":"V"},"20":{"cond":"-"},
+    "21":{"cond":"L"},"22":{"cond":"V"},
+  };
+  try {
+    log('📤 Subiendo fixture compartido...');
+    await set(ref(db, `ligas/${LIGA_ID}/fixture`), LIGA_FIXTURE);
+    log('✓ 22 fechas subidas a la liga', 'var(--green)');
+    log('📤 Subiendo condiciones de Sagrado Corazón...');
+    await update(ref(db, 'clubs/sagrado-corazon/config'), { ligaId: LIGA_ID, fixture: SAGCOR_CONDS });
+    log('✓ Condiciones de Sagrado Corazón guardadas', 'var(--green)');
+    log('✅ Listo.', '#22cd78');
+    btn.textContent = '✓ Subido';
+  } catch(e) {
+    log('❌ Error: ' + e.message, 'var(--red)');
+    btn.disabled = false; btn.textContent = '🚀 Subir fixture';
+  }
+};
 
 window.saSubirFixtureLAFIR = async function(btn){
   btn.disabled = true;
