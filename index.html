@@ -634,10 +634,12 @@
     <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:18px;line-height:1">🏟️</span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:#4d73f5;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('facturacion')"><span style="font-size:18px;line-height:1">💳</span>Facturación<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('usuarios')"><span style="font-size:18px;line-height:1">👥</span>Usuarios<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab" onclick="window.saTab('datos')"><span style="font-size:18px;line-height:1">📤</span>Datos<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="sa-clubes"      class="coord-view active"></div>
   <div id="sa-facturacion" class="coord-view"></div>
   <div id="sa-usuarios"    class="coord-view"></div>
+  <div id="sa-datos"       class="coord-view"></div>
 </div>
 
 <!-- COORDINADOR -->
@@ -3564,7 +3566,7 @@ async function startSuperAdminApp(){
   catBadge.textContent = 'SUPER ADMIN';
 
   window.saTab = function(tab){
-    const tabs = ['clubes','facturacion','usuarios'];
+    const tabs = ['clubes','facturacion','usuarios','datos'];
     document.querySelectorAll('#saTabsEl .coord-tab').forEach((t,i)=>{
       t.className = 'coord-tab' + (tabs[i]===tab ? ' cta' : '');
     });
@@ -3577,9 +3579,10 @@ async function startSuperAdminApp(){
 }
 
 async function renderSATab(tab){
-  if(tab==='clubes')    await renderSAClubes();
+  if(tab==='clubes')      await renderSAClubes();
   if(tab==='facturacion') await renderSAFacturacion();
-  if(tab==='usuarios')  await renderSAUsuarios();
+  if(tab==='usuarios')    await renderSAUsuarios();
+  if(tab==='datos')       renderSADatos();
 }
 
 // ── HELPERS ──
@@ -3625,7 +3628,8 @@ async function renderSAClubes(){
       const _catLbl = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
       ids.forEach(id => {
         const c = clubs[id];
-        const catKeys = c.cats ? Object.values(c.cats) : [];
+        const _knownCats = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020','escuelita'];
+        const catKeys = _knownCats.filter(k => c[k] !== undefined);
         const catBtns = catKeys.map(k => `<button onclick="window.saEntrarComo('${k}','${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-size:0.7rem;cursor:pointer">${_catLbl[k]||k}</button>`).join('');
         html += `
         <div class="prow" style="flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:8px">
@@ -4251,6 +4255,78 @@ window._saPlanVencer = async function(clubId){
   document.querySelector('div[style*="position:fixed"]')?.remove();
   showToast('Plan marcado como vencido');
   renderSATab('facturacion');
+};
+
+// ── TAB DATOS ──
+function renderSADatos(){
+  const el = document.getElementById('sa-datos');
+  el.innerHTML = `
+    <div style="padding:14px">
+      <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:14px">📤 Carga de datos a Firebase</div>
+
+      <div class="coord-ok-box" style="margin-bottom:12px">
+        <div style="font-weight:700;margin-bottom:4px">📋 Fixture LAFIR 2026 — El Ciclón</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
+          15 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lafir-torneo-general-2026/fixture</code><br>
+          Condiciones L/V → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">clubs/el-ciclon/config</code>
+        </div>
+        <button onclick="window.saSubirFixtureLAFIR(this)" class="btn btn-g" style="width:100%">🚀 Subir fixture</button>
+        <div id="lafirLog" style="margin-top:10px;font-size:0.8rem;line-height:1.8;display:none"></div>
+      </div>
+    </div>
+  `;
+}
+
+window.saSubirFixtureLAFIR = async function(btn){
+  btn.disabled = true;
+  btn.textContent = 'Subiendo...';
+  const logEl = document.getElementById('lafirLog');
+  logEl.style.display = 'block';
+  logEl.innerHTML = '';
+
+  const log = (msg, color='var(--muted)') => {
+    logEl.innerHTML += `<div style="color:${color}">${msg}</div>`;
+  };
+
+  const LIGA_ID = 'lafir-torneo-general-2026';
+
+  const LIGA_FIXTURE = {
+    "1": {rival:"UNIVERSITARIO DE BERISSO"}, "2": {rival:"SALADERO"},
+    "3": {rival:"VILLA ZULA"},               "4": {rival:"NUEVA VILLA ARGÜELLO"},
+    "5": {rival:"GUTIERRE"},                 "6": {rival:"ESTRELLA DE BERISSO"},
+    "7": {rival:"FILIAL LAURI"},             "8": {rival:"RACING DE BAVIO"},
+    "9": {rival:"TRABAJADORES"},             "10":{rival:"VILLA ESPAÑA"},
+    "11":{rival:"VILLA PAULA"},              "12":{rival:"SANTA TERESITA"},
+    "13":{rival:"DEP. GIMNASISTA"},          "14":{rival:"SANTIAGUEÑOS"},
+    "15":{rival:"VILLA ALBINO"},
+  };
+
+  const ELCICLON_CONDS = {
+    "1":{"cond":"L"}, "2":{"cond":"V"}, "3":{"cond":"L"}, "4":{"cond":"V"},
+    "5":{"cond":"L"}, "6":{"cond":"V"}, "7":{"cond":"L"}, "8":{"cond":"V"},
+    "9":{"cond":"L"}, "10":{"cond":"V"},"11":{"cond":"L"},"12":{"cond":"V"},
+    "13":{"cond":"L"},"14":{"cond":"V"},"15":{"cond":"V"},
+  };
+
+  try {
+    log('📤 Subiendo fixture compartido...');
+    await set(ref(db, `ligas/${LIGA_ID}/fixture`), LIGA_FIXTURE);
+    log('✓ 15 fechas subidas a la liga', 'var(--green)');
+
+    log('📤 Subiendo condiciones de El Ciclón...');
+    await update(ref(db, 'clubs/el-ciclon/config'), {
+      ligaId: LIGA_ID,
+      fixture: ELCICLON_CONDS,
+      torneoActivo: 'default'
+    });
+    log('✓ Configuración de El Ciclón guardada', 'var(--green)');
+    log('✅ Listo.', '#22cd78');
+    btn.textContent = '✓ Subido';
+  } catch(e) {
+    log('❌ Error: ' + e.message, 'var(--red)');
+    btn.disabled = false;
+    btn.textContent = '🚀 Subir fixture';
+  }
 };
 
 window.saVerClub = function(id){ window.saEditarClub(id); };
