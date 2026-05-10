@@ -3083,6 +3083,11 @@ loadClubConfig().then(()=> loadPlayersFromDB()).then(()=>{ loadAttMarks(today())
 async function renderTablas(){
   const el=document.getElementById('tablas-content');
   if(!el)return;
+  // Solo mostrar tablas LISFI para sagrado-corazon
+  if(!CLUB_PATH.includes('sagrado-corazon')){
+    el.innerHTML='<div class="empty-msg" style="padding:32px 0">Las tablas de posiciones de esta liga no están disponibles aún.</div>';
+    return;
+  }
   const _catNumMap2 = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const _catKey2 = CFG.dbPath;
   const catNum = _catNumMap2[_catKey2] || 16;
@@ -3556,6 +3561,10 @@ async function startSuperAdminApp(){
   if(logo) logo.textContent = 'MI PLANTEL';
   const subEl = document.querySelector('header div div div[style*="0.62rem"]');
   if(subEl) subEl.textContent = 'Panel Super Admin';
+  const nextMatchEl = document.getElementById('nextMatchEl');
+  if(nextMatchEl) nextMatchEl.textContent = '';
+  const headerSubEl = document.getElementById('headerSubEl');
+  if(headerSubEl) headerSubEl.textContent = 'PANEL SUPER ADMIN';
   let catBadge = document.getElementById('catBadge');
   if(!catBadge){
     catBadge = document.createElement('span');
@@ -3805,8 +3814,10 @@ window.saEntrarComo = function(cat, clubId){
       document.getElementById('coord-app').style.display='none';
       document.querySelector('.tabs-wrapper').style.display='none';
       document.querySelectorAll('.view').forEach(v=>{ v.style.display='none'; });
-      // Limpiar badges
+      // Limpiar badges y próximo partido
       const cb=document.getElementById('catBadge'); if(cb) cb.textContent='SUPER ADMIN';
+      const nm=document.getElementById('nextMatchEl'); if(nm) nm.textContent='';
+      const hse=document.getElementById('headerSubEl'); if(hse) hse.textContent='PANEL SUPER ADMIN';
       const sw=document.getElementById('catSwitchBtn'); if(sw) sw.remove();
       // Volver al panel SA sin resetear _appStarted (evita que onAuthStateChanged relance)
       window._appStarted = true;
