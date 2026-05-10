@@ -1211,27 +1211,41 @@ async function loadClubConfig(){
     const catKey = CFG.dbPath;
 
     // ── FIXTURE ──
-    // Condiciones L/V vienen del club, rivales pueden venir de la liga
-    if(cfg.fixture){
+    // Opción 1: schedule completo de liga + ligaNombre del club → derivación automática
+    if(ligaData && ligaData.schedule && cfg.ligaNombre){
+      const myName = cfg.ligaNombre.toUpperCase().trim();
+      const match5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
+      FIXTURE = Object.entries(ligaData.schedule).map(([k,matches])=>{
+        const fecha = parseInt(k);
+        const arr = Array.isArray(matches) ? matches : Object.values(matches);
+        // Buscar partido libre
+        const libreMatch = arr.find(m => m.libre && m.libre.toUpperCase().trim() === myName);
+        if(libreMatch) return {fecha, rival:'LIBRE', cond:'-'};
+        // Buscar partido donde aparece el club
+        const game = arr.find(m => {
+          if(!m.h || !m.a) return false;
+          const mh = m.h.toUpperCase().trim(), ma = m.a.toUpperCase().trim();
+          return mh === myName || ma === myName ||
+                 match5(mh) === match5(myName) || match5(ma) === match5(myName);
+        });
+        if(!game) return {fecha, rival:'LIBRE', cond:'-'};
+        const isHome = game.h.toUpperCase().trim() === myName || match5(game.h) === match5(myName);
+        return {fecha, rival: (isHome ? game.a : game.h).toUpperCase(), cond: isHome ? 'L' : 'V'};
+      }).sort((a,b)=>a.fecha-b.fecha);
+    }
+    // Opción 2 (legacy): fixture por club con rivales + condiciones separadas
+    else if(ligaData && ligaData.fixture && cfg.fixture){
+      const clubConds = cfg.fixture;
+      FIXTURE = Object.entries(ligaData.fixture)
+        .map(([k,v])=>({fecha:parseInt(k), rival:v.rival, cond:(clubConds[k]?.cond||v.cond||'-')}))
+        .sort((a,b)=>a.fecha-b.fecha);
+    }
+    // Opción 3: fixture completo guardado en el club
+    else if(cfg.fixture){
       const clubFixture = Object.entries(cfg.fixture)
         .map(([k,v])=>({fecha:parseInt(k), rival:v.rival, cond:v.cond}))
         .sort((a,b)=>a.fecha-b.fecha);
       if(clubFixture.length) FIXTURE = clubFixture;
-    }
-    // Si la liga tiene fixture, combinar con condiciones del club
-    if(ligaData && ligaData.fixture && cfg.fixture){
-      const clubConds = cfg.fixture; // {fecha: {cond, rival}}
-      FIXTURE = Object.entries(ligaData.fixture)
-        .map(([k,v])=>{
-          const fecha = parseInt(k);
-          const clubF = clubConds[k];
-          return {
-            fecha,
-            rival: v.rival,
-            cond: clubF ? clubF.cond : (v.cond||'-')
-          };
-        })
-        .sort((a,b)=>a.fecha-b.fecha);
     }
 
     // ── HORARIOS ──
@@ -4268,6 +4282,16 @@ function renderSADatos(){
       <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:14px">📤 Carga de datos a Firebase</div>
 
       <div class="coord-ok-box" style="margin-bottom:12px">
+        <div style="font-weight:700;margin-bottom:4px">📅 Schedule completo LISFI II Zona B 2026</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
+          22 fechas · 11 equipos → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lisfi-ii-zona-b-2026/schedule</code><br>
+          Cada club con <b>ligaNombre</b> configurado deriva su fixture automáticamente.
+        </div>
+        <button onclick="window.saSubirScheduleLISFI(this)" class="btn btn-g" style="width:100%">🚀 Subir schedule completo</button>
+        <div id="scheduleLog" style="margin-top:10px;font-size:0.8rem;line-height:1.8;display:none"></div>
+      </div>
+
+      <div class="coord-ok-box" style="margin-bottom:12px">
         <div style="font-weight:700;margin-bottom:4px">📋 Fixture LISFI II Zona B 2026 — Sagrado Corazón</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
           22 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lisfi-ii-zona-b-2026/fixture</code><br>
@@ -4289,6 +4313,53 @@ function renderSADatos(){
     </div>
   `;
 }
+
+window.saSubirScheduleLISFI = async function(btn){
+  btn.disabled = true; btn.textContent = 'Subiendo...';
+  const logEl = document.getElementById('scheduleLog');
+  logEl.style.display = 'block'; logEl.innerHTML = '';
+  const log = (msg, color='var(--muted)') => { logEl.innerHTML += `<div style="color:${color}">${msg}</div>`; };
+
+  const LIGA_ID = 'lisfi-ii-zona-b-2026';
+  const SCHEDULE = {
+    "1":[{"h":"CRISFA V.","a":"CAMBACERES"},{"h":"CATELLA","a":"HERNANDEZ"},{"h":"DEF. S. LORENZO","a":"N.FUERZA"},{"h":"LA PLATA V","a":"SAGR. CORAZON"},{"h":"VILLA PROGRESO","a":"ADAFI"},{"libre":"CAP.CHICA"}],
+    "2":[{"h":"CAMBACERES","a":"CAP.CHICA"},{"h":"ADAFI","a":"LA PLATA V"},{"h":"SAGR. CORAZON","a":"DEF. S. LORENZO"},{"h":"N.FUERZA","a":"CATELLA"},{"h":"HERNANDEZ","a":"CRISFA V."},{"libre":"VILLA PROGRESO"}],
+    "3":[{"h":"CAP.CHICA","a":"HERNANDEZ"},{"h":"CRISFA V.","a":"N.FUERZA"},{"h":"CATELLA","a":"SAGR. CORAZON"},{"h":"DEF. S. LORENZO","a":"ADAFI"},{"h":"LA PLATA V","a":"VILLA PROGRESO"},{"libre":"CAMBACERES"}],
+    "4":[{"h":"N.FUERZA","a":"CAP.CHICA"},{"h":"HERNANDEZ","a":"CAMBACERES"},{"h":"VILLA PROGRESO","a":"DEF. S. LORENZO"},{"h":"ADAFI","a":"CATELLA"},{"h":"SAGR. CORAZON","a":"CRISFA V."},{"libre":"LA PLATA V"}],
+    "5":[{"h":"CAMBACERES","a":"N.FUERZA"},{"h":"CAP.CHICA","a":"SAGR. CORAZON"},{"h":"CRISFA V.","a":"ADAFI"},{"h":"CATELLA","a":"VILLA PROGRESO"},{"h":"DEF. S. LORENZO","a":"LA PLATA V"},{"libre":"HERNANDEZ"}],
+    "6":[{"h":"ADAFI","a":"CAP.CHICA"},{"h":"SAGR. CORAZON","a":"CAMBACERES"},{"h":"N.FUERZA","a":"HERNANDEZ"},{"h":"LA PLATA V","a":"CATELLA"},{"h":"VILLA PROGRESO","a":"CRISFA V."},{"libre":"DEF. S. LORENZO"}],
+    "7":[{"h":"HERNANDEZ","a":"SAGR. CORAZON"},{"h":"CAMBACERES","a":"ADAFI"},{"h":"CAP.CHICA","a":"VILLA PROGRESO"},{"h":"CRISFA V.","a":"LA PLATA V"},{"h":"CATELLA","a":"DEF. S. LORENZO"},{"libre":"N.FUERZA"}],
+    "8":[{"h":"LA PLATA V","a":"CAP.CHICA"},{"h":"VILLA PROGRESO","a":"CAMBACERES"},{"h":"ADAFI","a":"HERNANDEZ"},{"h":"SAGR. CORAZON","a":"N.FUERZA"},{"h":"DEF. S. LORENZO","a":"CRISFA V."},{"libre":"CATELLA"}],
+    "9":[{"h":"N.FUERZA","a":"ADAFI"},{"h":"HERNANDEZ","a":"VILLA PROGRESO"},{"h":"CAMBACERES","a":"LA PLATA V"},{"h":"CAP.CHICA","a":"DEF. S. LORENZO"},{"h":"CRISFA V.","a":"CATELLA"},{"libre":"SAGR. CORAZON"}],
+    "10":[{"h":"CATELLA","a":"CAP.CHICA"},{"h":"DEF. S. LORENZO","a":"CAMBACERES"},{"h":"LA PLATA V","a":"HERNANDEZ"},{"h":"VILLA PROGRESO","a":"N.FUERZA"},{"h":"ADAFI","a":"SAGR. CORAZON"},{"libre":"CRISFA V."}],
+    "11":[{"h":"SAGR. CORAZON","a":"VILLA PROGRESO"},{"h":"N.FUERZA","a":"LA PLATA V"},{"h":"HERNANDEZ","a":"DEF. S. LORENZO"},{"h":"CAMBACERES","a":"CATELLA"},{"h":"CAP.CHICA","a":"CRISFA V."},{"libre":"ADAFI"}],
+    "12":[{"h":"CAMBACERES","a":"CRISFA V."},{"h":"HERNANDEZ","a":"CATELLA"},{"h":"N.FUERZA","a":"DEF. S. LORENZO"},{"h":"SAGR. CORAZON","a":"LA PLATA V"},{"h":"ADAFI","a":"VILLA PROGRESO"},{"libre":"CAP.CHICA"}],
+    "13":[{"h":"CAP.CHICA","a":"CAMBACERES"},{"h":"LA PLATA V","a":"ADAFI"},{"h":"DEF. S. LORENZO","a":"SAGR. CORAZON"},{"h":"CATELLA","a":"N.FUERZA"},{"h":"CRISFA V.","a":"HERNANDEZ"},{"libre":"VILLA PROGRESO"}],
+    "14":[{"h":"HERNANDEZ","a":"CAP.CHICA"},{"h":"N.FUERZA","a":"CRISFA V."},{"h":"SAGR. CORAZON","a":"CATELLA"},{"h":"ADAFI","a":"DEF. S. LORENZO"},{"h":"VILLA PROGRESO","a":"LA PLATA V"},{"libre":"CAMBACERES"}],
+    "15":[{"h":"CAP.CHICA","a":"N.FUERZA"},{"h":"CAMBACERES","a":"HERNANDEZ"},{"h":"DEF. S. LORENZO","a":"VILLA PROGRESO"},{"h":"CATELLA","a":"ADAFI"},{"h":"CRISFA V.","a":"SAGR. CORAZON"},{"libre":"LA PLATA V"}],
+    "16":[{"h":"N.FUERZA","a":"CAMBACERES"},{"h":"SAGR. CORAZON","a":"CAP.CHICA"},{"h":"ADAFI","a":"CRISFA V."},{"h":"VILLA PROGRESO","a":"CATELLA"},{"h":"LA PLATA V","a":"DEF. S. LORENZO"},{"libre":"HERNANDEZ"}],
+    "17":[{"h":"CAP.CHICA","a":"ADAFI"},{"h":"CAMBACERES","a":"SAGR. CORAZON"},{"h":"HERNANDEZ","a":"N.FUERZA"},{"h":"CATELLA","a":"LA PLATA V"},{"h":"CRISFA V.","a":"VILLA PROGRESO"},{"libre":"DEF. S. LORENZO"}],
+    "18":[{"h":"SAGR. CORAZON","a":"HERNANDEZ"},{"h":"ADAFI","a":"CAMBACERES"},{"h":"VILLA PROGRESO","a":"CAP.CHICA"},{"h":"LA PLATA V","a":"CRISFA V."},{"h":"DEF. S. LORENZO","a":"CATELLA"},{"libre":"N.FUERZA"}],
+    "19":[{"h":"CAP.CHICA","a":"LA PLATA V"},{"h":"CAMBACERES","a":"VILLA PROGRESO"},{"h":"HERNANDEZ","a":"ADAFI"},{"h":"N.FUERZA","a":"SAGR. CORAZON"},{"h":"CRISFA V.","a":"DEF. S. LORENZO"},{"libre":"CATELLA"}],
+    "20":[{"h":"ADAFI","a":"N.FUERZA"},{"h":"VILLA PROGRESO","a":"HERNANDEZ"},{"h":"LA PLATA V","a":"CAMBACERES"},{"h":"DEF. S. LORENZO","a":"CAP.CHICA"},{"h":"CATELLA","a":"CRISFA V."},{"libre":"SAGR. CORAZON"}],
+    "21":[{"h":"CAP.CHICA","a":"CATELLA"},{"h":"CAMBACERES","a":"DEF. S. LORENZO"},{"h":"HERNANDEZ","a":"LA PLATA V"},{"h":"N.FUERZA","a":"VILLA PROGRESO"},{"h":"SAGR. CORAZON","a":"ADAFI"},{"libre":"CRISFA V."}],
+    "22":[{"h":"VILLA PROGRESO","a":"SAGR. CORAZON"},{"h":"LA PLATA V","a":"N.FUERZA"},{"h":"DEF. S. LORENZO","a":"HERNANDEZ"},{"h":"CATELLA","a":"CAMBACERES"},{"h":"CRISFA V.","a":"CAP.CHICA"},{"libre":"ADAFI"}]
+  };
+  try {
+    log('📤 Subiendo schedule completo...');
+    await set(ref(db, `ligas/${LIGA_ID}/schedule`), SCHEDULE);
+    log('✓ 22 fechas · 11 equipos subidos', 'var(--green)');
+    // Configurar ligaNombre para sagrado-corazon y hernandez automáticamente
+    await update(ref(db, 'clubs/sagrado-corazon/config'), { ligaNombre: 'SAGR. CORAZON', ligaId: LIGA_ID });
+    await update(ref(db, 'clubs/hernandez/config'), { ligaNombre: 'HERNANDEZ', ligaId: LIGA_ID });
+    log('✓ ligaNombre configurado para Sagrado Corazón y Hernandez', 'var(--green)');
+    log('✅ Listo. Todos los clubes de LISFI derivan su fixture automáticamente.', '#22cd78');
+    btn.textContent = '✓ Subido';
+  } catch(e) {
+    log('❌ Error: ' + e.message, 'var(--red)');
+    btn.disabled = false; btn.textContent = '🚀 Subir schedule completo';
+  }
+};
 
 window.saSubirFixtureLISFI = async function(btn){
   btn.disabled = true; btn.textContent = 'Subiendo...';
@@ -4446,6 +4517,8 @@ window.saEditarClub = async function(clubId){
         <input id="nuevaLigaNombre" placeholder="Nombre (ej: LISFI 2026 Zona II C)" style="width:100%;margin-bottom:6px;background:#112896;border:1px solid #4d73f5;color:#e8efff;padding:8px 12px;border-radius:8px;font-size:0.82rem;box-sizing:border-box">
         <div id="nuevaLigaIdPreview" style="font-size:0.7rem;color:#4d73f5;padding:2px 4px"></div>
       </div>
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Nombre en la liga</label>
+      <input id="editClubLigaNombre" value="${club.config?.ligaNombre||''}" placeholder="Ej: HERNANDEZ o SAGR. CORAZON" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
       <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">${catsHtml}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -4483,6 +4556,7 @@ window._saOnLigaChange = function(){
 window._saGuardarEdicion = async function(clubId){
   const nombre = document.getElementById('editClubNombre').value.trim();
   const liga = document.getElementById('editClubLiga').value;
+  const ligaNombre = document.getElementById('editClubLigaNombre').value.trim().toUpperCase();
   const cats = [...document.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value);
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
@@ -4507,6 +4581,7 @@ window._saGuardarEdicion = async function(clubId){
   if(!updates.config) updates.config = {};
   if(current.config) Object.assign(updates.config, current.config);
   if(ligaFinal && ligaFinal !== '__nueva__') updates.config.ligaId = ligaFinal;
+  if(ligaNombre) updates.config.ligaNombre = ligaNombre;
   // torneoActivo se preserva tal cual estaba
   await set(ref(db,'clubs/'+clubId), updates);
   document.getElementById('saEditOverlay')?.remove();
