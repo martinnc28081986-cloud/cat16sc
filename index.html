@@ -3629,7 +3629,8 @@ async function renderSAClubes(){
       ids.forEach(id => {
         const c = clubs[id];
         const _knownCats = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020','escuelita'];
-        const catKeys = _knownCats.filter(k => c[k] !== undefined);
+        const _catsFromMeta = c.cats ? Object.values(c.cats) : [];
+        const catKeys = _knownCats.filter(k => c[k] !== undefined || _catsFromMeta.includes(k));
         const catBtns = catKeys.map(k => `<button onclick="window.saEntrarComo('${k}','${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-size:0.7rem;cursor:pointer">${_catLbl[k]||k}</button>`).join('');
         html += `
         <div class="prow" style="flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:8px">
@@ -4342,7 +4343,7 @@ window.saEditarClub = async function(clubId){
   const club = clubSnap.exists() ? clubSnap.val() : {};
   const nombre = club.nombre || clubId;
   const ligaActual = club.ligaId || club.liga_id || '';
-  const catsActivas = club.cats || [];
+  const catsActivas = club.cats ? Object.values(club.cats) : [];
   const ligas = ligasSnap.exists() ? Object.keys(ligasSnap.val()) : [];
   const todosUsers = usersSnap.exists() ? usersSnap.val() : {};
   const clubUsers = Object.entries(todosUsers).filter(([,u])=>u.clubId===clubId).map(([uid,u])=>({uid,...u}));
