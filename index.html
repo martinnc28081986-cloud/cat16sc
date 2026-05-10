@@ -682,6 +682,7 @@ let CLUB_PATH = 'clubs/sagrado-corazon'; // Prefijo multitenant — se actualiza
 window.showToast = function(msg){ const t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
 // Variables globales de torneo — accesibles desde profe y coordinador
 let TORNEO_ID = 'default';
+let CLUB_LIGA_NOMBRE = 'SAGR. CORAZON'; // nombre del club en la liga — se actualiza en loadClubConfig
 let DB_PREFIX = CLUB_PATH+'/cat16/torneos/'+TORNEO_ID; // se actualiza en loadClubConfig y startCoordApp
 const CAT_PREFIX = () => DB_PREFIX.split('/torneos/')[0]; // nivel cat sin torneo
 
@@ -1212,6 +1213,7 @@ async function loadClubConfig(){
 
     // ── FIXTURE ──
     // Opción 1: schedule completo de liga + ligaNombre del club → derivación automática
+    if(cfg.ligaNombre) CLUB_LIGA_NOMBRE = cfg.ligaNombre;
     if(ligaData && ligaData.schedule && cfg.ligaNombre){
       const myName = cfg.ligaNombre.toUpperCase().trim();
       const match5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
@@ -3088,15 +3090,24 @@ loadClubConfig().then(()=> loadPlayersFromDB()).then(()=>{ loadAttMarks(today())
 async function renderTablas(){
   const el=document.getElementById('tablas-content');
   if(!el)return;
-  // Solo mostrar tablas LISFI para sagrado-corazon
-  if(!CLUB_PATH.includes('sagrado-corazon')){
+  // Verificar que hay datos de liga disponibles
+  if(!LIGA_DATA || !LIGA_DATA.posiciones){
     el.innerHTML='<div class="empty-msg" style="padding:32px 0">Las tablas de posiciones de esta liga no están disponibles aún.</div>';
     return;
   }
   const _catNumMap2 = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const _catKey2 = CFG.dbPath;
   const catNum = _catNumMap2[_catKey2] || 16;
-  const scRes = LIGA_DATA.scResults[catNum]||[];
+  const myName = CLUB_LIGA_NOMBRE; // nombre del club en la liga
+  // Para sagcor usar scResults; para otros clubs buscar en rivalResults
+  const isSagcor = CLUB_PATH.includes('sagrado-corazon');
+  const rRivAll0 = LIGA_DATA.rivalResults?.[catNum]||{};
+  const scRes = isSagcor
+    ? (LIGA_DATA.scResults[catNum]||[])
+    : (Object.entries(rRivAll0).find(([k])=>{
+        const kn=k.toUpperCase().trim(); const mn=myName.toUpperCase().trim();
+        return kn===mn||kn.includes(mn.substring(0,5))||mn.includes(kn.substring(0,5));
+      })?.[1] || []);
   const pos   = LIGA_DATA.posiciones[catNum]||[];
 
   const nextF = await _getActiveFecha(FIXTURE, _suspensions);
@@ -3127,7 +3138,7 @@ async function renderTablas(){
 
     html+='<div class="stitle">Próximo Rival — F'+nextF.fecha+'</div>';
     html+='<div class="compare-card">';
-    html+='<div class="compare-row"><span class="compare-team us">SAGRADO C.</span><span style="flex:1"></span><span class="compare-team them">'+nextF.rival+'</span></div>';
+    html+='<div class="compare-row"><span class="compare-team us">'+myName+'</span><span style="flex:1"></span><span class="compare-team them">'+nextF.rival+'</span></div>';
 
     // Puntos
     html+='<div class="compare-stat">';
@@ -3213,8 +3224,8 @@ async function renderTablas(){
       const condLbl=r.cond==='L'?'Local':'Visita';
       const condCls=r.cond==='L'?'local':'visita';
       const scoreDisp=r.cond==='L'?r.gf+' - '+r.gc:r.gc+' - '+r.gf;
-      const localTeam=r.cond==='L'?'Sagrado C.':r.rival;
-      const visitTeam=r.cond==='L'?r.rival:'Sagrado C.';
+      const localTeam=r.cond==='L'?myName:r.rival;
+      const visitTeam=r.cond==='L'?r.rival:myName;
       html+='<div class="res-card"><div class="res-header">';
       html+='<div><div class="res-rival">'+localTeam+' <span style="color:var(--muted);font-weight:400">vs</span> '+visitTeam+'</div>';
       html+='<div style="margin-top:3px"><span class="res-fecha">Fecha '+r.fecha+'</span> <span class="res-cond '+condCls+'">'+condLbl+'</span></div></div>';
@@ -3229,7 +3240,7 @@ async function renderTablas(){
   html+='<div class="card" style="padding:10px 8px"><table class="standings-table">';
   html+='<thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th></tr></thead><tbody>';
   pos.forEach((p,i)=>{
-    const isSC=p.eq.toLowerCase().includes('sagr')||p.eq.toLowerCase().includes('coraz');
+    const isSC=p.eq&&(p.eq.toUpperCase().includes(myName.substring(0,5))||myName.toUpperCase().includes(p.eq.toUpperCase().substring(0,5)));
     const isRival=rivalKey&&(p.eq.toLowerCase().includes(rivalKey.substring(0,4).toLowerCase()));
     const cls=isSC?'us-row':isRival?'rival-row':'';
     html+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.eq+(isSC?' ⚽':'')+'</td><td>'+p.pj+'</td><td>'+p.pg+'</td><td>'+p.pe+'</td><td>'+p.pp+'</td><td>'+p.gf+'</td><td>'+p.gc+'</td><td><strong>'+p.pts+'</strong></td></tr>';
@@ -3793,6 +3804,8 @@ window.saEntrarComo = function(cat, clubId){
   document.querySelector('.tabs-wrapper').style.display = '';
   document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
   window._appStarted = false;
+  if(window._unsub1) try{window._unsub1();}catch(e){}
+  if(window._unsub2) try{window._unsub2();}catch(e){}
   window._unsub1 = null;
   window._unsub2 = null;
   if(cat==='coord'){
