@@ -1096,10 +1096,10 @@ catBadge.textContent = _catLabels[cat] || cat.toUpperCase();
     const clubSnap = await get(ref(db,'clubs/'+clubId));
     const clubData = clubSnap.exists()?clubSnap.val():{};
     const nombreClub = clubData.nombre || (clubId.charAt(0).toUpperCase()+clubId.slice(1).replace(/-/g,' '));
-    const liga = cfg.liga||'LISFI';
+    const liga = cfg.liga || (cfg.ligaId ? cfg.ligaId.toUpperCase().replace(/-/g,' ') : '');
     const zona = cfg.zona||'';
     const subEl = document.getElementById('headerSubEl');
-    if(subEl) subEl.textContent = (nombreClub + (liga?' · '+liga:''+(zona?' '+zona:''))).toUpperCase();
+    if(subEl) subEl.textContent = (nombreClub + (liga?' · '+liga+(zona?' '+zona:''):'')).toUpperCase();
   }catch(e){}
 })();
 
@@ -4316,6 +4316,8 @@ window.saSubirFixtureLAFIR = async function(btn){
     log('📤 Subiendo condiciones de El Ciclón...');
     await update(ref(db, 'clubs/el-ciclon/config'), {
       ligaId: LIGA_ID,
+      liga: 'LAFIR',
+      zona: 'Torneo General 2026',
       fixture: ELCICLON_CONDS,
       torneoActivo: 'default'
     });
@@ -4442,11 +4444,14 @@ window._saGuardarEdicion = async function(clubId){
     ligaFinal = ligaId;
     showToast('✓ Liga "'+ligaNombre+'" creada');
   }
+  // Preservar data existente del club, solo actualizar campos del SA
   const updates = {...current, nombre, cats};
   if(ligaFinal && ligaFinal !== '__nueva__') updates.ligaId = ligaFinal; else delete updates.ligaId;
-  // También actualizar torneoActivo en config
+  // Preservar config existente (torneoActivo NO se toca — es independiente del ligaId)
   if(!updates.config) updates.config = {};
-  updates.config.torneoActivo = ligaFinal && ligaFinal !== '__nueva__' ? ligaFinal : (current.config?.torneoActivo || 'default');
+  if(current.config) Object.assign(updates.config, current.config);
+  if(ligaFinal && ligaFinal !== '__nueva__') updates.config.ligaId = ligaFinal;
+  // torneoActivo se preserva tal cual estaba
   await set(ref(db,'clubs/'+clubId), updates);
   document.getElementById('saEditOverlay')?.remove();
   showToast('✓ Club actualizado');
