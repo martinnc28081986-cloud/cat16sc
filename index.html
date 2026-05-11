@@ -3111,7 +3111,10 @@ async function renderTablas(){
     const kn=k.toUpperCase().trim(); const mn=myName.toUpperCase().trim();
     return kn===mn||kn.includes(mn.substring(0,5))||mn.includes(kn.substring(0,5));
   })?.[1];
-  const scRes = _myRes || (LIGA_DATA.scResults?.[catNum]||[]);
+  // Para sagcor: usar scResults como siempre. Para otros: solo teamResults (evita mostrar datos de sagcor)
+  const scRes = _myRes
+    ? _myRes
+    : (CLUB_PATH.includes('sagrado-corazon') ? (LIGA_DATA.scResults?.[catNum]||[]) : []);
   const pos   = LIGA_DATA.posiciones[catNum]||[];
 
   const nextF = await _getActiveFecha(FIXTURE, _suspensions);
@@ -3222,7 +3225,15 @@ async function renderTablas(){
   if(!scRes.length){
     html+='<div class="empty-msg">Sin resultados cargados aún</div>';
   } else {
-    [...scRes].reverse().forEach(r=>{
+    const _mn5 = myName.toUpperCase().substring(0,5);
+    [...scRes].reverse()
+      .filter(r => {
+        // Descartar entradas donde el rival es el mismo equipo (error de datos)
+        if(!r.rival) return true;
+        const rn = r.rival.toUpperCase().trim();
+        return !(rn===myName.toUpperCase().trim() || rn.includes(_mn5) || myName.toUpperCase().includes(rn.substring(0,5)));
+      })
+      .forEach(r=>{
       const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
       const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
       const condLbl=r.cond==='L'?'Local':'Visita';
