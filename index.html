@@ -3099,15 +3099,13 @@ async function renderTablas(){
   const _catKey2 = CFG.dbPath;
   const catNum = _catNumMap2[_catKey2] || 16;
   const myName = CLUB_LIGA_NOMBRE; // nombre del club en la liga
-  // Para sagcor usar scResults; para otros clubs buscar en rivalResults
-  const isSagcor = CLUB_PATH.includes('sagrado-corazon');
-  const rRivAll0 = LIGA_DATA.rivalResults?.[catNum]||{};
-  const scRes = isSagcor
-    ? (LIGA_DATA.scResults[catNum]||[])
-    : (Object.entries(rRivAll0).find(([k])=>{
-        const kn=k.toUpperCase().trim(); const mn=myName.toUpperCase().trim();
-        return kn===mn||kn.includes(mn.substring(0,5))||mn.includes(kn.substring(0,5));
-      })?.[1] || []);
+  // Usar teamResults (nuevo scraper) — fallback a scResults para sagcor
+  const _teamRes = LIGA_DATA.teamResults?.[catNum] || {};
+  const _myRes = Object.entries(_teamRes).find(([k])=>{
+    const kn=k.toUpperCase().trim(); const mn=myName.toUpperCase().trim();
+    return kn===mn||kn.includes(mn.substring(0,5))||mn.includes(kn.substring(0,5));
+  })?.[1];
+  const scRes = _myRes || (LIGA_DATA.scResults?.[catNum]||[]);
   const pos   = LIGA_DATA.posiciones[catNum]||[];
 
   const nextF = await _getActiveFecha(FIXTURE, _suspensions);
