@@ -25,7 +25,7 @@ jobs:
         run: pip install requests beautifulsoup4 lxml
 
       - name: Ejecutar scraper LISFI
-        run: run: python scrape_lisfi.py
+        run: python scrape_lisfi.py
 
       - name: Commit y push
         run: |
