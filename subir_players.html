@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Subir Jugadores — MI PLANTEL</title>
+<style>
+  body { font-family: monospace; background: #07186b; color: #e8efff; padding: 20px; }
+  h2 { color: #4d73f5; }
+  .cat { background: #0d2280; border: 1px solid #1e3ab0; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .cat h3 { margin: 0 0 8px; color: #ffab40; }
+  .cat ul { margin: 0 0 10px; padding-left: 18px; font-size: 0.85rem; color: #aac4ff; }
+  button { background: #4d73f5; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; margin-right: 8px; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #log { background: #050f3d; border: 1px solid #1e3ab0; border-radius: 8px; padding: 12px; margin-top: 16px; font-size: 0.8rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+  .ok  { color: #22cd78; }
+  .err { color: #ff1744; }
+  .info{ color: #4d73f5; }
+  .warn { background: #3a1a00; border: 1px solid #ff6600; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.82rem; color: #ffab40; }
+</style>
+</head>
+<body>
+<h2>⚽ Subir Jugadores — MI PLANTEL</h2>
+
+<div class="warn">
+  ⚠️ Esta herramienta <strong>solo agrega</strong> jugadores nuevos. No sobreescribe ni borra datos existentes.<br>
+  Si un jugador ya existe en la categoría, se saltea automáticamente.
+</div>
+
+<div class="cat">
+  <h3>CAT 2013 — 15 jugadores</h3>
+  <ul id="list-cat13"></ul>
+  <button onclick="subirCat('cat13')" id="btn-cat13">Subir Cat 2013</button>
+</div>
+
+<div class="cat">
+  <h3>CAT 2015 — 12 jugadores</h3>
+  <ul id="list-cat2015"></ul>
+  <button onclick="subirCat('cat2015')" id="btn-cat2015">Subir Cat 2015</button>
+</div>
+
+<div class="cat">
+  <h3>CAT 2016 — 13 jugadores</h3>
+  <ul id="list-cat16"></ul>
+  <button onclick="subirCat('cat16')" id="btn-cat16">Subir Cat 2016</button>
+</div>
+
+<div class="cat">
+  <h3>CAT 2017 — 15 jugadores</h3>
+  <ul id="list-cat2017"></ul>
+  <button onclick="subirCat('cat2017')" id="btn-cat2017">Subir Cat 2017</button>
+</div>
+
+<div class="cat">
+  <h3>CAT 2018 — 10 jugadores</h3>
+  <ul id="list-cat2018"></ul>
+  <button onclick="subirCat('cat2018')" id="btn-cat2018">Subir Cat 2018</button>
+</div>
+
+<div style="margin-top:8px;">
+  <button onclick="subirTodo()" style="background:#22cd78;color:#000;font-weight:700;">⬆ Subir TODAS las categorías</button>
+</div>
+
+<div id="log"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, get, update } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const app = initializeApp({
+  apiKey: "AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
+  authDomain: "presentes-20226-cat-16-sc.firebaseapp.com",
+  databaseURL: "https://presentes-20226-cat-16-sc-default-rtdb.firebaseio.com",
+  projectId: "presentes-20226-cat-16-sc",
+});
+const db = getDatabase(app);
+
+const CLUB_PATH = 'clubs/sagrado-corazon';
+
+const PLAYERS_DATA = {
+  cat13: [
+    'Villanueva Manuel','Celis Juan Pablo','Coronel Salvador','Gil Marin Genaro',
+    'Volpi Juan Ignacio','Baldoni Thiago','Scotto Lucio','Albasi Ignacio',
+    'Benitez Bastian','Fontela Severino','Tortorelli Junior','Torres Guillermo',
+    'Baraglia Romeo','Auricchio Felipe','Gulino Mendieta Lisandro'
+  ],
+  cat2015: [
+    'Regalado Ciro','Recio Matias','Agristola Felipe','Pereyra Thiago',
+    'Cantaleano Miqueas','Baraglia Felipe','Arona Ciro','La Rosa Valentin',
+    'Valbruni Thiago','Arona Thiago','Baldini Santino','Merelles Matias'
+  ],
+  cat16: [
+    'Ciro','William','Santi','Vicente','Ramiro','Mateo','Faustino',
+    'Juan Cruz','Pedro','Camilo','Benja','Rafa','Feli'
+  ],
+  cat2017: [
+    'Jaume','Dante','Lorenzo','Juan','Fadel','Fermin','Carmelo','Aurichio',
+    'De Angelis','Ismael','Guarda','Recio','Simon','Pedro','Burruchaga'
+  ],
+  cat2018: [
+    'Vicente','Felipe P','Ciro T','Baltazar','Felipe R',
+    'Bautista F','Simon','Francisco C','Lautaro','Osman'
+  ]
+};
+
+// Preview listas
+Object.entries(PLAYERS_DATA).forEach(([cat, players]) => {
+  const ul = document.getElementById('list-'+cat);
+  if(ul) ul.innerHTML = players.map(p=>`<li>${p}</li>`).join('');
+});
+
+function log(msg, cls=''){
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  if(cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function makeKey(nombre){
+  return 'p_' + nombre.toLowerCase()
+    .replace(/[áà]/g,'a').replace(/[éè]/g,'e').replace(/[íì]/g,'i')
+    .replace(/[óò]/g,'o').replace(/[úù]/g,'u').replace(/ñ/g,'n')
+    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'')
+    + '_' + Date.now() + Math.floor(Math.random()*1000);
+}
+
+window.subirCat = async function(catKey){
+  const players = PLAYERS_DATA[catKey];
+  const btn = document.getElementById('btn-'+catKey);
+  btn.disabled = true;
+  log(`\n── ${catKey} (${players.length} jugadores) ──`, 'info');
+
+  const basePath = `${CLUB_PATH}/${catKey}/players`;
+
+  let nombresExistentes = [];
+  try {
+    const snap = await get(ref(db, basePath));
+    if(snap.exists()){
+      nombresExistentes = Object.values(snap.val())
+        .map(p => (p.nombre||'').toLowerCase());
+      log(`  ${nombresExistentes.length} jugadores ya existían en Firebase`);
+    }
+  } catch(e){ log('  Aviso leyendo existentes: '+e.message, 'err'); }
+
+  const updates = {};
+  let agregados = 0, salteados = 0;
+
+  players.forEach(nombre => {
+    if(nombresExistentes.includes(nombre.toLowerCase())){
+      log(`  ↷ Ya existe: ${nombre}`);
+      salteados++;
+    } else {
+      updates[`${basePath}/${makeKey(nombre)}`] = { nombre, activo: true };
+      log(`  + ${nombre}`);
+      agregados++;
+    }
+  });
+
+  if(Object.keys(updates).length > 0){
+    try {
+      await update(ref(db), updates);
+      log(`  ✅ ${agregados} agregados, ${salteados} salteados`, 'ok');
+    } catch(e){
+      log('  ❌ Error: ' + e.message, 'err');
+      btn.disabled = false;
+      return;
+    }
+  } else {
+    log(`  ℹ Todos ya existían, nada que hacer`, 'info');
+  }
+
+  btn.textContent = '✅ Listo';
+};
+
+window.subirTodo = async function(){
+  for(const cat of Object.keys(PLAYERS_DATA)){
+    await window.subirCat(cat);
+    await new Promise(r => setTimeout(r, 400));
+  }
+  log('\n🎉 Todas las categorías subidas', 'ok');
+};
+</script>
+</body>
+</html>
