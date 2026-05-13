@@ -4338,6 +4338,16 @@ function renderSADatos(){
         <button onclick="window.saSubirFixtureLAFIR(this)" class="btn btn-g" style="width:100%">🚀 Subir fixture</button>
         <div id="lafirLog" style="margin-top:10px;font-size:0.8rem;line-height:1.8;display:none"></div>
       </div>
+
+      <div class="coord-ok-box" style="margin-bottom:12px">
+        <div style="font-weight:700;margin-bottom:4px">👥 Jugadores — Sagrado Corazón</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
+          Carga inicial de jugadores para cat13, cat2015, cat16, cat2017 y cat2018.<br>
+          Solo agrega jugadores nuevos — nunca sobreescribe ni borra datos existentes.
+        </div>
+        <button onclick="window.saSubirPlayers(this)" class="btn btn-g" style="width:100%">👥 Subir jugadores faltantes</button>
+        <div id="playersLog" style="margin-top:10px;font-size:0.78rem;line-height:1.8;display:none;font-family:monospace"></div>
+      </div>
     </div>
   `;
 }
@@ -4484,6 +4494,60 @@ window.saSubirFixtureLAFIR = async function(btn){
     btn.disabled = false;
     btn.textContent = '🚀 Subir fixture';
   }
+};
+
+window.saSubirPlayers = async function(btn){
+  btn.disabled = true; btn.textContent = 'Subiendo...';
+  const logEl = document.getElementById('playersLog');
+  logEl.style.display = 'block'; logEl.innerHTML = '';
+  const log = (msg, color='var(--muted)') => { logEl.innerHTML += `<div style="color:${color}">${msg}</div>`; };
+
+  const CLUB = 'clubs/sagrado-corazon';
+  const PLAYERS_DATA = {
+    cat13: ['Villanueva Manuel','Celis Juan Pablo','Coronel Salvador','Gil Marin Genaro','Volpi Juan Ignacio','Baldoni Thiago','Scotto Lucio','Albasi Ignacio','Benitez Bastian','Fontela Severino','Tortorelli Junior','Torres Guillermo','Baraglia Romeo','Auricchio Felipe','Gulino Mendieta Lisandro'],
+    cat2015: ['Regalado Ciro','Recio Matias','Agristola Felipe','Pereyra Thiago','Cantaleano Miqueas','Baraglia Felipe','Arona Ciro','La Rosa Valentin','Valbruni Thiago','Arona Thiago','Baldini Santino','Merelles Matias'],
+    cat16: ['Ciro','William','Santi','Vicente','Ramiro','Mateo','Faustino','Juan Cruz','Pedro','Camilo','Benja','Rafa','Feli'],
+    cat2017: ['Jaume','Dante','Lorenzo','Juan','Fadel','Fermin','Carmelo','Aurichio','De Angelis','Ismael','Guarda','Recio','Simon','Pedro','Burruchaga'],
+    cat2018: ['Vicente','Felipe P','Ciro T','Baltazar','Felipe R','Bautista F','Simon','Francisco C','Lautaro','Osman']
+  };
+
+  const makeKey = n => 'p_' + n.toLowerCase()
+    .replace(/[áà]/g,'a').replace(/[éè]/g,'e').replace(/[íì]/g,'i')
+    .replace(/[óò]/g,'o').replace(/[úù]/g,'u').replace(/ñ/g,'n')
+    .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'')
+    + '_' + Date.now() + Math.floor(Math.random()*1000);
+
+  let totalAgregados = 0;
+  for(const [catKey, players] of Object.entries(PLAYERS_DATA)){
+    log(`── ${catKey} (${players.length} jugadores)`);
+    const basePath = `${CLUB}/${catKey}/players`;
+    let existentes = [];
+    try {
+      const snap = await get(ref(db, basePath));
+      if(snap.exists()) existentes = Object.values(snap.val()).map(p=>(p.nombre||'').toLowerCase());
+      if(existentes.length) log(`  ${existentes.length} ya existían en Firebase`);
+    } catch(e){ log('  Aviso: '+e.message,'var(--yellow)'); }
+
+    const updates = {};
+    let agregados = 0, salteados = 0;
+    players.forEach(nombre => {
+      if(existentes.includes(nombre.toLowerCase())){ salteados++; }
+      else { updates[`${basePath}/${makeKey(nombre)}`] = {nombre, activo:true}; agregados++; }
+    });
+
+    if(Object.keys(updates).length){
+      try {
+        await update(ref(db), updates);
+        log(`  ✅ ${agregados} agregados, ${salteados} ya existían`, '#22cd78');
+        totalAgregados += agregados;
+      } catch(e){ log('  ❌ Error: '+e.message,'var(--red)'); }
+    } else {
+      log(`  ℹ Todos ya existían, nada que hacer`);
+    }
+    await new Promise(r=>setTimeout(r,300));
+  }
+  log(`\n🎉 Listo — ${totalAgregados} jugadores nuevos cargados en Firebase`, '#22cd78');
+  btn.textContent = '✅ Listo';
 };
 
 window.saVerClub = function(id){ window.saEditarClub(id); };
