@@ -4621,7 +4621,7 @@ window.saEditarClub = async function(clubId){
         <div style="font-size:0.82rem;font-weight:600">${u.email||u.uid}</div>
         <div style="font-size:0.68rem;color:#7a9ccc">${u.role||'profe'} · ${u.cat||'—'}</div>
       </div>
-      <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}')" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">🗑 Eliminar</button>
+      <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">🗑 Eliminar</button>
     </div>`).join('') : '<div style="color:#7a9ccc;font-size:0.82rem;text-align:center;padding:12px">Sin usuarios registrados</div>';
 
   const ligasHtml = ligas.map(l=>`<option value="${l}" ${l===ligaActual?'selected':''}>${l}</option>`).join('');
@@ -4727,21 +4727,24 @@ window._saResetPass = async function(email){
   }catch(e){ showToast('Error: '+e.message); }
 };
 
-window._saDeleteUser = async function(uid, email){
+window._saDeleteUser = async function(uid, email, btn){
   if(!uid){ showToast('Sin UID'); return; }
   // Protección: no permitir eliminar al propio usuario logueado
   const {getAuth} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   const currentUid = getAuth().currentUser?.uid;
-  if(uid === currentUid){ showToast('⚠️ No podés eliminar tu propia cuenta'); return; }
+  if(uid === currentUid){ showToast('\u26a0\ufe0f No podés eliminar tu propia cuenta'); return; }
   const display = email || uid;
   if(!confirm('¿Eliminar a ' + display + ' del sistema?\n\nEl usuario perderá el acceso de inmediato.')) return;
+  // Remover la fila del DOM de inmediato (optimista), aunque ya no exista en Firebase
+  const row = btn ? btn.closest('div[style*="margin-bottom:6px"]') : null;
+  if(row) row.remove();
   try{
     await remove(ref(db, 'users/' + uid));
-    showToast('✓ Usuario eliminado: ' + display);
-    // Cerrar el overlay de edición y refrescar la lista de clubs
-    const ov = document.getElementById('saEditOverlay');
-    if(ov) ov.remove();
-  }catch(e){ showToast('Error al eliminar: ' + e.message); }
+    showToast('\u2713 Usuario eliminado: ' + display);
+  }catch(e){
+    // Si falla, mostrar error pero la fila ya fue removida visualmente
+    showToast('Error al eliminar: ' + e.message);
+  }
 };
 
 window._saAbrirAddUser = function(clubId){
