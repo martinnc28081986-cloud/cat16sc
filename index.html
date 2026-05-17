@@ -686,7 +686,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, set, update, remove, get, onValue, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const FC = {
   apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
@@ -4721,7 +4721,6 @@ window._saGuardarEdicion = async function(clubId){
 window._saResetPass = async function(email){
   if(!email){ showToast('Sin email'); return; }
   try{
-    const {sendPasswordResetEmail} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
     await sendPasswordResetEmail(auth, email);
     showToast('✓ Email de reset enviado a '+email);
   }catch(e){ showToast('Error: '+e.message); }
@@ -5699,7 +5698,6 @@ async function startCoordApp(){
     const clubId=CLUB_PATH.split('/').pop();
     try{
       // Crear usuario en Auth
-      const {createUserWithEmailAndPassword}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
       const cred=await createUserWithEmailAndPassword(auth,email,pass);
       // Guardar en DB
       await set(ref(db,'users/'+cred.user.uid),{email,role:'profe',clubId,cat});
