@@ -1569,7 +1569,7 @@ function renderAtt(){
   const a=PLAYERS.length-p;
   document.getElementById('cntP').textContent=p;
   document.getElementById('cntA').textContent=a;
-  document.getElementById('cntPct').textContent=Math.round(p/PLAYERS.length*100)+'%';
+  document.getElementById('cntPct').textContent=PLAYERS.length?Math.round(p/PLAYERS.length*100)+'%':'—';
 }
 
 window.saveSession=async function(){
