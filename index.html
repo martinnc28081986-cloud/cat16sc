@@ -608,12 +608,34 @@
 
 <!-- PWA Install Banner -->
 <div class="pwa-banner" id="pwaBanner">
+  <div style="font-size:1.5rem;flex-shrink:0">📲</div>
   <div class="pwa-banner-text">
-    <div class="pwa-banner-title">⚽ Instalar MI PLANTEL</div>
-    <div class="pwa-banner-sub">Agregá la app a tu pantalla de inicio</div>
+    <div class="pwa-banner-title" id="pwaBannerTitle">Instalá miplantel</div>
+    <div class="pwa-banner-sub" id="pwaBannerSub">Accedé más rápido desde tu pantalla de inicio</div>
   </div>
-  <button class="pwa-install-btn" onclick="window.pwaTriggerInstall()">Instalar</button>
+  <button class="pwa-install-btn" id="pwaBannerBtn" onclick="window.pwaTriggerInstall()">Instalar</button>
   <button class="pwa-dismiss-btn" onclick="window.pwaDismiss()">✕</button>
+</div>
+<!-- PWA iOS Modal -->
+<div id="pwaIosModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10001;align-items:flex-end;justify-content:center;">
+  <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px 16px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;text-align:center;">
+    <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:14px">Cómo instalar en iPhone / iPad</div>
+    <div style="display:flex;flex-direction:column;gap:12px;text-align:left;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 14px">
+        <span style="font-size:1.4rem">1️⃣</span>
+        <span style="font-size:0.85rem;color:var(--text)">Tocá el botón <strong>Compartir</strong> <span style="font-size:1rem">⎙</span> en la barra del navegador</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 14px">
+        <span style="font-size:1.4rem">2️⃣</span>
+        <span style="font-size:0.85rem;color:var(--text)">Elegí <strong>"Agregar a pantalla de inicio"</strong></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 14px">
+        <span style="font-size:1.4rem">3️⃣</span>
+        <span style="font-size:0.85rem;color:var(--text)">Tocá <strong>"Agregar"</strong> arriba a la derecha</span>
+      </div>
+    </div>
+    <button onclick="window.pwaIosClose()" style="width:100%;padding:13px;border-radius:9px;border:none;background:var(--surface2);color:var(--text);font-size:0.9rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Entendido</button>
+  </div>
 </div>
 
 <!-- SUPER ADMIN -->
@@ -848,6 +870,7 @@ function _launchByRole(profile){
   }
   const { role, cat } = profile;
   document.getElementById('loginScreen').style.display='none';
+  document.getElementById('resetPasswordScreen').style.display='none';
   document.getElementById('loginPass').value='';
   document.getElementById('loginErr').textContent='';
   document.getElementById('logoutBtn').style.display='inline-block';
@@ -860,6 +883,7 @@ function _launchByRole(profile){
     window._updatePresenceCat('coord');
     if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
     else { document.getElementById('loadingScreen').style.display='none'; }
+    window.pwaCheckAfterLogin && window.pwaCheckAfterLogin();
   } else if(role==='profe'){
     const cats = profile.cats || (cat ? [cat] : []);
     if(cats.length === 0){
@@ -875,6 +899,7 @@ function _launchByRole(profile){
       // Mostrar selector de categoría
       _showCatSelector(cats);
     }
+    window.pwaCheckAfterLogin && window.pwaCheckAfterLogin();
   } else {
     signOut(auth);
     document.getElementById('loginErr').textContent='Tu usuario no tiene acceso configurado. Contactá al administrador.';
@@ -926,12 +951,14 @@ window.doResetPassword = async function(){
 
   try {
     await confirmPasswordReset(auth, window._oobCode, p1);
+    // Mostrar estado de éxito antes de entrar
+    btn.textContent = '✅ ¡Listo! Ingresando...';
+    btn.style.background = '#1aab65';
     // Loguear automáticamente
-    const cred = await signInWithEmailAndPassword(auth, window._resetEmail, p1);
+    await signInWithEmailAndPassword(auth, window._resetEmail, p1);
     // Limpiar la URL para evitar re-uso del oobCode
     window.history.replaceState({}, document.title, window.location.pathname);
-    document.getElementById('resetPasswordScreen').style.display = 'none';
-    // El onAuthStateChanged se encarga del resto
+    // _launchByRole (vía onAuthStateChanged) se encarga de ocultar esta pantalla y lanzar la app
   } catch(e){
     errEl.textContent = e.code === 'auth/weak-password' ? 'La contraseña es muy débil.' : 'Error: ' + e.message;
     errEl.style.display = 'block';
@@ -5741,25 +5768,84 @@ self.addEventListener('fetch', e => {
     .catch(()=>{}); // silencioso si no está en HTTPS
 })();
 
-// 3) Prompt de instalación Android
+// ── PWA INSTALL ──────────────────────────────────────────────────────
+const _PWA_DISMISS_KEY = 'pwa_dismissed_until';
+const _PWA_DAYS = 7; // días antes de volver a mostrar
 let _pwaPrompt = null;
+const _isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+const _isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+function _pwaShouldShow(){
+  if(_isStandalone) return false; // ya instalada
+  const until = localStorage.getItem(_PWA_DISMISS_KEY);
+  if(until && Date.now() < parseInt(until)) return false;
+  return true;
+}
+
+// Capturar el prompt de Android/Chrome (puede disparar antes del login)
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _pwaPrompt = e;
-  // Mostrar banner solo si el usuario ya está logueado
-  if(auth.currentUser){
-    document.getElementById('pwaBanner').classList.add('show');
-  }
+  // Si el usuario ya está logueado, mostrar ahora
+  if(auth.currentUser && _pwaShouldShow()) _pwaShowBanner();
 });
+
+// Llamar desde _launchByRole para mostrar el banner post-login
+window.pwaCheckAfterLogin = function(){
+  if(_isStandalone) return;
+  if(!_pwaShouldShow()) return;
+  // Esperar 3 segundos para no interrumpir la carga
+  setTimeout(()=>{
+    if(_isIos){
+      _pwaShowBanner(true);
+    } else if(_pwaPrompt){
+      _pwaShowBanner(false);
+    }
+  }, 3000);
+};
+
+function _pwaShowBanner(isIos){
+  const banner = document.getElementById('pwaBanner');
+  const btn = document.getElementById('pwaBannerBtn');
+  if(isIos){
+    document.getElementById('pwaBannerTitle').textContent = 'Instalá miplantel';
+    document.getElementById('pwaBannerSub').textContent = 'Seguí las instrucciones para agregar al inicio';
+    btn.textContent = 'Cómo instalar';
+    btn.onclick = window.pwaIosShow;
+  } else {
+    document.getElementById('pwaBannerTitle').textContent = 'Instalá miplantel';
+    document.getElementById('pwaBannerSub').textContent = 'Accedé más rápido desde tu pantalla de inicio';
+    btn.textContent = 'Instalar';
+    btn.onclick = window.pwaTriggerInstall;
+  }
+  banner.classList.add('show');
+}
+
 window.pwaTriggerInstall = function(){
   if(!_pwaPrompt) return;
   _pwaPrompt.prompt();
-  _pwaPrompt.userChoice.then(()=>{ _pwaPrompt=null; window.pwaDismiss(); });
+  _pwaPrompt.userChoice.then(choice=>{
+    _pwaPrompt = null;
+    window.pwaDismiss();
+  });
+};
+window.pwaIosShow = function(){
+  const m = document.getElementById('pwaIosModal');
+  m.style.display = 'flex';
+};
+window.pwaIosClose = function(){
+  document.getElementById('pwaIosModal').style.display = 'none';
+  window.pwaDismiss();
 };
 window.pwaDismiss = function(){
   document.getElementById('pwaBanner').classList.remove('show');
+  // No volver a mostrar por 7 días
+  localStorage.setItem(_PWA_DISMISS_KEY, Date.now() + _PWA_DAYS * 86400000);
 };
-window.addEventListener('appinstalled', ()=>{ window.pwaDismiss(); });
+window.addEventListener('appinstalled', ()=>{
+  window.pwaDismiss();
+  localStorage.setItem(_PWA_DISMISS_KEY, Date.now() + 365 * 86400000); // no mostrar más
+});
 </script>
 </body>
 </html>
