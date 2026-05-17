@@ -2167,10 +2167,20 @@ function renderCitStats(){
     return !c||!c.citados||c.citados.length===0;
   })||null;
 
-  // Resultados desde LIGA_DATA.scResults (los carga el scraper, son los reales)
+  // Resultados desde LIGA_DATA — teamResults para cualquier club, scResults como fallback solo para sagcor
   const _catNumMapTL={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const _catKeyTL=CFG.dbPath;
-  const _scResTL=LIGA_DATA.scResults[_catNumMapTL[_catKeyTL]||16]||[];
+  const _catNumTL=_catNumMapTL[_catKeyTL]||16;
+  const _teamResTL=LIGA_DATA.teamResults?.[_catNumTL]||{};
+  const _myNameTL=(CFG.ligaNombre||'').toUpperCase().trim();
+  const _match5TL=s=>s?s.toUpperCase().trim().substring(0,5):'';
+  const _myResTL=Object.entries(_teamResTL).find(([k])=>{
+    const kn=k.toUpperCase().trim();
+    return _myNameTL&&(kn===_myNameTL||_match5TL(kn)===_match5TL(_myNameTL));
+  })?.[1];
+  const _scResTL = _myResTL
+    ? _myResTL
+    : (CLUB_PATH.includes('sagrado-corazon') ? (LIGA_DATA.scResults?.[_catNumTL]||[]) : []);
   const _resByFecha={};
   _scResTL.forEach(r=>{ _resByFecha[r.fecha]= r.gf>r.gc?'V':r.gf<r.gc?'L':'E'; });
 
