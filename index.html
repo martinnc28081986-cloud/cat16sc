@@ -5099,13 +5099,27 @@ window._saCrearUsuario = async function(clubId){
 // TABLERO COORDINADOR
 // ════════════════════════════════════════════════
 async function startCoordApp(){
-  // Leer torneoActivo del config antes de cargar datos
+  // Leer config del club (torneoActivo, ligaNombre, nombre, cats activas)
+  let _clubNombreCoord = 'MI CLUB';
+  let _ligaNombreCoord = '';
+  let _clubCatsActivas = [];
   try {
-    const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
-    if(cfgSnap.exists() && cfgSnap.val().torneoActivo){
-      TORNEO_ID = cfgSnap.val().torneoActivo;
+    const [cfgSnap, clubSnap] = await Promise.all([
+      get(ref(db, CLUB_PATH+'/config')),
+      get(ref(db, CLUB_PATH))
+    ]);
+    if(cfgSnap.exists()){
+      const cfg = cfgSnap.val();
+      if(cfg.torneoActivo) TORNEO_ID = cfg.torneoActivo;
+      if(cfg.ligaNombre) _ligaNombreCoord = cfg.ligaNombre;
+      CLUB_LIGA_NOMBRE = _ligaNombreCoord || CLUB_PATH.split('/').pop().toUpperCase().replace(/-/g,' ');
     }
-  } catch(e){ console.warn('startCoordApp: error leyendo torneoActivo', e); }
+    if(clubSnap.exists()){
+      const club = clubSnap.val();
+      if(club.nombre) _clubNombreCoord = club.nombre;
+      if(club.cats) _clubCatsActivas = Array.isArray(club.cats) ? club.cats : Object.values(club.cats);
+    }
+  } catch(e){ console.warn('startCoordApp: error leyendo config', e); }
 
   // Esperar que el fetch de liga_data.json termine (max 5s)
   await Promise.race([
@@ -5117,44 +5131,73 @@ async function startCoordApp(){
   document.getElementById('coord-app').style.display = 'block';
   document.querySelector('.logo').textContent = 'MI PLANTEL';
   const subEl = document.querySelector('header div div div[style*="0.62rem"]');
-  if(subEl) subEl.textContent = 'Sagrado Corazón — Vista Global';
+  if(subEl) subEl.textContent = _clubNombreCoord + ' — Vista Global';
   let catBadge = document.getElementById('catBadge');
   if(!catBadge){ catBadge=document.createElement('span'); catBadge.id='catBadge'; catBadge.style.cssText='background:rgba(34,85,238,0.15);color:var(--green);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;margin-left:6px;'; document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn')); }
   catBadge.textContent = 'COORD';
 
-  const COMP_CATS = [
-    {key:'cat16',  label:'Cat 2016',num:16,players:13},
-    {key:'cat13',  label:'Cat 2013',num:13,players:15},
-    {key:'cat2020',label:'Cat 2020',num:20,players:14},
-    {key:'cat2019',label:'Cat 2019',num:19,players:9},
-    {key:'cat2018',label:'Cat 2018',num:18,players:10},
-    {key:'cat2017',label:'Cat 2017',num:17,players:15},
-    {key:'cat2015',label:'Cat 2015',num:15,players:12},
-    {key:'cat2014',label:'Cat 2014',num:14,players:14},
-  ];
+  // Construir COMP_CATS dinámicamente desde las cats activas del club
+  const _CAT_META = {
+    cat16:{label:'Cat 2016',num:16},cat13:{label:'Cat 2013',num:13},
+    cat2020:{label:'Cat 2020',num:20},cat2019:{label:'Cat 2019',num:19},
+    cat2018:{label:'Cat 2018',num:18},cat2017:{label:'Cat 2017',num:17},
+    cat2015:{label:'Cat 2015',num:15},cat2014:{label:'Cat 2014',num:14},
+  };
+  const _catOrder=['cat16','cat13','cat2020','cat2019','cat2018','cat2017','cat2015','cat2014'];
+  const _activeCatKeys = _clubCatsActivas.length > 0
+    ? _catOrder.filter(k => _clubCatsActivas.includes(k))
+    : _catOrder;
+  const COMP_CATS = _activeCatKeys.map(k=>({key:k,..._CAT_META[k],players:14}));
+  const hasEsc = _clubCatsActivas.includes('escuelita') || _clubCatsActivas.length === 0;
   const ESC_CAT = {key:'escuelita',label:'Escuelita',players:10,escuelita:true};
-  const ALL_CATS = [...COMP_CATS, ESC_CAT];
+  const ALL_CATS = hasEsc ? [...COMP_CATS, ESC_CAT] : COMP_CATS;
 
-  const FIXTURE_C = [
-    {fecha:1,rival:'LA PLATA V',cond:'V'},{fecha:2,rival:'DEF.SAN LORENZO',cond:'V'},
-    {fecha:3,rival:'CATELLA',cond:'V'},{fecha:4,rival:'CRISFA V',cond:'L'},
-    {fecha:5,rival:'CAP.CHICA',cond:'V'},{fecha:6,rival:'CAMBACERES',cond:'L'},
-    {fecha:7,rival:'HERNANDEZ',cond:'V'},{fecha:8,rival:'N.FUERZA',cond:'L'},
-    {fecha:9,rival:'LIBRE',cond:'-'},{fecha:10,rival:'ADAFI',cond:'V'},
-    {fecha:11,rival:'VILLA PROGRESO',cond:'L'},{fecha:12,rival:'LA PLATA V',cond:'L'},
-    {fecha:13,rival:'DEF.SAN LORENZO',cond:'V'},{fecha:14,rival:'CATELLA',cond:'L'},
-    {fecha:15,rival:'CRISFA V',cond:'V'},{fecha:16,rival:'CAP.CHICA',cond:'L'},
-    {fecha:17,rival:'CAMBACERES',cond:'V'},{fecha:18,rival:'HERNANDEZ',cond:'L'},
-    {fecha:19,rival:'N.FUERZA',cond:'V'},{fecha:20,rival:'LIBRE',cond:'-'},
-    {fecha:21,rival:'ADAFI',cond:'L'},{fecha:22,rival:'VILLA PROGRESO',cond:'V'},
-  ];
+  // Fixture dinámico desde Firebase ligas/{ligaId}/schedule para este club
+  let FIXTURE_C = [];
+  try {
+    const ligaId = (await get(ref(db, CLUB_PATH+'/config'))).val()?.ligaId;
+    if(ligaId && _ligaNombreCoord){
+      const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
+      if(schedSnap.exists()){
+        const myN = _ligaNombreCoord.toUpperCase().trim();
+        const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
+        const catNumRef = COMP_CATS[0]?.num || 13;
+        const sched = schedSnap.val()[catNumRef] || schedSnap.val()[Object.keys(schedSnap.val())[0]] || {};
+        FIXTURE_C = Object.entries(sched).map(([k,matches])=>{
+          const fecha = parseInt(k);
+          const arr = Array.isArray(matches) ? matches : Object.values(matches);
+          const libre = arr.find(m => m.libre && (m5(m.libre)===m5(myN)));
+          if(libre) return {fecha, rival:'LIBRE', cond:'-'};
+          const asLocal = arr.find(m => m.local && (m5(m.local)===m5(myN)));
+          if(asLocal) return {fecha, rival:asLocal.visitante||'', cond:'L'};
+          const asVisit = arr.find(m => m.visitante && (m5(m.visitante)===m5(myN)));
+          if(asVisit) return {fecha, rival:asVisit.local||'', cond:'V'};
+          return null;
+        }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
+      }
+    }
+  } catch(e){ console.warn('startCoordApp: error leyendo schedule', e); }
+  // Fallback al FIXTURE global si ya fue derivado por loadClubConfig
+  if(!FIXTURE_C.length && window.FIXTURE && window.FIXTURE.length){
+    FIXTURE_C = [...window.FIXTURE];
+  }
 
-  // Tablas y resultados SC — se leen directamente de LIGA_DATA (única fuente de verdad)
-  const POS        = LIGA_DATA.posiciones;
+  // Tablas y resultados — dinámicos para cualquier club
+  const POS = LIGA_DATA.posiciones;
+  // Resultados por categoría para este club
   const SC_RESULTS = (()=>{
     const out={};
-    Object.entries(LIGA_DATA.scResults).forEach(([cat,arr])=>{
-      out[Number(cat)] = arr.map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
+    const isSagcor = CLUB_PATH.includes('sagrado-corazon');
+    COMP_CATS.forEach(cat=>{
+      if(isSagcor){
+        const arr = LIGA_DATA.scResults?.[cat.num] || [];
+        out[cat.num] = arr.map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
+      } else {
+        const teamAll = LIGA_DATA.teamResults?.[cat.num] || {};
+        const myN = _ligaNombreCoord.toUpperCase().trim();
+        const entry = Object.entries(teamAll).find(([k])=>{ const kn=k.toUpperCase().trim(); return myN&&(kn===myN||kn.substring(0,5)===myN.substring(0,5)); });
+        out[cat.num] = entry ? entry[1].map(r=>({f:r.fecha,gf:r.gf,gc:r.gc})) : [];
+      }
     });
     return out;
   })();
@@ -5177,7 +5220,12 @@ async function startCoordApp(){
     return null;
   }
   function catCitedFecha(catKey,f){ return f ? hasCitados(D[catKey].cit[citKey(f)]) : false; }
-  function isSC(eq){ return eq.toLowerCase().includes('sagr')||eq.toLowerCase().includes('coraz'); }
+  function isSC(eq){ 
+    if(!eq) return false;
+    const myN = (_ligaNombreCoord||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
+    const eqN = eq.toUpperCase().trim();
+    return myN && (eqN===myN || (myN.length>=5 && eqN.includes(myN.substring(0,5))) || (eqN.length>=5 && myN.includes(eqN.substring(0,5))));
+  }
 
   // ── DATA STATE ──
   const D = {};
