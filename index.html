@@ -3112,13 +3112,17 @@ async function renderPosPartido(){
 
   if(goleadores.length>0||enContraTotal>0){
     h+=`<div class="stitle" style="margin-top:16px;">Goleadores</div>`;
-    const thStyle=`color:var(--muted);font-size:.55rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 4px;border-bottom:1px solid var(--border);text-align:center;`;
-    h+=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:.75rem;">
+    // Determinar qué años históricos tienen datos reales
+    const AÑOS_CON_DATOS = ['2025','2024','2023','2022'].filter(y =>
+      goleadores.some(j => j.histAnios[y] > 0)
+    );
+    const thStyle=`color:var(--muted);font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:5px 6px;border-bottom:1px solid var(--border);text-align:center;`;
+    h+=`<table style="width:100%;border-collapse:collapse;font-size:.8rem;">
       <thead><tr>
-        <th style="${thStyle}width:18px;">#</th>
+        <th style="${thStyle}width:22px;">#</th>
         <th style="${thStyle}text-align:left;">Jugador</th>
         <th style="${thStyle}">2026</th>
-        ${AÑOS_HIST.map(y=>`<th style="${thStyle}">${y}</th>`).join('')}
+        ${AÑOS_CON_DATOS.map(y=>`<th style="${thStyle}">${y}</th>`).join('')}
         <th style="${thStyle}color:#22cd78;">Total</th>
       </tr></thead><tbody>`;
 
@@ -3129,22 +3133,24 @@ async function renderPosPartido(){
       const tar=tarAcum[j.nombre]||{a:0,r:0};
       const tarStr=(tar.a||tar.r)?` <span style="font-size:.6rem;color:var(--muted);">${tar.a?'A'+tar.a:''}${tar.r?' R'+tar.r:''}</span>`:'';
       h+=`<tr>
-        <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-weight:700;color:${col};">${pos}</td>
-        <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);font-weight:500;white-space:nowrap;">${j.nombre}${tarStr}</td>
-        <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;">${j.g2026||'—'}</span></td>
-        ${AÑOS_HIST.map(y=>`<td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-size:.75rem;color:var(--muted);">${j.histAnios[y]||'—'}</td>`).join('')}
+        <td style="padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-weight:700;color:${col};">${pos}</td>
+        <td style="padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.04);font-weight:500;">${j.nombre}${tarStr}</td>
+        <td style="padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;">${j.g2026||'—'}</span></td>
+        ${AÑOS_CON_DATOS.map(y=>`<td style="padding:6px 6px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-size:.8rem;color:var(--muted);">${j.histAnios[y]||'—'}</td>`).join('')}
         <td style="padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:#22cd78;">${j.total}</span></td>
       </tr>`;
     });
 
     if(enContraTotal>0){
       h+=`<tr>
-        <td style="padding:6px 4px;text-align:center;color:var(--muted);">—</td>
-        <td style="padding:6px 4px;font-size:.72rem;color:var(--muted);" colspan="${2+AÑOS_HIST.length}">En contra (2026)</td>
-        <td style="padding:6px 4px;text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--red);">${enContraTotal}</span></td>
+        <td style="padding:6px 6px;text-align:center;color:var(--muted);">—</td>
+        <td style="padding:6px 6px;font-size:.72rem;color:var(--muted);">En contra (2026)</td>
+        <td style="padding:6px 6px;text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--red);">${enContraTotal}</span></td>
+        ${AÑOS_CON_DATOS.map(()=>`<td></td>`).join('')}
+        <td style="padding:6px 6px;text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:var(--red);">${enContraTotal}</span></td>
       </tr>`;
     }
-    h+=`</tbody></table></div>`;
+    h+=`</tbody></table>`;
   }
 
   el.innerHTML=h;
