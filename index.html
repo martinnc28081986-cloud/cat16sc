@@ -2520,17 +2520,27 @@ function _fmtRival(rival){
   return rival.split(' ').map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase(); }).join(' ');
 }
 
-// Obtener resultado desde LIGA_DATA
+// Obtener resultado desde LIGA_DATA o citación guardada
 function _getResultData(key){
   const cit = citaciones[key];
   if(!cit) return null;
   const _catNumMap = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const catNum = _catNumMap[CFG.dbPath] || 16;
-  const scRes = (LIGA_DATA && LIGA_DATA.scResults && LIGA_DATA.scResults[catNum]) || [];
-  const match = scRes.find(function(r){ return Number(r.fecha) === Number(cit.fecha); });
+  const isSagcor = CLUB_PATH.includes('sagrado-corazon');
   let gf=null, gc=null;
+  // Buscar en scResults (sagcor) o teamResults (otros)
+  let scRes=[];
+  if(isSagcor){
+    scRes=(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[];
+  } else {
+    const _teamR=(LIGA_DATA&&LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
+    const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
+    const _entry=Object.entries(_teamR).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
+    scRes=_entry?_entry[1]:[];
+  }
+  const match = scRes.find(function(r){ return Number(r.fecha) === Number(cit.fecha); });
   if(match){ gf=match.gf; gc=match.gc; }
-  else if(cit.score){ const p=cit.score.split('-'); if(p.length===2){ gf=parseInt(p[0]); gc=parseInt(p[1]); } }
+  if(gf===null && cit.score){ const p=cit.score.split('-'); if(p.length===2){ gf=parseInt(p[0]); gc=parseInt(p[1]); } }
   if(gf===null || gc===null) return null;
   const result = gf>gc?'V':gf<gc?'L':'E';
   const color = result==='V'?'#22cd78':result==='L'?'#ff1744':'#ffab40';
@@ -2895,25 +2905,36 @@ function _ppResultData(key){
   const cit=citaciones[key]; if(!cit) return null;
   const map={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const catNum=map[CFG.dbPath]||16;
-  // Usar teamResults para cualquier club, scResults como fallback solo para sagcor
-  const _teamR=LIGA_DATA&&LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum]||{};
-  const _myN=(CFG.ligaNombre||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
-  const _myResArr=Object.entries(_teamR).find(([k])=>{
-    const kn=k.toUpperCase().trim();
-    return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5));
-  })?.[1];
-  const scRes=_myResArr
-    ? _myResArr
-    : (CLUB_PATH.includes('sagrado-corazon')?(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum]||[]):[]);
+  const isSagcor=CLUB_PATH.includes('sagrado-corazon');
+  // Obtener array de resultados del equipo correcto
+  let scRes=[];
+  if(isSagcor){
+    scRes=(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[];
+  } else {
+    const _teamR=(LIGA_DATA&&LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
+    const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
+    const _entry=Object.entries(_teamR).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
+    scRes=_entry?_entry[1]:[];
+  }
   const m=scRes.find(r=>Number(r.fecha)===Number(cit.fecha));
   if(m){
     const res=m.gf>m.gc?'V':m.gf<m.gc?'L':'E';
     const col=res==='V'?'#22cd78':res==='L'?'var(--red)':'var(--yellow)';
     return{score:m.gf+'-'+m.gc,res,col};
   }
+  // Fallback: score guardado manualmente en la citación
   if(cit.score&&cit.result){
     const col=cit.result==='V'?'#22cd78':cit.result==='L'?'var(--red)':'var(--yellow)';
     return{score:cit.score,res:cit.result,col};
+  }
+  // Último recurso: calcular desde stats cacheados
+  const st=_ppCache[key];
+  if(st&&st.jugadores){
+    const gf=Object.values(st.jugadores).reduce((s,p)=>s+(p.goles||0),0);
+    const gc=st.enContra||0;
+    const res=gf>gc?'V':gf<gc?'L':'E';
+    const col=res==='V'?'#22cd78':res==='L'?'var(--red)':'var(--yellow)';
+    return{score:gf+'-'+gc,res,col};
   }
   return null;
 }
@@ -3139,6 +3160,13 @@ window._ppGuardar=async function(){
   try{
     await _ppSaveStats(_ppEditKey,_ppEditStats);
     _ppCache[_ppEditKey]=JSON.parse(JSON.stringify(_ppEditStats));
+    // Calcular y persistir score + result en la citación (para todos los clubes)
+    const _gf=Object.values(_ppEditStats.jugadores||{}).reduce((s,p)=>s+(p.goles||0),0);
+    const _gc=_ppEditStats.enContra||0;
+    const _res=_gf>_gc?'V':_gf<_gc?'L':'E';
+    const _sc=_gf+'-'+_gc;
+    await update(ref(db,DB_PREFIX+'/citaciones/'+_ppEditKey),{score:_sc,result:_res});
+    if(citaciones[_ppEditKey]){ citaciones[_ppEditKey].score=_sc; citaciones[_ppEditKey].result=_res; }
     _ppEditKey=null; _ppEditStats={};
     showToast('&#10003; Estadísticas guardadas');
     await renderPosPartido();
@@ -3637,6 +3665,11 @@ window._ligaDataReady = (async () => {
           Object.entries(d.scResults).map(([k,v]) => [Number(k), v])
         );
       }
+    }
+    if (d.teamResults && Object.keys(d.teamResults).length > 0) {
+      LIGA_DATA.teamResults = Object.fromEntries(
+        Object.entries(d.teamResults).map(([k,v]) => [Number(k), v])
+      );
     }
     if (d.updatedAt) LIGA_DATA.updatedAt = d.updatedAt;
     console.log('✅ liga_data.json cargado —', LIGA_DATA.updatedAt);
