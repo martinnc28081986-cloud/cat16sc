@@ -2815,13 +2815,22 @@ function drawPitch(){
     g2.appendChild(t);
     g2.addEventListener('click', function(e){
       e.stopPropagation();
-      selectedPlayer = selectedPlayer===name ? null : name;
-      drawPitch(); drawBench();
+      if(selectedPlayer === name){
+        // Segundo toque → sacar de la cancha al banco
+        benchPlayers.push(name);
+        delete pitchPlayers[name];
+        selectedPlayer = null;
+        drawPitch(); drawBench();
+        autoSaveFormacion();
+      } else {
+        selectedPlayer = name;
+        drawPitch(); drawBench();
+      }
     });
     g.appendChild(g2);
   });
   const hint = document.getElementById('pitchHint');
-  if(hint) hint.textContent = selectedPlayer ? 'Tocá la cancha → colocar a '+getDisplayName(selectedPlayer) : '';
+  if(hint) hint.textContent = selectedPlayer ? (pitchPlayers[selectedPlayer] ? 'Tocá otro lugar para mover · tocá de nuevo para sacar' : 'Tocá la cancha → colocar a '+getDisplayName(selectedPlayer)) : '';
 }
 
 function drawBench(){
