@@ -2895,7 +2895,16 @@ function _ppResultData(key){
   const cit=citaciones[key]; if(!cit) return null;
   const map={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const catNum=map[CFG.dbPath]||16;
-  const scRes=(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[];
+  // Usar teamResults para cualquier club, scResults como fallback solo para sagcor
+  const _teamR=LIGA_DATA&&LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum]||{};
+  const _myN=(CFG.ligaNombre||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
+  const _myResArr=Object.entries(_teamR).find(([k])=>{
+    const kn=k.toUpperCase().trim();
+    return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5));
+  })?.[1];
+  const scRes=_myResArr
+    ? _myResArr
+    : (CLUB_PATH.includes('sagrado-corazon')?(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum]||[]):[]);
   const m=scRes.find(r=>Number(r.fecha)===Number(cit.fecha));
   if(m){
     const res=m.gf>m.gc?'V':m.gf<m.gc?'L':'E';
