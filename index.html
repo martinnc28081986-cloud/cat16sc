@@ -3354,7 +3354,7 @@ async function renderTablas(){
       </div>
     </div>`;
 
-    // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE ──
+    // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE (alineados por fecha) ──
     if(scRes.length || rRivRes.length){
       html+='<div class="stitle" style="margin-top:8px">Últimos resultados</div>';
       html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:4px">';
@@ -3362,40 +3362,39 @@ async function renderTablas(){
       html+='<div></div>';
       html+='<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;text-align:right">'+nextF.rival+'</div>';
       html+='</div>';
-      const scLast=[...scRes].reverse().slice(0,3);
-      const rows=Math.max(scLast.length,rRivRes.length);
-      for(let i=0;i<rows;i++){
+
+      // Alinear por fecha — tomar las últimas 3 fechas jugadas entre ambos equipos
+      const scByFecha=Object.fromEntries(scRes.map(r=>[r.fecha,r]));
+      const rByFecha=Object.fromEntries(rRivRes.map(r=>[r.fecha,r]));
+      const allFechas=[...new Set([...scRes.map(r=>r.fecha),...rRivRes.map(r=>r.fecha)])].sort((a,b)=>b-a).slice(0,3);
+
+      const _resCard=(r,align)=>{
+        const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
+        const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
+        const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
+        const condCls=r.cond==='L'?'local':'visita';
+        const condLbl=r.cond==='L'?'Loc':'Vis';
+        const scoreDisp=r.cond==='L'?r.gf+'-'+r.gc:r.gc+'-'+r.gf;
+        const isRight=align==='right';
+        const rival=r.rival?(' vs '+r.rival.substring(0,8)):'';
+        return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">
+          <div style="font-size:0.6rem;color:var(--muted);margin-bottom:2px;${isRight?'text-align:right':''}">F${r.fecha} <span class="res-cond ${condCls}">${condLbl}</span>${isRight?rival:''}</div>
+          <div style="display:flex;align-items:baseline;gap:4px;${isRight?'justify-content:flex-end':''}">
+            <div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:${resCol}">${scoreDisp}</div>
+            <div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:${resCol}">${resLbl}</div>
+          </div></div>`;
+      };
+      const _libreCard=(f,align)=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px;${align==='right'?'text-align:right':''}">
+        <div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">F${f}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">Libre</div></div>`;
+
+      allFechas.forEach(f=>{
         html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:4px;align-items:center;margin-bottom:5px">';
-        if(scLast[i]){
-          const r=scLast[i];
-          const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
-          const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-          const condCls=r.cond==='L'?'local':'visita';
-          const condLbl=r.cond==='L'?'Loc':'Vis';
-          const scoreDisp=r.cond==='L'?r.gf+'-'+r.gc:r.gc+'-'+r.gf;
-          const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
-          html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
-          html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.fecha+' <span class="res-cond '+condCls+'">'+condLbl+'</span></div>';
-          html+='<div style="display:flex;align-items:baseline;gap:4px"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
-          html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
-        } else { html+='<div></div>'; }
-        const fLabel=scLast[i]?'F'+scLast[i].fecha:rRivRes[i]?'F'+rRivRes[i].fecha:'';
-        html+='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0 2px">'+fLabel+'</div>';
-        if(rRivRes[i]){
-          const r=rRivRes[i];
-          const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
-          const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-          const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
-          const condLbl=r.cond==='L'?'Loc':'Vis';
-          const condCls=r.cond==='L'?'local':'visita';
-          const scoreDisp=r.gf+'-'+r.gc;
-          html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
-          html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.fecha+' <span class="res-cond '+condCls+'">'+condLbl+'</span> vs '+r.rival+'</div>';
-          html+='<div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
-          html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
-        } else { html+='<div></div>'; }
+        html+=scByFecha[f] ? _resCard(scByFecha[f],'left') : _libreCard(f,'left');
+        html+='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0 2px">F'+f+'</div>';
+        html+=rByFecha[f] ? _resCard(rByFecha[f],'right') : _libreCard(f,'right');
         html+='</div>';
-      }
+      });
     }
     html+='</div>'; // cierre compare-card
   }
