@@ -2255,7 +2255,7 @@ function renderCitStats(){
   const _catKeyTL=CFG.dbPath;
   const _catNumTL=_catNumMapTL[_catKeyTL]||16;
   const _teamResTL=LIGA_DATA.teamResults?.[_catNumTL]||{};
-  const _myNameTL=(CFG.ligaNombre||'').toUpperCase().trim();
+  const _myNameTL=(CFG.ligaNombre||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
   const _match5TL=s=>s?s.toUpperCase().trim().substring(0,5):'';
   const _myResTL=Object.entries(_teamResTL).find(([k])=>{
     const kn=k.toUpperCase().trim();
