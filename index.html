@@ -1466,7 +1466,26 @@ async function _getActiveFecha(fixture, suspensions){
       return catsToCheck.some(cat => !catCitedFechaNum(cat, f.fecha));
     });
 
-    window._activeFechaCache = active || null;
+    // Si no hay citaciones en ninguna categoría, usar teamResults para detectar la próxima fecha real
+    let result = active;
+    if(!active || activeCats.length === 0){
+      const catNum = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20}[CFG.dbPath]||16;
+      const isSagcor = CLUB_PATH.includes('sagrado-corazon');
+      let playedFechas = new Set();
+      if(isSagcor){
+        ((LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[]).forEach(r=>playedFechas.add(r.fecha));
+      } else {
+        const _tr=(LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
+        const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
+        const _entry=Object.entries(_tr).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
+        if(_entry) _entry[1].forEach(r=>playedFechas.add(r.fecha));
+      }
+      if(playedFechas.size > 0){
+        result = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && !playedFechas.has(f.fecha)) || active;
+      }
+    }
+
+    window._activeFechaCache = result || null;
     window._activeFechaTs = Date.now();
     return window._activeFechaCache;
   } catch(e) {
@@ -1477,6 +1496,22 @@ async function _getActiveFecha(fixture, suspensions){
 
 // Invalidar cache cuando se guarda una citación
 window._invalidateActiveFecha = function(){ window._activeFechaCache = null; };
+
+// Helper: conjunto de fechas ya jugadas según teamResults/scResults
+function _getPlayedFechas(){
+  const catNum={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20}[CFG.dbPath]||16;
+  const isSagcor=CLUB_PATH.includes('sagrado-corazon');
+  const played=new Set();
+  if(isSagcor){
+    ((LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[]).forEach(r=>played.add(r.fecha));
+  } else {
+    const _tr=(LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
+    const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
+    const _entry=Object.entries(_tr).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
+    if(_entry) _entry[1].forEach(r=>played.add(r.fecha));
+  }
+  return played;
+}
 
 function renderNextMatch(){
   const el=document.getElementById('nextMatchEl'); if(!el)return;
@@ -2557,10 +2592,12 @@ function renderFormacion(){
 
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
+  const _playedF1=_getPlayedFechas();
   let proximoKey = null, proximoF = null;
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
     if(_suspensions[f.fecha]) continue;
+    if(_playedF1.size>0 && _playedF1.has(f.fecha)) continue; // ya jugada
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
     if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey=key; proximoF=f; break; }
@@ -2659,10 +2696,12 @@ function renderFormacionHistorial(){
   const dd = document.getElementById('formHistDD');
   if(!dd) return;
 
+  const _playedF2=_getPlayedFechas();
   let proximoKey2 = null, proximoF2 = null;
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
     if(_suspensions[f.fecha]) continue;
+    if(_playedF2.size>0 && _playedF2.has(f.fecha)) continue; // ya jugada
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
     if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey2=key; proximoF2=f; break; }
@@ -3235,8 +3274,14 @@ async function renderTablas(){
   if(nextF && rivalData){
     const rW=rivalData.pg, rE=rivalData.pe, rL=rivalData.pp, rPts=rivalData.pts;
     const maxPts=Math.max(scPts,rPts)||1;
-    const rRivAll=LIGA_DATA.rivalResults[catNum]||{};
-    const rRivRes=(rRivAll[rivalKey]||[]).slice(-3);
+    // Usar teamResults para el rival (formato unificado, mejor coverage)
+    const _rTeamAll=(LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
+    const _rKey=(rivalKey||'').toUpperCase().trim();
+    const _rEntry=Object.entries(_rTeamAll).find(([k])=>{
+      const kn=k.toUpperCase().trim();
+      return kn===_rKey||(kn.length>=5&&_rKey.length>=5&&(kn.substring(0,5)===_rKey.substring(0,5)));
+    });
+    const rRivRes=_rEntry?[..._rEntry[1]].slice(-3):[];
 
     html+='<div class="stitle">Próximo Rival — F'+nextF.fecha+'</div>';
     html+='<div class="compare-card">';
@@ -3296,16 +3341,18 @@ async function renderTablas(){
           html+='<div style="display:flex;align-items:baseline;gap:4px"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
           html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
         } else { html+='<div></div>'; }
-        const fLabel=scLast[i]?'F'+scLast[i].fecha:rRivRes[i]?'F'+rRivRes[i].f:'';
+        const fLabel=scLast[i]?'F'+scLast[i].fecha:rRivRes[i]?'F'+rRivRes[i].fecha:'';
         html+='<div style="font-size:0.65rem;color:var(--muted);text-align:center;padding:0 2px">'+fLabel+'</div>';
         if(rRivRes[i]){
           const r=rRivRes[i];
           const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
           const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
           const resCol=res==='win'?'#22cd78':res==='draw'?'var(--yellow)':'var(--red)';
+          const condLbl=r.cond==='L'?'Loc':'Vis';
+          const condCls=r.cond==='L'?'local':'visita';
           const scoreDisp=r.gf+'-'+r.gc;
           html+='<div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 9px">';
-          html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.f+' vs '+r.vs+'</div>';
+          html+='<div style="font-size:0.65rem;color:var(--muted);margin-bottom:2px">F'+r.fecha+' <span class="res-cond '+condCls+'">'+condLbl+'</span> vs '+r.rival+'</div>';
           html+='<div style="display:flex;align-items:baseline;gap:4px;justify-content:flex-end"><div style="font-family:Bebas Neue,sans-serif;font-size:1.2rem;color:'+resCol+'">'+scoreDisp+'</div>';
           html+='<div style="font-family:Bebas Neue,sans-serif;font-size:0.78rem;color:'+resCol+'">'+resLbl+'</div></div></div>';
         } else { html+='<div></div>'; }
