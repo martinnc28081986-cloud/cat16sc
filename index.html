@@ -3293,7 +3293,9 @@ async function renderTablas(){
   html+='<thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th></tr></thead><tbody>';
   pos.forEach((p,i)=>{
     const isSC=p.eq&&(p.eq.toUpperCase().includes(myName.substring(0,5))||myName.toUpperCase().includes(p.eq.toUpperCase().substring(0,5)));
-    const isRival=rivalKey&&(p.eq.toLowerCase().includes(rivalKey.substring(0,4).toLowerCase()));
+    const _normR=s=>s.toLowerCase().replace(/\./g,'').replace(/\s+/g,' ').trim();
+    const _rn=rivalKey?_normR(rivalKey):''; const _pn=_normR(p.eq);
+    const isRival=rivalKey&&(_rn===_pn||(Math.min(_rn.length,_pn.length)>=6&&(_pn.includes(_rn.substring(0,7))||_rn.includes(_pn.substring(0,7)))));
     const cls=isSC?'us-row':isRival?'rival-row':'';
     html+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.eq+(isSC?' ⚽':'')+'</td><td>'+p.pj+'</td><td>'+p.pg+'</td><td>'+p.pe+'</td><td>'+p.pp+'</td><td>'+p.gf+'</td><td>'+p.gc+'</td><td><strong>'+p.pts+'</strong></td></tr>';
   });
