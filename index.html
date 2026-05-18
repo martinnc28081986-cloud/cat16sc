@@ -4768,10 +4768,10 @@ window._saAbrirAddUser = function(clubId){
       <input id="addUserEmail" type="email" placeholder="profe@email.com"
         style="width:100%;margin-bottom:12px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
 
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Categoría</label>
-      <select id="addUserCat" style="width:100%;margin-bottom:12px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.85rem;box-sizing:border-box">
-        ${CAT_OPTS.map(c=>`<option value="${c.key}">${c.label}</option>`).join('')}
-      </select>
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">Categoría/s <span style="color:#4d73f5;font-weight:400">(podés elegir varias)</span></label>
+      <div id="addUserCats" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px">
+        ${CAT_OPTS.map(c=>`<label style="display:flex;align-items:center;gap:7px;background:#112896;border:1px solid #1e3ab0;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:0.82rem"><input type="checkbox" name="addUserCatCk" value="${c.key}" style="accent-color:#4d73f5;width:15px;height:15px"> ${c.label}</label>`).join('')}
+      </div>
 
       <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Rol</label>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px">
@@ -4810,11 +4810,12 @@ window._saAbrirAddUser = function(clubId){
 
 window._saCrearUsuario = async function(clubId){
   const email = document.getElementById('addUserEmail').value.trim();
-  const cat = document.getElementById('addUserCat').value;
+  const selectedCats = [...document.querySelectorAll('input[name="addUserCatCk"]:checked')].map(cb=>cb.value);
   const rol = document.querySelector('input[name="addUserRol"]:checked').value;
   const invitar = document.getElementById('addUserInvitar').checked;
 
   if(!email||!email.includes('@')){ showToast('Email inválido'); return; }
+  if(!selectedCats.length){ showToast('Seleccioná al menos una categoría'); return; }
 
   const btn = document.getElementById('addUserBtn');
   btn.disabled = true; btn.textContent = 'Creando...';
@@ -4848,8 +4849,9 @@ window._saCrearUsuario = async function(clubId){
     const perfil = {
       email, clubId,
       role: isCoord ? 'coordinator' : 'profe',
-      cat
+      cats: selectedCats
     };
+    if(selectedCats.length === 1) perfil.cat = selectedCats[0]; // compatibilidad retroactiva
     if(rol==='profe+coord') perfil.isProfeCoord = true;
     await set(ref(db,'users/'+uid), perfil);
 
