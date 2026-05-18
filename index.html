@@ -4627,9 +4627,9 @@ window.saEditarClub = async function(clubId){
         <div style="font-size:0.82rem;font-weight:600">${u.email||u.uid}</div>
         <div style="font-size:0.68rem;color:#7a9ccc">${u.role||'profe'} · Cat ${catsLabel}</div>
       </div>
-      <div style="display:flex;gap:6px;flex-shrink:0">
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">✏️ Cats</button>
-        <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">🗑 Eliminar</button>
+        <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">🗑 Elim.</button>
       </div>
     </div>`;
   }).join('') : '<div style="color:#7a9ccc;font-size:0.82rem;text-align:center;padding:12px">Sin usuarios registrados</div>';
