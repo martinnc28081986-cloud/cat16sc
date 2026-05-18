@@ -4623,7 +4623,7 @@ window.saEditarClub = async function(clubId){
   const ligaActual = club.ligaId || club.liga_id || '';
   const catsActivas = club.cats ? Object.values(club.cats) : [];
   const _KNOWN_ADDR = {'SAGRADO CORAZON':'Av. 13 y 610 Villa Elvira','SAGR. CORAZON':'Av. 13 y 610 Villa Elvira','HERNANDEZ':'Av 31 e/510 y 511 José Hernández','JOSE HERNANDEZ':'Av 31 e/510 y 511 José Hernández','NUESTRA SEÑORA DE LUJAN':'522 y 21 Ringuelet','NUEVA ALBA':'604 e/ 126 y 127 Villa Elvira','PEDRO BENOIT':'526 bis e/ 15 y 16 bis Ringuelet','REAL INFANTIL':'29 y 79 La Plata','SAN JUAN BAUTISTA':'146 y 515 Romero','SPORT CLUB':'Tapalque y Lavalle, Magdalena','TALLERES':'131 y 52 La Plata','UNIVERSITARIO':'Av. 60 y 126 Berisso','VILLA SAN CARLOS':'26 y 173 Berisso'};
-  const _autoAddr = club.config?.address || _KNOWN_ADDR[(club.config?.ligaNombre||'').toUpperCase().trim()] || '';
+  const _autoAddr = _KNOWN_ADDR[(club.config?.ligaNombre||'').toUpperCase().trim()] || club.config?.address || '';
   const ligas = ligasSnap.exists() ? Object.keys(ligasSnap.val()) : [];
   const todosUsers = usersSnap.exists() ? usersSnap.val() : {};
   const clubUsers = Object.entries(todosUsers).filter(([,u])=>u.clubId===clubId).map(([uid,u])=>({uid,...u}));
@@ -4679,8 +4679,7 @@ window.saEditarClub = async function(clubId){
         <input id="nuevaLigaNombre" placeholder="Nombre (ej: LISFI 2026 Zona II C)" style="width:100%;margin-bottom:6px;background:#112896;border:1px solid #4d73f5;color:#e8efff;padding:8px 12px;border-radius:8px;font-size:0.82rem;box-sizing:border-box">
         <div id="nuevaLigaIdPreview" style="font-size:0.7rem;color:#4d73f5;padding:2px 4px"></div>
       </div>
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Nombre en la liga</label>
-      <input id="editClubLigaNombre" value="${club.config?.ligaNombre||''}" placeholder="Ej: HERNANDEZ o SAGR. CORAZON" style="width:100%;margin-bottom:12px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+      <input id="editClubLigaNombre" type="hidden" value="${club.config?.ligaNombre||''}">
       <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Dirección de la cancha (partidos de local)</label>
       <input id="editClubAddress" value="${_autoAddr}" placeholder="Ej: Av. 13 y 610 Villa Elvira" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
       <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
