@@ -5155,31 +5155,36 @@ async function startCoordApp(){
   // Fixture dinámico desde Firebase ligas/{ligaId}/schedule para este club
   let FIXTURE_C = [];
   try {
-    const ligaId = (await get(ref(db, CLUB_PATH+'/config'))).val()?.ligaId;
+    const _cfgVal = (await get(ref(db, CLUB_PATH+'/config'))).val() || {};
+    const ligaId = _cfgVal.ligaId;
     if(ligaId && _ligaNombreCoord){
       const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
       if(schedSnap.exists()){
         const myN = _ligaNombreCoord.toUpperCase().trim();
         const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
-        const catNumRef = COMP_CATS[0]?.num || 13;
-        const sched = schedSnap.val()[catNumRef] || schedSnap.val()[Object.keys(schedSnap.val())[0]] || {};
-        FIXTURE_C = Object.entries(sched).map(([k,matches])=>{
+        // El schedule está indexado por fecha: {1: [...], 2: [...], ...}
+        FIXTURE_C = Object.entries(schedSnap.val()).map(([k,matches])=>{
           const fecha = parseInt(k);
+          if(isNaN(fecha)) return null;
           const arr = Array.isArray(matches) ? matches : Object.values(matches);
-          const libre = arr.find(m => m.libre && (m5(m.libre)===m5(myN)));
+          const libre = arr.find(m => m.libre && m5(m.libre)===m5(myN));
           if(libre) return {fecha, rival:'LIBRE', cond:'-'};
-          const asLocal = arr.find(m => m.local && (m5(m.local)===m5(myN)));
+          const asLocal = arr.find(m => m.local && (m.local.toUpperCase().trim()===myN || m5(m.local)===m5(myN)));
           if(asLocal) return {fecha, rival:asLocal.visitante||'', cond:'L'};
-          const asVisit = arr.find(m => m.visitante && (m5(m.visitante)===m5(myN)));
+          const asVisit = arr.find(m => m.visitante && (m.visitante.toUpperCase().trim()===myN || m5(m.visitante)===m5(myN)));
           if(asVisit) return {fecha, rival:asVisit.local||'', cond:'V'};
           return null;
         }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
       }
     }
   } catch(e){ console.warn('startCoordApp: error leyendo schedule', e); }
-  // Fallback al FIXTURE global si ya fue derivado por loadClubConfig
+  // Fallback al FIXTURE global del profe si ya fue derivado
   if(!FIXTURE_C.length && window.FIXTURE && window.FIXTURE.length){
     FIXTURE_C = [...window.FIXTURE];
+  }
+  // Fallback final: fixture vacío numerado
+  if(!FIXTURE_C.length){
+    FIXTURE_C = Array.from({length:22},(_,i)=>({fecha:i+1,rival:'—',cond:'L'}));
   }
 
   // Tablas y resultados — dinámicos para cualquier club
