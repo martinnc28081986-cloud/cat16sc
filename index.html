@@ -4617,14 +4617,22 @@ window.saEditarClub = async function(clubId){
   overlay.id = 'saEditOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
 
-  const usersHtml = clubUsers.length ? clubUsers.map(u=>`
+  const _catLabel = {cat16:'2016',cat13:'2013',cat2015:'2015',cat2014:'2014',cat2017:'2017',cat2018:'2018',cat2019:'2019',cat2020:'2020',escuelita:'Esc'};
+  const usersHtml = clubUsers.length ? clubUsers.map(u=>{
+    const uCats = u.cats ? Object.values(u.cats) : (u.cat ? [u.cat] : []);
+    const catsLabel = uCats.map(c=>_catLabel[c]||c).join(', ') || '—';
+    return `
     <div style="background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:0.82rem;font-weight:600">${u.email||u.uid}</div>
-        <div style="font-size:0.68rem;color:#7a9ccc">${u.role||'profe'} · ${u.cat||'—'}</div>
+        <div style="font-size:0.68rem;color:#7a9ccc">${u.role||'profe'} · Cat ${catsLabel}</div>
       </div>
-      <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">🗑 Eliminar</button>
-    </div>`).join('') : '<div style="color:#7a9ccc;font-size:0.82rem;text-align:center;padding:12px">Sin usuarios registrados</div>';
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">✏️ Cats</button>
+        <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">🗑 Eliminar</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="color:#7a9ccc;font-size:0.82rem;text-align:center;padding:12px">Sin usuarios registrados</div>';
 
   const ligasHtml = ligas.map(l=>`<option value="${l}" ${l===ligaActual?'selected':''}>${l}</option>`).join('');
   const catsHtml = CAT_OPTS.map(c=>`
@@ -4745,6 +4753,50 @@ window._saDeleteUser = async function(uid, email, btn){
     // Si falla, mostrar error pero la fila ya fue removida visualmente
     showToast('Error al eliminar: ' + e.message);
   }
+};
+
+window._saEditUserCats = async function(uid, email, clubId){
+  const CAT_OPTS_EC = [{key:'cat13',label:'Cat 2013'},{key:'cat2014',label:'Cat 2014'},{key:'cat2015',label:'Cat 2015'},{key:'cat16',label:'Cat 2016'},{key:'cat2017',label:'Cat 2017'},{key:'cat2018',label:'Cat 2018'},{key:'cat2019',label:'Cat 2019'},{key:'cat2020',label:'Cat 2020'},{key:'escuelita',label:'Escuelita'}];
+
+  // Leer cats actuales del usuario
+  const snap = await get(ref(db, 'users/'+uid));
+  const uData = snap.exists() ? snap.val() : {};
+  const currentCats = uData.cats ? Object.values(uData.cats) : (uData.cat ? [uData.cat] : []);
+
+  const ov = document.createElement('div');
+  ov.id = 'saEditCatsOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML = `
+    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:360px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5;margin-bottom:4px">✏️ EDITAR CATEGORÍAS</div>
+      <div style="font-size:0.75rem;color:#7a9ccc;margin-bottom:16px">${email}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:20px">
+        ${CAT_OPTS_EC.map(c=>`
+          <label style="display:flex;align-items:center;gap:8px;background:#112896;border:1px solid #1e3ab0;border-radius:7px;padding:8px 10px;cursor:pointer;font-size:0.82rem">
+            <input type="checkbox" name="editCatCk" value="${c.key}" ${currentCats.includes(c.key)?'checked':''} style="accent-color:#4d73f5;width:15px;height:15px">
+            ${c.label}
+          </label>`).join('')}
+      </div>
+      <button id="saveEditCatsBtn" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar categorías</button>
+      <button onclick="document.getElementById('saEditCatsOverlay').remove()" style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">Cancelar</button>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+
+  document.getElementById('saveEditCatsBtn').onclick = async function(){
+    const newCats = [...document.querySelectorAll('input[name="editCatCk"]:checked')].map(cb=>cb.value);
+    if(!newCats.length){ showToast('Seleccioná al menos una categoría'); return; }
+    this.disabled = true; this.textContent = 'Guardando...';
+    try{
+      await update(ref(db, 'users/'+uid), {
+        cats: newCats,
+        cat: newCats[0] // compatibilidad retroactiva
+      });
+      showToast('✓ Categorías actualizadas');
+      ov.remove();
+      window.saEditarClub(clubId); // refrescar vista del club
+    } catch(e){ showToast('Error: '+e.message); this.disabled=false; this.textContent='💾 Guardar categorías'; }
+  };
 };
 
 window._saAbrirAddUser = function(clubId){
