@@ -1296,6 +1296,19 @@ async function loadClubConfig(){
     // ── DIRECCIÓN ──
     if(cfg.address) CFG.address = cfg.address;
 
+    // ── NOMBRE DEL CLUB (para cabeceras de citación) ──
+    try{
+      const clubSnap = await get(ref(db, CLUB_PATH));
+      if(clubSnap.exists() && clubSnap.val().nombre){
+        CFG.club = clubSnap.val().nombre;
+      }
+    }catch(e){}
+
+    // Fallback de dirección si no está en config
+    if(!CFG.address && CFG.club){
+      CFG.address = '';
+    }
+
     // ── CANCHAS DE RIVALES (desde la liga) ──
     if(ligaData && ligaData.canchas){
       window._ligaCanchas = ligaData.canchas;
@@ -2149,8 +2162,9 @@ window.shareCit = async function(key){
                     cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020'};
   const catLabel = catNames[catKey] || catKey;
 
+  const clubNombreWA = (CFG.club || 'MI PLANTEL').toUpperCase();
   let lines = [];
-  lines.push('⚽ *SAGRADO CORAZÓN — '+catLabel+' — Fecha '+cit.fecha+'*');
+  lines.push('⚽ *'+clubNombreWA+' — '+catLabel+' — Fecha '+cit.fecha+'*');
   lines.push('🆚 vs '+cit.rival+' | '+condLabel);
   if(fechaStr) lines.push('📅 '+fechaStr);
   if(matchTime) lines.push('⏰ Partido: '+matchTime+' hs');
@@ -4664,7 +4678,12 @@ window.saEditarClub = async function(clubId){
         <div id="nuevaLigaIdPreview" style="font-size:0.7rem;color:#4d73f5;padding:2px 4px"></div>
       </div>
       <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Nombre en la liga</label>
-      <input id="editClubLigaNombre" value="${club.config?.ligaNombre||''}" placeholder="Ej: HERNANDEZ o SAGR. CORAZON" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+      <input id="editClubLigaNombre" value="${club.config?.ligaNombre||''}" placeholder="Ej: HERNANDEZ o SAGR. CORAZON" style="width:100%;margin-bottom:12px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Dirección de la cancha (partidos de local)</label>
+      <input id="editClubAddress" value="${club.config?.address || (() => {
+        const KNOWN = {'SAGRADO CORAZON':'Av. 13 y 610 Villa Elvira','SAGR. CORAZON':'Av. 13 y 610 Villa Elvira','HERNANDEZ':'Av 31 e/510 y 511 José Hernández','JOSE HERNANDEZ':'Av 31 e/510 y 511 José Hernández','NUESTRA SEÑORA DE LUJAN':'522 y 21 Ringuelet','NUEVA ALBA':'604 e/ 126 y 127 Villa Elvira','PEDRO BENOIT':'526 bis e/ 15 y 16 bis Ringuelet','REAL INFANTIL':'29 y 79 La Plata','SAN JUAN BAUTISTA':'146 y 515 Romero','SPORT CLUB':'Tapalque y Lavalle, Magdalena','TALLERES':'131 y 52 La Plata','UNIVERSITARIO':'Av. 60 y 126 Berisso','VILLA SAN CARLOS':'26 y 173 Berisso'};
+        return KNOWN[(club.config?.ligaNombre||'').toUpperCase().trim()] || '';
+      })()}" placeholder="Ej: Av. 13 y 610 Villa Elvira" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
       <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">${catsHtml}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -4703,6 +4722,7 @@ window._saGuardarEdicion = async function(clubId){
   const nombre = document.getElementById('editClubNombre').value.trim();
   const liga = document.getElementById('editClubLiga').value;
   const ligaNombre = document.getElementById('editClubLigaNombre').value.trim().toUpperCase();
+  const clubAddress = document.getElementById('editClubAddress')?.value.trim() || '';
   const cats = [...document.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value);
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
@@ -4728,6 +4748,7 @@ window._saGuardarEdicion = async function(clubId){
   if(current.config) Object.assign(updates.config, current.config);
   if(ligaFinal && ligaFinal !== '__nueva__') updates.config.ligaId = ligaFinal;
   if(ligaNombre) updates.config.ligaNombre = ligaNombre;
+  if(clubAddress) updates.config.address = clubAddress;
   // torneoActivo se preserva tal cual estaba
   await set(ref(db,'clubs/'+clubId), updates);
   document.getElementById('saEditOverlay')?.remove();
