@@ -740,6 +740,7 @@ onValue(ref(db, 'presence'), snap => {
     const data = snap.exists()
       ? Object.values(snap.val()).filter(d => d.t && (_now - d.t) < 10 * 60 * 1000)
       : [];
+    window._lastPresenceData = data;
     _connectedUsers = data.length;
     _connectedCats = [...new Set(data.map(d=>d.cat).filter(c=>c&&c!=='coord'))];
     if(typeof setSS === 'function') setSS('live');
@@ -1393,11 +1394,17 @@ const _CAT_LABELS = {cat16:'2016',cat13:'2013',cat2020:'2020',cat2019:'2019',cat
 function setSS(s) {
   document.getElementById('syncDot').className='sync-dot '+s;
   let label = s==='error'?'sin conexion':s==='live'?'en vivo':'conectando...';
-  if(s==='live' && _connectedCats.length>0){
-    const catNames = _connectedCats.map(c=>_CAT_LABELS[c]||c).join(' · ');
+  const isSA = window._isSuperAdmin || (window._userProfile && window._userProfile.role==='super-admin');
+  // Los no-SA ven presencia filtrada (sin el super-admin)
+  const visibleCats = isSA ? _connectedCats : _connectedCats.filter(c=>c!=='super-admin');
+  const visibleCount = isSA ? _connectedUsers : _connectedUsers - (
+    (() => { try { const d=Object.values((window._lastPresenceData)||{}); return d.filter(x=>x.cat==='super-admin').length; } catch(e){return 0;} })()
+  );
+  if(s==='live' && visibleCats.length>0){
+    const catNames = visibleCats.map(c=>_CAT_LABELS[c]||c).join(' · ');
     label = 'en vivo · '+catNames;
-  } else if(s==='live' && _connectedUsers>0){
-    label = 'en vivo · '+_connectedUsers+('' === 1?' usuario':' usuarios');
+  } else if(s==='live' && visibleCount>0){
+    label = 'en vivo · '+visibleCount+(visibleCount===1?' usuario':' usuarios');
   }
   document.getElementById('syncLabel').textContent = label;
   document.getElementById('offlineBanner').classList.toggle('show', s==='error');
