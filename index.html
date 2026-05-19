@@ -5565,27 +5565,29 @@ async function startCoordApp(){
         h+=`</div></div>`;
       });
     }
-    // ── ESCUELITA — Encuentros ──
-    const escEncs=Object.entries(D['escuelita'].cit).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
-    h+=`<div class="csec" style="margin-top:24px">⚽ Escuelita — Encuentros${escEncs.length?` <span style="font-size:0.72rem;color:var(--muted);font-family:'DM Sans',sans-serif;letter-spacing:0">${escEncs.length} registrado${escEncs.length!==1?'s':''}</span>`:''}
-    </div>`;
-    if(!escEncs.length){
-      h+=`<div class="empty-msg" style="padding:16px 0">Sin encuentros registrados aún</div>`;
-    } else {
-      escEncs.forEach(([,enc])=>{
-        const citados=enc.citados||[];
-        const bg=citados.length?'rgba(34,85,238,0.06)':'var(--surface2)';
-        const bdr=citados.length?'rgba(34,85,238,0.25)':'var(--border)';
-        h+=`<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:10px 13px;margin-bottom:6px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${citados.length?'6px':'0'}">
-            <div>
-              <span style="font-weight:700;font-size:0.88rem">vs ${enc.rival||'—'}</span>
-              ${citados.length?`<span style="font-size:0.68rem;color:var(--green);margin-left:8px">${citados.length} citados</span>`:'<span style="font-size:0.68rem;color:var(--muted);margin-left:8px">Sin citados</span>'}
+    // ── ESCUELITA — Encuentros (solo si el club tiene escuelita activa) ──
+    if(hasEsc && D['escuelita']){
+      const escEncs=Object.entries(D['escuelita'].cit).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
+      h+=`<div class="csec" style="margin-top:24px">⚽ Escuelita — Encuentros${escEncs.length?` <span style="font-size:0.72rem;color:var(--muted);font-family:'DM Sans',sans-serif;letter-spacing:0">${escEncs.length} registrado${escEncs.length!==1?'s':''}</span>`:''}
+      </div>`;
+      if(!escEncs.length){
+        h+=`<div class="empty-msg" style="padding:16px 0">Sin encuentros registrados aún</div>`;
+      } else {
+        escEncs.forEach(([,enc])=>{
+          const citados=enc.citados||[];
+          const bg=citados.length?'rgba(34,85,238,0.06)':'var(--surface2)';
+          const bdr=citados.length?'rgba(34,85,238,0.25)':'var(--border)';
+          h+=`<div style="background:${bg};border:1px solid ${bdr};border-radius:10px;padding:10px 13px;margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${citados.length?'6px':'0'}">
+              <div>
+                <span style="font-weight:700;font-size:0.88rem">vs ${enc.rival||'—'}</span>
+                ${citados.length?`<span style="font-size:0.68rem;color:var(--green);margin-left:8px">${citados.length} citados</span>`:'<span style="font-size:0.68rem;color:var(--muted);margin-left:8px">Sin citados</span>'}
+              </div>
             </div>
-          </div>
-          ${citados.length?`<div style="display:flex;flex-wrap:wrap;gap:3px">${citados.map(p=>`<span style="font-size:0.66rem;padding:2px 7px;border-radius:10px;background:rgba(34,85,238,0.1);border:1px solid rgba(34,85,238,0.2);color:var(--green)">${p}</span>`).join('')}</div>`:''}
-        </div>`;
-      });
+            ${citados.length?`<div style="display:flex;flex-wrap:wrap;gap:3px">${citados.map(p=>`<span style="font-size:0.66rem;padding:2px 7px;border-radius:10px;background:rgba(34,85,238,0.1);border:1px solid rgba(34,85,238,0.2);color:var(--green)">${p}</span>`).join('')}</div>`:''}
+          </div>`;
+        });
+      }
     }
 
     el.innerHTML=h;
