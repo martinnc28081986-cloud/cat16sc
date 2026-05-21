@@ -4128,6 +4128,7 @@ window.saRenderStep = async function(step){
       <div id="saTorneoFields">
         <select id="saTorneoSelect" onchange="window.saOnTorneoSelect()" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;margin-bottom:8px;">
           <option value="lisfi-2026-zona2b">LISFI 2026 Zona II B</option>
+          <option value="lafir-2026">LAFIR 2026</option>
           <option value="__nuevo__">+ Crear torneo nuevo</option>
         </select>
         <input id="saTorneoNuevo" placeholder="ID del torneo (ej: lisfi-2026-zona2c)" style="display:none;width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:8px;">
@@ -4324,7 +4325,13 @@ window.saCrearClubFinal = async function(){
 
     // Actualizar torneoActivo en config si se especificó
     if(m.torneoId){
-      await update(ref(db, 'clubs/'+m.clubId+'/config'), { torneoActivo: m.torneoId });
+      const cfgUpd = { torneoActivo: m.torneoId };
+      // Para ligas no-LISFI: también setear ligaId y ligaNombre automáticamente
+      if(!m.torneoId.includes('lisfi')){
+        cfgUpd.ligaId = m.torneoId;
+        cfgUpd.ligaNombre = (m.nombre||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+      }
+      await update(ref(db, 'clubs/'+m.clubId+'/config'), cfgUpd);
     }
 
     // 2. Crear usuarios y enviar invitaciones via Firebase Auth REST
@@ -5153,10 +5160,12 @@ async function startCoordApp(){
   const ALL_CATS = hasEsc ? [...COMP_CATS, ESC_CAT] : COMP_CATS;
 
   // Fixture dinámico desde Firebase ligas/{ligaId}/schedule para este club
+  let _ligaIdCoord = null;
   let FIXTURE_C = [];
   try {
     const _cfgVal = (await get(ref(db, CLUB_PATH+'/config'))).val() || {};
     const ligaId = _cfgVal.ligaId;
+    _ligaIdCoord = ligaId || null;
     if(ligaId && _ligaNombreCoord){
       const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
       if(schedSnap.exists()){
@@ -5188,22 +5197,71 @@ async function startCoordApp(){
   }
 
   // Tablas y resultados — dinámicos para cualquier club
-  const POS = LIGA_DATA.posiciones;
+  // Para ligas no-LISFI: leer posiciones y resultados desde Firebase
+  let _coordPOS = LIGA_DATA.posiciones;
+  let _coordSCR = {};
+  const _isLisfi = !_ligaIdCoord || _ligaIdCoord.includes('lisfi');
+  const _hasPgPp = _isLisfi; // LISFI tiene pg/pe/pp/gf/gc; LAFIR etc. solo pj+pts
+  if(!_isLisfi){
+    try {
+      const [posSnap, resSnap] = await Promise.all([
+        get(ref(db,'ligas/'+_ligaIdCoord+'/posiciones')),
+        get(ref(db,'ligas/'+_ligaIdCoord+'/resultados'))
+      ]);
+      if(posSnap.exists()){
+        _coordPOS = {};
+        Object.entries(posSnap.val()).forEach(([cat,rows])=>{
+          _coordPOS[parseInt(cat)] = Array.isArray(rows)?rows:Object.values(rows);
+        });
+      }
+      if(resSnap.exists() && _ligaNombreCoord){
+        const myN=_ligaNombreCoord.toUpperCase().trim();
+        const m5=s=>s?s.toUpperCase().trim().substring(0,5):'';
+        Object.entries(resSnap.val()).forEach(([fecha,matches])=>{
+          const f=parseInt(fecha);
+          const arr=Array.isArray(matches)?matches:Object.values(matches);
+          arr.forEach(match=>{
+            if(!match||!match.cats||match.susp) return;
+            const isL=match.local&&(match.local.toUpperCase().trim()===myN||m5(match.local)===m5(myN));
+            const isV=match.visitante&&(match.visitante.toUpperCase().trim()===myN||m5(match.visitante)===m5(myN));
+            if(!isL&&!isV) return;
+            Object.entries(match.cats).forEach(([cat,g])=>{
+              if(!g) return;
+              const n=parseInt(cat);
+              if(!_coordSCR[n]) _coordSCR[n]=[];
+              const gf=isL?g.l:g.v, gc=isL?g.v:g.l;
+              if(typeof gf==='number'&&typeof gc==='number') _coordSCR[n].push({f,gf,gc});
+            });
+          });
+        });
+        // Ordenar por fecha
+        Object.values(_coordSCR).forEach(arr=>arr.sort((a,b)=>a.f-b.f));
+      }
+    } catch(e){ console.warn('Error leyendo posiciones/resultados de liga:',e); }
+  }
+
+  const POS = _coordPOS;
   // Resultados por categoría para este club
   const SC_RESULTS = (()=>{
     const out={};
-    const isSagcor = CLUB_PATH.includes('sagrado-corazon');
-    COMP_CATS.forEach(cat=>{
-      if(isSagcor){
-        const arr = LIGA_DATA.scResults?.[cat.num] || [];
-        out[cat.num] = arr.map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
-      } else {
-        const teamAll = LIGA_DATA.teamResults?.[cat.num] || {};
-        const myN = _ligaNombreCoord.toUpperCase().trim();
-        const entry = Object.entries(teamAll).find(([k])=>{ const kn=k.toUpperCase().trim(); return myN&&(kn===myN||kn.substring(0,5)===myN.substring(0,5)); });
-        out[cat.num] = entry ? entry[1].map(r=>({f:r.fecha,gf:r.gf,gc:r.gc})) : [];
-      }
-    });
+    if(Object.keys(_coordSCR).length>0){
+      // Liga no-LISFI: usar resultados de Firebase
+      COMP_CATS.forEach(cat=>{ out[cat.num]=_coordSCR[cat.num]||[]; });
+    } else {
+      // LISFI: usar LIGA_DATA (scResults para sagcor, teamResults para otros)
+      const isSagcor = CLUB_PATH.includes('sagrado-corazon');
+      COMP_CATS.forEach(cat=>{
+        if(isSagcor){
+          const arr = LIGA_DATA.scResults?.[cat.num] || [];
+          out[cat.num] = arr.map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
+        } else {
+          const teamAll = LIGA_DATA.teamResults?.[cat.num] || {};
+          const myN = _ligaNombreCoord.toUpperCase().trim();
+          const entry = Object.entries(teamAll).find(([k])=>{ const kn=k.toUpperCase().trim(); return myN&&(kn===myN||kn.substring(0,5)===myN.substring(0,5)); });
+          out[cat.num] = entry ? entry[1].map(r=>({f:r.fecha,gf:r.gf,gc:r.gc})) : [];
+        }
+      });
+    }
     return out;
   })();
 
@@ -5593,22 +5651,23 @@ async function startCoordApp(){
     el.innerHTML=h;
   }
   // Cats que suman para la tabla general (2013-2018 inclusive; 2019 y 2020 no cuentan)
-  const GEN_CAT_NUMS = [13, 14, 15, 16, 17, 18];
+  // Cats que suman para tabla general: LISFI = [13-18], otras ligas = todas las cats disponibles
+  const GEN_CAT_NUMS = _isLisfi ? [13,14,15,16,17,18] : Object.keys(_coordPOS||{}).map(Number);
 
-  // POS_GENERAL calculada dinámicamente desde LIGA_DATA.posiciones (solo cats 13-18)
+  // POS_GENERAL — soporta ligas con y sin pg/pe/pp/gf/gc
   const POS_GENERAL = (() => {
     const totals = {};
     GEN_CAT_NUMS.forEach(num => {
-      (LIGA_DATA.posiciones[num] || []).forEach(row => {
-        if (!totals[row.eq]) totals[row.eq] = {eq:row.eq,pj:0,pg:0,pe:0,pp:0,gf:0,gc:0};
+      ((_coordPOS||{})[num] || []).forEach(row => {
+        if (!totals[row.eq]) totals[row.eq] = {eq:row.eq,pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0};
         const t = totals[row.eq];
-        t.pj += row.pj; t.pg += row.pg; t.pe += row.pe; t.pp += row.pp;
-        t.gf += row.gf; t.gc += row.gc;
+        t.pj += (row.pj||0); t.pts += (row.pts||0);
+        if(_hasPgPp){ t.pg+=(row.pg||0); t.pe+=(row.pe||0); t.pp+=(row.pp||0); t.gf+=(row.gf||0); t.gc+=(row.gc||0); }
       });
     });
     return Object.values(totals)
-      .map(t => ({...t, pts: t.pg*2 + t.pe}))
-      .sort((a,b) => b.pts - a.pts || (b.gf-b.gc) - (a.gf-a.gc) || b.gf - a.gf);
+      .map(t => ({...t, pts: _hasPgPp ? t.pg*2+t.pe : t.pts}))
+      .sort((a,b) => b.pts-a.pts || (_hasPgPp?(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf:0));
   })();
 
   // ── TAB GOLEADORES ──
@@ -5685,24 +5744,24 @@ async function startCoordApp(){
     let tW=0,tD=0,tL=0,tGF=0,tGC=0,tPJ=0;
     GEN_CAT_NUMS.forEach(num=>{ (SC_RESULTS[num]||[]).forEach(r=>{ if(r.gf>r.gc)tW++;else if(r.gf===r.gc)tD++;else tL++; tGF+=r.gf;tGC+=r.gc;tPJ++; }); });
     const tPts=tW*2+tD;
-    let h=`<div style="font-size:0.68rem;color:var(--muted);text-align:right;margin-bottom:10px">Actualizado: ${LIGA_DATA.updatedAt} · Fuente: LISFI</div>`;
+    let h=`<div style="font-size:0.68rem;color:var(--muted);text-align:right;margin-bottom:10px">${LIGA_DATA.updatedAt?`Actualizado: ${LIGA_DATA.updatedAt} · Fuente: LISFI`:(_ligaIdCoord||'LIGA').toUpperCase().replace(/-/g,' ')}</div>`;
 
     // ── TABLA GENERAL ACUMULADA ──
     const scGen=POS_GENERAL.find(p=>isSC(p.eq));
     const scGenPos=POS_GENERAL.findIndex(p=>isSC(p.eq))+1;
-    h+=`<div class="csec" style="margin-top:0">🏆 Posiciones General — Zona II B</div>`;
+    h+=`<div class="csec" style="margin-top:0">🏆 Posiciones General${_isLisfi?' — Zona II B':''}</div>`;
     // Destacado SC
     if(scGen){
       h+=`<div style="background:rgba(34,85,238,0.1);border:1px solid rgba(34,85,238,0.35);border-radius:10px;padding:12px 15px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:3rem;line-height:1;color:var(--yellow)">${scGenPos}°</div>
         <div style="flex:1">
-          <div style="font-weight:700;font-size:0.95rem;color:var(--green)">⚽ Sagrado Corazón</div>
-          <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${scGen.pj} PJ · GF:${scGen.gf} GC:${scGen.gc}</div>
-          <div style="display:flex;gap:10px;margin-top:5px">
+          <div style="font-weight:700;font-size:0.95rem;color:var(--green)">⚽ ${_clubNombreCoord}</div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${scGen.pj} PJ${_hasPgPp?` · GF:${scGen.gf} GC:${scGen.gc}`:''}</div>
+          ${_hasPgPp?`<div style="display:flex;gap:10px;margin-top:5px">
             <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--green)">${scGen.pg}G</span>
             <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--yellow)">${scGen.pe}E</span>
             <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--red)">${scGen.pp}P</span>
-          </div>
+          </div>`:''}
         </div>
         <div style="text-align:center">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;line-height:1;color:var(--yellow)">${scGen.pts}</div>
@@ -5713,15 +5772,14 @@ async function startCoordApp(){
     // Tabla completa
     h+=`<div class="card" style="padding:10px 8px;overflow-x:auto;margin-bottom:20px">
       <table class="stbl">
-        <thead><tr><th>#</th><th style="text-align:left">Club</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th></tr></thead>
+        <thead><tr><th>#</th><th style="text-align:left">Club</th><th>PJ</th>${_hasPgPp?'<th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th>':''}<th>PTS</th></tr></thead>
         <tbody>`;
     POS_GENERAL.forEach((p,i)=>{
       const cls=isSC(p.eq)?' class="sc-row"':'';
-      const dg=p.gf-p.gc;
-      h+=`<tr${cls}><td>${i+1}</td><td>${p.eq}${isSC(p.eq)?' ⚽':''}</td><td>${p.pj}</td><td>${p.pg}</td><td>${p.pe}</td><td>${p.pp}</td><td>${p.gf}</td><td>${p.gc}</td><td><strong>${p.pts}</strong></td></tr>`;
+      h+=`<tr${cls}><td>${i+1}</td><td>${p.eq}${isSC(p.eq)?' ⚽':''}</td><td>${p.pj}</td>${_hasPgPp?`<td>${p.pg}</td><td>${p.pe}</td><td>${p.pp}</td><td>${p.gf}</td><td>${p.gc}</td>`:''}<td><strong>${p.pts}</strong></td></tr>`;
     });
     h+=`</tbody></table></div>`;
-    h+=`<div class="csec">Sagrado Corazón — Rendimiento por categoría</div>`;
+    h+=`<div class="csec">${_clubNombreCoord} — Rendimiento por categoría</div>`;
     h+=`<div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-num" style="color:var(--yellow)">${tPts}</div><div class="kpi-lbl">Puntos (suma cats)</div></div>
       <div class="kpi-card"><div class="kpi-num">${tPJ}</div><div class="kpi-lbl">Partidos jugados</div></div>
@@ -5763,10 +5821,10 @@ async function startCoordApp(){
       const pos=POS[cat.num]||[];
       if(!pos.length) return;
       h+=`<div style="margin-bottom:18px"><div style="font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:2px;color:var(--green);margin-bottom:6px">${cat.label}</div>`;
-      h+=`<div class="card" style="padding:10px 8px;overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th></tr></thead><tbody>`;
+      h+=`<div class="card" style="padding:10px 8px;overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th>${_hasPgPp?'<th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th>':''}<th>PTS</th></tr></thead><tbody>`;
       pos.forEach((p,i)=>{
         const cls=isSC(p.eq)?' class="sc-row"':'';
-        h+=`<tr${cls}><td>${i+1}</td><td>${p.eq}${isSC(p.eq)?' ⚽':''}</td><td>${p.pj}</td><td>${p.pg}</td><td>${p.pe}</td><td>${p.pp}</td><td>${p.gf}</td><td>${p.gc}</td><td><strong>${p.pts}</strong></td></tr>`;
+        h+=`<tr${cls}><td>${i+1}</td><td>${p.eq}${isSC(p.eq)?' ⚽':''}</td><td>${p.pj}</td>${_hasPgPp?`<td>${p.pg}</td><td>${p.pe}</td><td>${p.pp}</td><td>${p.gf}</td><td>${p.gc}</td>`:''}<td><strong>${p.pts}</strong></td></tr>`;
       });
       h+=`</tbody></table></div></div>`;
     });
