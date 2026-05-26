@@ -5869,10 +5869,6 @@ async function startCoordApp(){
       return;
     }
 
-    const catsToShow=coordPresFilter?ALL_CATS.filter(c=>c.key===coordPresFilter):ALL_CATS;
-    let h=jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
-    ALL_CATS.forEach(cat=>{ h+=`<button class="cfilter${coordPresFilter===cat.key?' on':''}" onclick="window.coordPF('${cat.key}')">${cat.label.replace('Cat ','')}</button>`; });
-    const catsToShow=coordPresFilter?ALL_CATS.filter(c=>c.key===coordPresFilter):ALL_CATS;
     let h=jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
     ALL_CATS.forEach(cat=>{ h+=`<button class="cfilter${coordPresFilter===cat.key?' on':''}" onclick="window.coordPF('${cat.key}')">${cat.label.replace('Cat ','')}</button>`; });
     h+=`</div><div class="cfilter-row">
@@ -5880,6 +5876,7 @@ async function startCoordApp(){
       <button class="cfilter${coordPresMode==='week'?' on':''}" onclick="window.coordPM('week')">Por Semana</button>
       <button class="cfilter${coordPresMode==='month'?' on':''}" onclick="window.coordPM('month')">Por Mes</button>
     </div>`;
+    const catsToShow=coordPresFilter?ALL_CATS.filter(c=>c.key===coordPresFilter):ALL_CATS;
     function gKey(d){ if(coordPresMode==='month') return d.slice(0,7); if(coordPresMode==='week'){const dt=new Date(d+'T12:00:00'),thu=new Date(dt);thu.setDate(dt.getDate()-(dt.getDay()+6)%7+3);const wk=Math.ceil(((thu-new Date(thu.getFullYear(),0,1))/864e5+1)/7);return thu.getFullYear()+'-W'+String(wk).padStart(2,'0');}return d;}
     function gLbl(k){ if(coordPresMode==='month'){const[y,mo]=k.split('-');return MES[parseInt(mo)-1]+' '+y;} if(coordPresMode==='week'){const[y,wn]=k.split('-W');const jan4=new Date(parseInt(y),0,4),mon=new Date(jan4);mon.setDate(jan4.getDate()-(jan4.getDay()||7)+1+(parseInt(wn)-1)*7);return 'Sem '+mon.getDate()+'/'+(mon.getMonth()+1)+' ('+y+')';} const[y,mo,dd]=k.split('-');return dd+'/'+mo+'/'+y.slice(2);}
     const allDates=[...new Set(catsToShow.flatMap(c=>Object.keys(D[c.key].att)))].sort().reverse();
