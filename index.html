@@ -2340,6 +2340,20 @@ window.saveCitacion=async function(){
 };
 
 
+window.deletePartidoExtra = async function(key){
+  if(!citaciones[key]||!citaciones[key].tipo) return;
+  const rival = citaciones[key].rival||'?';
+  if(!confirm('¿Eliminar el partido extra vs '+rival+'?\nEsta acción no se puede deshacer.')) return;
+  try{
+    await remove(ref(db, DB_PREFIX+'/citaciones/'+key));
+    delete citaciones[key];
+    // Limpiar stats si existen
+    try{ await remove(ref(db, DB_PREFIX+'/stats/'+key)); }catch(e){}
+    showToast('Partido eliminado');
+    renderCitStats();
+  } catch(e){ showToast('Error al eliminar'); }
+};
+
 window.shareCit = async function(key){
   const cit = citaciones[key];
   if(!cit||!cit.citados||!cit.citados.length){ showToast('Sin citados para compartir'); return; }
@@ -2549,7 +2563,11 @@ function renderCitStats(){
   const matchList=document.getElementById('citMatchList');
   if(matchList){
     matchList.innerHTML='';
-    const allDesc=Object.entries(citaciones).filter(([,m])=>m.citados&&m.citados.length>0).sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
+    const allDesc=Object.entries(citaciones).filter(([,m])=>m.citados&&m.citados.length>0).sort((a,b)=>{
+      const aVal=a[1].tipo?(a[1].ts||0):((a[1].fecha||0)*1e10);
+      const bVal=b[1].tipo?(b[1].ts||0):((b[1].fecha||0)*1e10);
+      return bVal-aVal;
+    });
     if(!allDesc.length){ matchList.innerHTML='<div class="empty-msg">Sin citaciones guardadas aún</div>'; }
     allDesc.forEach(([key,saved])=>{
       const resCls=saved.result==='V'?'rV':saved.result==='L'?'rL':saved.result==='E'?'rE':'';
@@ -2564,8 +2582,10 @@ function renderCitStats(){
       const titleRival=(esExtra?'':'')+' vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
       const c=document.createElement('div'); c.className='card';
       c.dataset.citKey = key;
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      const deleteBtn=esExtra?'<button class="btn btn-ol delete-extra-btn" style="border-color:var(--red);color:var(--red);font-size:0.72rem;padding:5px 10px;margin-left:6px">🗑</button>':'';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button>'+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
+      if(esExtra){ c.querySelector('.delete-extra-btn').addEventListener('click', function(e){ e.stopPropagation(); window.deletePartidoExtra(c.dataset.citKey); }); }
       matchList.appendChild(c);
     });
   }
