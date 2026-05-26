@@ -1981,11 +1981,23 @@ window.openPartidoExtraModal = function(){
   document.getElementById('peTipoTorneo').style.color = 'var(--text)';
   // Cargar torneos existentes
   const sel = document.getElementById('peTorneoSelect');
+  const inp = document.getElementById('peTorneoNuevo');
+  const hint = document.getElementById('peTorneoHint');
   sel.innerHTML = '';
-  _torneosExtraNombres.forEach(n => {
-    const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt);
-  });
-  const newOpt = document.createElement('option'); newOpt.value = '__nuevo__'; newOpt.textContent = '— Nuevo torneo —'; sel.appendChild(newOpt);
+  if(_torneosExtraNombres.length === 0){
+    // Sin torneos previos: ocultar select, mostrar input directamente
+    sel.style.display = 'none';
+    inp.style.display = 'block';
+    hint.textContent = 'Se guardará para futuros partidos';
+  } else {
+    sel.style.display = 'block';
+    inp.style.display = 'none';
+    hint.textContent = 'Torneos usados anteriormente';
+    _torneosExtraNombres.forEach(n => {
+      const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt);
+    });
+    const newOpt = document.createElement('option'); newOpt.value = '__nuevo__'; newOpt.textContent = '— Nuevo torneo —'; sel.appendChild(newOpt);
+  }
   document.getElementById('partidoExtraModal').style.display = 'flex';
 };
 
@@ -2027,7 +2039,8 @@ window.crearPartidoExtra = async function(){
 
   let torneoNombre = '';
   if(_peTipoActivo === 'torneo'){
-    const sel = document.getElementById('peTorneoSelect').value;
+    const selEl = document.getElementById('peTorneoSelect');
+    const sel = selEl.style.display === 'none' ? '__nuevo__' : selEl.value;
     if(sel === '__nuevo__'){
       torneoNombre = (document.getElementById('peTorneoNuevo').value||'').trim();
       if(!torneoNombre){ showToast('Ingresá el nombre del torneo'); return; }
