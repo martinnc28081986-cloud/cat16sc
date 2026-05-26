@@ -5703,65 +5703,57 @@ async function startCoordApp(){
       <div class="kpi-card"><div class="kpi-num">${totSess}</div><div class="kpi-lbl">Total entrenamientos</div></div>
     </div>`;
 
-    // ── EVOLUCIÓN PRESENCIA POR MES — barras CSS agrupadas ──
+    // ── EVOLUCIÓN PRESENCIA POR MES — barra general ──
     const monthData={};
     ALL_CATS.forEach(cat=>{
       Object.entries(D[cat.key].att).forEach(([d,s])=>{
         const ym=d.substring(0,7);
-        if(!monthData[ym]) monthData[ym]={};
-        if(!monthData[ym][cat.key]) monthData[ym][cat.key]={pres:0,slots:0};
-        monthData[ym][cat.key].pres+=(s.present||[]).length;
-        monthData[ym][cat.key].slots+=cat.players;
+        if(!monthData[ym]) monthData[ym]={pres:0,slots:0};
+        monthData[ym].pres+=(s.present||[]).length;
+        monthData[ym].slots+=cat.players;
       });
     });
-    const months=Object.keys(monthData).sort().slice(-5);
+    const months=Object.keys(monthData).sort().slice(-6);
     const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
     if(months.length){
+      const maxPct=Math.max(...months.map(ym=>{ const d=monthData[ym]; return d.slots?Math.round(d.pres/d.slots*100):0; }),1);
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
         <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Evolución de presencia — por mes</div>
-        <div style="display:flex;gap:6px;align-items:flex-end;height:80px;margin-bottom:8px">`;
+        <div style="display:flex;gap:6px;align-items:flex-end;height:72px;margin-bottom:6px">`;
       months.forEach(ym=>{
-        const [y,m]=ym.split('-');
-        h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;height:100%">
-          <div style="flex:1;width:100%;display:flex;align-items:flex-end;gap:1px">`;
-        ALL_CATS.filter(c=>!c.escuelita).forEach(cat=>{
-          const cd=monthData[ym][cat.key];
-          const pct=cd&&cd.slots?Math.round(cd.pres/cd.slots*100):0;
-          const col=CAT_COL_R[cat.key]||'#4d73f5';
-          h+=`<div title="${cat.label}: ${pct}%" style="flex:1;height:${pct}%;min-height:2px;background:${col};border-radius:2px 2px 0 0;opacity:0.85"></div>`;
-        });
-        h+=`</div><div style="font-size:0.58rem;color:var(--muted);margin-top:4px">${MES_S[parseInt(m)-1]}</div></div>`;
-      });
-      h+=`</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">`;
-      ALL_CATS.filter(c=>!c.escuelita).forEach(cat=>{
-        const col=CAT_COL_R[cat.key]||'#4d73f5';
-        h+=`<span style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${col}"></span>${cat.label}</span>`;
+        const [,m]=ym.split('-');
+        const d=monthData[ym];
+        const pct=d.slots?Math.round(d.pres/d.slots*100):0;
+        const barH=Math.round(pct/maxPct*100);
+        const col=pct>=75?'#22cd78':pct>=50?'#ffab40':'#ff4444';
+        h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <div style="font-size:0.6rem;color:${col};font-weight:600">${pct}%</div>
+          <div style="width:100%;flex:1;display:flex;align-items:flex-end">
+            <div style="width:100%;height:${barH}%;min-height:4px;background:${col};border-radius:3px 3px 0 0;opacity:0.85"></div>
+          </div>
+          <div style="font-size:0.58rem;color:var(--muted)">${MES_S[parseInt(m)-1]}</div>
+        </div>`;
       });
       h+=`</div></div>`;
     }
 
-    // ── AVANCE DE TEMPORADA — general del club con V/E/L ──
+    // ── AVANCE DE TEMPORADA — usando resultados de la primera cat con datos ──
     {
       const playable=FIXTURE_C.filter(f=>f.cond!=='-');
       const actFNum=actF?actF.fecha:999;
-      const jugadas=playable.filter(f=>f.fecha<actFNum&&!_suspensions[f.fecha]).length;
       const suspCount=Object.keys(_suspensions).filter(k=>playable.some(f=>f.fecha===Number(k))).length;
-      // Calcular V/E/L general sumando todas las cats
-      const resxF={};
-      COMP_CATS.forEach(cat=>{
-        (SC_RESULTS[cat.num]||[]).forEach(r=>{
-          if(!resxF[r.f]) resxF[r.f]={gf:0,gc:0,count:0};
-          resxF[r.f].gf+=r.gf; resxF[r.f].gc+=r.gc; resxF[r.f].count++;
-        });
-      });
-      let totV=0,totE=0,totL=0;
-      Object.values(resxF).forEach(r=>{ if(r.gf>r.gc)totV++;else if(r.gf===r.gc)totE++;else totL++; });
+      // Usar primera cat con resultados como referencia
+      let refRes=[];
+      for(const cat of COMP_CATS){ const r=SC_RESULTS[cat.num]||[]; if(r.length){ refRes=r; break; } }
+      const resByFechaCoord={};
+      refRes.forEach(r=>{ resByFechaCoord[r.f]= r.gf>r.gc?'V':r.gf<r.gc?'L':'E'; });
+      const totV=Object.values(resByFechaCoord).filter(v=>v==='V').length;
+      const totE=Object.values(resByFechaCoord).filter(v=>v==='E').length;
+      const totL=Object.values(resByFechaCoord).filter(v=>v==='L').length;
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Avance de temporada</div>
-          <div style="font-size:0.75rem;font-weight:700"><span style="color:var(--green)">${totV}V</span> <span style="color:var(--yellow)">${totE}E</span> <span style="color:var(--red)">${totL}L</span></div>
+          <div style="font-size:0.75rem;font-weight:700"><span style="color:#22cd78">${totV}V</span> <span style="color:#ffab40">${totE}E</span> <span style="color:#ff4444">${totL}L</span></div>
         </div>
         <div style="display:flex;gap:3px;flex-wrap:wrap">`;
       FIXTURE_C.forEach(f=>{
@@ -5772,10 +5764,10 @@ async function startCoordApp(){
         } else if(actF&&f.fecha===actF.fecha){
           h+=`<div title="F${f.fecha} — PRÓXIMA" style="width:22px;height:22px;border-radius:50%;background:#4d73f5;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:900;color:#fff">${f.fecha}</div>`;
         } else if(f.fecha<actFNum){
-          const r=resxF[f.fecha];
-          let bg,col,lbl;
-          if(r&&r.count>0){ const net=r.gf-r.gc; if(net>0){bg='#22cd78';col='#fff';lbl='V';}else if(net<0){bg='#ff1744';col='#fff';lbl='L';}else{bg='#ffab40';col='#000';lbl='E';} }
-          else { bg='rgba(34,85,238,0.18)';col='var(--green)';lbl=String(f.fecha); }
+          const res=resByFechaCoord[f.fecha];
+          const bg=res==='V'?'#22cd78':res==='L'?'#ff1744':res==='E'?'#ffab40':'rgba(34,85,238,0.18)';
+          const col=res==='E'?'#000':'#fff';
+          const lbl=res||String(f.fecha);
           h+=`<div title="F${f.fecha} vs ${f.rival}" style="width:22px;height:22px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:${col}">${lbl}</div>`;
         } else {
           h+=`<div title="F${f.fecha} vs ${f.rival}" style="width:22px;height:22px;border-radius:50%;background:transparent;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--muted)">${f.fecha}</div>`;
@@ -5783,9 +5775,9 @@ async function startCoordApp(){
       });
       h+=`</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
-          <span style="font-size:0.62rem;color:var(--green);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78"></span>Victoria</span>
-          <span style="font-size:0.62rem;color:var(--yellow);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40"></span>Empate</span>
-          <span style="font-size:0.62rem;color:var(--red);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff1744"></span>Derrota</span>
+          <span style="font-size:0.62rem;color:#22cd78;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78"></span>Victoria</span>
+          <span style="font-size:0.62rem;color:#ffab40;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40"></span>Empate</span>
+          <span style="font-size:0.62rem;color:#ff4444;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff4444"></span>Derrota</span>
           <span style="font-size:0.62rem;color:#4d73f5;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5"></span>Próxima</span>
           ${suspCount?`<span style="font-size:0.62rem;color:var(--red);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,23,68,0.3)"></span>${suspCount} susp.</span>`:''}
         </div>
@@ -6140,9 +6132,10 @@ async function startCoordApp(){
       const posCol=pos===1?'var(--yellow)':pos<=3?'var(--green)':pos>total-3?'var(--red)':'var(--muted)';
       const col=CAT_COL_L[cat.key]||'#4d73f5';
       // Calcular puntos acumulados por fecha
+      const resSorted=[...res].sort((a,b)=>(a.f||0)-(b.f||0));
       const ptsByF=[];
       let cumPts=0;
-      res.forEach(r=>{ if(r.gf>r.gc) cumPts+=2; else if(r.gf===r.gc) cumPts+=1; ptsByF.push({f:r.f,pts:cumPts}); });
+      resSorted.forEach(r=>{ if(r.gf>r.gc) cumPts+=2; else if(r.gf===r.gc) cumPts+=1; ptsByF.push({f:r.f,pts:cumPts,gf:r.gf,gc:r.gc}); });
       const maxPts=ptsByF.length?Math.max(...ptsByF.map(x=>x.pts),1):1;
       const barWidth=ptsByF.length?Math.floor(100/ptsByF.length):10;
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">
@@ -6155,8 +6148,7 @@ async function startCoordApp(){
         </div>
         <div style="display:flex;align-items:flex-end;gap:2px;height:48px;margin-bottom:4px">`;
       ptsByF.forEach((x,i)=>{
-        const r=res[i];
-        const resCol=r.gf>r.gc?'#22cd78':r.gf<r.gc?'#ff1744':'#ffab40';
+        const resCol=x.gf>x.gc?'#22cd78':x.gf<x.gc?'#ff1744':'#ffab40';
         const pct=Math.round(x.pts/maxPts*100);
         h+=`<div title="F${x.f}: ${x.pts} pts" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
           <div style="width:100%;height:${Math.max(pct,4)}%;background:${col};border-radius:2px 2px 0 0;opacity:0.85;min-height:3px"></div>
