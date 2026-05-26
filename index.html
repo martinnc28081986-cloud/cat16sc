@@ -512,6 +512,8 @@
     </div>
   </div>
 
+  <button class="btn btn-oly" onclick="openPartidoExtraModal()" style="width:100%;margin-bottom:12px;border-style:dashed">➕ Partido extra (amistoso / torneo)</button>
+
   <div class="count-bar">
     <div class="ci"><div class="cn" id="citCnt" style="color:var(--yellow)">0</div><div class="cl">citados</div></div>
     <div class="ci"><div class="cn" id="citPct" style="color:#fff">0%</div><div class="cl">del plantel</div></div>
@@ -530,6 +532,57 @@
   </div>
 
   <button class="btn btn-y" id="citSaveBtn" onclick="saveCitacion()" style="width:100%;margin-top:2px">&#128190; Guardar partido</button>
+</div>
+
+<!-- MODAL PARTIDO EXTRA -->
+<div id="partidoExtraModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:20px;width:92%;max-width:360px;margin:auto;position:relative;top:50%;transform:translateY(-50%)">
+    <div style="font-weight:700;font-size:1rem;margin-bottom:4px">Nuevo partido extra</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:14px">Por fuera del torneo oficial</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button id="peTipoAmistoso" class="btn btn-oly" onclick="peTipoSelect('amistoso')" style="font-size:0.8rem;padding:7px 0">Amistoso</button>
+      <button id="peTipoTorneo"   class="btn btn-oly" onclick="peTipoSelect('torneo')"   style="font-size:0.8rem;padding:7px 0">Torneo</button>
+    </div>
+
+    <div id="peTorneoSection" style="display:none;background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.3);border-radius:8px;padding:10px;margin-bottom:12px">
+      <label style="font-size:0.75rem;color:#7a9af7;display:block;margin-bottom:5px;font-weight:600">Nombre del torneo</label>
+      <select id="peTorneoSelect" onchange="peTorneoSelectChange()" style="width:100%;margin-bottom:0;font-size:0.82rem;padding:6px 8px;border-radius:7px;border:1px solid rgba(77,115,245,0.4);background:var(--bg);color:var(--text)"></select>
+      <input id="peTorneoNuevo" type="text" placeholder="Ej: Copa Verano 2025" style="display:none;margin-top:7px;width:100%;font-size:0.82rem;padding:6px 8px;border-radius:7px;border:1px solid rgba(77,115,245,0.4);background:var(--bg);color:var(--text)" />
+      <div style="font-size:0.7rem;color:#7a9af7;margin-top:5px" id="peTorneoHint">Los torneos se guardan para reutilizar</div>
+    </div>
+
+    <div style="margin-bottom:10px">
+      <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">Rival</label>
+      <input id="peRival" type="text" placeholder="Nombre del rival" style="width:100%;font-size:0.85rem" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">Fecha</label>
+        <input id="peFecha" type="date" style="width:100%;font-size:0.82rem" />
+      </div>
+      <div>
+        <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">Hora partido</label>
+        <input id="peHora" type="time" style="width:100%;font-size:0.82rem" />
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">Cancha</label>
+      <input id="peCancha" type="text" placeholder="Dirección o nombre de la cancha" style="width:100%;font-size:0.85rem" />
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px">Condición</label>
+      <select id="peCondicion" style="width:100%;font-size:0.85rem">
+        <option value="L">Local</option>
+        <option value="V">Visitante</option>
+      </select>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-oly" onclick="closePartidoExtraModal()">Cancelar</button>
+      <button class="btn btn-y" onclick="crearPartidoExtra()">Crear y citar</button>
+    </div>
+  </div>
 </div>
 
 <!-- TAB 5 — STATS CITACIONES -->
@@ -1373,6 +1426,8 @@ let markedAtt={}, markedCit={}, markedReasons={};
 let selHistMonth=null, selStatsMonth=null;
 let activeTab='tomar';
 let currentFecha = null;
+let currentPartidoExtra = null;
+let _torneosExtraNombres = [];
 let selectedCamisetero = null;
 let pitchPlayers={}, benchPlayers=[], selectedPlayer=null, pitchTapReady=false;
 
@@ -1573,6 +1628,9 @@ function _startFirebaseListeners(){
     window._unsub2 = onValue(ref(db,DB_PREFIX+'/citaciones'), snap => {
       citaciones=snap.val()||{};
       refresh();
+    }, ()=>{});
+    onValue(ref(db,DB_PREFIX+'/torneos_extra_nombres'), snap => {
+      _torneosExtraNombres = snap.val() ? Object.values(snap.val()) : [];
     }, ()=>{});
   } catch(e) {
     clearTimeout(_loadTimeout);
@@ -1902,9 +1960,150 @@ function renderStats(mf){
   }
 }
 
+// ── PARTIDO EXTRA ──
+let _peTipoActivo = 'amistoso';
+
+window.openPartidoExtraModal = function(){
+  _peTipoActivo = 'amistoso';
+  // Reset campos
+  document.getElementById('peRival').value = '';
+  document.getElementById('peFecha').value = '';
+  document.getElementById('peHora').value = '';
+  document.getElementById('peCancha').value = '';
+  document.getElementById('peCondicion').value = 'L';
+  document.getElementById('peTorneoNuevo').value = '';
+  document.getElementById('peTorneoNuevo').style.display = 'none';
+  document.getElementById('peTorneoSection').style.display = 'none';
+  // Estilo botones tipo
+  document.getElementById('peTipoAmistoso').style.borderColor = 'var(--yellow)';
+  document.getElementById('peTipoAmistoso').style.color = 'var(--yellow)';
+  document.getElementById('peTipoTorneo').style.borderColor = 'var(--border)';
+  document.getElementById('peTipoTorneo').style.color = 'var(--text)';
+  // Cargar torneos existentes
+  const sel = document.getElementById('peTorneoSelect');
+  sel.innerHTML = '';
+  _torneosExtraNombres.forEach(n => {
+    const opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt);
+  });
+  const newOpt = document.createElement('option'); newOpt.value = '__nuevo__'; newOpt.textContent = '— Nuevo torneo —'; sel.appendChild(newOpt);
+  document.getElementById('partidoExtraModal').style.display = 'flex';
+};
+
+window.closePartidoExtraModal = function(){
+  document.getElementById('partidoExtraModal').style.display = 'none';
+};
+
+window.peTipoSelect = function(tipo){
+  _peTipoActivo = tipo;
+  const esT = tipo === 'torneo';
+  document.getElementById('peTorneoSection').style.display = esT ? 'block' : 'none';
+  document.getElementById('peTipoAmistoso').style.borderColor = !esT ? 'var(--yellow)' : 'var(--border)';
+  document.getElementById('peTipoAmistoso').style.color     = !esT ? 'var(--yellow)' : 'var(--text)';
+  document.getElementById('peTipoTorneo').style.borderColor =  esT ? 'var(--yellow)' : 'var(--border)';
+  document.getElementById('peTipoTorneo').style.color       =  esT ? 'var(--yellow)' : 'var(--text)';
+};
+
+window.peTorneoSelectChange = function(){
+  const v = document.getElementById('peTorneoSelect').value;
+  const inp = document.getElementById('peTorneoNuevo');
+  const hint = document.getElementById('peTorneoHint');
+  if(v === '__nuevo__'){
+    inp.style.display = 'block';
+    hint.textContent = 'Se guardará para futuros partidos';
+    inp.focus();
+  } else {
+    inp.style.display = 'none';
+    hint.textContent = 'Torneo ya registrado';
+  }
+};
+
+window.crearPartidoExtra = async function(){
+  const rival   = (document.getElementById('peRival').value||'').trim();
+  const fecha   = document.getElementById('peFecha').value;
+  const hora    = document.getElementById('peHora').value;
+  const cancha  = (document.getElementById('peCancha').value||'').trim();
+  const condicion = document.getElementById('peCondicion').value;
+  if(!rival){ showToast('Ingresá el rival'); return; }
+
+  let torneoNombre = '';
+  if(_peTipoActivo === 'torneo'){
+    const sel = document.getElementById('peTorneoSelect').value;
+    if(sel === '__nuevo__'){
+      torneoNombre = (document.getElementById('peTorneoNuevo').value||'').trim();
+      if(!torneoNombre){ showToast('Ingresá el nombre del torneo'); return; }
+    } else {
+      torneoNombre = sel;
+    }
+  }
+
+  const key = 'extra_' + Date.now();
+  const data = {
+    tipo: _peTipoActivo,
+    rival,
+    condicion,
+    ts: Date.now(),
+    citados: [],
+    ...(fecha   && { fecha_str: fecha }),
+    ...(hora    && { hora }),
+    ...(cancha  && { cancha }),
+    ...(_peTipoActivo === 'torneo' && torneoNombre && { torneo_nombre: torneoNombre }),
+  };
+
+  try {
+    await update(ref(db, DB_PREFIX+'/citaciones/'+key), data);
+    citaciones[key] = data;
+
+    // Guardar nombre de torneo si es nuevo
+    if(_peTipoActivo === 'torneo' && torneoNombre && !_torneosExtraNombres.includes(torneoNombre)){
+      _torneosExtraNombres.push(torneoNombre);
+      const nombresObj = {};
+      _torneosExtraNombres.forEach((n,i) => nombresObj[i] = n);
+      await update(ref(db, DB_PREFIX+'/torneos_extra_nombres'), nombresObj);
+    }
+
+    closePartidoExtraModal();
+    loadPartidoExtra(key);
+    showToast('Partido creado — marcá los jugadores y guardá');
+  } catch(e){ showToast('Error al crear partido'); console.error(e); }
+};
+
+window.loadPartidoExtra = function(key){
+  currentFecha = null;
+  currentPartidoExtra = key;
+  document.getElementById('citFechaSelect').value = '';
+  markedCit = {}; selectedCamisetero = null;
+  const cit = citaciones[key];
+  if(!cit) return;
+  (cit.citados||[]).forEach(p => markedCit[p] = true);
+  selectedCamisetero = cit.camisetero || null;
+
+  const tipoLabel = cit.tipo === 'torneo' ? (cit.torneo_nombre || 'Torneo') : 'Amistoso';
+  const condLabel = cit.condicion === 'L' ? 'Local' : 'Visitante';
+  const condCls   = cit.condicion === 'L' ? 'fb-local' : 'fb-visit';
+  const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let fechaStr = '';
+  if(cit.fecha_str){
+    const d = new Date(cit.fecha_str+'T12:00:00');
+    fechaStr = DIAS[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+  }
+
+  const info = document.getElementById('fixtureInfo');
+  info.style.display = 'block';
+  document.getElementById('fixtureTitleEl').innerHTML =
+    '<span style="background:rgba(77,115,245,0.15);color:#7a9af7;font-size:0.65rem;padding:2px 7px;border-radius:20px;margin-right:6px;font-weight:700;text-transform:uppercase">'+tipoLabel+'</span>'+
+    'vs '+cit.rival+' <span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
+  document.getElementById('fixtureSubEl').innerHTML =
+    (fechaStr ? fechaStr+' · ' : '')+(cit.hora ? cit.hora+' hs · ' : '')+(cit.cancha || '');
+
+  const saveBtn = document.getElementById('citSaveBtn');
+  if(saveBtn){ saveBtn.disabled = false; saveBtn.innerHTML = '&#128190; Guardar partido'; }
+  renderCitList(); renderCamSelector();
+};
+
 // ── CITACIONES — load fixture fecha ──
 window.loadFecha=function(val){
   currentFecha=val?parseInt(val):null;
+  currentPartidoExtra=null;
   const info=document.getElementById('fixtureInfo');
   const saveBtn=document.getElementById('citSaveBtn');
   if(!val){info.style.display='none';if(saveBtn)saveBtn.disabled=false;return;}
@@ -2097,6 +2296,19 @@ window.saveCitacion=async function(){
     return;
   }
   // ── CATEGORÍAS DE COMPETENCIA ──
+  // ── PARTIDO EXTRA ──
+  if(currentPartidoExtra){
+    const citados=PLAYERS.filter(p=>markedCit[p]===true);
+    const existing=citaciones[currentPartidoExtra]||{};
+    try{
+      await update(ref(db,DB_PREFIX+'/citaciones/'+currentPartidoExtra),{...existing,citados,camisetero:selectedCamisetero||null});
+      citaciones[currentPartidoExtra]={...existing,citados,camisetero:selectedCamisetero||null};
+      showToast('Partido guardado');
+      btn.textContent='✓ Guardado';
+      setTimeout(()=>{ btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; },1500);
+    } catch(e){ showToast('Error al guardar'); btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; }
+    return;
+  }
   if(!currentFecha){showToast('Selecciona una fecha del fixture'); btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; return;}
   const f=FIXTURE.find(x=>x.fecha===currentFecha);
   if(!f){ btn.disabled=false; return; }
@@ -2119,7 +2331,6 @@ window.shareCit = async function(key){
   const cit = citaciones[key];
   if(!cit||!cit.citados||!cit.citados.length){ showToast('Sin citados para compartir'); return; }
   const condLabel = cit.condicion==='L'?'LOCAL':'VISITANTE';
-  const matchTime = CFG.matchTime||'';
   // Direcciones de canchas LISFI Zona II
   const RIVAL_ADDRESSES_DEFAULT = {
     'ADAFI': '10 y 508 M. B. Gonnet',
@@ -2171,7 +2382,11 @@ window.shareCit = async function(key){
   const localAddr = CFG.address || 'Av. 13 y 610 Villa Elvira';
   const rivalKey = (cit.rival||'').toUpperCase().trim();
   const visitaAddr = RIVAL_ADDRESSES[rivalKey] || '';
-  const address = cit.condicion==='L' ? localAddr : visitaAddr;
+
+  // ── PARTIDO EXTRA: usar cancha y hora directamente ──
+  const esExtra = !!cit.tipo;
+  const matchTime = esExtra ? (cit.hora||'') : (CFG.matchTime||'');
+  const address   = esExtra ? (cit.cancha||'') : (cit.condicion==='L' ? localAddr : visitaAddr);
 
   // Horario de citación = 40 min antes del partido
   let citTime = '';
@@ -2185,10 +2400,15 @@ window.shareCit = async function(key){
   const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const MESES_S = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   let fechaStr = '';
-  const dateStr = FIXTURE_DATES[cit.fecha];
-  if(dateStr){
-    const d = new Date(dateStr+'T12:00:00');
+  if(esExtra && cit.fecha_str){
+    const d = new Date(cit.fecha_str+'T12:00:00');
     fechaStr = DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  } else {
+    const dateStr = FIXTURE_DATES[cit.fecha];
+    if(dateStr){
+      const d = new Date(dateStr+'T12:00:00');
+      fechaStr = DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    }
   }
 
   // Categoría
@@ -2199,7 +2419,13 @@ window.shareCit = async function(key){
 
   const clubNombreWA = (CFG.club || 'MI PLANTEL').toUpperCase();
   let lines = [];
-  lines.push('⚽ *'+clubNombreWA+' — '+catLabel+' — Fecha '+cit.fecha+'*');
+  if(esExtra){
+    const tipoLabel = cit.tipo === 'torneo' ? (cit.torneo_nombre||'Torneo').toUpperCase() : 'AMISTOSO';
+    lines.push('⚽ *'+clubNombreWA+' — '+catLabel+'*');
+    lines.push('🏆 '+tipoLabel);
+  } else {
+    lines.push('⚽ *'+clubNombreWA+' — '+catLabel+' — Fecha '+cit.fecha+'*');
+  }
   lines.push('🆚 vs '+cit.rival+' | '+condLabel);
   if(fechaStr) lines.push('📅 '+fechaStr);
   if(matchTime) lines.push('⏰ Partido: '+matchTime+' hs');
@@ -2318,9 +2544,14 @@ function renderCitStats(){
       const condCls=saved.condicion==='L'?'fb-local':'fb-visit';
       const noCitados=PLAYERS.filter(p=>!(saved.citados||[]).includes(p));
       const camBadge=saved.camisetero?'<div style="font-size:0.72rem;color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
+      const esExtra=!!saved.tipo;
+      const tipoLabel=saved.tipo==='torneo'?(saved.torneo_nombre||'Torneo'):'Amistoso';
+      const extraBadge=esExtra?'<span style="background:rgba(77,115,245,0.18);color:#7a9af7;font-size:0.65rem;padding:2px 8px;border-radius:20px;margin-right:5px;font-weight:700;text-transform:uppercase">'+tipoLabel+'</span>':'';
+      const titlePrefix=esExtra?extraBadge:'Fecha '+saved.fecha+' &mdash; ';
+      const titleRival=(esExtra?'':'')+' vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
       const c=document.createElement('div'); c.className='card';
       c.dataset.citKey = key;
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">Fecha '+saved.fecha+' &mdash; vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span></div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:0.72rem;padding:5px 10px">&#128279; WhatsApp</button></div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
       matchList.appendChild(c);
     });
@@ -3014,8 +3245,12 @@ async function renderPosPartido(){
   const hist = await _loadHistoricos();
 
   const partidos=Object.entries(citaciones)
-    .filter(([,m])=>m.citados&&m.citados.length>0&&m.fecha)
-    .sort((a,b)=>(b[1].fecha||0)-(a[1].fecha||0));
+    .filter(([,m])=>m.citados&&m.citados.length>0&&(m.fecha||m.tipo))
+    .sort((a,b)=>{
+      const aVal=a[1].tipo?(a[1].ts||0):((a[1].fecha||0)*1e10);
+      const bVal=b[1].tipo?(b[1].ts||0):((b[1].fecha||0)*1e10);
+      return bVal-aVal;
+    });
 
   if(!partidos.length){
     el.innerHTML='<div class="empty-msg">Sin partidos citados aún</div>';
@@ -3051,15 +3286,22 @@ async function renderPosPartido(){
     const st=_ppCache[key];
     const cargado=st&&st.jugadores&&Object.keys(st.jugadores).length>0;
     const isEdit=_ppEditKey===key;
+    const esExtra=!!m.tipo;
+    const tipoLabel=m.tipo==='torneo'?(m.torneo_nombre||'Torneo'):'Amistoso';
     const scoreHtml=rd?`<span style="font-family:Bebas Neue,sans-serif;font-size:1.3rem;letter-spacing:2px;color:${rd.col};">${rd.score}</span>`:'';
     const badgeHtml=cargado
       ?`<span style="font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(34,205,120,.12);color:#22cd78;border:1px solid rgba(34,205,120,.3);">&#10003; Cargado</span>`
       :`<span style="font-size:.6rem;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(255,171,64,.12);color:var(--yellow);border:1px solid rgba(255,171,64,.3);">Cargar &#9660;</span>`;
+    const extraBadge=esExtra?`<div style="margin-bottom:3px"><span style="background:rgba(77,115,245,0.15);color:#7a9af7;font-size:.6rem;padding:1px 8px;border-radius:20px;font-weight:700;text-transform:uppercase">${tipoLabel}</span></div>`:'';
+    const headerTitle=esExtra
+      ?`<div style="font-size:.88rem;font-weight:600;">vs ${_fmtRival(m.rival)}</div>`
+      :`<div style="font-family:Bebas Neue,sans-serif;font-size:.8rem;letter-spacing:1px;color:var(--muted);">F${m.fecha||'?'} &middot; ${_fmtRival(m.rival)}</div>`;
 
     h+=`<div class="card" style="margin-bottom:8px;">`;
     h+=`<div class="ctop pp-toggle" data-key="${key}" style="cursor:pointer;">
       <div>
-        <div style="font-family:Bebas Neue,sans-serif;font-size:.8rem;letter-spacing:1px;color:var(--muted);">F${m.fecha||'?'} &middot; ${_fmtRival(m.rival)}</div>
+        ${extraBadge}
+        ${headerTitle}
         <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
           <span class="fixture-badge ${condCls}" style="font-size:.6rem;">${condLbl}</span>
           ${scoreHtml}
@@ -3069,8 +3311,33 @@ async function renderPosPartido(){
     </div>`;
 
     if(isEdit){
-      h+=`<div style="border-top:1px solid var(--border);padding:10px 0 4px;">
-        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;">${(m.citados||[]).length} citados</div>`;
+      h+=`<div style="border-top:1px solid var(--border);padding:10px 0 4px;">`;
+
+      // ── RESULTADO MANUAL (solo para partidos extra) ──
+      if(esExtra){
+        const mgf=_ppEditStats.manualGF!=null?_ppEditStats.manualGF:'';
+        const mgc=_ppEditStats.manualGC!=null?_ppEditStats.manualGC:'';
+        const mres=_ppEditStats.manualResult||'';
+        const btnV=mres==='V'?'border:1px solid #22cd78;background:rgba(34,205,120,.15);color:#22cd78;':'border:1px solid var(--border);background:transparent;color:var(--muted);';
+        const btnE=mres==='E'?'border:1px solid var(--yellow);background:rgba(255,171,64,.15);color:var(--yellow);':'border:1px solid var(--border);background:transparent;color:var(--muted);';
+        const btnL=mres==='L'?'border:1px solid var(--red);background:rgba(255,23,68,.15);color:var(--red);':'border:1px solid var(--border);background:transparent;color:var(--muted);';
+        h+=`<div style="margin-bottom:12px;">
+          <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;">Resultado</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="number" min="0" data-pp-gf="1" value="${mgf}" placeholder="0" style="width:56px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:1.4rem;padding:5px 4px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);" />
+            <span style="font-size:1.1rem;color:var(--muted);">—</span>
+            <input type="number" min="0" data-pp-gc="1" value="${mgc}" placeholder="0" style="width:56px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:1.4rem;padding:5px 4px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <button data-pp-res="V" style="padding:7px 0;font-size:.78rem;font-weight:600;border-radius:8px;cursor:pointer;${btnV}">Victoria</button>
+            <button data-pp-res="E" style="padding:7px 0;font-size:.78rem;font-weight:600;border-radius:8px;cursor:pointer;${btnE}">Empate</button>
+            <button data-pp-res="L" style="padding:7px 0;font-size:.78rem;font-weight:600;border-radius:8px;cursor:pointer;${btnL}">Derrota</button>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin-bottom:10px;"></div>`;
+      }
+
+      h+=`<div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:8px;">${(m.citados||[]).length} citados</div>`;
 
       (m.citados||[]).forEach(nombre=>{
         const st2=(_ppEditStats.jugadores||{})[nombre]||{};
@@ -3178,6 +3445,13 @@ window._ppToggle=async function(key){
     _ppCache[key]=existing;
     _ppEditStats=existing ? JSON.parse(JSON.stringify(existing)) : {};
     if(!_ppEditStats.jugadores) _ppEditStats.jugadores={};
+    // Pre-cargar score manual si ya fue guardado previamente
+    const cit=citaciones[key];
+    if(cit&&cit.tipo&&cit.score&&_ppEditStats.manualGF==null){
+      const parts=(cit.score||'').split('-');
+      if(parts.length===2){ _ppEditStats.manualGF=parseInt(parts[0])||0; _ppEditStats.manualGC=parseInt(parts[1])||0; }
+      _ppEditStats.manualResult=cit.result||null;
+    }
   }
   await renderPosPartido();
 };
@@ -3191,7 +3465,13 @@ document.addEventListener('click',function(e){
   if(t.dataset.ppCardR){ _ppToggleCard(t.dataset.ppCardR,'roja'); return; }
   if(t.dataset.ppEcMas){ _ppEditStats.enContra=(_ppEditStats.enContra||0)+1; renderPosPartido(); return; }
   if(t.dataset.ppEcMenos){ _ppEditStats.enContra=Math.max(0,(_ppEditStats.enContra||0)-1); renderPosPartido(); return; }
+  if(t.dataset.ppRes){ _ppEditStats.manualResult=t.dataset.ppRes; renderPosPartido(); return; }
   if(t.dataset.ppGuardar){ window._ppGuardar(); return; }
+});
+document.addEventListener('input',function(e){
+  const t=e.target;
+  if(t.dataset.ppGf!==undefined){ _ppEditStats.manualGF=parseInt(t.value)||0; }
+  if(t.dataset.ppGc!==undefined){ _ppEditStats.manualGC=parseInt(t.value)||0; }
 });
 
 function _ppAdjust(nombre,delta){
@@ -3215,10 +3495,18 @@ window._ppGuardar=async function(){
     await _ppSaveStats(_ppEditKey,_ppEditStats);
     _ppCache[_ppEditKey]=JSON.parse(JSON.stringify(_ppEditStats));
     // Calcular y persistir score + result en la citación (para todos los clubes)
-    const _gf=Object.values(_ppEditStats.jugadores||{}).reduce((s,p)=>s+(p.goles||0),0);
-    const _gc=_ppEditStats.enContra||0;
-    const _res=_gf>_gc?'V':_gf<_gc?'L':'E';
-    const _sc=_gf+'-'+_gc;
+    const citExtra=citaciones[_ppEditKey]&&!!citaciones[_ppEditKey].tipo;
+    let _gf,_gc,_res,_sc;
+    if(citExtra){
+      _gf=_ppEditStats.manualGF!=null?_ppEditStats.manualGF:Object.values(_ppEditStats.jugadores||{}).reduce((s,p)=>s+(p.goles||0),0);
+      _gc=_ppEditStats.manualGC!=null?_ppEditStats.manualGC:(_ppEditStats.enContra||0);
+      _res=_ppEditStats.manualResult||(_gf>_gc?'V':_gf<_gc?'L':'E');
+    } else {
+      _gf=Object.values(_ppEditStats.jugadores||{}).reduce((s,p)=>s+(p.goles||0),0);
+      _gc=_ppEditStats.enContra||0;
+      _res=_gf>_gc?'V':_gf<_gc?'L':'E';
+    }
+    _sc=_gf+'-'+_gc;
     await update(ref(db,DB_PREFIX+'/citaciones/'+_ppEditKey),{score:_sc,result:_res});
     if(citaciones[_ppEditKey]){ citaciones[_ppEditKey].score=_sc; citaciones[_ppEditKey].result=_res; }
     _ppEditKey=null; _ppEditStats={};
