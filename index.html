@@ -5617,6 +5617,8 @@ async function startCoordApp(){
   const D = {};
   ALL_CATS.forEach(c=>{ D[c.key]={att:{},cit:{},hist:{},stats:{}}; });
   let coordFirebaseLoaded=false, coordActiveTab='resumen', coordPresFilter=null, coordPresMode='month';
+  let coordJugadorSel=null; // {catKey, nombre}
+  let coordJugadorMes='todo'; // 'todo' o 'YYYY-MM'
 
   function refresh(){ renderCoordTab(coordActiveTab); }
   _onSuspensionChange = refresh;
@@ -5674,6 +5676,13 @@ async function startCoordApp(){
   };
   window.coordPF=function(f){ coordPresFilter=f; renderCoordTab('presencias'); };
   window.coordPM=function(m){ coordPresMode=m; renderCoordTab('presencias'); };
+  window.coordJugadorSelect=function(val){
+    if(!val){ coordJugadorSel=null; }
+    else{ const [catKey,...rest]=val.split('|'); coordJugadorSel={catKey,nombre:rest.join('|')}; }
+    coordJugadorMes='todo';
+    renderCoordTab('presencias');
+  };
+  window.coordJugadorMesChange=function(val){ coordJugadorMes=val; renderCoordTab('presencias'); };
 
   function renderCoordTab(tab){
     if(tab==='resumen')    renderResumen();
@@ -5834,8 +5843,37 @@ async function startCoordApp(){
   function renderPresencias(){
     const el=document.getElementById('cv-presencias');
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando presencias…</div>'; return; }
+
+    // ── SELECTOR DE JUGADOR ──
+    let jugSel=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px">Comparativa de jugador</div>
+      <select onchange="window.coordJugadorSelect(this.value)" style="width:100%;font-size:0.82rem;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+        <option value="">— elegir jugador —</option>`;
+    COMP_CATS.forEach(cat=>{
+      const players=Object.keys(D[cat.key].att).flatMap(d=>[...(D[cat.key].att[d].present||[]),...(D[cat.key].att[d].absent||[])]);
+      const uniq=[...new Set(players)].sort();
+      if(!uniq.length) return;
+      jugSel+=`<optgroup label="${cat.label}">`;
+      uniq.forEach(p=>{
+        const val=cat.key+'|'+p;
+        const sel=(coordJugadorSel&&coordJugadorSel.catKey===cat.key&&coordJugadorSel.nombre===p)?'selected':'';
+        jugSel+=`<option value="${val}" ${sel}>${p}</option>`;
+      });
+      jugSel+=`</optgroup>`;
+    });
+    jugSel+=`</select></div>`;
+
+    if(coordJugadorSel){
+      el.innerHTML=jugSel;
+      renderCoordJugador(el);
+      return;
+    }
+
     const catsToShow=coordPresFilter?ALL_CATS.filter(c=>c.key===coordPresFilter):ALL_CATS;
-    let h=`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
+    let h=jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
+    ALL_CATS.forEach(cat=>{ h+=`<button class="cfilter${coordPresFilter===cat.key?' on':''}" onclick="window.coordPF('${cat.key}')">${cat.label.replace('Cat ','')}</button>`; });
+    const catsToShow=coordPresFilter?ALL_CATS.filter(c=>c.key===coordPresFilter):ALL_CATS;
+    let h=jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
     ALL_CATS.forEach(cat=>{ h+=`<button class="cfilter${coordPresFilter===cat.key?' on':''}" onclick="window.coordPF('${cat.key}')">${cat.label.replace('Cat ','')}</button>`; });
     h+=`</div><div class="cfilter-row">
       <button class="cfilter${coordPresMode==='day'?' on':''}" onclick="window.coordPM('day')">Por Día</button>
@@ -5871,6 +5909,182 @@ async function startCoordApp(){
       });
     } else { h+=`<div class="empty-msg">Sin datos de ausencias</div>`; }
     el.innerHTML=h;
+  }
+
+  // ── COMPARATIVA DE JUGADOR ──
+  function renderCoordJugador(el){
+    if(!coordJugadorSel) return;
+    const {catKey,nombre}=coordJugadorSel;
+    const cat=ALL_CATS.find(c=>c.key===catKey); if(!cat) return;
+    const att=D[catKey].att||{};
+    const cit=D[catKey].cit||{};
+    const DIAS_S=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const MES_S2=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const REASON_LABELS2={lesionado:'Lesión',enfermedad:'Enfermedad',personal:'Personal',suspendido:'Suspendido',sinaviso:'Sin aviso'};
+    const REASON_COLORS2={lesionado:'#ff6d00',enfermedad:'#aa00ff',personal:'#00b0ff',suspendido:'#ff1744',sinaviso:'#888'};
+
+    // Obtener todos los meses disponibles
+    const allDates=Object.keys(att).sort();
+    const mesesDisp=[...new Set(allDates.map(d=>d.slice(0,7)))].sort();
+
+    // Filtrar por mes
+    const filterDates=coordJugadorMes==='todo'?allDates:allDates.filter(d=>d.startsWith(coordJugadorMes));
+
+    // Selector de mes
+    let h=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;overflow-x:auto">`;
+    h+=`<button onclick="window.coordJugadorMesChange('todo')" style="padding:4px 12px;border-radius:20px;border:1px solid ${coordJugadorMes==='todo'?'rgba(77,115,245,0.5)':'var(--border)'};background:${coordJugadorMes==='todo'?'rgba(77,115,245,0.15)':'transparent'};color:${coordJugadorMes==='todo'?'#7a9af7':'var(--muted)'};font-size:0.72rem;cursor:pointer;white-space:nowrap">Todo</button>`;
+    mesesDisp.forEach(ym=>{
+      const [y,m]=ym.split('-');
+      const lbl=MES_S2[parseInt(m)-1]+' '+y;
+      const act=coordJugadorMes===ym;
+      h+=`<button onclick="window.coordJugadorMesChange('${ym}')" style="padding:4px 12px;border-radius:20px;border:1px solid ${act?'rgba(77,115,245,0.5)':'var(--border)'};background:${act?'rgba(77,115,245,0.15)':'transparent'};color:${act?'#7a9af7':'var(--muted)'};font-size:0.72rem;cursor:pointer;white-space:nowrap">${lbl}</button>`;
+    });
+    h+=`</div>`;
+
+    // ── PRESENCIA ──
+    const totalSess=filterDates.filter(d=>att[d]).length;
+    const jugPresente=filterDates.filter(d=>att[d]&&(att[d].present||[]).includes(nombre)).length;
+    const jugPct=totalSess?Math.round(jugPresente/totalSess*100):0;
+
+    // Promedio categoría
+    const catPlayers=[...new Set(allDates.flatMap(d=>att[d]?[...(att[d].present||[]),...(att[d].absent||[])]:[])) ];
+    const catPcts=catPlayers.map(p=>{ const pr=filterDates.filter(d=>att[d]&&(att[d].present||[]).includes(p)).length; return totalSess?Math.round(pr/totalSess*100):0; });
+    const catAvg=catPcts.length?Math.round(catPcts.reduce((a,b)=>a+b,0)/catPcts.length):0;
+
+    // Promedio club
+    let clubTotal=0,clubSessions=0;
+    ALL_CATS.forEach(c=>{ Object.values(D[c.key].att||{}).filter(s=>{ const d=Object.keys(D[c.key].att||{}).find(k=>D[c.key].att[k]===s); return !d||(coordJugadorMes==='todo'||d.startsWith(coordJugadorMes)); }).forEach(s=>{ clubTotal+=(s.present||[]).length; clubSessions+=c.players; }); });
+    const clubAvg=clubSessions?Math.round(clubTotal/clubSessions*100):0;
+
+    const pCol2=p=>p>=75?'#22cd78':p>=50?'#ffab40':'#ff4444';
+
+    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:10px">
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">📋 Presencia — ${nombre}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:${pCol2(jugPct)}">${jugPct}%</div><div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Jugador</div></div>
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:${pCol2(catAvg)}">${catAvg}%</div><div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Prom. ${cat.label}</div></div>
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:${pCol2(clubAvg)}">${clubAvg}%</div><div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Prom. club</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:0.72rem;color:var(--muted);width:70px">Jugador</div>
+        <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${jugPct}%;background:${pCol2(jugPct)};border-radius:4px"></div></div>
+        <div style="font-size:0.72rem;font-weight:600;color:${pCol2(jugPct)};width:30px;text-align:right">${jugPct}%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:0.72rem;color:var(--muted);width:70px">${cat.label}</div>
+        <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${catAvg}%;background:#ffab40;border-radius:4px"></div></div>
+        <div style="font-size:0.72rem;font-weight:600;color:#ffab40;width:30px;text-align:right">${catAvg}%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="font-size:0.72rem;color:var(--muted);width:70px">Club</div>
+        <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${clubAvg}%;background:#4d73f5;border-radius:4px"></div></div>
+        <div style="font-size:0.72rem;font-weight:600;color:#4d73f5;width:30px;text-align:right">${clubAvg}%</div>
+      </div>`;
+
+    // Ausencias
+    const ausencias=[];
+    filterDates.forEach(d=>{ if(att[d]&&(att[d].absent||[]).includes(nombre)){ const motivo=(att[d].reasons&&att[d].reasons[nombre])||'sinaviso'; ausencias.push({d,motivo}); } });
+    ausencias.sort((a,b)=>b.d.localeCompare(a.d));
+    h+=`<div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Ausencias (${ausencias.length} de ${totalSess} sesiones)</div>`;
+    if(!ausencias.length){
+      h+=`<div style="font-size:0.8rem;color:#22cd78;font-weight:500">✅ Sin ausencias en el período</div>`;
+    } else {
+      ausencias.forEach(({d,motivo})=>{
+        const dt=new Date(d+'T12:00:00');
+        const dStr=DIAS_S[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1);
+        const col=REASON_COLORS2[motivo]||'#888';
+        const lbl=REASON_LABELS2[motivo]||motivo;
+        h+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:0.72rem;color:var(--muted);width:72px;flex-shrink:0">${dStr}</div>
+          <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></div>
+          <div style="font-size:0.82rem;color:var(--text)">${lbl}</div>
+        </div>`;
+      });
+    }
+    h+=`</div>`;
+
+    // ── CITACIONES ──
+    const citEntries=Object.values(cit).filter(c=>c.citados&&c.fecha);
+    const totalF=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]).length;
+    const citF=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]);
+
+    // Filtrar por mes si aplica
+    const citFiltradas=coordJugadorMes==='todo'?citF:citF.filter(f=>{ const fd=FIXTURE_DATES[f.fecha]; return fd&&fd.startsWith(coordJugadorMes); });
+    const totalCitF=citFiltradas.length;
+    const jugCitado=citFiltradas.filter(f=>{ const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase(); return cit[key]&&(cit[key].citados||[]).includes(nombre); }).length;
+    const jugCitPct=totalCitF?Math.round(jugCitado/totalCitF*100):0;
+
+    // Promedio citaciones categoría
+    const catCitPcts=catPlayers.map(p=>{ return totalCitF?Math.round(citFiltradas.filter(f=>{ const k='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase(); return cit[k]&&(cit[k].citados||[]).includes(p); }).length/totalCitF*100):0; });
+    const catCitAvg=catCitPcts.length?Math.round(catCitPcts.reduce((a,b)=>a+b,0)/catCitPcts.length):0;
+
+    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:10px">
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">⭐ Citaciones — ${nombre}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:${pCol2(jugCitPct)}">${jugCitado}/${totalCitF}</div><div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Jugador (${jugCitPct}%)</div></div>
+        <div style="background:var(--bg);border-radius:8px;padding:8px;text-align:center"><div style="font-size:1.3rem;font-weight:700;color:${pCol2(catCitAvg)}">${catCitAvg}%</div><div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Prom. ${cat.label}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:0.72rem;color:var(--muted);width:70px">Jugador</div>
+        <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${jugCitPct}%;background:${pCol2(jugCitPct)};border-radius:4px"></div></div>
+        <div style="font-size:0.72rem;font-weight:600;color:${pCol2(jugCitPct)};width:30px;text-align:right">${jugCitPct}%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="font-size:0.72rem;color:var(--muted);width:70px">${cat.label}</div>
+        <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${catCitAvg}%;background:#ffab40;border-radius:4px"></div></div>
+        <div style="font-size:0.72rem;font-weight:600;color:#ffab40;width:30px;text-align:right">${catCitAvg}%</div>
+      </div>
+
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Detalle por fecha</div>`;
+
+    // Detalle por fecha con semana previa
+    const citDetalle=[...citFiltradas].reverse();
+    if(!citDetalle.length){ h+=`<div style="font-size:0.8rem;color:var(--muted)">Sin partidos en el período</div>`; }
+    citDetalle.forEach(f=>{
+      const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+      const citEntry=cit[key];
+      const esCitado=citEntry&&(citEntry.citados||[]).includes(nombre);
+      const condLbl=f.cond==='L'?'Local':'Visita';
+      const badgeBg=esCitado?'rgba(34,205,120,0.15)':'rgba(255,23,68,0.08)';
+      const badgeBor=esCitado?'rgba(34,205,120,0.4)':'rgba(255,23,68,0.25)';
+      const badgeCol=esCitado?'#22cd78':'var(--red)';
+      const badgeTxt=esCitado?'✓ Citado':'No citado';
+
+      // Entrenamientos semana previa (7 días antes del partido)
+      const matchDateStr=FIXTURE_DATES?FIXTURE_DATES[f.fecha]:null;
+      let semPreviaHtml='';
+      if(matchDateStr){
+        const matchDate=new Date(matchDateStr+'T12:00:00');
+        const semStart=new Date(matchDate); semStart.setDate(matchDate.getDate()-7);
+        const semDates=Object.keys(att).filter(d=>{ const dt=new Date(d+'T12:00:00'); return dt>=semStart&&dt<matchDate; }).sort();
+        if(semDates.length){
+          const presCount=semDates.filter(d=>(att[d].present||[]).includes(nombre)).length;
+          const presCol=presCount===semDates.length?'#22cd78':presCount===0?'#ff4444':'#ffab40';
+          semPreviaHtml=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px;padding-left:0">
+            <div style="font-size:0.62rem;color:var(--muted);flex-shrink:0">Sem. previa:</div>
+            <div style="display:flex;gap:2px">`;
+          semDates.forEach(d=>{
+            const pres=(att[d].present||[]).includes(nombre);
+            const dt=new Date(d+'T12:00:00');
+            const tip=DIAS_S[dt.getDay()]+' '+dt.getDate()+'/'+(dt.getMonth()+1);
+            semPreviaHtml+=`<div title="${tip}" style="width:16px;height:16px;border-radius:3px;background:${pres?'rgba(34,205,120,0.2)':'rgba(255,23,68,0.15)'};border:1px solid ${pres?'rgba(34,205,120,0.4)':'rgba(255,23,68,0.3)'};display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:${pres?'#22cd78':'#ff4444'}">${pres?'✓':'✗'}</div>`;
+          });
+          semPreviaHtml+=`</div><span style="font-size:0.62rem;color:${presCol};font-weight:600">${presCount}/${semDates.length}</span></div>`;
+        }
+      }
+
+      h+=`<div style="padding:7px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="font-size:0.72rem;color:var(--muted);width:28px;flex-shrink:0">F${f.fecha}</div>
+          <div style="flex:1;font-size:0.82rem;font-weight:500">vs ${f.rival} <span style="font-size:0.65rem;color:var(--muted);font-weight:400">· ${condLbl}</span></div>
+          <span style="font-size:0.62rem;padding:2px 8px;border-radius:12px;font-weight:600;background:${badgeBg};border:1px solid ${badgeBor};color:${badgeCol};white-space:nowrap">${badgeTxt}</span>
+        </div>
+        ${semPreviaHtml}
+      </div>`;
+    });
+
+    h+=`</div>`;
+    el.innerHTML+=h;
   }
 
   // ── TAB CITACIONES ──
