@@ -1589,6 +1589,7 @@ selHistMonth=null;
 selStatsMonth=null;
 activeTab='tomar';
 currentFecha=null;
+currentPartidoExtra=null;
 selectedCamisetero=null;
 pitchPlayers={};
 benchPlayers=[];
@@ -1597,6 +1598,7 @@ pitchTapReady=false;
 // Limpiar vistas
 const _views=['playerList','histList','statsList','citStatsList','citMatchList','causasResumen','causasMensual','tablas-content'];
 _views.forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; });
+const _fi=document.getElementById('fixtureInfo'); if(_fi) _fi.style.display='none';
 // Resetear tabs
 document.querySelectorAll('.tab').forEach((t,i)=>{ t.className='tab'+(i===0?' ag':''); });
 document.querySelectorAll('.view').forEach((v,i)=>{ v.classList.toggle('active',i===0); });
