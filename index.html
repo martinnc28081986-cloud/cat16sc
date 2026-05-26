@@ -5692,112 +5692,131 @@ async function startCoordApp(){
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando datos del club…</div>'; return; }
     const actF=globalActiveFecha();
     let totSess=0,totPres=0,totSlots=0;
-    ALL_CATS.forEach(cat=>{
-      const att=D[cat.key].att;
-      const dates=Object.keys(att);
-      totSess+=dates.length;
-      dates.forEach(d=>{ totPres+=(att[d].present||[]).length; totSlots+=cat.players; });
-    });
+    ALL_CATS.forEach(cat=>{ const att=D[cat.key].att; const dates=Object.keys(att); totSess+=dates.length; dates.forEach(d=>{ totPres+=(att[d].present||[]).length; totSlots+=cat.players; }); });
     const avgPct=totSlots?Math.round(totPres/totSlots*100):0;
     const citadasActF=actF?COMP_CATS.filter(c=>catCitedFecha(c.key,actF)).length:COMP_CATS.length;
     const sinCitarActF=COMP_CATS.length-citadasActF;
+
+    // ── KPIs ──
     let h=`<div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-num" style="color:${pCol(avgPct)}">${avgPct}%</div><div class="kpi-lbl">Presencia promedio club</div></div>
       <div class="kpi-card"><div class="kpi-num">${totSess}</div><div class="kpi-lbl">Total entrenamientos</div></div>
-      <div class="kpi-card"><div class="kpi-num" style="color:${sinCitarActF?'var(--red)':'var(--green)'}">${sinCitarActF}</div><div class="kpi-lbl">Sin citar F${actF?actF.fecha:'—'}</div></div>
-      <div class="kpi-card"><div class="kpi-num" style="color:var(--green)">${citadasActF}</div><div class="kpi-lbl">Citaron F${actF?actF.fecha:'—'}</div></div>
     </div>`;
-    // ── PROGRESIVIDAD DE TEMPORADA ──
+
+    // ── EVOLUCIÓN PRESENCIA POR MES — barras CSS agrupadas ──
+    const monthData={};
+    ALL_CATS.forEach(cat=>{
+      Object.entries(D[cat.key].att).forEach(([d,s])=>{
+        const ym=d.substring(0,7);
+        if(!monthData[ym]) monthData[ym]={};
+        if(!monthData[ym][cat.key]) monthData[ym][cat.key]={pres:0,slots:0};
+        monthData[ym][cat.key].pres+=(s.present||[]).length;
+        monthData[ym][cat.key].slots+=cat.players;
+      });
+    });
+    const months=Object.keys(monthData).sort().slice(-5);
+    const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
+    if(months.length){
+      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Evolución de presencia — por mes</div>
+        <div style="display:flex;gap:6px;align-items:flex-end;height:80px;margin-bottom:8px">`;
+      months.forEach(ym=>{
+        const [y,m]=ym.split('-');
+        h+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;height:100%">
+          <div style="flex:1;width:100%;display:flex;align-items:flex-end;gap:1px">`;
+        ALL_CATS.filter(c=>!c.escuelita).forEach(cat=>{
+          const cd=monthData[ym][cat.key];
+          const pct=cd&&cd.slots?Math.round(cd.pres/cd.slots*100):0;
+          const col=CAT_COL_R[cat.key]||'#4d73f5';
+          h+=`<div title="${cat.label}: ${pct}%" style="flex:1;height:${pct}%;min-height:2px;background:${col};border-radius:2px 2px 0 0;opacity:0.85"></div>`;
+        });
+        h+=`</div><div style="font-size:0.58rem;color:var(--muted);margin-top:4px">${MES_S[parseInt(m)-1]}</div></div>`;
+      });
+      h+=`</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">`;
+      ALL_CATS.filter(c=>!c.escuelita).forEach(cat=>{
+        const col=CAT_COL_R[cat.key]||'#4d73f5';
+        h+=`<span style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${col}"></span>${cat.label}</span>`;
+      });
+      h+=`</div></div>`;
+    }
+
+    // ── AVANCE DE TEMPORADA — general del club con V/E/L ──
     {
       const playable=FIXTURE_C.filter(f=>f.cond!=='-');
-      const totalPlay=playable.length;
       const actFNum=actF?actF.fecha:999;
       const jugadas=playable.filter(f=>f.fecha<actFNum&&!_suspensions[f.fecha]).length;
       const suspCount=Object.keys(_suspensions).filter(k=>playable.some(f=>f.fecha===Number(k))).length;
-      const pctSeason=Math.round(jugadas/totalPlay*100);
+      // Calcular V/E/L general sumando todas las cats
+      const resxF={};
+      COMP_CATS.forEach(cat=>{
+        (SC_RESULTS[cat.num]||[]).forEach(r=>{
+          if(!resxF[r.f]) resxF[r.f]={gf:0,gc:0,count:0};
+          resxF[r.f].gf+=r.gf; resxF[r.f].gc+=r.gc; resxF[r.f].count++;
+        });
+      });
+      let totV=0,totE=0,totL=0;
+      Object.values(resxF).forEach(r=>{ if(r.gf>r.gc)totV++;else if(r.gf===r.gc)totE++;else totL++; });
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Avance de temporada</div>
-          <div style="font-size:0.8rem;font-weight:700"><span style="color:var(--green)">${jugadas}</span><span style="color:var(--muted);font-weight:400"> / ${totalPlay} fechas</span></div>
-        </div>
-        <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:10px">
-          <div style="height:100%;width:${pctSeason}%;background:var(--green);border-radius:3px;transition:width 0.5s"></div>
+          <div style="font-size:0.75rem;font-weight:700"><span style="color:var(--green)">${totV}V</span> <span style="color:var(--yellow)">${totE}E</span> <span style="color:var(--red)">${totL}L</span></div>
         </div>
         <div style="display:flex;gap:3px;flex-wrap:wrap">`;
       FIXTURE_C.forEach(f=>{
         if(f.cond==='-'){
-          h+=`<div title="F${f.fecha} — Libre" style="width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:0.48rem;color:var(--muted);letter-spacing:0">L</div>`;
+          h+=`<div title="F${f.fecha} — Libre" style="width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:0.48rem;color:var(--muted)">L</div>`;
         } else if(_suspensions[f.fecha]){
-          h+=`<div title="F${f.fecha} vs ${f.rival} — Suspendida" style="width:22px;height:22px;border-radius:50%;background:rgba(255,23,68,0.12);border:1px solid rgba(255,23,68,0.35);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--red)">${f.fecha}</div>`;
+          h+=`<div title="F${f.fecha} — Suspendida" style="width:22px;height:22px;border-radius:50%;background:rgba(255,23,68,0.12);border:1px solid rgba(255,23,68,0.35);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--red)">${f.fecha}</div>`;
         } else if(actF&&f.fecha===actF.fecha){
-          h+=`<div title="F${f.fecha} vs ${f.rival} — PRÓXIMA" style="width:22px;height:22px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:900;color:#000;box-shadow:0 0 0 3px rgba(34,85,238,0.25),0 0 8px rgba(34,85,238,0.3)">${f.fecha}</div>`;
+          h+=`<div title="F${f.fecha} — PRÓXIMA" style="width:22px;height:22px;border-radius:50%;background:#4d73f5;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:900;color:#fff">${f.fecha}</div>`;
         } else if(f.fecha<actFNum){
-          h+=`<div title="F${f.fecha} vs ${f.rival} — Jugada" style="width:22px;height:22px;border-radius:50%;background:rgba(34,85,238,0.18);border:1px solid rgba(34,85,238,0.35);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:600;color:var(--green)">${f.fecha}</div>`;
+          const r=resxF[f.fecha];
+          let bg,col,lbl;
+          if(r&&r.count>0){ const net=r.gf-r.gc; if(net>0){bg='#22cd78';col='#fff';lbl='V';}else if(net<0){bg='#ff1744';col='#fff';lbl='L';}else{bg='#ffab40';col='#000';lbl='E';} }
+          else { bg='rgba(34,85,238,0.18)';col='var(--green)';lbl=String(f.fecha); }
+          h+=`<div title="F${f.fecha} vs ${f.rival}" style="width:22px;height:22px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:${col}">${lbl}</div>`;
         } else {
           h+=`<div title="F${f.fecha} vs ${f.rival}" style="width:22px;height:22px;border-radius:50%;background:transparent;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--muted)">${f.fecha}</div>`;
         }
       });
       h+=`</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
-          <span style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(34,85,238,0.18);border:1px solid rgba(34,85,238,0.35)"></span>Jugada</span>
-          <span style="font-size:0.62rem;color:var(--green);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green)"></span>Próxima</span>
-          <span style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;border:1px solid var(--border)"></span>Pendiente</span>
-          <span style="font-size:0.62rem;color:var(--muted);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bg);border:1px dashed var(--border)"></span>Libre</span>
-          ${suspCount?`<span style="font-size:0.62rem;color:var(--red);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,23,68,0.12);border:1px solid rgba(255,23,68,0.35)"></span>${suspCount} suspendida${suspCount!==1?'s':''}</span>`:''}
+          <span style="font-size:0.62rem;color:var(--green);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78"></span>Victoria</span>
+          <span style="font-size:0.62rem;color:var(--yellow);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40"></span>Empate</span>
+          <span style="font-size:0.62rem;color:var(--red);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff1744"></span>Derrota</span>
+          <span style="font-size:0.62rem;color:#4d73f5;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5"></span>Próxima</span>
+          ${suspCount?`<span style="font-size:0.62rem;color:var(--red);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,23,68,0.3)"></span>${suspCount} susp.</span>`:''}
         </div>
       </div>`;
     }
-    // ── PRÓXIMO PARTIDO GLOBAL ──
-    if(actF){
-      const condLbl=actF.cond==='L'?'Local':'Visita';
-      const condCol=actF.cond==='L'?'#448aff':'var(--yellow)';
-      const pct=Math.round(citadasActF/COMP_CATS.length*100);
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:6px">Próximo partido del club</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px">F${actF.fecha} · ${actF.rival}</span>
-            <span style="font-size:0.7rem;font-weight:600;padding:2px 8px;border-radius:4px;background:${actF.cond==='L'?'rgba(68,138,255,0.15)':'rgba(255,171,64,0.15)'};color:${condCol};margin-left:6px">${condLbl}</span>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:${pct===100?'var(--green)':pct>=50?'var(--yellow)':'var(--red)'}">${citadasActF}/${COMP_CATS.length}</div>
-            <div style="font-size:0.62rem;color:var(--muted)">cats citaron</div>
-          </div>
-        </div>
-        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:10px">
-          <div style="height:100%;width:${pct}%;background:${pct===100?'var(--green)':pct>=50?'var(--yellow)':'var(--red)'};border-radius:3px;transition:width 0.4s"></div>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">`;
+
+    // ── CITACIONES — estado simple por cat ──
+    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Citaciones${actF?' — F'+actF.fecha+' vs '+actF.rival:''}</div>`;
+    if(!actF){
+      h+=`<div style="font-size:0.82rem;color:var(--green);font-weight:600">✅ Todas las categorías al día</div>`;
+    } else {
       COMP_CATS.forEach(cat=>{
         const cited=catCitedFecha(cat.key,actF);
-        h+=`<span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;font-weight:600;
-          background:${cited?'rgba(34,85,238,0.15)':'rgba(255,23,68,0.08)'};
-          border:1px solid ${cited?'rgba(34,85,238,0.4)':'rgba(255,23,68,0.25)'};
-          color:${cited?'var(--green)':'var(--red)'}">
-          ${cat.label.replace('Cat ','')} ${cited?'✓':'—'}
-        </span>`;
+        const citEntry=cited?Object.values(D[cat.key].cit).find(x=>x.fecha===actF.fecha):null;
+        const waTag=citEntry&&citEntry.whatsappShared?`<span style="background:#25D36622;color:#25D366;font-size:0.6rem;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:4px">📱 WA</span>`:'';
+        const badge=cited
+          ?`<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">✓ Citada</span>`
+          :`<span style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.25);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">Sin citar</span>`;
+        h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+          <div style="flex:1;font-size:0.82rem;font-weight:500">${cat.label}</div>
+          ${badge}${waTag}
+        </div>`;
       });
-      h+=`</div></div>`;
-    } else {
-      h+=`<div class="coord-ok-box"><div style="font-weight:700;font-size:0.88rem;color:var(--green)">✅ Todas las categorías tienen el fixture completo citado</div></div>`;
     }
-    h+=`<div class="csec">Resumen por categoría</div>`;
-    ALL_CATS.forEach(cat=>{
-      const att=D[cat.key].att, cit=D[cat.key].cit;
-      const dates=Object.keys(att);
-      const avgP=dates.length?Math.round(dates.reduce((a,d)=>a+(att[d].present||[]).length,0)/dates.length/cat.players*100):0;
-      const cited=catCitedFecha(cat.key,actF);
-      const last5=dates.sort().slice(-5).map(d=>{ const p=Math.round((att[d].present||[]).length/cat.players*100); return `<span title="${d}: ${p}%" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${pCol(p)};opacity:0.8;margin-right:2px"></span>`; }).join('');
-      const isEscCat=!!cat.escuelita;
-      const citBadge=isEscCat
-        ? `<span style="font-size:0.65rem;color:var(--muted);font-weight:600;border:1px solid var(--border);border-radius:12px;padding:2px 8px">ESCUELITA</span>`
-        : (actF?(cited?`<span class="c-ok">CITADO F${actF.fecha}</span>`:`<span class="c-alert">SIN CITAR F${actF.fecha}</span>`):`<span class="c-ok">AL DÍA</span>`);
-      h+=`<div class="crd-row" style="border-color:${!isEscCat&&actF&&cited?'rgba(34,85,238,0.35)':!isEscCat&&actF?'rgba(255,23,68,0.2)':'var(--border)'}"><div class="crd-top"><div class="crd-name">${cat.label}</div><div style="display:flex;align-items:center;gap:6px">${citBadge}<span style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:${pCol(avgP)}">${avgP}%</span></div></div><div style="font-size:0.72rem;color:var(--muted)">${dates.length} entrenamientos · ${Object.keys(cit).length} partidos</div><div style="display:flex;align-items:center;gap:5px;margin-top:5px">${last5}<span style="font-size:0.65rem;color:var(--muted)">últimas sesiones</span></div><div class="mini-bar"><div class="mini-fill" style="width:${avgP}%;background:${pCol(avgP)}"></div></div></div>`;
-    });
+    h+=`</div>`;
+
     // ── PANEL DE SUSPENSIONES ──
-    const suspCount = Object.keys(_suspensions).length;
-    h+=`<div class="csec" style="margin-top:28px">🗓 Calendario — Suspensiones${suspCount?` <span style="font-size:0.72rem;color:var(--red);font-family:'DM Sans',sans-serif;letter-spacing:0">${suspCount} suspendida${suspCount!==1?'s':''}</span>`:''}
-    </div>`;
+    const suspCount2=Object.keys(_suspensions).length;
+    h+=`<div class="csec" style="margin-top:16px">🗓 Suspensiones${suspCount2?` <span style="font-size:0.72rem;color:var(--red);font-family:'DM Sans',sans-serif;letter-spacing:0">${suspCount2} suspendida${suspCount2!==1?'s':''}</span>`:''}</div>`;
     h+=`<div style="font-size:0.73rem;color:var(--muted);margin-bottom:10px">Tildá las fechas suspendidas. Se actualiza en tiempo real para todos los equipos.</div>`;
     FIXTURE_C.filter(f=>f.cond!=='-').forEach(f=>{
       const susp=!!_suspensions[f.fecha];
@@ -5812,14 +5831,13 @@ async function startCoordApp(){
           <span style="font-size:0.65rem;color:var(--muted)">${f.cond==='L'?'Local':'Visita'}</span>
           ${susp?'<span style="font-size:0.65rem;color:var(--red);font-weight:700">SUSPENDIDA</span>':''}
         </div>
-        <button onclick="window.toggleSusp(${f.fecha})" style="background:${btnBg};border:1px solid ${btnBord};color:${btnCol};border-radius:6px;padding:5px 11px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s">
+        <button onclick="window.toggleSusp(${f.fecha})" style="background:${btnBg};border:1px solid ${btnBord};color:${btnCol};border-radius:6px;padding:5px 11px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
           ${susp?'✓ Suspendida':'Suspender'}
         </button>
       </div>`;
     });
     el.innerHTML=h;
   }
-
   // ── TAB PRESENCIAS ──
   function renderPresencias(){
     const el=document.getElementById('cv-presencias');
@@ -5869,68 +5887,29 @@ async function startCoordApp(){
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando citaciones…</div>'; return; }
     const actF=globalActiveFecha();
     const citadasActF=actF?COMP_CATS.filter(c=>catCitedFecha(c.key,actF)).length:COMP_CATS.length;
+    const CAT_COL_C={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
     let h='';
-    // ── ESTADO GLOBAL ──
-    if(actF){
-      const condLbl=actF.cond==='L'?'Local':'Visita';
-      const condCol=actF.cond==='L'?'#448aff':'var(--yellow)';
-      const pct=Math.round(citadasActF/COMP_CATS.length*100);
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-        <div style="font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:5px">Próximo partido del club</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px">F${actF.fecha} · ${actF.rival}</span>
-            <span style="font-size:0.68rem;font-weight:600;padding:2px 7px;border-radius:4px;background:${actF.cond==='L'?'rgba(68,138,255,0.15)':'rgba(255,171,64,0.15)'};color:${condCol};margin-left:6px">${condLbl}</span>
-          </div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:${pct===100?'var(--green)':pct>=50?'var(--yellow)':'var(--red)'}">${citadasActF}/${COMP_CATS.length}</span>
-        </div>
-        <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${pct===100?'var(--green)':pct>=50?'var(--yellow)':'var(--red)'};border-radius:3px;transition:width 0.4s"></div>
-        </div>
-      </div>`;
+    // ── ESTADO POR CATEGORÍA ──
+    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Estado${actF?' — F'+actF.fecha+' vs '+actF.rival:''}</div>`;
+    if(!actF){
+      h+=`<div style="font-size:0.82rem;color:var(--green);font-weight:600">✅ Todas las categorías al día</div>`;
     } else {
-      h+=`<div class="coord-ok-box" style="margin-bottom:12px"><div style="font-weight:700;font-size:0.88rem;color:var(--green)">✅ Todas las categorías al día con las citaciones</div></div>`;
-    }
-    h+=`<div class="csec">Estado por categoría — Competencia</div>`;
-    COMP_CATS.forEach(cat=>{
-      const cit=D[cat.key].cit;
-      const cited=catCitedFecha(cat.key,actF);
-      const allArr=Object.values(cit).sort((a,b)=>a.fecha-b.fecha);
-      const last=allArr[allArr.length-1];
-      // Card border/bg según si citó la fecha global
-      const cardBord=cited?'rgba(34,85,238,0.4)':'rgba(255,23,68,0.3)';
-      const cardBg=cited?'rgba(34,85,238,0.05)':'rgba(255,23,68,0.03)';
-      h+=`<div class="cit-card" style="border-color:${cardBord};background:${cardBg}">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:0.9rem;margin-bottom:3px">${cat.label}</div>`;
-      if(actF){
-        if(cited){
-          const citEntry=Object.values(cit).find(x=>x.fecha===actF.fecha);
-          const waTag=citEntry&&citEntry.whatsappShared?`<span class="wa-tag">📱 WA</span>`:'';
-          h+=`<div style="font-size:0.72rem;color:var(--green);margin-bottom:3px">✅ F${actF.fecha} citado ${waTag}</div>`;
-          if(citEntry) h+=`<div style="font-size:0.7rem;color:var(--muted)">${(citEntry.citados||[]).length?(citEntry.citados||[]).length+' jugadores':'No se jugó'}${citEntry.camisetero?' · 👕 '+citEntry.camisetero:''}</div>`;
-        } else {
-          h+=`<div style="font-size:0.72rem;color:var(--red);margin-bottom:3px">⚠️ Sin citar F${actF.fecha} vs ${actF.rival}</div>`;
-          if(last) h+=`<div style="font-size:0.7rem;color:var(--muted)">Última: F${last.fecha} vs ${last.rival} · ${(last.citados||[]).length?(last.citados||[]).length+' jugadores':'No se jugó'}</div>`;
-          else h+=`<div style="font-size:0.7rem;color:var(--red)">Sin historial</div>`;
-        }
-      } else {
-        if(last) h+=`<div style="font-size:0.72rem;color:var(--muted)">Último: F${last.fecha} vs ${last.rival} · ${(last.citados||[]).length?(last.citados||[]).length+' jugadores':'No se jugó'}</div>`;
-      }
-      h+=`</div>
-          <span class="${cited?'c-ok':'c-alert'}">${cited?`CITADO F${actF?actF.fecha:''}`:'SIN CITAR'}</span>
+      COMP_CATS.forEach(cat=>{
+        const cited=catCitedFecha(cat.key,actF);
+        const citEntry=cited?Object.values(D[cat.key].cit).find(x=>x.fecha===actF.fecha):null;
+        const waTag=citEntry&&citEntry.whatsappShared?`<span style="background:#25D36622;color:#25D366;font-size:0.6rem;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:4px">📱 WA</span>`:'';
+        const badge=cited
+          ?`<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">✓ Citada</span>`
+          :`<span style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.25);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">Sin citar</span>`;
+        h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL_C[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+          <div style="flex:1;font-size:0.82rem;font-weight:500">${cat.label}</div>
+          ${badge}${waTag}
         </div>`;
-      // Pills de citados si está citado
-      if(cited && actF){
-        const citEntry=Object.values(cit).find(x=>x.fecha===actF.fecha);
-        if(citEntry&&citEntry.citados&&citEntry.citados.length){
-          h+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px">${citEntry.citados.map(p=>`<span style="background:rgba(34,85,238,0.1);border:1px solid rgba(34,85,238,0.25);color:var(--green);border-radius:12px;font-size:0.66rem;padding:2px 8px">${p}</span>`).join('')}</div>`;
-        }
-      }
-      h+=`</div>`;
-    });
-    // ── HISTORIAL POR FECHA ──
+      });
+    }
+    h+=`</div>`;
     const allF=[...new Set(COMP_CATS.flatMap(c=>Object.values(D[c.key].cit).map(x=>x.fecha)))].filter(Boolean).sort((a,b)=>b-a);
     if(allF.length){
       h+=`<div class="csec" style="margin-top:24px">Historial por fecha</div>`;
@@ -6006,6 +5985,32 @@ async function startCoordApp(){
       Object.values(D[cat.key].stats||{}).forEach(st=>{ Object.entries(st.jugadores||{}).forEach(([n,d])=>{ g[n]=(g[n]||0)+(d.goles||0); }); });
       g26[cat.key]=g;
     });
+
+    // ── ESTADO DE CARGA POR CATEGORÍA ──
+    const actF=globalActiveFecha();
+    const lastPlayedF=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]&&(!actF||f.fecha<actF.fecha)).slice(-1)[0];
+    let hEstado=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Estado de carga de goles</div>`;
+    COMP_CATS.forEach(cat=>{
+      const stats=D[cat.key].stats||{};
+      const fechasJugadas=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]&&(!actF||f.fecha<actF.fecha));
+      const faltanFechas=fechasJugadas.filter(f=>{
+        const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+        const st=stats[key]; return !st||!st.jugadores||!Object.keys(st.jugadores).length;
+      });
+      const badge=faltanFechas.length===0
+        ?`<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">✓ Al día</span>`
+        :`<span style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.25);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">Falta F${faltanFechas.map(f=>f.fecha).join(', F')}</span>`;
+      hEstado+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+        <div style="flex:1;font-size:0.82rem;font-weight:500">${cat.label}</div>
+        ${badge}
+      </div>`;
+    });
+    hEstado+=`</div>`;
+    let h=hEstado;
+      g26[cat.key]=g;
+    });
     const gHist={};
     COMP_CATS.forEach(cat=>{
       const byY={};
@@ -6035,7 +6040,6 @@ async function startCoordApp(){
     const ranking=buildRanking(golAnio,golCat==='all'?null:golCat);
     const maxG=ranking.length?ranking[0].g:1;
     const top=buildRanking('total',null)[0];
-    let h='';
     if(top){
       const col=CAT_COL[top.cat]||'#4d73f5';
       const catLbl=COMP_CATS.find(c=>c.key===top.cat)?.label||top.cat;
@@ -6123,19 +6127,51 @@ async function startCoordApp(){
         <span>GF:${tGF} GC:${tGC}</span>
       </div>`;
     }
-    // Per-cat ranking by position
-    h+=`<div class="csec">Posición y rendimiento por categoría</div>`;
+    // Evolución de puntos por categoría — barras individuales
+    h+=`<div class="csec">Evolución de puntos por categoría</div>`;
     const catRanks = COMP_CATS.map(cat=>{
       const pos=POS[cat.num]||[];
       const scIdx=pos.findIndex(p=>isSC(p.eq));
       const scRow=pos[scIdx];
       const res=SC_RESULTS[cat.num]||[];
       const w=res.filter(r=>r.gf>r.gc).length,d=res.filter(r=>r.gf===r.gc).length,l=res.filter(r=>r.gf<r.gc).length;
-      return {cat,pos:scIdx+1,total:pos.length,pts:scRow?scRow.pts:0,w,d,l,pj:res.length,gf:res.reduce((a,r)=>a+r.gf,0),gc:res.reduce((a,r)=>a+r.gc,0)};
+      return {cat,pos:scIdx+1,total:pos.length,pts:scRow?scRow.pts:0,w,d,l,pj:res.length,res,gf:res.reduce((a,r)=>a+r.gf,0),gc:res.reduce((a,r)=>a+r.gc,0)};
     }).sort((a,b)=>a.pos-b.pos);
-    catRanks.forEach(({cat,pos,total,pts,w,d,l,pj,gf,gc})=>{
+    const CAT_COL_L={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
+    catRanks.forEach(({cat,pos,total,pts,w,d,l,pj,res})=>{
       const posCol=pos===1?'var(--yellow)':pos<=3?'var(--green)':pos>total-3?'var(--red)':'var(--muted)';
-      h+=`<div class="crd-row"><div style="display:flex;align-items:center;gap:12px"><div class="liga-pos" style="color:${posCol}">${pos}°</div><div style="flex:1;min-width:0"><div class="crd-top" style="margin-bottom:3px"><div class="crd-name">${cat.label}</div><div style="font-size:0.72rem;color:var(--muted)">${pj}PJ · ${pts}pts</div></div><div style="font-size:0.7rem;color:var(--muted)">GF:${gf} GC:${gc} · <span style="color:var(--green)">${w}G</span> <span style="color:var(--yellow)">${d}E</span> <span style="color:var(--red)">${l}P</span> · pos ${pos}/${total}</div><div class="mini-bar" style="margin-top:5px"><div class="mini-fill" style="width:${Math.round((total-pos+1)/total*100)}%;background:${posCol}"></div></div></div></div></div>`;
+      const col=CAT_COL_L[cat.key]||'#4d73f5';
+      // Calcular puntos acumulados por fecha
+      const ptsByF=[];
+      let cumPts=0;
+      res.forEach(r=>{ if(r.gf>r.gc) cumPts+=2; else if(r.gf===r.gc) cumPts+=1; ptsByF.push({f:r.f,pts:cumPts}); });
+      const maxPts=ptsByF.length?Math.max(...ptsByF.map(x=>x.pts),1):1;
+      const barWidth=ptsByF.length?Math.floor(100/ptsByF.length):10;
+      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col}"></span>
+            <span style="font-size:0.82rem;font-weight:600">${cat.label}</span>
+          </div>
+          <span style="font-size:0.72rem;color:${posCol};font-weight:600">${pos}° de ${total} · ${pts} pts</span>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:2px;height:48px;margin-bottom:4px">`;
+      ptsByF.forEach((x,i)=>{
+        const r=res[i];
+        const resCol=r.gf>r.gc?'#22cd78':r.gf<r.gc?'#ff1744':'#ffab40';
+        const pct=Math.round(x.pts/maxPts*100);
+        h+=`<div title="F${x.f}: ${x.pts} pts" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
+          <div style="width:100%;height:${Math.max(pct,4)}%;background:${col};border-radius:2px 2px 0 0;opacity:0.85;min-height:3px"></div>
+          <div style="width:6px;height:6px;border-radius:50%;background:${resCol};flex-shrink:0"></div>
+        </div>`;
+      });
+      h+=`</div>
+        <div style="display:flex;gap:8px;font-size:0.6rem;color:var(--muted)">
+          <span><span style="color:var(--green)">●</span> ${w}V</span>
+          <span><span style="color:var(--yellow)">●</span> ${d}E</span>
+          <span><span style="color:var(--red)">●</span> ${l}L</span>
+        </div>
+      </div>`;
     });
 
     // Full tables per cat
