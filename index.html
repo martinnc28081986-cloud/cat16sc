@@ -5636,12 +5636,15 @@ async function startCoordApp(){
     for(const f of FIXTURE_C){
       if(f.cond==='-') continue;
       if(_suspensions[f.fecha]) continue;
-      const key=citKey(f);
-      if(!COMP_CATS.every(cat=>hasCitados(D[cat.key].cit[key]))) return f;
+      // Buscar por campo .fecha (no por clave), igual que el resto del código
+      const todasCitaron = COMP_CATS.every(cat =>
+        Object.values(D[cat.key].cit).some(x => x.fecha === f.fecha && x.citados && x.citados.length > 0)
+      );
+      if(!todasCitaron) return f;
     }
     return null;
   }
-  function catCitedFecha(catKey,f){ return f ? hasCitados(D[catKey].cit[citKey(f)]) : false; }
+  function catCitedFecha(catKey,f){ return f ? Object.values(D[catKey].cit).some(x => x.fecha === f.fecha && x.citados && x.citados.length > 0) : false; }
   function isSC(eq){ 
     if(!eq) return false;
     const myN = (_ligaNombreCoord||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
