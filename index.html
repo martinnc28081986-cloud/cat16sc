@@ -5633,18 +5633,24 @@ async function startCoordApp(){
   function hasCitados(entry){ return !!(entry && entry.citados && entry.citados.length>0); }
   function nextUncited(cits){ return FIXTURE_C.find(f=>{ if(f.cond==='-') return false; if(_suspensions[f.fecha]) return false; return !hasCitados(cits[citKey(f)]); }); }
   function globalActiveFecha(){
+    // Construir conjunto de fechas ya jugadas (al menos una cat tiene resultado)
+    const playedFechas = new Set();
+    COMP_CATS.forEach(cat => {
+      (SC_RESULTS[cat.num] || []).forEach(r => playedFechas.add(+r.f));
+    });
     for(const f of FIXTURE_C){
       if(f.cond==='-') continue;
       if(_suspensions[f.fecha]) continue;
-      // Buscar por campo .fecha (no por clave), igual que el resto del código
+      if(playedFechas.has(+f.fecha)) continue; // ya jugada, saltar
+      // Buscar por campo .fecha con coerción de tipo (puede ser string o number)
       const todasCitaron = COMP_CATS.every(cat =>
-        Object.values(D[cat.key].cit).some(x => x.fecha === f.fecha && x.citados && x.citados.length > 0)
+        Object.values(D[cat.key].cit).some(x => +x.fecha === +f.fecha && x.citados && x.citados.length > 0)
       );
       if(!todasCitaron) return f;
     }
     return null;
   }
-  function catCitedFecha(catKey,f){ return f ? Object.values(D[catKey].cit).some(x => x.fecha === f.fecha && x.citados && x.citados.length > 0) : false; }
+  function catCitedFecha(catKey,f){ return f ? Object.values(D[catKey].cit).some(x => +x.fecha === +f.fecha && x.citados && x.citados.length > 0) : false; }
   function isSC(eq){ 
     if(!eq) return false;
     const myN = (_ligaNombreCoord||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
