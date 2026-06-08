@@ -5797,25 +5797,78 @@ async function startCoordApp(){
 
     // ── CITACIONES — primero, dos columnas ──
     {
-      const proximaF=FIXTURE_C.find(f=>f.cond!=='-'&&!_suspensions[f.fecha])||null;
-      if(proximaF){
-        const citadas=COMP_CATS.filter(c=>catCitedFecha(c.key,proximaF));
-        const sinCitar=COMP_CATS.filter(c=>!catCitedFecha(c.key,proximaF));
+      // Buscar próxima fecha con datos de citación reales
+      // Recopilar todas las fechas con citaciones de cualquier cat
+      const todasFechasCit=[...new Set(COMP_CATS.flatMap(c=>Object.values(D[c.key].cit).map(x=>x.fecha).filter(Boolean)))].sort((a,b)=>a-b);
+      // Próxima fecha: mínima que no todas las cats citaron
+      let proximaFNum=null;
+      // Primero buscar en FIXTURE_C si tiene rivals reales
+      const fixtureConRivals=FIXTURE_C.filter(f=>f.cond!=='-'&&f.rival!=='—'&&!_suspensions[f.fecha]);
+      if(fixtureConRivals.length){
+        const proximaF2=FIXTURE_C.find(f=>f.cond!=='-'&&f.rival!=='—'&&!_suspensions[f.fecha])||null;
+        if(proximaF2){
+          const citadas=COMP_CATS.filter(c=>catCitedFecha(c.key,proximaF2));
+          const sinCitar=COMP_CATS.filter(c=>!catCitedFecha(c.key,proximaF2));
+          const todasCitadas=sinCitar.length===0;
+          h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${proximaF2.fecha} vs ${proximaF2.rival}</div>
+              ${!todasCitadas?`<div style="font-size:0.72rem;font-weight:700;color:#ffab40">${citadas.length}/${COMP_CATS.length}</div>`:''}
+            </div>`;
+          if(todasCitadas){
+            h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
+          } else {
+            h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div>
+              <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
+            if(citadas.length){
+              citadas.forEach(cat=>{
+                const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===proximaF2.fecha);
+                const wa=citEntry&&citEntry.whatsappShared;
+                h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+                  <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+                  <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+                  ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
+                </div>`;
+              });
+            } else { h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`; }
+            h+=`</div><div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
+              <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
+            sinCitar.forEach(cat=>{
+              h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+                <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+              </div>`;
+            });
+            h+=`</div></div>`;
+          }
+          h+=`</div>`;
+        }
+      } else if(todasFechasCit.length){
+        // Fallback: FIXTURE_C sin rivals reales — mostrar desde citaciones existentes
+        // Buscar la fecha más baja donde no todas citaron
+        let targetFecha=null;
+        for(const fn of todasFechasCit){
+          const citadasN=COMP_CATS.filter(c=>Object.values(D[c.key].cit).some(x=>x.fecha===fn&&x.citados&&x.citados.length>0));
+          if(citadasN.length<COMP_CATS.length){ targetFecha=fn; break; }
+        }
+        if(!targetFecha) targetFecha=todasFechasCit[todasFechasCit.length-1];
+        const rival=FIXTURE_C.find(f=>f.fecha===targetFecha)?.rival||'—';
+        const citadas=COMP_CATS.filter(c=>Object.values(D[c.key].cit).some(x=>x.fecha===targetFecha&&x.citados&&x.citados.length>0));
+        const sinCitar=COMP_CATS.filter(c=>!citadas.includes(c));
         const todasCitadas=sinCitar.length===0;
         h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${proximaF.fecha} vs ${proximaF.rival}</div>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${targetFecha}${rival!=='—'?' vs '+rival:''}</div>
             ${!todasCitadas?`<div style="font-size:0.72rem;font-weight:700;color:#ffab40">${citadas.length}/${COMP_CATS.length}</div>`:''}
           </div>`;
         if(todasCitadas){
           h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
         } else {
-          h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
+          h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div>
+            <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
           if(citadas.length){
             citadas.forEach(cat=>{
-              const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===proximaF.fecha);
+              const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===targetFecha);
               const wa=citEntry&&citEntry.whatsappShared;
               h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
                 <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
@@ -5823,12 +5876,9 @@ async function startCoordApp(){
                 ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
               </div>`;
             });
-          } else {
-            h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`;
-          }
-          h+=`</div>
-            <div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
-              <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
+          } else { h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`; }
+          h+=`</div><div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
+            <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
           sinCitar.forEach(cat=>{
             h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
               <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
