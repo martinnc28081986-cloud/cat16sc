@@ -774,6 +774,11 @@ onValue(connectedRef, snap => {
     _myPresRef = push(ref(db, 'presence'));
     onDisconnect(_myPresRef).remove();
     set(_myPresRef, { t: Date.now(), cat: _currentCat });
+    window._fbConnected = true;
+    if(typeof setSS === 'function') setSS('live');
+  } else if(snap.val() === false) {
+    window._fbConnected = false;
+    if(typeof setSS === 'function') setSS('error');
   }
 });
 
@@ -1481,6 +1486,8 @@ function setSS(s) {
   document.getElementById('syncLabel').textContent = label;
   document.getElementById('offlineBanner').classList.toggle('show', s==='error');
 }
+// Si Firebase ya confirmó conexión antes de que setSS estuviera lista, actualizar ahora
+setTimeout(()=>{ if(window._fbConnected===true) setSS('live'); else if(window._fbConnected===false) setSS('error'); }, 100);
 
 // ── FECHA ACTIVA GLOBAL ──
 // La fecha activa es la primera donde al menos UNA categoría competitiva no citó
@@ -5797,15 +5804,14 @@ async function startCoordApp(){
 
     // ── CITACIONES — primero, dos columnas ──
     {
-      // Buscar próxima fecha con datos de citación reales
-      // Recopilar todas las fechas con citaciones de cualquier cat
+      // Buscar próxima fecha activa (primera donde alguna cat competitiva no citó aún)
       const todasFechasCit=[...new Set(COMP_CATS.flatMap(c=>Object.values(D[c.key].cit).map(x=>x.fecha).filter(Boolean)))].sort((a,b)=>a-b);
-      // Próxima fecha: mínima que no todas las cats citaron
-      let proximaFNum=null;
-      // Primero buscar en FIXTURE_C si tiene rivals reales
-      const fixtureConRivals=FIXTURE_C.filter(f=>f.cond!=='-'&&f.rival!=='—'&&!_suspensions[f.fecha]);
+      // Usar globalActiveFecha() que ya tiene la lógica correcta
+      const _gaf = globalActiveFecha();
+      // Si todas citaron, mostrar la última fecha del fixture con rival
+      const proximaF2 = _gaf || FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]).slice(-1)[0] || null;
+      const fixtureConRivals = [proximaF2].filter(Boolean);
       if(fixtureConRivals.length){
-        const proximaF2=FIXTURE_C.find(f=>f.cond!=='-'&&f.rival!=='—'&&!_suspensions[f.fecha])||null;
         if(proximaF2){
           const citadas=COMP_CATS.filter(c=>catCitedFecha(c.key,proximaF2));
           const sinCitar=COMP_CATS.filter(c=>!catCitedFecha(c.key,proximaF2));
