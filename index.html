@@ -5934,29 +5934,50 @@ async function startCoordApp(){
       h+=`</div>`;
     }
 
-    // ── CITACIONES — solo si hay fecha activa ──
-    if(actF){
-      const todasCitadas=COMP_CATS.every(c=>catCitedFecha(c.key,actF));
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Citaciones — F${actF.fecha} vs ${actF.rival}</div>`;
-      if(todasCitadas){
-        h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
-      } else {
-        COMP_CATS.forEach(cat=>{
-          const cited=catCitedFecha(cat.key,actF);
-          const citEntry=cited?Object.values(D[cat.key].cit).find(x=>x.fecha===actF.fecha):null;
-          const waTag=citEntry&&citEntry.whatsappShared?`<span style="background:#25D36622;color:#25D366;font-size:0.68rem;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:4px">📱</span>`:'';
-          const badge=cited
-            ?`<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">✓ Citada</span>`
-            :`<span style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.25);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">Sin citar</span>`;
-          h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-            <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-            <div style="flex:1;font-size:0.82rem;font-weight:500">${cat.label}</div>
-            ${badge}${waTag}
+    // ── CITACIONES — próxima fecha siempre visible ──
+    {
+      const proximaF=FIXTURE_C.find(f=>f.cond!=='-'&&!_suspensions[f.fecha])||null;
+      if(proximaF){
+        const todasCitadas=COMP_CATS.every(c=>catCitedFecha(c.key,proximaF));
+        const citadas=COMP_CATS.filter(c=>catCitedFecha(c.key,proximaF));
+        const sinCitar=COMP_CATS.filter(c=>!catCitedFecha(c.key,proximaF));
+        h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${proximaF.fecha} vs ${proximaF.rival}</div>
+            ${!todasCitadas?`<div style="font-size:0.72rem;font-weight:700;color:#ffab40">${citadas.length}/${COMP_CATS.length}</div>`:''}
           </div>`;
-        });
+        if(todasCitadas){
+          h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
+        } else {
+          h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
+          if(citadas.length){
+            citadas.forEach(cat=>{
+              const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===proximaF.fecha);
+              const wa=citEntry&&citEntry.whatsappShared;
+              h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+                <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+                ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
+              </div>`;
+            });
+          } else {
+            h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`;
+          }
+          h+=`</div>
+            <div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
+              <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
+          sinCitar.forEach(cat=>{
+            h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+              <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+              <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+            </div>`;
+          });
+          h+=`</div></div>`;
+        }
+        h+=`</div>`;
       }
-      h+=`</div>`;
     }
 
     // ── PANEL DE SUSPENSIONES ──
