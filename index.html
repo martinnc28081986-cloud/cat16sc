@@ -802,10 +802,14 @@ onValue(ref(db, 'presence'), snap => {
 
 // ── SUSPENSIONES (compartidas, tiempo real) ──
 let _suspensions = {};
+let _suspensionesEnt = {}; // suspensiones de entrenamiento por mes {YYYY-MM: {DD: true}}
 let _onSuspensionChange = null;
 onValue(ref(db, CLUB_PATH+'/config/suspensions'), snap => {
   _suspensions = snap.val() || {};
   if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
+});
+onValue(ref(db, CLUB_PATH+'/config/suspensionesEnt'), snap => {
+  _suspensionesEnt = snap.val() || {};
 });
 
 // ── LOGIN ──
@@ -1695,6 +1699,24 @@ function loadAttMarks(d){
 
 function renderAtt(){
   const el=document.getElementById('playerList'); el.innerHTML='';
+  // ── Verificar si hoy es día suspendido ──
+  const dateVal=document.getElementById('sessionDate').value;
+  if(dateVal){
+    const [dY,dM,dD]=dateVal.split('-');
+    const mesKey=dY+'-'+dM;
+    const diaKey=dD;
+    if(_suspensionesEnt[mesKey]&&_suspensionesEnt[mesKey][diaKey]){
+      el.innerHTML=`<div style="text-align:center;padding:32px 16px">
+        <div style="font-size:2.5rem;margin-bottom:10px">⛔</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--red);margin-bottom:6px">Hoy no se entrena</div>
+        <div style="font-size:0.8rem;color:var(--muted)">Esta fecha fue marcada como suspendida por el coordinador.</div>
+      </div>`;
+      document.getElementById('cntP').textContent='—';
+      document.getElementById('cntA').textContent='—';
+      document.getElementById('cntPct').textContent='—';
+      return;
+    }
+  }
   PLAYERS.forEach(name=>{
     const s=markedAtt[name];
     let streak=0;
@@ -5691,18 +5713,26 @@ async function startCoordApp(){
   };
   window.coordPF=function(f){ coordPresFilter=f; renderCoordTab('presencias'); };
   window.coordPM=function(m){ coordPresMode=m; renderCoordTab('presencias'); };
+  window._coordNavMes=function(mes){
+    const now=new Date();
+    const mesActual=now.toISOString().substring(0,7);
+    _coordMesCarga=(mes>=mesActual)?null:mes;
+    renderResumen();
+    const el=document.getElementById('cv-resumen');
+    if(el) el.scrollTop=0;
+  };
 
   window.coordAbrirSuspEnt=function(){
     const now=new Date();
     const mesActual=now.toISOString().substring(0,7);
-    const [Y,M]=mesActual.split('-');
+    const [Y,M]=mesActual.split('-').map(Number);
     const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
     const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const DIA_L=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
     const grupos={};
-    const ultimoDia=new Date(parseInt(Y),parseInt(M),0).getDate();
+    const ultimoDia=new Date(Y,M,0).getDate();
     for(let d=1;d<=ultimoDia;d++){
-      const dt=new Date(parseInt(Y),parseInt(M)-1,d);
+      const dt=new Date(Y,M-1,d);
       const dow=String(dt.getDay());
       if(_coordDiasEnt.includes(dow)){ if(!grupos[dow]) grupos[dow]=[]; grupos[dow].push(d); }
     }
@@ -5711,12 +5741,11 @@ async function startCoordApp(){
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
     let html=`<div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:20px;width:100%;max-width:420px;margin:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5">⚙ SUSPENSIONES — ${MES_L[parseInt(M)-1].toUpperCase()}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5">⚙ SUSPENSIONES — ${MES_L[M-1].toUpperCase()}</div>
         <button onclick="document.getElementById('suspEntOverlay').remove()" style="background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:6px;padding:3px 9px;font-size:0.8rem;cursor:pointer">✕</button>
       </div>
       <div style="font-size:0.72rem;color:#7a9ccc;margin-bottom:14px">Tildá los días que no se entrenó. Se descuentan del total estimado del mes.</div>`;
-    const dowOrder=_coordDiasEnt.slice().sort((a,b)=>parseInt(a)-parseInt(b));
-    dowOrder.forEach(dow=>{
+    _coordDiasEnt.slice().sort((a,b)=>parseInt(a)-parseInt(b)).forEach(dow=>{
       const dias=grupos[dow]||[];
       html+=`<div style="font-size:0.62rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${DIA_L[parseInt(dow)]}</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">`;
       dias.forEach(d=>{
@@ -5772,19 +5801,17 @@ async function startCoordApp(){
   }
 
   // ── TAB RESUMEN ──
+  let _coordMesCarga=null; // null = mes actual, o 'YYYY-MM' para navegar
   function renderResumen(){
     const el=document.getElementById('cv-resumen');
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando datos del club…</div>'; return; }
+    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
+    const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const actF=globalActiveFecha();
-    let totSess=0,totPres=0,totSlots=0;
-    ALL_CATS.forEach(cat=>{ const att=D[cat.key].att; const dates=Object.keys(att); totSess+=dates.length; dates.forEach(d=>{ totPres+=(att[d].present||[]).length; totSlots+=cat.players; }); });
-    const avgPct=totSlots?Math.round(totPres/totSlots*100):0;
-    const citadasActF=actF?COMP_CATS.filter(c=>catCitedFecha(c.key,actF)).length:COMP_CATS.length;
-    const sinCitarActF=COMP_CATS.length-citadasActF;
 
     // ── EVOLUCIÓN PRESENCIA POR MES — número grande + 3 meses anteriores ──
     const monthData={};
-    let h=``;
     ALL_CATS.forEach(cat=>{
       Object.entries(D[cat.key].att).forEach(([d,s])=>{
         const ym=d.substring(0,7);
@@ -5793,9 +5820,7 @@ async function startCoordApp(){
         monthData[ym].slots+=cat.players;
       });
     });
-    const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
+    let h=``;
     const allMonths=Object.keys(monthData).sort();
     if(allMonths.length){
       const lastMonth=allMonths[allMonths.length-1];
@@ -5833,43 +5858,58 @@ async function startCoordApp(){
       h+=`</div></div>`;
     }
 
-    // ── CARGA DE ENTRENAMIENTOS DEL MES ──
+    // ── CARGA DE ENTRENAMIENTOS DEL MES — con navegación ──
     {
       const now=new Date();
-      const mesActual=now.toISOString().substring(0,7);
-      const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
+      const mesActualISO=now.toISOString().substring(0,7);
+      // Calcular mes visible (el seleccionado o el actual)
+      const mesSel=_coordMesCarga||mesActualISO;
+      const [msY,msM]=mesSel.split('-').map(Number);
+      const esMesActual=mesSel===mesActualISO;
+      // Mes anterior y siguiente para navegación
+      const dtPrev=new Date(msY,msM-2,1); const mesPrev=dtPrev.getFullYear()+'-'+String(dtPrev.getMonth()+1).padStart(2,'0');
+      const dtNext=new Date(msY,msM,1);   const mesSig=dtNext.getFullYear()+'-'+String(dtNext.getMonth()+1).padStart(2,'0');
+      const hayMesSig=mesSig<=mesActualISO;
+      // Suspensiones del mes visible
+      const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesSel])||{};
       const suspCount=Object.keys(suspEnt).length;
-      let totalMes=0,diasHastaHoy=0;
+      // Calcular días del mes y días hasta hoy (solo si es mes actual)
+      let totalMes=0, diasRef=0;
       if(_coordDiasEnt.length){
-        const ultimoDia=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+        const ultimoDia=new Date(msY,msM,0).getDate();
+        const limDia=esMesActual?now.getDate():ultimoDia;
         for(let d=1;d<=ultimoDia;d++){
-          const dt=new Date(now.getFullYear(),now.getMonth(),d);
+          const dt2=new Date(msY,msM-1,d);
           const dd=String(d).padStart(2,'0');
-          if(_coordDiasEnt.includes(String(dt.getDay()))&&!suspEnt[dd]){
+          if(_coordDiasEnt.includes(String(dt2.getDay()))&&!suspEnt[dd]){
             totalMes++;
-            if(dt<=now) diasHastaHoy++;
+            if(d<=limDia) diasRef++;
           }
         }
       }
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Carga de entrenamientos — ${MES_L[now.getMonth()]}</div>
-          ${totalMes>0?`<div style="font-size:0.65rem;color:var(--muted)">${totalMes} en el mes${suspCount?` · <span style="color:#ffab40">${suspCount} susp.</span>`:''}${diasHastaHoy?` · ${diasHastaHoy} a hoy`:''}</div>`:''}
+          <div style="display:flex;align-items:center;gap:8px">
+            <button onclick="window._coordNavMes('${mesPrev}')" style="background:rgba(77,115,245,0.12);border:1px solid rgba(77,115,245,0.3);color:#4d73f5;border-radius:6px;padding:2px 9px;font-size:0.75rem;font-weight:700;cursor:pointer">←</button>
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Carga — ${MES_L[msM-1]}${esMesActual?' (actual)':''}</div>
+            <button onclick="window._coordNavMes('${mesSig}')" style="background:${hayMesSig?'rgba(77,115,245,0.12)':'transparent'};border:1px solid ${hayMesSig?'rgba(77,115,245,0.3)':'rgba(77,115,245,0.1)'};color:${hayMesSig?'#4d73f5':'#2a3a5a'};border-radius:6px;padding:2px 9px;font-size:0.75rem;font-weight:700;cursor:${hayMesSig?'pointer':'default'}">→</button>
+          </div>
+          ${totalMes>0?`<div style="font-size:0.65rem;color:var(--muted)">${totalMes} en el mes${suspCount?` · <span style="color:#ffab40">${suspCount} susp.</span>`:''}${esMesActual&&diasRef?` · ${diasRef} a hoy`:''}</div>`:''}
         </div>`;
       ALL_CATS.forEach(cat=>{
         const att=D[cat.key].att;
-        const cargados=Object.keys(att).filter(d=>d.startsWith(mesActual)).length;
-        let colBar,semaforo,labelDer,barCargado,barHoy;
+        const cargados=Object.keys(att).filter(d=>d.startsWith(mesSel)).length;
+        let colBar,semaforo,labelDer,barCargado,barRef;
         if(totalMes>0){
-          colBar=cargados>=diasHastaHoy?'#22cd78':cargados>=diasHastaHoy*0.6?'#ffab40':'#ff4444';
-          semaforo=cargados>=diasHastaHoy?'🟢':cargados>=diasHastaHoy*0.6?'🟡':'🔴';
+          colBar=cargados>=diasRef?'#22cd78':cargados>=diasRef*0.6?'#ffab40':'#ff4444';
+          semaforo=cargados>=diasRef?'🟢':cargados>=diasRef*0.6?'🟡':'🔴';
           labelDer=`<span style="font-size:0.72rem;color:${colBar};font-weight:700">${cargados}/${totalMes}</span>`;
           barCargado=Math.round(cargados/totalMes*100);
-          barHoy=Math.round(diasHastaHoy/totalMes*100);
+          barRef=esMesActual?Math.round(diasRef/totalMes*100):0;
         } else {
           colBar='#4d73f5'; semaforo='';
           labelDer=`<span style="font-size:0.72rem;color:var(--muted)">${cargados} cargado${cargados!==1?'s':''}</span>`;
-          barCargado=cargados>0?100:0; barHoy=0;
+          barCargado=cargados>0?100:0; barRef=0;
         }
         h+=`<div style="margin-bottom:9px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -5882,7 +5922,7 @@ async function startCoordApp(){
           </div>
           <div style="background:rgba(0,0,0,0.25);border-radius:4px;height:7px;position:relative;overflow:hidden">
             <div style="position:absolute;top:0;left:0;height:100%;width:${barCargado}%;background:${colBar};border-radius:4px"></div>
-            ${barHoy&&barHoy!==barCargado?`<div style="position:absolute;top:0;left:${barHoy}%;width:1px;height:100%;background:rgba(255,255,255,0.4)"></div>`:''}
+            ${barRef&&barRef!==barCargado?`<div style="position:absolute;top:0;left:${barRef}%;width:1px;height:100%;background:rgba(255,255,255,0.4)"></div>`:''}
           </div>
         </div>`;
       });
@@ -5894,74 +5934,30 @@ async function startCoordApp(){
       h+=`</div>`;
     }
 
-    // ── AVANCE DE TEMPORADA — usando resultados de la primera cat con datos ──
-    {
-      const playable=FIXTURE_C.filter(f=>f.cond!=='-');
-      const actFNum=actF?actF.fecha:999;
-      const suspCount=Object.keys(_suspensions).filter(k=>playable.some(f=>f.fecha===Number(k))).length;
-      // Usar primera cat con resultados como referencia
-      let refRes=[];
-      for(const cat of COMP_CATS){ const r=SC_RESULTS[cat.num]||[]; if(r.length){ refRes=r; break; } }
-      const resByFechaCoord={};
-      refRes.forEach(r=>{ resByFechaCoord[r.f]= r.gf>r.gc?'V':r.gf<r.gc?'L':'E'; });
-      const totV=Object.values(resByFechaCoord).filter(v=>v==='V').length;
-      const totE=Object.values(resByFechaCoord).filter(v=>v==='E').length;
-      const totL=Object.values(resByFechaCoord).filter(v=>v==='L').length;
+    // ── CITACIONES — solo si hay fecha activa ──
+    if(actF){
+      const todasCitadas=COMP_CATS.every(c=>catCitedFecha(c.key,actF));
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Avance de temporada</div>
-          <div style="font-size:0.75rem;font-weight:700"><span style="color:#22cd78">${totV}V</span> <span style="color:#ffab40">${totE}E</span> <span style="color:#ff4444">${totL}L</span></div>
-        </div>
-        <div style="display:flex;gap:3px;flex-wrap:wrap">`;
-      FIXTURE_C.forEach(f=>{
-        if(f.cond==='-'){
-          h+=`<div title="F${f.fecha} — Libre" style="width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:0.48rem;color:var(--muted)">L</div>`;
-        } else if(_suspensions[f.fecha]){
-          h+=`<div title="F${f.fecha} — Suspendida" style="width:22px;height:22px;border-radius:50%;background:rgba(255,23,68,0.12);border:1px solid rgba(255,23,68,0.35);display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:var(--red)">${f.fecha}</div>`;
-        } else if(actF&&f.fecha===actF.fecha){
-          h+=`<div title="F${f.fecha} — PRÓXIMA" style="width:22px;height:22px;border-radius:50%;background:#4d73f5;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:900;color:#fff">${f.fecha}</div>`;
-        } else if(f.fecha<actFNum){
-          const res=resByFechaCoord[f.fecha];
-          const bg=res==='V'?'#22cd78':res==='L'?'#ff1744':res==='E'?'#ffab40':'rgba(34,85,238,0.18)';
-          const col=res==='E'?'#000':'#fff';
-          const lbl=res||String(f.fecha);
-          h+=`<div title="F${f.fecha} vs ${f.rival}" style="width:22px;height:22px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:${col}">${lbl}</div>`;
-        } else {
-          h+=`<div title="F${f.fecha} vs ${f.rival}" style="width:22px;height:22px;border-radius:50%;background:transparent;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:var(--muted)">${f.fecha}</div>`;
-        }
-      });
-      h+=`</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
-          <span style="font-size:0.62rem;color:#22cd78;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78"></span>Victoria</span>
-          <span style="font-size:0.62rem;color:#ffab40;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40"></span>Empate</span>
-          <span style="font-size:0.62rem;color:#ff4444;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff4444"></span>Derrota</span>
-          <span style="font-size:0.62rem;color:#4d73f5;display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5"></span>Próxima</span>
-          ${suspCount?`<span style="font-size:0.62rem;color:var(--red);display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:rgba(255,23,68,0.3)"></span>${suspCount} susp.</span>`:''}
-        </div>
-      </div>`;
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Citaciones — F${actF.fecha} vs ${actF.rival}</div>`;
+      if(todasCitadas){
+        h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
+      } else {
+        COMP_CATS.forEach(cat=>{
+          const cited=catCitedFecha(cat.key,actF);
+          const citEntry=cited?Object.values(D[cat.key].cit).find(x=>x.fecha===actF.fecha):null;
+          const waTag=citEntry&&citEntry.whatsappShared?`<span style="background:#25D36622;color:#25D366;font-size:0.68rem;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:4px">📱</span>`:'';
+          const badge=cited
+            ?`<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">✓ Citada</span>`
+            :`<span style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.25);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">Sin citar</span>`;
+          h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+            <div style="flex:1;font-size:0.82rem;font-weight:500">${cat.label}</div>
+            ${badge}${waTag}
+          </div>`;
+        });
+      }
+      h+=`</div>`;
     }
-
-    // ── CITACIONES — estado simple por cat ──
-    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Citaciones${actF?' — F'+actF.fecha+' vs '+actF.rival:''}</div>`;
-    if(!actF){
-      h+=`<div style="font-size:0.82rem;color:var(--green);font-weight:600">✅ Todas las categorías al día</div>`;
-    } else {
-      COMP_CATS.forEach(cat=>{
-        const cited=catCitedFecha(cat.key,actF);
-        const citEntry=cited?Object.values(D[cat.key].cit).find(x=>x.fecha===actF.fecha):null;
-        const waTag=citEntry&&citEntry.whatsappShared?`<span style="background:#25D36622;color:#25D366;font-size:0.6rem;padding:1px 6px;border-radius:10px;font-weight:700;margin-left:4px">📱 WA</span>`:'';
-        const badge=cited
-          ?`<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">✓ Citada</span>`
-          :`<span style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.25);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">Sin citar</span>`;
-        h+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-          <div style="flex:1;font-size:0.82rem;font-weight:500">${cat.label}</div>
-          ${badge}${waTag}
-        </div>`;
-      });
-    }
-    h+=`</div>`;
 
     // ── PANEL DE SUSPENSIONES ──
     const suspCount2=Object.keys(_suspensions).length;
@@ -5991,8 +5987,6 @@ async function startCoordApp(){
   function renderPresencias(){
     const el=document.getElementById('cv-presencias');
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando presencias…</div>'; return; }
-
-    // ── SUSPENSIONES DE ENTRENAMIENTO ──
     var _suspEntHtml='';
     if(_coordDiasEnt.length){
       const now=new Date();
@@ -6032,7 +6026,6 @@ async function startCoordApp(){
       renderCoordJugador(el);
       return;
     }
-
     let h=_suspEntHtml+jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
     ALL_CATS.forEach(cat=>{ h+=`<button class="cfilter${coordPresFilter===cat.key?' on':''}" onclick="window.coordPF('${cat.key}')">${cat.label.replace('Cat ','')}</button>`; });
     h+=`</div><div class="cfilter-row">
