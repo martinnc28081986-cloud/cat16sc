@@ -5628,9 +5628,9 @@ async function startCoordApp(){
   const D = {};
   ALL_CATS.forEach(c=>{ D[c.key]={att:{},cit:{},hist:{},stats:{}}; });
   let coordFirebaseLoaded=false, coordActiveTab='resumen', coordPresFilter=null, coordPresMode='month';
-  let coordJugadorSel=null; // {catKey, nombre}
-  let coordJugadorMes='todo'; // 'todo' o 'YYYY-MM'
-  let _coordDiasEnt=[]; // días de entrenamiento del club, ej: ["2","4","5"]
+  let coordJugadorSel=null;
+  let coordJugadorMes='todo';
+  let _coordDiasEnt=[];
 
   function refresh(){ renderCoordTab(coordActiveTab); }
   _onSuspensionChange = refresh;
@@ -5660,8 +5660,7 @@ async function startCoordApp(){
         get(ref(db, CLUB_PATH+'/'+cat.key+'/goleadores_historicos')).then(s=>{ D[cat.key].hist=s.val()||{}; }).catch(()=>{}),
         get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/stats')).then(s=>{ D[cat.key].stats=s.val()||{}; }).catch(()=>{})
       ]);
-      // También cargar diasEntrenamiento del club
-      reads.push(get(ref(db, CLUB_PATH)).then(s=>{ if(s.exists()) _coordDiasEnt=s.val().diasEntrenamiento||[]; }).catch(()=>{}));
+      reads.push(get(ref(db, CLUB_PATH+'/diasEntrenamiento')).then(s=>{ if(s.exists()) _coordDiasEnt=s.val()||[]; }).catch(()=>{}));
       await Promise.all(reads);
     } catch(e){}
     // Citaciones con onValue para reflejar actualizaciones en tiempo real (ej: whatsappShared)
@@ -5713,6 +5712,7 @@ async function startCoordApp(){
   function renderResumen(){
     const el=document.getElementById('cv-resumen');
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando datos del club…</div>'; return; }
+    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
     const actF=globalActiveFecha();
     let totSess=0,totPres=0,totSlots=0;
     ALL_CATS.forEach(cat=>{ const att=D[cat.key].att; const dates=Object.keys(att); totSess+=dates.length; dates.forEach(d=>{ totPres+=(att[d].present||[]).length; totSlots+=cat.players; }); });
