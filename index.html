@@ -5129,6 +5129,14 @@ window.saEditarClub = async function(clubId){
       <span style="font-size:0.82rem">${c.label}</span>
     </label>`).join('');
 
+  const _diasSemana=[{v:'1',l:'Lun'},{v:'2',l:'Mar'},{v:'3',l:'Mié'},{v:'4',l:'Jue'},{v:'5',l:'Vie'},{v:'6',l:'Sáb'}];
+  const _diasActuales=Array.isArray(club.diasEntrenamiento)?club.diasEntrenamiento:[];
+  const diasHtml=_diasSemana.map(d=>`
+    <label style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#112896;border:1px solid ${_diasActuales.includes(d.v)?'#4d73f5':'#1e3ab0'};border-radius:8px;padding:8px 4px;cursor:pointer;flex:1">
+      <input type="checkbox" class="editDiaCheck" value="${d.v}" ${_diasActuales.includes(d.v)?'checked':''} style="accent-color:#4d73f5;width:16px;height:16px">
+      <span style="font-size:0.72rem;font-weight:600">${d.l}</span>
+    </label>`).join('');
+
   overlay.innerHTML = `
     <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:auto">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#4d73f5;margin-bottom:16px">✏️ EDITAR CLUB</div>
@@ -5149,6 +5157,8 @@ window.saEditarClub = async function(clubId){
       <input id="editClubAddress" value="${_autoAddr}" placeholder="Ej: Av. 13 y 610 Villa Elvira" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
       <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">${catsHtml}</div>
+      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Días de entrenamiento</div>
+      <div style="display:flex;gap:5px;margin-bottom:16px">${diasHtml}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700">Usuarios (${clubUsers.length})</div>
         <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">+ Agregar usuario</button>
@@ -5187,6 +5197,7 @@ window._saGuardarEdicion = async function(clubId){
   const ligaNombre = document.getElementById('editClubLigaNombre').value.trim().toUpperCase();
   const clubAddress = document.getElementById('editClubAddress')?.value.trim() || '';
   const cats = [...document.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value);
+  const diasEntrenamiento = [...document.querySelectorAll('.editDiaCheck:checked')].map(cb=>cb.value);
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
   const current = snap.exists() ? snap.val() : {};
@@ -5204,7 +5215,7 @@ window._saGuardarEdicion = async function(clubId){
     showToast('✓ Liga "'+ligaNombre+'" creada');
   }
   // Preservar data existente del club, solo actualizar campos del SA
-  const updates = {...current, nombre, cats};
+  const updates = {...current, nombre, cats, diasEntrenamiento};
   if(ligaFinal && ligaFinal !== '__nueva__') updates.ligaId = ligaFinal; else delete updates.ligaId;
   // Preservar config existente (torneoActivo NO se toca — es independiente del ligaId)
   if(!updates.config) updates.config = {};
@@ -5617,10 +5628,10 @@ async function startCoordApp(){
   const D = {};
   ALL_CATS.forEach(c=>{ D[c.key]={att:{},cit:{},hist:{},stats:{}}; });
   let coordFirebaseLoaded=false, coordActiveTab='resumen', coordPresFilter=null, coordPresMode='month';
-  let coordJugadorSel=null;
-  let coordJugadorMes='todo';
-  let _coordDiasEnt=[]; // días de entrenamiento ["2","4","5"] = mar/jue/vie
-  let _coordSuspEnt={}; // suspensiones de entrenamiento {YYYY-MM: {DD: true}}
+  let coordJugadorSel=null; // {catKey, nombre}
+  let coordJugadorMes='todo'; // 'todo' o 'YYYY-MM'
+  let _coordDiasEnt=[];
+  let _coordSuspEnt={};
 
   function refresh(){ renderCoordTab(coordActiveTab); }
   _onSuspensionChange = refresh;
@@ -5688,16 +5699,12 @@ async function startCoordApp(){
     const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
     const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const DIA_L=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    // Agrupar días del mes por día de semana de entrenamiento
     const grupos={};
     const ultimoDia=new Date(parseInt(Y),parseInt(M),0).getDate();
     for(let d=1;d<=ultimoDia;d++){
       const dt=new Date(parseInt(Y),parseInt(M)-1,d);
       const dow=String(dt.getDay());
-      if(_coordDiasEnt.includes(dow)){
-        if(!grupos[dow]) grupos[dow]=[];
-        grupos[dow].push(d);
-      }
+      if(_coordDiasEnt.includes(dow)){ if(!grupos[dow]) grupos[dow]=[]; grupos[dow].push(d); }
     }
     const overlay=document.createElement('div');
     overlay.id='suspEntOverlay';
@@ -5711,8 +5718,7 @@ async function startCoordApp(){
     const dowOrder=_coordDiasEnt.slice().sort((a,b)=>parseInt(a)-parseInt(b));
     dowOrder.forEach(dow=>{
       const dias=grupos[dow]||[];
-      html+=`<div style="font-size:0.62rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${DIA_L[parseInt(dow)]}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">`;
+      html+=`<div style="font-size:0.62rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${DIA_L[parseInt(dow)]}</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">`;
       dias.forEach(d=>{
         const dd=String(d).padStart(2,'0');
         const susp=!!suspEnt[dd];
@@ -5720,8 +5726,7 @@ async function startCoordApp(){
       });
       html+=`</div>`;
     });
-    html+=`<button onclick="document.getElementById('suspEntOverlay').remove()" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:10px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-top:4px">Listo</button>
-    </div>`;
+    html+=`<button onclick="document.getElementById('suspEntOverlay').remove()" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:10px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-top:4px">Listo</button></div>`;
     overlay.innerHTML=html;
     document.body.appendChild(overlay);
     overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
@@ -5735,21 +5740,15 @@ async function startCoordApp(){
         await remove(ref(db,path));
         if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={};
         delete _coordSuspEnt[mesActual][dd];
-        btn.style.background='rgba(77,115,245,0.1)';
-        btn.style.borderColor='#1e3ab0';
-        btn.style.color='#7a9ccc';
-        btn.textContent=btn.textContent.replace('✓ ','').trim();
-        const DIA_L=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        btn.style.background='rgba(77,115,245,0.1)'; btn.style.borderColor='#1e3ab0'; btn.style.color='#7a9ccc';
+        btn.textContent=btn.textContent.replace('✓','').trim();
       } else {
         await set(ref(db,path),true);
         if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={};
         _coordSuspEnt[mesActual][dd]=true;
-        btn.style.background='rgba(255,23,68,0.15)';
-        btn.style.borderColor='rgba(255,23,68,0.4)';
-        btn.style.color='#ff4d6d';
+        btn.style.background='rgba(255,23,68,0.15)'; btn.style.borderColor='rgba(255,23,68,0.4)'; btn.style.color='#ff4d6d';
         if(!btn.textContent.includes('✓')) btn.textContent='✓  '+btn.textContent.trim();
       }
-      // Refrescar resumen en background sin cerrar el popup
       if(coordActiveTab==='resumen'||coordActiveTab==='presencias') renderCoordTab(coordActiveTab);
     }catch(e){ showToast('Error al guardar'); }
   };
@@ -5776,22 +5775,16 @@ async function startCoordApp(){
   function renderResumen(){
     const el=document.getElementById('cv-resumen');
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando datos del club…</div>'; return; }
-    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-    const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const actF=globalActiveFecha();
     let totSess=0,totPres=0,totSlots=0;
     ALL_CATS.forEach(cat=>{ const att=D[cat.key].att; const dates=Object.keys(att); totSess+=dates.length; dates.forEach(d=>{ totPres+=(att[d].present||[]).length; totSlots+=cat.players; }); });
     const avgPct=totSlots?Math.round(totPres/totSlots*100):0;
-
-    // ── KPIs ──
-    let h=`<div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-num" style="color:${pCol(avgPct)}">${avgPct}%</div><div class="kpi-lbl">Presencia promedio club</div></div>
-      <div class="kpi-card"><div class="kpi-num">${totSess}</div><div class="kpi-lbl">Total entrenamientos</div></div>
-    </div>`;
+    const citadasActF=actF?COMP_CATS.filter(c=>catCitedFecha(c.key,actF)).length:COMP_CATS.length;
+    const sinCitarActF=COMP_CATS.length-citadasActF;
 
     // ── EVOLUCIÓN PRESENCIA POR MES — número grande + 3 meses anteriores ──
     const monthData={};
+    let h=``;
     ALL_CATS.forEach(cat=>{
       Object.entries(D[cat.key].att).forEach(([d,s])=>{
         const ym=d.substring(0,7);
@@ -5800,15 +5793,18 @@ async function startCoordApp(){
         monthData[ym].slots+=cat.players;
       });
     });
+    const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
     const allMonths=Object.keys(monthData).sort();
     if(allMonths.length){
       const lastMonth=allMonths[allMonths.length-1];
-      const prevMonths=allMonths.slice(-4,-1).reverse(); // 3 meses anteriores, más reciente primero
+      const prevMonths=allMonths.slice(-4,-1).reverse();
       const pctOf=ym=>{ const d=monthData[ym]; return d&&d.slots?Math.round(d.pres/d.slots*100):0; };
       const curPct=pctOf(lastMonth);
       const prevPct=prevMonths.length?pctOf(prevMonths[0]):null;
       const diff=prevPct!==null?curPct-prevPct:null;
-      const [curY,curM]=lastMonth.split('-');
+      const [,curM]=lastMonth.split('-');
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
         <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px">Evolución de presencia — por mes</div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.07)">
@@ -5841,36 +5837,30 @@ async function startCoordApp(){
     {
       const now=new Date();
       const mesActual=now.toISOString().substring(0,7);
-      const mesLabel=MES_L[now.getMonth()];
       const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
       const suspCount=Object.keys(suspEnt).length;
-
-      // Calcular total del mes completo y días esperados hasta hoy
-      let totalMes=0, diasHastaHoy=0;
+      let totalMes=0,diasHastaHoy=0;
       if(_coordDiasEnt.length){
-        const primerDia=new Date(now.getFullYear(),now.getMonth(),1);
-        const ultimoDia=new Date(now.getFullYear(),now.getMonth()+1,0);
-        for(let d=new Date(primerDia);d<=ultimoDia;d.setDate(d.getDate()+1)){
-          const dd=String(d.getDate()).padStart(2,'0');
-          if(_coordDiasEnt.includes(String(d.getDay()))&&!suspEnt[dd]){
+        const ultimoDia=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+        for(let d=1;d<=ultimoDia;d++){
+          const dt=new Date(now.getFullYear(),now.getMonth(),d);
+          const dd=String(d).padStart(2,'0');
+          if(_coordDiasEnt.includes(String(dt.getDay()))&&!suspEnt[dd]){
             totalMes++;
-            if(d<=now) diasHastaHoy++;
+            if(dt<=now) diasHastaHoy++;
           }
         }
       }
-
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Carga de entrenamientos — ${mesLabel}</div>
-          ${totalMes>0?`<div style="font-size:0.68rem;color:var(--muted)">${totalMes} en el mes${suspCount?` <span style="color:#ffab40">(${suspCount} susp.)</span>`:''}${diasHastaHoy?` · ${diasHastaHoy} esperados a hoy`:''}</div>`:''}
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Carga de entrenamientos — ${MES_L[now.getMonth()]}</div>
+          ${totalMes>0?`<div style="font-size:0.65rem;color:var(--muted)">${totalMes} en el mes${suspCount?` · <span style="color:#ffab40">${suspCount} susp.</span>`:''}${diasHastaHoy?` · ${diasHastaHoy} a hoy`:''}</div>`:''}
         </div>`;
-
       ALL_CATS.forEach(cat=>{
         const att=D[cat.key].att;
         const cargados=Object.keys(att).filter(d=>d.startsWith(mesActual)).length;
         let colBar,semaforo,labelDer,barCargado,barHoy;
         if(totalMes>0){
-          const pctTotal=Math.round(cargados/totalMes*100);
           colBar=cargados>=diasHastaHoy?'#22cd78':cargados>=diasHastaHoy*0.6?'#ffab40':'#ff4444';
           semaforo=cargados>=diasHastaHoy?'🟢':cargados>=diasHastaHoy*0.6?'🟡':'🔴';
           labelDer=`<span style="font-size:0.72rem;color:${colBar};font-weight:700">${cargados}/${totalMes}</span>`;
@@ -5904,7 +5894,7 @@ async function startCoordApp(){
       h+=`</div>`;
     }
 
-    // ── AVANCE DE TEMPORADA ──
+    // ── AVANCE DE TEMPORADA — usando resultados de la primera cat con datos ──
     {
       const playable=FIXTURE_C.filter(f=>f.cond!=='-');
       const actFNum=actF?actF.fecha:999;
@@ -6003,19 +5993,20 @@ async function startCoordApp(){
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando presencias…</div>'; return; }
 
     // ── SUSPENSIONES DE ENTRENAMIENTO ──
+    var _suspEntHtml='';
     if(_coordDiasEnt.length){
       const now=new Date();
       const mesActual=now.toISOString().substring(0,7);
       const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
       const suspCount=Object.keys(suspEnt).length;
-      const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-      var _suspEntHtml=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+      const MES_L2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      _suspEntHtml=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Suspensiones de entrenamiento</div>
-          <button onclick="window.coordAbrirSuspEnt()" style="background:${suspCount?'rgba(255,171,64,0.12)':'rgba(77,115,245,0.12)'};border:1px solid ${suspCount?'rgba(255,171,64,0.3)':'rgba(77,115,245,0.3)'};color:${suspCount?'#ffab40':'#4d73f5'};border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">⚙ ${MES_L[now.getMonth()]}${suspCount?' ('+suspCount+' susp.)':''}</button>
+          <button onclick="window.coordAbrirSuspEnt()" style="background:${suspCount?'rgba(255,171,64,0.12)':'rgba(77,115,245,0.12)'};border:1px solid ${suspCount?'rgba(255,171,64,0.3)':'rgba(77,115,245,0.3)'};color:${suspCount?'#ffab40':'#4d73f5'};border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">⚙ ${MES_L2[now.getMonth()]}${suspCount?' ('+suspCount+' susp.)':''}</button>
         </div>
       </div>`;
-    } else { var _suspEntHtml=''; }
+    }
 
     // ── SELECTOR DE JUGADOR ──
     let jugSel=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
