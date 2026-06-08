@@ -5647,7 +5647,7 @@ async function startCoordApp(){
   ALL_CATS.forEach(c=>{ D[c.key]={att:{},cit:{},hist:{},stats:{}}; });
   let coordFirebaseLoaded=false, coordActiveTab='resumen', coordPresFilter=null, coordPresMode='month';
   let coordJugadorSel=null; // {catKey, nombre}
-  let coordJugadorMes='todo'; // 'todo' o 'YYYY-MM'
+  let coordJugadorMes='todo';
   let _coordDiasEnt=[];
   let _coordSuspEnt={};
 
@@ -5711,8 +5711,7 @@ async function startCoordApp(){
   window.coordPM=function(m){ coordPresMode=m; renderCoordTab('presencias'); };
   window._coordNavMes=function(mes){
     const now=new Date(); const mesActual=now.toISOString().substring(0,7);
-    _coordMesCarga=(mes>=mesActual)?null:mes;
-    renderResumen();
+    _coordMesCarga=(mes>=mesActual)?null:mes; renderResumen();
   };
   window.coordAbrirSuspEnt=function(){
     const now=new Date(); const mesActual=now.toISOString().substring(0,7);
@@ -5745,8 +5744,7 @@ async function startCoordApp(){
       html+=`</div>`;
     });
     html+=`<button onclick="document.getElementById('suspEntOverlay').remove()" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:10px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-top:4px">Listo</button></div>`;
-    overlay.innerHTML=html;
-    document.body.appendChild(overlay);
+    overlay.innerHTML=html; document.body.appendChild(overlay);
     overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
   };
   window.coordToggleSuspEnt=async function(mesActual,dd,btn){
@@ -5755,14 +5753,12 @@ async function startCoordApp(){
     try{
       if(suspEnt[dd]){
         await remove(ref(db,path));
-        if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={};
-        delete _coordSuspEnt[mesActual][dd];
+        if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={}; delete _coordSuspEnt[mesActual][dd];
         btn.style.background='rgba(77,115,245,0.1)'; btn.style.borderColor='#1e3ab0'; btn.style.color='#7a9ccc';
         btn.textContent=btn.textContent.replace('✓','').trim();
       } else {
         await set(ref(db,path),true);
-        if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={};
-        _coordSuspEnt[mesActual][dd]=true;
+        if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={}; _coordSuspEnt[mesActual][dd]=true;
         btn.style.background='rgba(255,23,68,0.15)'; btn.style.borderColor='rgba(255,23,68,0.4)'; btn.style.color='#ff4d6d';
         if(!btn.textContent.includes('✓')) btn.textContent='✓  '+btn.textContent.trim();
       }
@@ -5796,7 +5792,54 @@ async function startCoordApp(){
     const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
     const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const actF=globalActiveFecha();
+
+    let h=``;
+
+    // ── CITACIONES — primero, dos columnas ──
+    {
+      const proximaF=FIXTURE_C.find(f=>f.cond!=='-'&&!_suspensions[f.fecha])||null;
+      if(proximaF){
+        const citadas=COMP_CATS.filter(c=>catCitedFecha(c.key,proximaF));
+        const sinCitar=COMP_CATS.filter(c=>!catCitedFecha(c.key,proximaF));
+        const todasCitadas=sinCitar.length===0;
+        h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${proximaF.fecha} vs ${proximaF.rival}</div>
+            ${!todasCitadas?`<div style="font-size:0.72rem;font-weight:700;color:#ffab40">${citadas.length}/${COMP_CATS.length}</div>`:''}
+          </div>`;
+        if(todasCitadas){
+          h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
+        } else {
+          h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
+          if(citadas.length){
+            citadas.forEach(cat=>{
+              const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===proximaF.fecha);
+              const wa=citEntry&&citEntry.whatsappShared;
+              h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+                <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+                ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
+              </div>`;
+            });
+          } else {
+            h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`;
+          }
+          h+=`</div>
+            <div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
+              <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
+          sinCitar.forEach(cat=>{
+            h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
+              <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+              <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+            </div>`;
+          });
+          h+=`</div></div>`;
+        }
+        h+=`</div>`;
+      }
+    }
 
     // ── EVOLUCIÓN PRESENCIA POR MES ──
     const monthData={};
@@ -5808,7 +5851,6 @@ async function startCoordApp(){
         monthData[ym].slots+=cat.players;
       });
     });
-    let h=``;
     const allMonths=Object.keys(monthData).sort();
     if(allMonths.length){
       const lastMonth=allMonths[allMonths.length-1];
@@ -5846,7 +5888,7 @@ async function startCoordApp(){
       h+=`</div></div>`;
     }
 
-    // ── CARGA DE ENTRENAMIENTOS DEL MES — con navegación ──
+    // ── CARGA DE ENTRENAMIENTOS DEL MES ──
     {
       const now=new Date();
       const mesActualISO=now.toISOString().substring(0,7);
@@ -5918,52 +5960,6 @@ async function startCoordApp(){
       h+=`</div>`;
     }
 
-    // ── CITACIONES — dos columnas citaron / faltan ──
-    {
-      const proximaF=FIXTURE_C.find(f=>f.cond!=='-'&&!_suspensions[f.fecha])||null;
-      if(proximaF){
-        const citadas=COMP_CATS.filter(c=>catCitedFecha(c.key,proximaF));
-        const sinCitar=COMP_CATS.filter(c=>!catCitedFecha(c.key,proximaF));
-        const todasCitadas=sinCitar.length===0;
-        h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${proximaF.fecha} vs ${proximaF.rival}</div>
-            ${!todasCitadas?`<div style="font-size:0.72rem;font-weight:700;color:#ffab40">${citadas.length}/${COMP_CATS.length}</div>`:''}
-          </div>`;
-        if(todasCitadas){
-          h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
-        } else {
-          h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
-          if(citadas.length){
-            citadas.forEach(cat=>{
-              const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===proximaF.fecha);
-              const wa=citEntry&&citEntry.whatsappShared;
-              h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-                <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
-                ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
-              </div>`;
-            });
-          } else {
-            h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`;
-          }
-          h+=`</div>
-            <div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
-              <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
-          sinCitar.forEach(cat=>{
-            h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-              <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-              <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
-            </div>`;
-          });
-          h+=`</div></div>`;
-        }
-        h+=`</div>`;
-      }
-    }
-
     // ── PANEL DE SUSPENSIONES ──
     const suspCount2=Object.keys(_suspensions).length;
     h+=`<div class="csec" style="margin-top:16px">🗓 Suspensiones${suspCount2?` <span style="font-size:0.72rem;color:var(--red);font-family:'DM Sans',sans-serif;letter-spacing:0">${suspCount2} suspendida${suspCount2!==1?'s':''}</span>`:''}</div>`;
@@ -5988,6 +5984,8 @@ async function startCoordApp(){
     });
     el.innerHTML=h;
   }
+
+
   // ── TAB PRESENCIAS ──
   function renderPresencias(){
     const el=document.getElementById('cv-presencias');
