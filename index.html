@@ -5555,6 +5555,13 @@ async function startCoordApp(){
     FIXTURE_C = Array.from({length:22},(_,i)=>({fecha:i+1,rival:'—',cond:'L'}));
   }
 
+  // Si FIXTURE_C incompleto (LISFI solo cargó libres), completar con FIXTURE_DEFAULT
+  if(FIXTURE_C.length < 10){
+    const base = (typeof FIXTURE_DEFAULT!=="undefined"?FIXTURE_DEFAULT:[]).concat(window.FIXTURE||[]);
+    const existentes = new Set(FIXTURE_C.map(f=>f.fecha));
+    base.forEach(f=>{ if(!existentes.has(f.fecha)) FIXTURE_C.push(f); });
+    FIXTURE_C.sort((a,b)=>a.fecha-b.fecha);
+  }
   // Tablas y resultados — dinámicos para cualquier club
   // Para ligas no-LISFI: leer posiciones y resultados desde Firebase
   let _coordPOS = LIGA_DATA.posiciones;
@@ -5633,22 +5640,17 @@ async function startCoordApp(){
   function hasCitados(entry){ return !!(entry && entry.citados && entry.citados.length>0); }
   function nextUncited(cits){ return FIXTURE_C.find(f=>{ if(f.cond==='-') return false; if(_suspensions[f.fecha]) return false; return !hasCitados(cits[citKey(f)]); }); }
   function globalActiveFecha(){
-    // Construir conjunto de fechas ya jugadas (al menos una cat tiene resultado)
     const playedFechas = new Set();
     COMP_CATS.forEach(cat => {
       (SC_RESULTS[cat.num] || []).forEach(r => playedFechas.add(+r.f));
     });
-    console.log('[GAF] playedFechas:', [...playedFechas].sort((a,b)=>a-b));
-    console.log('[GAF] FIXTURE_C:', FIXTURE_C.map(f=>f.fecha+'/'+f.cond));
     for(const f of FIXTURE_C){
-      if(f.cond==='-'){ console.log('[GAF] skip libre F'+f.fecha); continue; }
-      if(_suspensions[f.fecha]){ console.log('[GAF] skip susp F'+f.fecha); continue; }
-      if(playedFechas.has(+f.fecha)){ console.log('[GAF] skip played F'+f.fecha); continue; }
+      if(f.cond==='-') continue;
+      if(_suspensions[f.fecha]) continue;
+      if(playedFechas.has(+f.fecha)) continue;
       const todasCitaron = COMP_CATS.every(cat =>
         Object.values(D[cat.key].cit).some(x => +x.fecha === +f.fecha && x.citados && x.citados.length > 0)
       );
-      const citStates = COMP_CATS.map(cat => cat.key+':'+(Object.values(D[cat.key].cit).some(x=>+x.fecha===+f.fecha&&x.citados&&x.citados.length>0)?'✓':'✗'));
-      console.log('[GAF] F'+f.fecha+' todasCitaron='+todasCitaron, citStates);
       if(!todasCitaron) return f;
     }
     return null;
