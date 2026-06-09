@@ -5638,14 +5638,17 @@ async function startCoordApp(){
     COMP_CATS.forEach(cat => {
       (SC_RESULTS[cat.num] || []).forEach(r => playedFechas.add(+r.f));
     });
+    console.log('[GAF] playedFechas:', [...playedFechas].sort((a,b)=>a-b));
+    console.log('[GAF] FIXTURE_C:', FIXTURE_C.map(f=>f.fecha+'/'+f.cond));
     for(const f of FIXTURE_C){
-      if(f.cond==='-') continue;
-      if(_suspensions[f.fecha]) continue;
-      if(playedFechas.has(+f.fecha)) continue; // ya jugada, saltar
-      // Buscar por campo .fecha con coerción de tipo (puede ser string o number)
+      if(f.cond==='-'){ console.log('[GAF] skip libre F'+f.fecha); continue; }
+      if(_suspensions[f.fecha]){ console.log('[GAF] skip susp F'+f.fecha); continue; }
+      if(playedFechas.has(+f.fecha)){ console.log('[GAF] skip played F'+f.fecha); continue; }
       const todasCitaron = COMP_CATS.every(cat =>
         Object.values(D[cat.key].cit).some(x => +x.fecha === +f.fecha && x.citados && x.citados.length > 0)
       );
+      const citStates = COMP_CATS.map(cat => cat.key+':'+(Object.values(D[cat.key].cit).some(x=>+x.fecha===+f.fecha&&x.citados&&x.citados.length>0)?'✓':'✗'));
+      console.log('[GAF] F'+f.fecha+' todasCitaron='+todasCitaron, citStates);
       if(!todasCitaron) return f;
     }
     return null;
