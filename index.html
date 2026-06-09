@@ -5635,6 +5635,7 @@ async function startCoordApp(){
   function globalActiveFecha(){
     // Fixture completo: FIXTURE_C + FIXTURE_DEFAULT para fechas faltantes
     const allFechas = [...FIXTURE_C];
+    console.log('[GAF2] FIXTURE_C.length='+FIXTURE_C.length+' FIXTURE_DEFAULT.length='+(typeof FIXTURE_DEFAULT!=='undefined'?FIXTURE_DEFAULT.length:'undef'));
     const knownFechas = new Set(allFechas.map(f=>+f.fecha));
     const fallback = (typeof FIXTURE_DEFAULT!=='undefined'?FIXTURE_DEFAULT:[]).concat(window.FIXTURE||[]);
     fallback.forEach(f=>{ if(!knownFechas.has(+f.fecha)){ allFechas.push(f); knownFechas.add(+f.fecha); } });
@@ -5652,8 +5653,9 @@ async function startCoordApp(){
       const todasCitaron = COMP_CATS.every(cat=>
         Object.values(D[cat.key].cit).some(x=> +x.fecha===+f.fecha && x.citados && x.citados.length>0)
       );
-      if(!todasCitaron) return f;
+      if(!todasCitaron){ console.log('[GAF2] -> F'+f.fecha+' (alguna cat no citó)'); return f; }
     }
+    console.log('[GAF2] -> null (todas citaron todo)');
     return null;
   }
   function catCitedFecha(catKey,f){ return f ? Object.values(D[catKey].cit).some(x => +x.fecha === +f.fecha && x.citados && x.citados.length > 0) : false; }
