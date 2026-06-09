@@ -5555,13 +5555,6 @@ async function startCoordApp(){
     FIXTURE_C = Array.from({length:22},(_,i)=>({fecha:i+1,rival:'—',cond:'L'}));
   }
 
-  // Si FIXTURE_C incompleto (LISFI solo cargó libres), completar con FIXTURE_DEFAULT
-  if(FIXTURE_C.length < 10){
-    const base = (typeof FIXTURE_DEFAULT!=="undefined"?FIXTURE_DEFAULT:[]).concat(window.FIXTURE||[]);
-    const existentes = new Set(FIXTURE_C.map(f=>f.fecha));
-    base.forEach(f=>{ if(!existentes.has(f.fecha)) FIXTURE_C.push(f); });
-    FIXTURE_C.sort((a,b)=>a.fecha-b.fecha);
-  }
   // Tablas y resultados — dinámicos para cualquier club
   // Para ligas no-LISFI: leer posiciones y resultados desde Firebase
   let _coordPOS = LIGA_DATA.posiciones;
@@ -5640,18 +5633,24 @@ async function startCoordApp(){
   function hasCitados(entry){ return !!(entry && entry.citados && entry.citados.length>0); }
   function nextUncited(cits){ return FIXTURE_C.find(f=>{ if(f.cond==='-') return false; if(_suspensions[f.fecha]) return false; return !hasCitados(cits[citKey(f)]); }); }
   function globalActiveFecha(){
-    const playedFechas = new Set();
+    // Fechas libres en el fixture conocido
+    const libresFechas = new Set(FIXTURE_C.filter(f=>f.cond==='-').map(f=>+f.fecha));
+    // Fecha máxima que ya tiene citación en alguna cat
+    let maxCitada = 0;
     COMP_CATS.forEach(cat => {
-      (SC_RESULTS[cat.num] || []).forEach(r => playedFechas.add(+r.f));
+      Object.values(D[cat.key].cit).forEach(x => {
+        if(x.fecha && x.citados && x.citados.length > 0) maxCitada = Math.max(maxCitada, +x.fecha);
+      });
     });
-    for(const f of FIXTURE_C){
-      if(f.cond==='-') continue;
-      if(_suspensions[f.fecha]) continue;
-      if(playedFechas.has(+f.fecha)) continue;
-      const todasCitaron = COMP_CATS.every(cat =>
-        Object.values(D[cat.key].cit).some(x => +x.fecha === +f.fecha && x.citados && x.citados.length > 0)
-      );
-      if(!todasCitaron) return f;
+    // Próxima fecha: maxCitada + 1, saltando libres y suspendidas
+    let next = maxCitada + 1;
+    while(next <= 30){
+      if(!libresFechas.has(next) && !_suspensions[next]){
+        // Buscar info de rival en FIXTURE_C si existe
+        const fixtureF = FIXTURE_C.find(f => +f.fecha === next);
+        return fixtureF || {fecha: next, rival: '—', cond: 'L'};
+      }
+      next++;
     }
     return null;
   }
@@ -5704,7 +5703,16 @@ async function startCoordApp(){
       reads.push(get(ref(db, CLUB_PATH+'/config/suspensionesEnt')).then(s=>{ if(s.exists()) _coordSuspEnt=s.val()||{}; }).catch(()=>{}));
       await Promise.all(reads);
     } catch(e){}
-    // Citaciones con onValue para reflejar actualizaciones en tiempo real (ej: whatsappShared)
+    // Citaciones: primero get() para tener datos antes del primer render, luego onValue para updates
+    const citReads = ALL_CATS.map(cat=>
+      get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/citaciones')).then(s=>{
+        D[cat.key].cit = s.val()||{};
+      }).catch(()=>{})
+    );
+    await Promise.all(citReads);
+    coordFirebaseLoaded=true;
+    refresh();
+    // onValue para reflejar actualizaciones en tiempo real (ej: whatsappShared)
     ALL_CATS.forEach(cat=>{
       const unsub = onValue(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/citaciones'), s=>{
         D[cat.key].cit = s.val()||{};
@@ -5712,8 +5720,6 @@ async function startCoordApp(){
       }, ()=>{});
       window._coordUnsubs.push(unsub);
     });
-    coordFirebaseLoaded=true;
-    refresh();
   })();
 
   window.coordTab=function(tab){
