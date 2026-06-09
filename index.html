@@ -5633,24 +5633,26 @@ async function startCoordApp(){
   function hasCitados(entry){ return !!(entry && entry.citados && entry.citados.length>0); }
   function nextUncited(cits){ return FIXTURE_C.find(f=>{ if(f.cond==='-') return false; if(_suspensions[f.fecha]) return false; return !hasCitados(cits[citKey(f)]); }); }
   function globalActiveFecha(){
-    // Fechas libres en el fixture conocido
-    const libresFechas = new Set(FIXTURE_C.filter(f=>f.cond==='-').map(f=>+f.fecha));
-    // Fecha máxima que ya tiene citación en alguna cat
-    let maxCitada = 0;
-    COMP_CATS.forEach(cat => {
-      Object.values(D[cat.key].cit).forEach(x => {
-        if(x.fecha && x.citados && x.citados.length > 0) maxCitada = Math.max(maxCitada, +x.fecha);
-      });
-    });
-    // Próxima fecha: maxCitada + 1, saltando libres y suspendidas
-    let next = maxCitada + 1;
-    while(next <= 30){
-      if(!libresFechas.has(next) && !_suspensions[next]){
-        // Buscar info de rival en FIXTURE_C si existe
-        const fixtureF = FIXTURE_C.find(f => +f.fecha === next);
-        return fixtureF || {fecha: next, rival: '—', cond: 'L'};
-      }
-      next++;
+    // Fixture completo: FIXTURE_C + FIXTURE_DEFAULT para fechas faltantes
+    const allFechas = [...FIXTURE_C];
+    const knownFechas = new Set(allFechas.map(f=>+f.fecha));
+    const fallback = (typeof FIXTURE_DEFAULT!=='undefined'?FIXTURE_DEFAULT:[]).concat(window.FIXTURE||[]);
+    fallback.forEach(f=>{ if(!knownFechas.has(+f.fecha)){ allFechas.push(f); knownFechas.add(+f.fecha); } });
+    allFechas.sort((a,b)=>a.fecha-b.fecha);
+
+    // Fechas ya jugadas: tienen resultado en SC_RESULTS
+    const playedFechas = new Set();
+    COMP_CATS.forEach(cat => (SC_RESULTS[cat.num]||[]).forEach(r=>playedFechas.add(+r.f)));
+
+    // Primera fecha donde alguna cat competitiva no citó aún
+    for(const f of allFechas){
+      if(f.cond==='-') continue;
+      if(_suspensions[f.fecha]) continue;
+      if(playedFechas.has(+f.fecha)) continue;
+      const todasCitaron = COMP_CATS.every(cat=>
+        Object.values(D[cat.key].cit).some(x=> +x.fecha===+f.fecha && x.citados && x.citados.length>0)
+      );
+      if(!todasCitaron) return f;
     }
     return null;
   }
@@ -5713,8 +5715,11 @@ async function startCoordApp(){
     coordFirebaseLoaded=true;
     refresh();
     // onValue para reflejar actualizaciones en tiempo real (ej: whatsappShared)
+    // Ignorar el primer disparo (ya tenemos los datos del get())
     ALL_CATS.forEach(cat=>{
+      let firstFire = true;
       const unsub = onValue(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/citaciones'), s=>{
+        if(firstFire){ firstFire=false; return; }
         D[cat.key].cit = s.val()||{};
         if(coordFirebaseLoaded) refresh();
       }, ()=>{});
