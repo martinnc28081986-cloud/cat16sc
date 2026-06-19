@@ -2359,7 +2359,9 @@ window.saveCitacion=async function(){
   const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
   try{
     // Usar update() en vez de set() para no pisar campos existentes (whatsappShared, score, result, etc.)
-    await update(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,citados,camisetero:selectedCamisetero||null});
+    const _now = new Date();
+    const _savedAt = _now.toISOString().substring(0,10); // YYYY-MM-DD
+    await update(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,citados,camisetero:selectedCamisetero||null,savedAt:_savedAt});
     window._invalidateActiveFecha();
     showToast('Partido guardado');
     btn.textContent='&#10003; Guardado';
@@ -5860,99 +5862,50 @@ async function startCoordApp(){
 
     let h=``;
 
-    // ── CITACIONES — primero, dos columnas ──
+    // ── CITACIONES — última citación por categoría ──
     {
-      // Buscar próxima fecha activa (primera donde alguna cat competitiva no citó aún)
-      const todasFechasCit=[...new Set(COMP_CATS.flatMap(c=>Object.values(D[c.key].cit).map(x=>x.fecha).filter(Boolean)))].sort((a,b)=>a-b);
-      // Usar globalActiveFecha() que ya tiene la lógica correcta
-      const _gaf = globalActiveFecha();
-      // Si todas citaron, mostrar la última fecha del fixture con rival
-      const proximaF2 = _gaf || FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]).slice(-1)[0] || null;
-      const fixtureConRivals = [proximaF2].filter(Boolean);
-      if(fixtureConRivals.length){
-        if(proximaF2){
-          const citadas=COMP_CATS.filter(c=>catCitedFecha(c.key,proximaF2));
-          const sinCitar=COMP_CATS.filter(c=>!catCitedFecha(c.key,proximaF2));
-          const todasCitadas=sinCitar.length===0;
-          h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-              <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${proximaF2.fecha} vs ${proximaF2.rival}</div>
-              ${!todasCitadas?`<div style="font-size:0.72rem;font-weight:700;color:#ffab40">${citadas.length}/${COMP_CATS.length}</div>`:''}
-            </div>`;
-          if(todasCitadas){
-            h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
-          } else {
-            h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div>
-              <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
-            if(citadas.length){
-              citadas.forEach(cat=>{
-                const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===proximaF2.fecha);
-                const wa=citEntry&&citEntry.whatsappShared;
-                h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                  <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
-                  <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
-                  ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
-                </div>`;
-              });
-            } else { h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`; }
-            h+=`</div><div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
-              <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
-            sinCitar.forEach(cat=>{
-              h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
-                <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
-              </div>`;
-            });
-            h+=`</div></div>`;
+      // Para cada cat: encontrar su última citación (mayor fecha con citados)
+      const catCitStatus = COMP_CATS.map(cat => {
+        const entries = Object.values(D[cat.key].cit)
+          .filter(x => x && x.citados && x.citados.length > 0 && x.fecha)
+          .sort((a,b) => (+b.fecha) - (+a.fecha));
+        const last = entries[0] || null;
+        const sd = last && last.savedAt ? last.savedAt : null;
+        const sdFmt = sd ? sd.substring(8,10)+'/'+sd.substring(5,7) : null; // DD/MM
+        return { cat, last, fecha: last ? +last.fecha : 0, rival: last ? (last.rival||'—') : null, n: last ? last.citados.length : 0, wa: last && last.whatsappShared, savedAt: sdFmt };
+      });
+
+      // Ordenar: primero las que tienen menor fecha (más atrasadas), luego las sin citar
+      const conCita = catCitStatus.filter(x=>x.last).sort((a,b)=>a.fecha-b.fecha);
+      const sinCita = catCitStatus.filter(x=>!x.last);
+
+      // Fecha máxima citada entre todas las cats (para detectar atraso)
+      const maxFecha = conCita.length ? conCita[conCita.length-1].fecha : 0;
+
+      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+        <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px">Última citación por categoría</div>
+        <div style="display:flex;flex-direction:column;gap:6px">`;
+
+      COMP_CATS.forEach(cat => {
+        const s = catCitStatus.find(x=>x.cat.key===cat.key);
+        const atrasada = s.last && s.fecha < maxFecha;
+        const color = CAT_COL_R[cat.key]||'#6ABDE6';
+        const borderCol = !s.last ? 'rgba(255,80,104,0.3)' : atrasada ? 'rgba(212,175,55,0.35)' : 'rgba(106,189,230,0.3)';
+        const bgCol = !s.last ? 'rgba(255,80,104,0.06)' : atrasada ? 'rgba(212,175,55,0.06)' : 'rgba(106,189,230,0.06)';
+        h+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:${bgCol};border:1px solid ${borderCol}">
+          <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
+          <span style="font-size:0.8rem;font-weight:600;color:#e8f4ff;min-width:72px">${cat.label}</span>
+          ${s.last
+            ? `<span style="font-size:0.75rem;color:${atrasada?'#D4AF37':'#6ABDE6'};font-weight:700">F${s.fecha}</span>
+               <span style="font-size:0.72rem;color:var(--muted);flex:1">${s.rival}</span>
+               ${s.savedAt?`<span style="font-size:0.68rem;color:var(--muted);opacity:0.7">${s.savedAt}</span>`:''}
+               <span style="font-size:0.7rem;color:var(--muted)">${s.n} cit${s.wa?' 📱':''}</span>`
+            : `<span style="font-size:0.72rem;color:#ff5068;font-weight:600;flex:1">Sin citaciones</span>`
           }
-          h+=`</div>`;
-        }
-      } else if(todasFechasCit.length){
-        // Fallback: FIXTURE_C sin rivals reales — mostrar desde citaciones existentes
-        // Buscar la fecha más baja donde no todas citaron
-        let targetFecha=null;
-        for(const fn of todasFechasCit){
-          const citadasN=COMP_CATS.filter(c=>Object.values(D[c.key].cit).some(x=>x.fecha===fn&&x.citados&&x.citados.length>0));
-          if(citadasN.length<COMP_CATS.length){ targetFecha=fn; break; }
-        }
-        if(!targetFecha) targetFecha=todasFechasCit[todasFechasCit.length-1];
-        const rival=FIXTURE_C.find(f=>f.fecha===targetFecha)?.rival||'—';
-        const citadas=COMP_CATS.filter(c=>Object.values(D[c.key].cit).some(x=>x.fecha===targetFecha&&x.citados&&x.citados.length>0));
-        const sinCitar=COMP_CATS.filter(c=>!citadas.includes(c));
-        const todasCitadas=sinCitar.length===0;
-        h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Citaciones — F${targetFecha}${rival!=='—'?' vs '+rival:''}</div>
-            ${!todasCitadas?`<div style="font-size:0.72rem;font-weight:700;color:#ffab40">${citadas.length}/${COMP_CATS.length}</div>`:''}
-          </div>`;
-        if(todasCitadas){
-          h+=`<div style="font-size:0.85rem;color:#22cd78;font-weight:600">✅ Todas las categorías al día</div>`;
-        } else {
-          h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div>
-            <div style="font-size:0.6rem;color:#22cd78;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✓ Citaron</div>`;
-          if(citadas.length){
-            citadas.forEach(cat=>{
-              const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===targetFecha);
-              const wa=citEntry&&citEntry.whatsappShared;
-              h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
-                <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
-                ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
-              </div>`;
-            });
-          } else { h+=`<div style="font-size:0.72rem;color:var(--muted)">Ninguna aún</div>`; }
-          h+=`</div><div style="border-left:1px solid rgba(255,255,255,0.08);padding-left:12px">
-            <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
-          sinCitar.forEach(cat=>{
-            h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-              <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
-              <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
-            </div>`;
-          });
-          h+=`</div></div>`;
-        }
-        h+=`</div>`;
-      }
+        </div>`;
+      });
+
+      h+=`</div></div>`;
     }
 
     // ── EVOLUCIÓN PRESENCIA POR MES ──
