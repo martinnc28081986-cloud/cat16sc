@@ -2593,11 +2593,27 @@ function renderCitStats(){
   const matchList=document.getElementById('citMatchList');
   if(matchList){
     matchList.innerHTML='';
-    const allDesc=Object.entries(citaciones).filter(([,m])=>m.citados&&m.citados.length>0).sort((a,b)=>{
-      const aVal=a[1].tipo?(a[1].ts||0):((a[1].fecha||0)*1e10);
-      const bVal=b[1].tipo?(b[1].ts||0):((b[1].fecha||0)*1e10);
-      return bVal-aVal;
-    });
+    // Ordenar mezclando regulares y extras cronológicamente.
+    // Clave comparable: extras usan fecha_str (YYYY-MM-DD), regulares usan número de fecha padded.
+    // Para mezclarlos: asumimos que cada fecha del torneo cae en semanas consecutivas desde F1.
+    // Si hay fecha_str en el extra, la comparamos directamente. Si no, usamos ts convertido a fecha.
+    const FIXTURE_C_SORTED = [...FIXTURE_C].sort((a,b)=>a.fecha-b.fecha);
+    const _fechaToDate = fn => {
+      const f = FIXTURE_C_SORTED.find(x=>x.fecha===+fn);
+      return f && f.dateStr ? f.dateStr : null; // dateStr si existe en el fixture
+    };
+    // Convertir todo a timestamp numérico para ordenar correctamente.
+    // Regular F1..F22: aproximar ms desde inicio del torneo (10/03/2026) + N*7días.
+    // Extra: usar ts guardado, o parsear fecha_str.
+    const _TORNEO_T0 = Date.parse('2026-03-10'); // F1 ≈ 10 mar 2026
+    const _citTs = ([k,x]) => {
+      if(!x.tipo) return _TORNEO_T0 + (+(x.fecha||0)) * 7 * 86400000;
+      if(x.fecha_str) return Date.parse(x.fecha_str)||x.ts||0;
+      return x.ts||0;
+    };
+    const allDesc=Object.entries(citaciones)
+      .filter(([,m])=>m.citados&&m.citados.length>0)
+      .sort((a,b)=>_citTs(b)-_citTs(a));
     if(!allDesc.length){ matchList.innerHTML='<div class="empty-msg">Sin citaciones guardadas aún</div>'; }
     allDesc.forEach(([key,saved])=>{
       const resCls=saved.result==='V'?'rV':saved.result==='L'?'rL':saved.result==='E'?'rE':'';
