@@ -6436,7 +6436,8 @@ async function startCoordApp(){
     const _statKey=f=>'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     // Buscar stats por número de fecha (independiente del rival en el key)
     const _getStatByFecha=(cat,fn)=>{ const pat=new RegExp('^fecha'+String(fn).padStart(2,'0')+'_'); const k=Object.keys(D[cat.key].stats||{}).find(k=>pat.test(k)); return k?(D[cat.key].stats||{})[k]:null; };
-    const _hasGoles=(cat,f)=>{ const st=_getStatByFecha(cat,f.fecha); return !!(st&&st.jugadores&&Object.keys(st.jugadores).length>0); };
+    const _hasGoles=(cat,f)=>{ const res=_getRes(cat,f.fecha); if(res&&res.gf===0) return true; // 0 goles a favor → no hay nada que cargar
+      const st=_getStatByFecha(cat,f.fecha); return !!(st&&st.jugadores&&Object.keys(st.jugadores).length>0); };
     const _getRes=(cat,fn)=>{ const r=(SC_RESULTS[cat.num]||[]).find(x=>+x.f===+fn); return r?{gf:r.gf,gc:r.gc}:null; };
 
     let hEstado=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
@@ -6445,13 +6446,14 @@ async function startCoordApp(){
     if(!fechasJugadasGlobal.length){
       hEstado+=`<div style="font-size:0.8rem;color:var(--muted);">Sin partidos jugados registrados aún.</div>`;
     } else {
-      // Una fila por partido, columnas = cats
+      // Una fila por partido, columnas = cats ordenadas de mayor a menor (2013→2020)
+      const CATS_SORTED=[...COMP_CATS].sort((a,b)=>a.num-b.num);
       hEstado+=`<div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
           <thead>
             <tr>
               <th style="text-align:left;padding:4px 8px 8px 0;color:var(--muted);font-weight:600;white-space:nowrap;min-width:110px;">Partido</th>`;
-      COMP_CATS.forEach(cat=>{
+      CATS_SORTED.forEach(cat=>{
         hEstado+=`<th style="text-align:center;padding:4px 6px 8px;color:${CAT_COL[cat.key]||'#6ABDE6'};font-weight:700;white-space:nowrap;">${cat.label.replace('Cat ','')}</th>`;
       });
       hEstado+=`</tr></thead><tbody>`;
@@ -6463,17 +6465,20 @@ async function startCoordApp(){
             <span style="color:#e8f4ff;margin-left:4px;">${f.rival}</span>
             <span style="font-size:0.62rem;color:var(--muted);margin-left:4px;">${f.cond==='L'?'L':'V'}</span>
           </td>`;
-        COMP_CATS.forEach(cat=>{
+        CATS_SORTED.forEach(cat=>{
           const res=_getRes(cat,f.fecha);
           const tieneGoles=_hasGoles(cat,f);
+          // Si el equipo no metió goles (gf=0), no hay nada que declarar → verde por defecto
+          const sinGolesQueDec=res && res.gf===0;
+          const ok=tieneGoles||sinGolesQueDec;
           const resStr=res?`${res.gf}-${res.gc}`:'—';
-          const bg=tieneGoles?'rgba(34,205,120,0.12)':'rgba(255,80,104,0.08)';
-          const col=tieneGoles?'#22cd78':'#ff5068';
-          const border=tieneGoles?'rgba(34,205,120,0.3)':'rgba(255,80,104,0.2)';
+          const bg=ok?'rgba(34,205,120,0.12)':'rgba(255,80,104,0.08)';
+          const col=ok?'#22cd78':'#ff5068';
+          const border=ok?'rgba(34,205,120,0.3)':'rgba(255,80,104,0.2)';
           hEstado+=`<td style="text-align:center;padding:5px 6px;">
             <div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;background:${bg};border:1px solid ${border};border-radius:6px;padding:3px 7px;min-width:36px;">
               <span style="font-weight:700;color:${col};font-size:0.72rem;">${resStr}</span>
-              <span style="font-size:0.55rem;color:${col};opacity:0.8;">${tieneGoles?'✓':'✗'}</span>
+              <span style="font-size:0.55rem;color:${col};opacity:0.8;">${tieneGoles?'✓':sinGolesQueDec?'–':'✗'}</span>
             </div>
           </td>`;
         });
