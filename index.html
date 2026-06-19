@@ -22,12 +22,12 @@
   body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overscroll-behavior:none; }
 
   header { background:repeating-linear-gradient(90deg,#6ABDE6 0px,#6ABDE6 22px,#f0f4ff 22px,#f0f4ff 44px); border-bottom:2px solid #3a8ab8; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
-  .logo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:3px; color:#021529; text-shadow:0 1px 0 rgba(255,255,255,0.3); }
-  .sync-dot { width:8px; height:8px; border-radius:50%; background:#02315a; display:inline-block; margin-right:5px; transition:background 0.3s; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:3px; color:#021529; font-weight:900; text-shadow:0 1px 4px rgba(212,175,55,0.8), 0 0 12px rgba(212,175,55,0.4); }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:#021529; display:inline-block; margin-right:5px; transition:background 0.3s; }
   .sync-dot.live { background:#6ABDE6; animation:pulse 2s infinite; }
   .sync-dot.error { background:var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .header-right { display:flex; align-items:center; font-size:0.72rem; color:#02315a; }
+  .header-right { display:flex; align-items:center; font-size:0.72rem; color:#021529; font-weight:700; text-shadow:0 1px 3px rgba(212,175,55,0.5); }
 
   /* ── BOTTOM NAV ── */
   .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:#030810; border-top:1px solid #0e2040; display:flex; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
@@ -231,7 +231,7 @@
   .offline-banner { background:var(--yellow); color:#000; text-align:center; font-size:0.76rem; font-weight:700; padding:7px 14px; display:none; letter-spacing:0.4px; }
   .offline-banner.show { display:block; }
 
-  .next-match { font-size:0.67rem; color:var(--yellow); margin-top:3px; letter-spacing:0.2px; }
+  .next-match { font-size:0.67rem; color:#021529; margin-top:3px; letter-spacing:0.2px; font-weight:700; text-shadow:0 1px 3px rgba(212,175,55,0.7); }
 
   .trend-wrap { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px 8px; margin-bottom:12px; display:none; }
 
@@ -407,7 +407,7 @@
   <div style="display:flex;align-items:center;gap:10px">
     <div>
       <div class="logo">MI PLANTEL</div>
-      <div id="headerSubEl" style="font-size:0.62rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px">LISFI II Zona B 2026</div>
+      <div id="headerSubEl" style="font-size:0.62rem;color:#021529;letter-spacing:1.5px;text-transform:uppercase;margin-top:1px;font-weight:700;text-shadow:0 1px 3px rgba(212,175,55,0.6);">LISFI II Zona B 2026</div>
       <div id="nextMatchEl" class="next-match"></div>
     </div>
   </div>
