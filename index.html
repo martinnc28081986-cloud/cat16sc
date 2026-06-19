@@ -6394,15 +6394,35 @@ async function startCoordApp(){
     });
 
     // ── ESTADO DE CARGA DE GOLES POR PARTIDO ──
-    // Fechas jugadas desde SC_RESULTS, fallback a citaciones con citados
+    // Fuentes para saber qué fechas se jugaron (por prioridad):
+    // 1. SC_RESULTS (scraper LISFI o resultados Firebase LAFIR)
+    // 2. Stats cargadas en Firebase (si existe el key → el partido se jugó)
+    // 3. Citaciones con citados (fallback)
     const _playedNums = new Set();
+    // Fuente 1: SC_RESULTS
     COMP_CATS.forEach(cat=>(SC_RESULTS[cat.num]||[]).forEach(r=>_playedNums.add(+r.f)));
+    // Fuente 2: stats existentes en Firebase (clave fecha##_rival → fecha numérica)
+    COMP_CATS.forEach(cat=>{
+      Object.keys(D[cat.key].stats||{}).forEach(k=>{
+        const m=k.match(/^fecha(\d+)_/);
+        if(m) _playedNums.add(parseInt(m[1]));
+      });
+    });
+    // Fuente 3: citaciones con citados guardados
     if(!_playedNums.size){
       COMP_CATS.forEach(cat=>{
         Object.values(D[cat.key].cit).forEach(x=>{ if(x&&x.fecha&&x.citados&&x.citados.length>0) _playedNums.add(+x.fecha); });
       });
     }
-    const fechasJugadasGlobal=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]&&_playedNums.has(+f.fecha));
+    // Si FIXTURE_C no tiene los partidos (keys vacíos), construir desde stats
+    let fechasJugadasGlobal=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]&&_playedNums.has(+f.fecha));
+    if(!fechasJugadasGlobal.length && _playedNums.size){
+      // FIXTURE_C incompleto: generar fechas desde los números conocidos
+      fechasJugadasGlobal=[..._playedNums].sort((a,b)=>a-b).map(fn=>{
+        const fc=FIXTURE_C.find(f=>f.fecha===fn);
+        return fc || {fecha:fn, rival:'—', cond:'?'};
+      });
+    }
 
     // Helper: resultado de SC_RESULTS para una cat y fecha
     const _getRes=(cat,fn)=>{ const r=(SC_RESULTS[cat.num]||[]).find(x=>+x.f===+fn); return r?{gf:r.gf,gc:r.gc}:null; };
