@@ -4,53 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MI PLANTEL</title>
-<meta name="theme-color" content="#0d0d0d">
+<meta name="theme-color" content="#080e1f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MI PLANTEL">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%2307186b'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial Black,sans-serif' font-size='60' font-weight='900' fill='%234d73f5'%3E⚽%3C/text%3E%3Ctext x='50%25' y='80%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial,sans-serif' font-size='22' font-weight='900' letter-spacing='3' fill='%234d73f5'%3EMI PLANTEL%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%23080e1f'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial Black,sans-serif' font-size='60' font-weight='900' fill='%236ABDE6'%3E⚽%3C/text%3E%3Ctext x='50%25' y='80%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial,sans-serif' font-size='22' font-weight='900' letter-spacing='3' fill='%236ABDE6'%3EMI PLANTEL%3C/text%3E%3C/svg%3E">
 <link rel="manifest" id="pwa-manifest">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --green:#4d73f5; --red:#ff1744; --yellow:#ffab40;
-    --bg:#07186b; --surface:#0d2280; --surface2:#112896;
-    --border:#1e3ab0; --text:#e8efff; --muted:#7a9ccc;
+    --green:#6ABDE6; --red:#ff5068; --yellow:#D4AF37;
+    --bg:#080e1f; --surface:#091729; --surface2:#0d1e35;
+    --border:#0e3050; --text:#e8f4ff; --muted:#4a7a99;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overscroll-behavior:none; }
 
-  header { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
-  .logo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:3px; color:var(--green); }
-  .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block; margin-right:5px; transition:background 0.3s; }
-  .sync-dot.live { background:var(--green); animation:pulse 2s infinite; }
+  header { background:repeating-linear-gradient(90deg,#6ABDE6 0px,#6ABDE6 22px,#f0f4ff 22px,#f0f4ff 44px); border-bottom:2px solid #3a8ab8; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:3px; color:#021529; text-shadow:0 1px 0 rgba(255,255,255,0.3); }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:#02315a; display:inline-block; margin-right:5px; transition:background 0.3s; }
+  .sync-dot.live { background:#6ABDE6; animation:pulse 2s infinite; }
   .sync-dot.error { background:var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .header-right { display:flex; align-items:center; font-size:0.72rem; color:var(--muted); }
+  .header-right { display:flex; align-items:center; font-size:0.72rem; color:#02315a; }
 
   /* ── BOTTOM NAV ── */
-  .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:#050f3d; border-top:1px solid #1e3a9e; display:flex; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:#030810; border-top:1px solid #0e2040; display:flex; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
   .bnav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; border-radius:14px; padding:8px 4px 6px; border:1px solid transparent; transition:all 0.2s; }
   .bnav-item .bnav-icon { font-size:20px; line-height:1; }
   .bnav-item .bnav-lbl { font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#3a4a6a; }
   .bnav-item .bnav-dot { width:5px; height:5px; border-radius:50%; background:transparent; }
-  .bnav-item.active-b { background:rgba(77,115,245,0.18); border-color:rgba(77,115,245,0.35); }
-  .bnav-item.active-b .bnav-lbl { color:#4d73f5; }
-  .bnav-item.active-b .bnav-dot { background:#4d73f5; }
-  .bnav-item.active-y { background:rgba(255,171,64,0.15); border-color:rgba(255,171,64,0.35); }
-  .bnav-item.active-y .bnav-lbl { color:#ffab40; }
-  .bnav-item.active-y .bnav-dot { background:#ffab40; }
+  .bnav-item.active-b { background:rgba(106,189,230,0.15); border-color:rgba(106,189,230,0.45); }
+  .bnav-item.active-b .bnav-lbl { color:#6ABDE6; }
+  .bnav-item.active-b .bnav-dot { background:#6ABDE6; }
+  .bnav-item.active-y { background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.35); }
+  .bnav-item.active-y .bnav-lbl { color:#D4AF37; }
+  .bnav-item.active-y .bnav-dot { background:#D4AF37; }
   .bnav-item.active-g { background:rgba(34,205,120,0.12); border-color:rgba(34,205,120,0.3); }
   .bnav-item.active-g .bnav-lbl { color:#22cd78; }
   .bnav-item.active-g .bnav-dot { background:#22cd78; }
   /* ── SUBTABS (arriba, dentro de cada sección) ── */
   .tabs-wrapper { background:var(--surface); border-bottom:1px solid var(--border); }
   .tab-section-label { display:flex; align-items:center; gap:5px; padding:5px 12px 2px; font-size:0.6rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; }
-  .tsl-ent { color:#4a9eff; }
+  .tsl-ent { color:#6ABDE6; }
   .tsl-par { color:var(--yellow); }
   .tsl-plantel { color:#22cd78; }
-  .tgl-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; background:#4a9eff; }
+  .tgl-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; background:#6ABDE6; }
   .tgl-dot-par { background:var(--yellow); }
   .tgl-dot-plantel { background:#22cd78; }
   .tabs { display:flex; overflow-x:auto; padding:0 6px 6px; gap:3px; justify-content:center; }
@@ -60,8 +60,8 @@
   .tab-icon-btn .tib-icon { font-size:15px; line-height:1; }
   .tab-icon-btn .tib-lbl { font-size:0.5rem; text-align:center; line-height:1.2; }
   .tab-icon-btn.ay { color:var(--yellow); background:rgba(255,171,64,.12); border-color:rgba(255,171,64,.3); }
-  .tab.ag { color:#4a9eff; background:rgba(74,158,255,0.12); border-color:rgba(74,158,255,0.3); }
-  .tab.ay { color:var(--yellow); background:rgba(255,171,64,0.12); border-color:rgba(255,171,64,0.3); }
+  .tab.ag { color:#6ABDE6; background:rgba(106,189,230,0.12); border-color:rgba(106,189,230,0.3); }
+  .tab.ay { color:#D4AF37; background:rgba(212,175,55,0.12); border-color:rgba(212,175,55,0.3); }
   .tab.agg { color:#22cd78; background:rgba(34,205,120,0.12); border-color:rgba(34,205,120,0.3); }
   /* padding inferior para no quedar tapado por bottom-nav */
   .view { padding-bottom:80px !important; }
@@ -70,14 +70,14 @@
   .view.active { display:block; }
 
   .btn { padding:9px 16px; border-radius:8px; border:none; font-family:'DM Sans',sans-serif; font-weight:600; font-size:0.83rem; cursor:pointer; transition:all 0.15s; white-space:nowrap; }
-  .btn-g { background:var(--green); color:#000; }
+  .btn-g { background:#6ABDE6; color:#021529; }
   .btn-g:hover { opacity:0.85; transform:translateY(-1px); }
   .btn-g:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
   .btn-y { background:var(--yellow); color:#000; }
   .btn-y:hover { opacity:0.85; transform:translateY(-1px); }
   .btn-y:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
   .btn-ol { background:transparent; border:1px solid var(--border); color:var(--text); font-size:0.76rem; padding:7px 12px; }
-  .btn-ol:hover { border-color:var(--green); color:var(--green); }
+  .btn-ol:hover { border-color:#6ABDE6; color:#6ABDE6; }
   .btn-oly { background:transparent; border:1px solid var(--border); color:var(--text); font-size:0.76rem; padding:7px 12px; }
   .btn-oly:hover { border-color:var(--yellow); color:var(--yellow); }
   .btn-del { background:transparent; border:1px solid #333; color:#777; font-size:0.7rem; padding:5px 10px; }
@@ -101,11 +101,11 @@
 
   .pgrid { display:grid; gap:7px; margin-bottom:12px; }
   .prow { background:var(--surface2); border:1px solid var(--border); border-radius:9px; display:flex; align-items:center; padding:11px 13px; gap:11px; cursor:pointer; user-select:none; -webkit-user-select:none; transition:all 0.15s; -webkit-tap-highlight-color:transparent; }
-  .prow.present { border-color:var(--green); background:rgba(34,85,238,0.06); }
+  .prow.present { border-color:#6ABDE6; background:rgba(106,189,230,0.07); }
   .prow.absent { border-color:var(--red); background:rgba(255,23,68,0.05); opacity:0.72; }
   .prow.citado { border-color:var(--yellow); background:rgba(255,171,64,0.06); }
   .tbtn { width:32px; height:32px; border-radius:50%; border:2px solid var(--border); background:transparent; display:flex; align-items:center; justify-content:center; font-size:0.88rem; transition:all 0.15s; flex-shrink:0; pointer-events:none; }
-  .prow.present .tbtn { background:var(--green); border-color:var(--green); color:#000; }
+  .prow.present .tbtn { background:#6ABDE6; border-color:#6ABDE6; color:#021529; }
   .prow.absent .tbtn { background:var(--red); border-color:var(--red); color:#fff; }
   .prow.citado .tbtn { background:var(--yellow); border-color:var(--yellow); color:#000; }
   .pname { font-weight:500; font-size:0.9rem; flex:1; }
@@ -113,7 +113,7 @@
 
   .frow { display:flex; gap:7px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px; }
   .chip { padding:5px 13px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:0.73rem; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:500; transition:all 0.15s; white-space:nowrap; flex-shrink:0; }
-  .chip.cg { border-color:var(--green); color:var(--green); background:rgba(34,85,238,0.08); }
+  .chip.cg { border-color:#6ABDE6; color:#6ABDE6; background:rgba(106,189,230,0.08); }
   .chip.cy { border-color:var(--yellow); color:var(--yellow); background:rgba(255,171,64,0.08); }
 
   .card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:13px 15px; margin-bottom:9px; }
@@ -301,7 +301,7 @@
   /* ── COORDINADOR ── */
   .coord-tabs { display:flex; position:fixed; bottom:0; left:0; right:0; z-index:100; background:#050f3d; border-top:1px solid #1e3a9e; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
   .coord-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; border-radius:14px; padding:8px 4px 6px; border:1px solid transparent; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#3a4a6a; white-space:nowrap; transition:all 0.2s; }
-  .coord-tab.cta { background:rgba(77,115,245,0.18); border-color:rgba(77,115,245,0.35); color:#4d73f5; }
+  .coord-tab.cta { background:rgba(106,189,230,0.15); border-color:rgba(106,189,230,0.45); color:#6ABDE6; }
   .coord-view { padding-bottom:80px !important; }
   .coord-view { display:none; padding:14px; max-width:720px; margin:0 auto; }
   .coord-view.active { display:block; }
@@ -343,14 +343,14 @@
   <div class="login-box">
     <div style="display:flex;justify-content:center;margin-bottom:16px">
       <svg width="240" height="68" viewBox="0 0 240 68">
-        <circle cx="34" cy="34" r="22" fill="none" stroke="#4d73f5" stroke-width="2"/>
-        <line x1="34" y1="12" x2="34" y2="56" stroke="#4d73f5" stroke-width="1.5"/>
-        <line x1="12" y1="34" x2="56" y2="34" stroke="#4d73f5" stroke-width="1.5"/>
-        <ellipse cx="34" cy="34" rx="10" ry="22" fill="none" stroke="#4d73f5" stroke-width="1.5"/>
-        <ellipse cx="34" cy="34" rx="22" ry="10" fill="none" stroke="#4d73f5" stroke-width="1.5"/>
+        <circle cx="34" cy="34" r="22" fill="none" stroke="#6ABDE6" stroke-width="2"/>
+        <line x1="34" y1="12" x2="34" y2="56" stroke="#6ABDE6" stroke-width="1.5"/>
+        <line x1="12" y1="34" x2="56" y2="34" stroke="#6ABDE6" stroke-width="1.5"/>
+        <ellipse cx="34" cy="34" rx="10" ry="22" fill="none" stroke="#6ABDE6" stroke-width="1.5"/>
+        <ellipse cx="34" cy="34" rx="22" ry="10" fill="none" stroke="#6ABDE6" stroke-width="1.5"/>
         <line x1="68" y1="16" x2="68" y2="52" stroke="#1e3a9e" stroke-width="1"/>
         <text x="80" y="30" font-family="Arial Black, sans-serif" font-size="16" font-weight="900" fill="#ffffff" letter-spacing="2">MI</text>
-        <text x="80" y="52" font-family="Arial Black, sans-serif" font-size="16" font-weight="900" fill="#4d73f5" letter-spacing="2">PLANTEL</text>
+        <text x="80" y="52" font-family="Arial Black, sans-serif" font-size="16" font-weight="900" fill="#6ABDE6" letter-spacing="2">PLANTEL</text>
       </svg>
     </div>
     <div class="login-sub" style="font-size:0.72rem;margin-bottom:6px">El plantel siempre bajo control</div>
@@ -380,16 +380,16 @@
 
 <div id="resetPasswordScreen" style="display:none;position:fixed;inset:0;background:#07186b;z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
   <div style="max-width:400px;width:100%;">
-    <div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:4px;color:#e8efff;margin-bottom:4px;">MI PLANTEL</div>
-    <div style="width:32px;height:3px;background:#4d73f5;border-radius:2px;margin-bottom:24px;"></div>
+    <div style="font-family:Bebas Neue,sans-serif;font-size:2rem;letter-spacing:4px;color:#e8f4ff;margin-bottom:4px;">MI PLANTEL</div>
+    <div style="width:32px;height:3px;background:#6ABDE6;border-radius:2px;margin-bottom:24px;"></div>
     <div style="font-size:.7rem;color:#22cd78;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;">Bienvenido</div>
-    <div style="font-size:1.1rem;font-weight:600;color:#e8efff;margin-bottom:6px;">Creá tu contraseña</div>
-    <div style="font-size:.82rem;color:#7a9ccc;margin-bottom:24px;">Elegí una contraseña para acceder a la app.</div>
+    <div style="font-size:1.1rem;font-weight:600;color:#e8f4ff;margin-bottom:6px;">Creá tu contraseña</div>
+    <div style="font-size:.82rem;color:#4a7a99;margin-bottom:24px;">Elegí una contraseña para acceder a la app.</div>
     <div style="margin-bottom:12px;">
-      <input id="resetPass1" type="password" placeholder="Nueva contraseña" style="width:100%;background:#0d2280;border:1px solid #1e3ab0;border-radius:9px;padding:12px 14px;color:#e8efff;font-size:.9rem;font-family:DM Sans,sans-serif;outline:none;">
+      <input id="resetPass1" type="password" placeholder="Nueva contraseña" style="width:100%;background:#091729;border:1px solid #0e3050;border-radius:9px;padding:12px 14px;color:#e8f4ff;font-size:.9rem;font-family:DM Sans,sans-serif;outline:none;">
     </div>
     <div style="margin-bottom:20px;">
-      <input id="resetPass2" type="password" placeholder="Repetir contraseña" style="width:100%;background:#0d2280;border:1px solid #1e3ab0;border-radius:9px;padding:12px 14px;color:#e8efff;font-size:.9rem;font-family:DM Sans,sans-serif;outline:none;">
+      <input id="resetPass2" type="password" placeholder="Repetir contraseña" style="width:100%;background:#091729;border:1px solid #0e3050;border-radius:9px;padding:12px 14px;color:#e8f4ff;font-size:.9rem;font-family:DM Sans,sans-serif;outline:none;">
     </div>
     <div id="resetPassErr" style="color:#ff1744;font-size:.78rem;margin-bottom:12px;display:none;"></div>
     <button id="resetPassBtn" onclick="window.doResetPassword()" style="width:100%;padding:13px;border-radius:9px;border:none;background:#22cd78;color:#000;font-size:.95rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Crear contraseña y entrar</button>
@@ -671,7 +671,7 @@
 </div>
 <!-- PWA iOS Modal -->
 <div id="pwaIosModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10001;align-items:flex-end;justify-content:center;">
-  <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px 16px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;text-align:center;">
+  <div style="background:#091729;border:1px solid #0e3050;border-radius:16px 16px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;text-align:center;">
     <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:14px">Cómo instalar en iPhone / iPad</div>
     <div style="display:flex;flex-direction:column;gap:12px;text-align:left;margin-bottom:20px">
       <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 14px">
@@ -696,17 +696,17 @@
 
 <!-- MODAL NUEVO CLUB -->
 <div id="saClubModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;overflow-y:auto;padding:16px;">
-  <div style="background:#07186b;border:1px solid #1e3ab0;border-radius:14px;max-width:480px;margin:0 auto;">
-    <div style="background:#0d2280;border-bottom:1px solid #1e3ab0;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:14px 14px 0 0;">
-      <div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5;" id="saModalTitle">Nuevo Club</div>
-      <button onclick="window.saCloseModal()" style="background:transparent;border:none;color:#7a9ccc;font-size:1.2rem;cursor:pointer;">✕</button>
+  <div style="background:#07186b;border:1px solid #0e3050;border-radius:14px;max-width:480px;margin:0 auto;">
+    <div style="background:#091729;border-bottom:1px solid #0e3050;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:14px 14px 0 0;">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:1.1rem;letter-spacing:2px;color:#6ABDE6;" id="saModalTitle">Nuevo Club</div>
+      <button onclick="window.saCloseModal()" style="background:transparent;border:none;color:#4a7a99;font-size:1.2rem;cursor:pointer;">✕</button>
     </div>
     <div style="padding:16px;" id="saModalBody">
     </div>
   </div>
 </div>
   <div class="coord-tabs" id="saTabsEl">
-    <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:18px;line-height:1">🏟️</span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:#4d73f5;display:block"></span></div>
+    <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:18px;line-height:1">🏟️</span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:#6ABDE6;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('facturacion')"><span style="font-size:18px;line-height:1">💳</span>Facturación<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('usuarios')"><span style="font-size:18px;line-height:1">👥</span>Usuarios<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('datos')"><span style="font-size:18px;line-height:1">📤</span>Datos<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
@@ -720,7 +720,7 @@
 <!-- COORDINADOR -->
 <div id="coord-app" style="display:none">
   <div class="coord-tabs" id="coordTabsEl">
-    <div class="coord-tab cta" onclick="window.coordTab('resumen')"><span style="font-size:18px;line-height:1">📊</span>Resumen<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:#4d73f5;display:block"></span></div>
+    <div class="coord-tab cta" onclick="window.coordTab('resumen')"><span style="font-size:18px;line-height:1">📊</span>Resumen<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:#6ABDE6;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('presencias')"><span style="font-size:18px;line-height:1">🏃</span>Presencias<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('citaciones')"><span style="font-size:18px;line-height:1">⭐</span>Citaciones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('goleadores')"><span style="font-size:18px;line-height:1">⚽</span>Goles<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
@@ -2561,8 +2561,8 @@ function renderCitStats(){
     else if(res==='E'){bg='#ffab40';col='#000';}
     else if(isSusp){bg='rgba(255,23,68,0.2)';col='#ff5555';}
     else if(isLibre){bg='#2a3a5e';col='#5a7aae';}
-    else if(isCitada){bg='#4d73f5';col='#fff';} // citada pero sin resultado aún
-    else if(f===proximaFecha){bg='#4d73f5';col='#fff';}
+    else if(isCitada){bg='#6ABDE6';col='#fff';} // citada pero sin resultado aún
+    else if(f===proximaFecha){bg='#6ABDE6';col='#fff';}
     else{bg='#1a2535';col='#3a4a5e';}
     return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
   }).join('');
@@ -2574,14 +2574,14 @@ function renderCitStats(){
         <span>F1</span><span style="color:var(--yellow)">F${jugadas||'—'} actual</span><span>F${FIXTURE[FIXTURE.length-1].fecha}</span>
       </div>
       <div style="height:5px;background:var(--border);border-radius:3px;margin-bottom:10px">
-        <div style="height:100%;width:${pct}%;background:#4d73f5;border-radius:3px;transition:width 0.4s"></div>
+        <div style="height:100%;width:${pct}%;background:#6ABDE6;border-radius:3px;transition:width 0.4s"></div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">${dotsHtml}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:0.62rem;color:var(--muted)">
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22cd78;margin-right:2px"></span>V</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffab40;margin-right:2px"></span>E</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff1744;margin-right:2px"></span>L</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4d73f5;margin-right:2px"></span>Próximo</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6ABDE6;margin-right:2px"></span>Próximo</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a3a5e;margin-right:2px"></span>Libre</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#1a2535;margin-right:2px"></span>Pendiente</span>
       </div>
@@ -2605,7 +2605,7 @@ function renderCitStats(){
       const camBadge=saved.camisetero?'<div style="font-size:0.72rem;color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
       const esExtra=!!saved.tipo;
       const tipoLabel=saved.tipo==='torneo'?(saved.torneo_nombre||'Torneo'):'Amistoso';
-      const extraBadge=esExtra?'<span style="background:rgba(77,115,245,0.18);color:#7a9af7;font-size:0.65rem;padding:2px 8px;border-radius:20px;margin-right:5px;font-weight:700;text-transform:uppercase">'+tipoLabel+'</span>':'';
+      const extraBadge=esExtra?'<span style="background:rgba(106,189,230,0.15);color:#7a9af7;font-size:0.65rem;padding:2px 8px;border-radius:20px;margin-right:5px;font-weight:700;text-transform:uppercase">'+tipoLabel+'</span>':'';
       const titlePrefix=esExtra?extraBadge:'Fecha '+saved.fecha+' &mdash; ';
       const titleRival=(esExtra?'':'')+' vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
       const c=document.createElement('div'); c.className='card';
@@ -3007,7 +3007,7 @@ function renderFormacionHistorial(){
 
   function makeItem(key, fecha, rival, condicion, citCount, tieneForm, rd, isActual, labelTop){
     const div = document.createElement('div');
-    div.style.cssText = 'padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:'+(isActual?'rgba(77,115,245,.15)':'transparent')+';'+(isActual?'border-left:2px solid var(--green);':'');
+    div.style.cssText = 'padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:'+(isActual?'rgba(106,189,230,.15)':'transparent')+';'+(isActual?'border-left:2px solid var(--green);':'');
     const condLabel = condicion==='L'?'Local':'Visita';
     const condCls = condicion==='L'?'fb-local':'fb-visit';
     const resHtml = rd ? '<span style="font-family:Bebas Neue,sans-serif;font-size:.78rem;letter-spacing:1px;padding:1px 7px;border-radius:4px;display:inline-block;margin-left:3px;vertical-align:middle;background:'+rd.bg+';color:'+rd.color+';">'+rd.score+'</span>' : '';
@@ -4431,15 +4431,15 @@ window.saRenderStep = async function(step){
       const dotStyle = done
         ? 'background:#22cd78;border-color:#22cd78;color:#000;'
         : active
-          ? 'background:#4d73f5;border-color:#4d73f5;color:#fff;'
-          : 'background:#0d2280;border-color:#1e3ab0;color:#7a9ccc;';
-      const lblStyle = active ? 'color:#4d73f5;' : 'color:#7a9ccc;';
+          ? 'background:#6ABDE6;border-color:#6ABDE6;color:#fff;'
+          : 'background:#091729;border-color:#0e3050;color:#4a7a99;';
+      const lblStyle = active ? 'color:#6ABDE6;' : 'color:#4a7a99;';
       h += '<div style="display:flex;flex-direction:column;align-items:center;flex:1;">';
       h += '<div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;border:2px solid;'+dotStyle+'">'+(done?'✓':n)+'</div>';
       h += '<div style="font-size:.52rem;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;'+lblStyle+'">'+lbl+'</div>';
       h += '</div>';
       if(i < steps.length-1){
-        const lineColor = done ? '#22cd78' : '#1e3ab0';
+        const lineColor = done ? '#22cd78' : '#0e3050';
         h += '<div style="flex:1;height:1px;background:'+lineColor+';margin-bottom:18px;"></div>';
       }
     });
@@ -4463,28 +4463,28 @@ window.saRenderStep = async function(step){
     } catch(e){ console.log('Error cargando clubs:', e); }
 
     body.innerHTML = stepperHtml(1) + `
-      <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">Seleccioná o creá un club</label>
-      <select id="saClubSelect" onchange="window.saOnClubSelect()" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;margin-bottom:14px;">
+      <label style="font-size:.62rem;font-weight:600;color:#4a7a99;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">Seleccioná o creá un club</label>
+      <select id="saClubSelect" onchange="window.saOnClubSelect()" style="width:100%;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#e8f4ff;font-size:.85rem;font-family:DM Sans,sans-serif;margin-bottom:14px;">
         ${clubsOpts}
       </select>
       <div id="saNewClubFields" style="display:none;">
-        <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">Nombre del club</label>
-        <input id="saClubNombre" oninput="window.saGenId()" placeholder="Ej: Club Atlético San Martín" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:10px;">
-        <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">ID del club</label>
-        <div id="saClubIdPreview" style="width:100%;background:#0d2280;border:1px solid rgba(77,115,245,.3);border-radius:8px;padding:7px 12px;color:#4d73f5;font-size:.78rem;font-family:DM Sans,sans-serif;margin-bottom:14px;">se genera automáticamente</div>
+        <label style="font-size:.62rem;font-weight:600;color:#4a7a99;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">Nombre del club</label>
+        <input id="saClubNombre" oninput="window.saGenId()" placeholder="Ej: Club Atlético San Martín" style="width:100%;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#e8f4ff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:10px;">
+        <label style="font-size:.62rem;font-weight:600;color:#4a7a99;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;">ID del club</label>
+        <div id="saClubIdPreview" style="width:100%;background:#091729;border:1px solid rgba(106,189,230,.3);border-radius:8px;padding:7px 12px;color:#6ABDE6;font-size:.78rem;font-family:DM Sans,sans-serif;margin-bottom:14px;">se genera automáticamente</div>
       </div>
-      <label style="font-size:.62rem;font-weight:600;color:#7a9ccc;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;margin-top:4px;">Torneo activo</label>
+      <label style="font-size:.62rem;font-weight:600;color:#4a7a99;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px;margin-top:4px;">Torneo activo</label>
       <div id="saTorneoFields">
-        <select id="saTorneoSelect" onchange="window.saOnTorneoSelect()" style="width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;margin-bottom:8px;">
+        <select id="saTorneoSelect" onchange="window.saOnTorneoSelect()" style="width:100%;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#e8f4ff;font-size:.85rem;font-family:DM Sans,sans-serif;margin-bottom:8px;">
           <option value="lisfi-2026-zona2b">LISFI 2026 Zona II B</option>
           <option value="lafir-2026">LAFIR 2026</option>
           <option value="__nuevo__">+ Crear torneo nuevo</option>
         </select>
-        <input id="saTorneoNuevo" placeholder="ID del torneo (ej: lisfi-2026-zona2c)" style="display:none;width:100%;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:9px 12px;color:#e8efff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:8px;">
+        <input id="saTorneoNuevo" placeholder="ID del torneo (ej: lisfi-2026-zona2c)" style="display:none;width:100%;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#e8f4ff;font-size:.85rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:8px;">
       </div>
       <div style="display:flex;gap:8px;margin-top:8px;">
-        <button onclick="window.saCloseModal()" style="flex:1;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Cancelar</button>
-        <button onclick="window.saStep1Next()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#4d73f5;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Siguiente →</button>
+        <button onclick="window.saCloseModal()" style="flex:1;padding:10px;border-radius:9px;border:1px solid #0e3050;background:transparent;color:#4a7a99;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Cancelar</button>
+        <button onclick="window.saStep1Next()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#6ABDE6;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Siguiente →</button>
       </div>`;
 
     window.saOnClubSelect();
@@ -4496,14 +4496,14 @@ window.saRenderStep = async function(step){
     let catsHtml = '';
     allCats.forEach(function(c){
       const on = sel.includes(c);
-      catsHtml += `<div onclick="window.saToggleCat('${c}')" style="background:${on?'rgba(77,115,245,.15)':'#112896'};border:1px solid ${on?'#4d73f5':'#1e3ab0'};border-radius:8px;padding:10px 4px;text-align:center;cursor:pointer;"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:${on?'#4d73f5':'#e8efff'};">${c}</div><div style="font-size:.55rem;color:${on?'#22cd78':'#7a9ccc'};margin-top:2px;">${on?'✓ activa':'inactiva'}</div></div>`;
+      catsHtml += `<div onclick="window.saToggleCat('${c}')" style="background:${on?'rgba(106,189,230,.15)':'#0d1e35'};border:1px solid ${on?'#6ABDE6':'#0e3050'};border-radius:8px;padding:10px 4px;text-align:center;cursor:pointer;"><div style="font-family:Bebas Neue,sans-serif;font-size:1rem;color:${on?'#6ABDE6':'#e8f4ff'};">${c}</div><div style="font-size:.55rem;color:${on?'#22cd78':'#4a7a99'};margin-top:2px;">${on?'✓ activa':'inactiva'}</div></div>`;
     });
 
     body.innerHTML = stepperHtml(2)
       + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;">' + catsHtml + '</div>'
       + '<div style="display:flex;gap:8px;">'
-      + '<button onclick="window.saRenderStep(1)" style="flex:1;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>'
-      + '<button onclick="window.saStep2Next()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#4d73f5;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Siguiente →</button>'
+      + '<button onclick="window.saRenderStep(1)" style="flex:1;padding:10px;border-radius:9px;border:1px solid #0e3050;background:transparent;color:#4a7a99;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>'
+      + '<button onclick="window.saStep2Next()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#6ABDE6;color:#fff;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Siguiente →</button>'
       + '</div>';
 
   } else if(step === 3){
@@ -4513,8 +4513,8 @@ window.saRenderStep = async function(step){
 
     if(!cats3.length){
       body.innerHTML = stepperHtml(3)
-        + '<div style="text-align:center;padding:20px;color:#7a9ccc;font-size:.85rem;">No hay categorías seleccionadas.</div>'
-        + '<button onclick="window.saRenderStep(2)" style="width:100%;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>';
+        + '<div style="text-align:center;padding:20px;color:#4a7a99;font-size:.85rem;">No hay categorías seleccionadas.</div>'
+        + '<button onclick="window.saRenderStep(2)" style="width:100%;padding:10px;border-radius:9px;border:1px solid #0e3050;background:transparent;color:#4a7a99;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>';
       return;
     }
 
@@ -4525,18 +4525,18 @@ window.saRenderStep = async function(step){
       const rolesHtml = ['profe','coordinador','profe+coord'].map(function(r){
         const on = (u.rol||'profe') === r;
         const lbl = r==='profe'?'Profe':r==='coordinador'?'Coord':'Profe+Coord';
-        return `<div onclick="window.saSetRol('${cat}','${r}')" style="padding:4px 8px;border-radius:20px;font-size:.58rem;font-weight:700;text-transform:uppercase;border:1px solid ${on?'#22cd78':'#1e3ab0'};color:${on?'#22cd78':'#7a9ccc'};cursor:pointer;background:${on?'rgba(34,205,120,.12)':'transparent'};">${lbl}</div>`;
+        return `<div onclick="window.saSetRol('${cat}','${r}')" style="padding:4px 8px;border-radius:20px;font-size:.58rem;font-weight:700;text-transform:uppercase;border:1px solid ${on?'#22cd78':'#0e3050'};color:${on?'#22cd78':'#4a7a99'};cursor:pointer;background:${on?'rgba(34,205,120,.12)':'transparent'};">${lbl}</div>`;
       }).join('');
-      const toggleStyle = `width:36px;height:20px;border-radius:10px;background:${u.invitar!==false?'#22cd78':'#1e3ab0'};position:relative;cursor:pointer;flex-shrink:0;`;
+      const toggleStyle = `width:36px;height:20px;border-radius:10px;background:${u.invitar!==false?'#22cd78':'#0e3050'};position:relative;cursor:pointer;flex-shrink:0;`;
       const thumbSide = u.invitar!==false ? 'right' : 'left';
-      uHtml += `<div style="background:#112896;border:1px solid #1e3ab0;border-radius:10px;padding:12px;margin-bottom:10px;">
+      uHtml += `<div style="background:#0d1e35;border:1px solid #0e3050;border-radius:10px;padding:12px;margin-bottom:10px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-family:Bebas Neue,sans-serif;font-size:.78rem;padding:2px 8px;border-radius:4px;background:rgba(77,115,245,.15);color:#4d73f5;border:1px solid rgba(77,115,245,.3);">CAT ${cat}</span>
+          <span style="font-family:Bebas Neue,sans-serif;font-size:.78rem;padding:2px 8px;border-radius:4px;background:rgba(106,189,230,.15);color:#6ABDE6;border:1px solid rgba(106,189,230,.3);">CAT ${cat}</span>
         </div>
         <div style="display:flex;gap:5px;margin-bottom:10px;">${rolesHtml}</div>
-        <input id="saEmail_${cat}" placeholder="email@club.com" value="${u.email||''}" oninput="window.saSetEmail('${cat}',this.value)" style="width:100%;background:#0d2280;border:1px solid #1e3ab0;border-radius:8px;padding:8px 12px;color:#e8efff;font-size:.82rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #1e3ab0;">
-          <div><div style="font-size:.72rem;color:#e8efff;">Enviar invitación</div><div style="font-size:.58rem;color:#7a9ccc;">Email con link para crear contraseña</div></div>
+        <input id="saEmail_${cat}" placeholder="email@club.com" value="${u.email||''}" oninput="window.saSetEmail('${cat}',this.value)" style="width:100%;background:#091729;border:1px solid #0e3050;border-radius:8px;padding:8px 12px;color:#e8f4ff;font-size:.82rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #0e3050;">
+          <div><div style="font-size:.72rem;color:#e8f4ff;">Enviar invitación</div><div style="font-size:.58rem;color:#4a7a99;">Email con link para crear contraseña</div></div>
           <div onclick="window.saToggleInvitar('${cat}')" style="${toggleStyle}"><div style="position:absolute;top:2px;${thumbSide}:2px;width:16px;height:16px;border-radius:50%;background:#fff;"></div></div>
         </div>
       </div>`;
@@ -4544,7 +4544,7 @@ window.saRenderStep = async function(step){
 
     body.innerHTML = stepperHtml(3) + uHtml
       + '<div style="display:flex;gap:8px;margin-top:8px;">'
-      + '<button onclick="window.saRenderStep(2)" style="flex:1;padding:10px;border-radius:9px;border:1px solid #1e3ab0;background:transparent;color:#7a9ccc;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>'
+      + '<button onclick="window.saRenderStep(2)" style="flex:1;padding:10px;border-radius:9px;border:1px solid #0e3050;background:transparent;color:#4a7a99;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>'
       + '<button onclick="window.saCrearClubFinal()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#22cd78;color:#000;font-size:.8rem;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">✓ Crear club</button>'
       + '</div>';
   }
@@ -4765,17 +4765,17 @@ window.saGestionarPlan = async function(clubId){
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
 
   overlay.innerHTML = `
-    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:380px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#4d73f5;margin-bottom:4px">💳 GESTIONAR PLAN</div>
+    <div style="background:#091729;border:1px solid #0e3050;border-radius:16px;padding:24px;width:100%;max-width:380px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#6ABDE6;margin-bottom:4px">💳 GESTIONAR PLAN</div>
       <div style="font-size:0.85rem;font-weight:700;margin-bottom:4px">${nombre}</div>
-      <div style="font-size:0.72rem;color:#7a9ccc;margin-bottom:16px">
+      <div style="font-size:0.72rem;color:#4a7a99;margin-bottom:16px">
         Plan actual: <b style="color:${planActual==='activo'?'#22cd78':'#ffab40'}">${planActual==='activo'?'ACTIVO':'TRIAL'}</b>
         &nbsp;·&nbsp; Vence: <b>${endStr}</b>
       </div>
 
-      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">Renovar plan activo</div>
+      <div style="font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px">Renovar plan activo</div>
       <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:0.82rem;color:#e8efff;font-weight:600" id="planMesesLabel">1 mes</span>
+        <span style="font-size:0.82rem;color:#e8f4ff;font-weight:600" id="planMesesLabel">1 mes</span>
         <span style="font-size:0.72rem;color:#22cd78;font-weight:700" id="planFechaLabel"></span>
       </div>
       <input type="range" id="planSlider" min="1" max="12" value="1"
@@ -4795,13 +4795,13 @@ window.saGestionarPlan = async function(clubId){
         ✓ Confirmar renovación
       </button>
 
-      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Otras acciones</div>
+      <div style="font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Otras acciones</div>
       <div style="display:flex;gap:8px;margin-bottom:16px">
         <button onclick="window._saPlanTrial('${clubId}')" style="flex:1;background:rgba(255,171,64,0.12);color:#ffab40;border:1px solid rgba(255,171,64,0.3);border-radius:8px;padding:9px;font-size:0.78rem;font-weight:700;cursor:pointer">🕐 Trial 30 días</button>
         <button onclick="window._saPlanVencer('${clubId}')" style="flex:1;background:rgba(255,23,68,0.1);color:#ff1744;border:1px solid rgba(255,23,68,0.25);border-radius:8px;padding:9px;font-size:0.78rem;font-weight:700;cursor:pointer">⛔ Marcar vencido</button>
       </div>
 
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:8px;padding:9px;font-size:0.82rem;cursor:pointer">Cancelar</button>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:transparent;border:1px solid #0e3050;color:#4a7a99;border-radius:8px;padding:9px;font-size:0.82rem;cursor:pointer">Cancelar</button>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -4863,7 +4863,7 @@ function renderSADatos(){
       <div class="coord-ok-box" style="margin-bottom:12px">
         <div style="font-weight:700;margin-bottom:4px">📅 Schedule completo LISFI II Zona B 2026</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
-          22 fechas · 11 equipos → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lisfi-ii-zona-b-2026/schedule</code><br>
+          22 fechas · 11 equipos → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#6ABDE6">ligas/lisfi-ii-zona-b-2026/schedule</code><br>
           Cada club con <b>ligaNombre</b> configurado deriva su fixture automáticamente.
         </div>
         <button onclick="window.saSubirScheduleLISFI(this)" class="btn btn-g" style="width:100%">🚀 Subir schedule completo</button>
@@ -4873,8 +4873,8 @@ function renderSADatos(){
       <div class="coord-ok-box" style="margin-bottom:12px">
         <div style="font-weight:700;margin-bottom:4px">📋 Fixture LISFI II Zona B 2026 — Sagrado Corazón</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
-          22 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lisfi-ii-zona-b-2026/fixture</code><br>
-          Condiciones L/V → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">clubs/sagrado-corazon/config</code>
+          22 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#6ABDE6">ligas/lisfi-ii-zona-b-2026/fixture</code><br>
+          Condiciones L/V → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#6ABDE6">clubs/sagrado-corazon/config</code>
         </div>
         <button onclick="window.saSubirFixtureLISFI(this)" class="btn btn-g" style="width:100%">🚀 Subir fixture</button>
         <div id="lisfiLog" style="margin-top:10px;font-size:0.8rem;line-height:1.8;display:none"></div>
@@ -4883,8 +4883,8 @@ function renderSADatos(){
       <div class="coord-ok-box" style="margin-bottom:12px">
         <div style="font-weight:700;margin-bottom:4px">📋 Fixture LAFIR 2026 — El Ciclón</div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
-          15 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">ligas/lafir-torneo-general-2026/fixture</code><br>
-          Condiciones L/V → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#4d73f5">clubs/el-ciclon/config</code>
+          15 fechas → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#6ABDE6">ligas/lafir-torneo-general-2026/fixture</code><br>
+          Condiciones L/V → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#6ABDE6">clubs/el-ciclon/config</code>
         </div>
         <button onclick="window.saSubirFixtureLAFIR(this)" class="btn btn-g" style="width:100%">🚀 Subir fixture</button>
         <div id="lafirLog" style="margin-top:10px;font-size:0.8rem;line-height:1.8;display:none"></div>
@@ -5136,61 +5136,61 @@ window.saEditarClub = async function(clubId){
     const uCats = u.cats ? Object.values(u.cats) : (u.cat ? [u.cat] : []);
     const catsLabel = uCats.map(c=>_catLabel[c]||c).join(', ') || '—';
     return `
-    <div style="background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+    <div style="background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:0.82rem;font-weight:600">${u.email||u.uid}</div>
-        <div style="font-size:0.68rem;color:#7a9ccc">${u.role||'profe'} · Cat ${catsLabel}</div>
+        <div style="font-size:0.68rem;color:#4a7a99">${u.role||'profe'} · Cat ${catsLabel}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">✏️ Cats</button>
+        <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:#6ABDE6;border:1px solid rgba(77,115,245,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">✏️ Cats</button>
         <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">🗑 Elim.</button>
       </div>
     </div>`;
-  }).join('') : '<div style="color:#7a9ccc;font-size:0.82rem;text-align:center;padding:12px">Sin usuarios registrados</div>';
+  }).join('') : '<div style="color:#4a7a99;font-size:0.82rem;text-align:center;padding:12px">Sin usuarios registrados</div>';
 
   const ligasHtml = ligas.map(l=>`<option value="${l}" ${l===ligaActual?'selected':''}>${l}</option>`).join('');
   const catsHtml = CAT_OPTS.map(c=>`
-    <label style="display:flex;align-items:center;gap:8px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:8px 10px;cursor:pointer">
-      <input type="checkbox" class="editCatCheck" value="${c.key}" ${catsActivas.includes(c.key)?'checked':''} style="accent-color:#4d73f5;width:16px;height:16px">
+    <label style="display:flex;align-items:center;gap:8px;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:8px 10px;cursor:pointer">
+      <input type="checkbox" class="editCatCheck" value="${c.key}" ${catsActivas.includes(c.key)?'checked':''} style="accent-color:#6ABDE6;width:16px;height:16px">
       <span style="font-size:0.82rem">${c.label}</span>
     </label>`).join('');
   const _diasSemana=[{v:'1',l:'Lun'},{v:'2',l:'Mar'},{v:'3',l:'Mié'},{v:'4',l:'Jue'},{v:'5',l:'Vie'},{v:'6',l:'Sáb'}];
   const _diasActuales=Array.isArray(club.diasEntrenamiento)?club.diasEntrenamiento:[];
   const diasHtml=_diasSemana.map(d=>`
-    <label style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#112896;border:1px solid ${_diasActuales.includes(d.v)?'#4d73f5':'#1e3ab0'};border-radius:8px;padding:8px 4px;cursor:pointer;flex:1">
-      <input type="checkbox" class="editDiaCheck" value="${d.v}" ${_diasActuales.includes(d.v)?'checked':''} style="accent-color:#4d73f5;width:16px;height:16px">
+    <label style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#0d1e35;border:1px solid ${_diasActuales.includes(d.v)?'#6ABDE6':'#0e3050'};border-radius:8px;padding:8px 4px;cursor:pointer;flex:1">
+      <input type="checkbox" class="editDiaCheck" value="${d.v}" ${_diasActuales.includes(d.v)?'checked':''} style="accent-color:#6ABDE6;width:16px;height:16px">
       <span style="font-size:0.72rem;font-weight:600">${d.l}</span>
     </label>`).join('');
 
   overlay.innerHTML = `
-    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:auto">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#4d73f5;margin-bottom:16px">✏️ EDITAR CLUB</div>
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Nombre del club</label>
-      <input id="editClubNombre" value="${nombre}" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Liga</label>
-      <select id="editClubLiga" onchange="window._saOnLigaChange()" style="width:100%;margin-bottom:8px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.85rem;box-sizing:border-box">
+    <div style="background:#091729;border:1px solid #0e3050;border-radius:16px;padding:24px;width:100%;max-width:420px;margin:auto">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:#6ABDE6;margin-bottom:16px">✏️ EDITAR CLUB</div>
+      <label style="display:block;font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Nombre del club</label>
+      <input id="editClubNombre" value="${nombre}" style="width:100%;margin-bottom:16px;background:#0d1e35;border:1px solid #0e3050;color:#e8f4ff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+      <label style="display:block;font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Liga</label>
+      <select id="editClubLiga" onchange="window._saOnLigaChange()" style="width:100%;margin-bottom:8px;background:#0d1e35;border:1px solid #0e3050;color:#e8f4ff;padding:9px 12px;border-radius:8px;font-size:0.85rem;box-sizing:border-box">
         <option value="">— Sin liga —</option>
         ${ligasHtml}
         <option value="__nueva__">+ Nueva liga...</option>
       </select>
       <div id="nuevaLigaFields" style="display:none;margin-bottom:12px">
-        <input id="nuevaLigaNombre" placeholder="Nombre (ej: LISFI 2026 Zona II C)" style="width:100%;margin-bottom:6px;background:#112896;border:1px solid #4d73f5;color:#e8efff;padding:8px 12px;border-radius:8px;font-size:0.82rem;box-sizing:border-box">
-        <div id="nuevaLigaIdPreview" style="font-size:0.7rem;color:#4d73f5;padding:2px 4px"></div>
+        <input id="nuevaLigaNombre" placeholder="Nombre (ej: LISFI 2026 Zona II C)" style="width:100%;margin-bottom:6px;background:#0d1e35;border:1px solid #6ABDE6;color:#e8f4ff;padding:8px 12px;border-radius:8px;font-size:0.82rem;box-sizing:border-box">
+        <div id="nuevaLigaIdPreview" style="font-size:0.7rem;color:#6ABDE6;padding:2px 4px"></div>
       </div>
       <input id="editClubLigaNombre" type="hidden" value="${club.config?.ligaNombre||''}">
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Dirección de la cancha (partidos de local)</label>
-      <input id="editClubAddress" value="${_autoAddr}" placeholder="Ej: Av. 13 y 610 Villa Elvira" style="width:100%;margin-bottom:16px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
-      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
+      <label style="display:block;font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Dirección de la cancha (partidos de local)</label>
+      <input id="editClubAddress" value="${_autoAddr}" placeholder="Ej: Av. 13 y 610 Villa Elvira" style="width:100%;margin-bottom:16px;background:#0d1e35;border:1px solid #0e3050;color:#e8f4ff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+      <div style="font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Categorías activas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px">${catsHtml}</div>
-      <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Días de entrenamiento</div>
+      <div style="font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Días de entrenamiento</div>
       <div style="display:flex;gap:5px;margin-bottom:16px">${diasHtml}</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700">Usuarios (${clubUsers.length})</div>
-        <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">+ Agregar usuario</button>
+        <div style="font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700">Usuarios (${clubUsers.length})</div>
+        <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:#6ABDE6;border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">+ Agregar usuario</button>
       </div>
       <div style="margin-bottom:16px">${usersHtml}</div>
-      <button onclick="window._saGuardarEdicion('${clubId}')" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar cambios</button>
-      <button onclick="document.getElementById('saEditOverlay').remove()" style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">Cancelar</button>
+      <button onclick="window._saGuardarEdicion('${clubId}')" style="width:100%;background:#6ABDE6;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar cambios</button>
+      <button onclick="document.getElementById('saEditOverlay').remove()" style="width:100%;background:transparent;border:1px solid #0e3050;color:#4a7a99;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">Cancelar</button>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -5294,18 +5294,18 @@ window._saEditUserCats = async function(uid, email, clubId){
   ov.id = 'saEditCatsOverlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px';
   ov.innerHTML = `
-    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:360px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5;margin-bottom:4px">✏️ EDITAR CATEGORÍAS</div>
-      <div style="font-size:0.75rem;color:#7a9ccc;margin-bottom:16px">${email}</div>
+    <div style="background:#091729;border:1px solid #0e3050;border-radius:16px;padding:24px;width:100%;max-width:360px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#6ABDE6;margin-bottom:4px">✏️ EDITAR CATEGORÍAS</div>
+      <div style="font-size:0.75rem;color:#4a7a99;margin-bottom:16px">${email}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:20px">
         ${CAT_OPTS_EC.map(c=>`
-          <label style="display:flex;align-items:center;gap:8px;background:#112896;border:1px solid #1e3ab0;border-radius:7px;padding:8px 10px;cursor:pointer;font-size:0.82rem">
-            <input type="checkbox" name="editCatCk" value="${c.key}" ${currentCats.includes(c.key)?'checked':''} style="accent-color:#4d73f5;width:15px;height:15px">
+          <label style="display:flex;align-items:center;gap:8px;background:#0d1e35;border:1px solid #0e3050;border-radius:7px;padding:8px 10px;cursor:pointer;font-size:0.82rem">
+            <input type="checkbox" name="editCatCk" value="${c.key}" ${currentCats.includes(c.key)?'checked':''} style="accent-color:#6ABDE6;width:15px;height:15px">
             ${c.label}
           </label>`).join('')}
       </div>
-      <button id="saveEditCatsBtn" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar categorías</button>
-      <button onclick="document.getElementById('saEditCatsOverlay').remove()" style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">Cancelar</button>
+      <button id="saveEditCatsBtn" style="width:100%;background:#6ABDE6;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar categorías</button>
+      <button onclick="document.getElementById('saEditCatsOverlay').remove()" style="width:100%;background:transparent;border:1px solid #0e3050;color:#4a7a99;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">Cancelar</button>
     </div>`;
   document.body.appendChild(ov);
   ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
@@ -5340,45 +5340,45 @@ window._saAbrirAddUser = function(clubId){
   overlay2.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
 
   overlay2.innerHTML = `
-    <div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:24px;width:100%;max-width:380px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5;margin-bottom:16px">➕ NUEVO USUARIO</div>
+    <div style="background:#091729;border:1px solid #0e3050;border-radius:16px;padding:24px;width:100%;max-width:380px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#6ABDE6;margin-bottom:16px">➕ NUEVO USUARIO</div>
 
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Email</label>
+      <label style="display:block;font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px">Email</label>
       <input id="addUserEmail" type="email" placeholder="profe@email.com"
-        style="width:100%;margin-bottom:12px;background:#112896;border:1px solid #1e3ab0;color:#e8efff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
+        style="width:100%;margin-bottom:12px;background:#0d1e35;border:1px solid #0e3050;color:#e8f4ff;padding:9px 12px;border-radius:8px;font-size:0.88rem;box-sizing:border-box">
 
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">Categoría/s <span style="color:#4d73f5;font-weight:400">(podés elegir varias)</span></label>
+      <label style="display:block;font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px">Categoría/s <span style="color:#6ABDE6;font-weight:400">(podés elegir varias)</span></label>
       <div id="addUserCats" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px">
-        ${CAT_OPTS.map(c=>`<label style="display:flex;align-items:center;gap:7px;background:#112896;border:1px solid #1e3ab0;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:0.82rem"><input type="checkbox" name="addUserCatCk" value="${c.key}" style="accent-color:#4d73f5;width:15px;height:15px"> ${c.label}</label>`).join('')}
+        ${CAT_OPTS.map(c=>`<label style="display:flex;align-items:center;gap:7px;background:#0d1e35;border:1px solid #0e3050;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:0.82rem"><input type="checkbox" name="addUserCatCk" value="${c.key}" style="accent-color:#6ABDE6;width:15px;height:15px"> ${c.label}</label>`).join('')}
       </div>
 
-      <label style="display:block;font-size:0.68rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Rol</label>
+      <label style="display:block;font-size:0.68rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Rol</label>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px">
-        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 6px;cursor:pointer">
-          <input type="radio" name="addUserRol" value="profe" checked style="accent-color:#4d73f5">
+        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:10px 6px;cursor:pointer">
+          <input type="radio" name="addUserRol" value="profe" checked style="accent-color:#6ABDE6">
           <span style="font-size:0.72rem;text-align:center">Profe</span>
         </label>
-        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 6px;cursor:pointer">
-          <input type="radio" name="addUserRol" value="coordinator" style="accent-color:#4d73f5">
+        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:10px 6px;cursor:pointer">
+          <input type="radio" name="addUserRol" value="coordinator" style="accent-color:#6ABDE6">
           <span style="font-size:0.72rem;text-align:center">Coordinador</span>
         </label>
-        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#112896;border:1px solid #1e3ab0;border-radius:8px;padding:10px 6px;cursor:pointer">
-          <input type="radio" name="addUserRol" value="profe+coord" style="accent-color:#4d73f5">
+        <label style="display:flex;flex-direction:column;align-items:center;gap:6px;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:10px 6px;cursor:pointer">
+          <input type="radio" name="addUserRol" value="profe+coord" style="accent-color:#6ABDE6">
           <span style="font-size:0.72rem;text-align:center">Profe + Coord</span>
         </label>
       </div>
 
       <label style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer">
-        <input type="checkbox" id="addUserInvitar" checked style="accent-color:#4d73f5;width:18px;height:18px">
+        <input type="checkbox" id="addUserInvitar" checked style="accent-color:#6ABDE6;width:18px;height:18px">
         <span style="font-size:0.82rem">Enviar email de invitación</span>
       </label>
 
       <button id="addUserBtn" onclick="window._saCrearUsuario('${clubId}')"
-        style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">
+        style="width:100%;background:#6ABDE6;color:#fff;border:none;border-radius:9px;padding:11px;font-size:0.88rem;font-weight:700;cursor:pointer;margin-bottom:8px">
         ✓ Crear usuario
       </button>
       <button onclick="document.getElementById('saAddUserOverlay').remove()"
-        style="width:100%;background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">
+        style="width:100%;background:transparent;border:1px solid #0e3050;color:#4a7a99;border-radius:9px;padding:10px;font-size:0.82rem;cursor:pointer">
         Cancelar
       </button>
     </div>
@@ -5499,7 +5499,7 @@ async function startCoordApp(){
   const subEl = document.querySelector('header div div div[style*="0.62rem"]');
   if(subEl) subEl.textContent = _clubNombreCoord + ' — Vista Global';
   let catBadge = document.getElementById('catBadge');
-  if(!catBadge){ catBadge=document.createElement('span'); catBadge.id='catBadge'; catBadge.style.cssText='background:rgba(34,85,238,0.15);color:var(--green);font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;margin-left:6px;'; document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn')); }
+  if(!catBadge){ catBadge=document.createElement('span'); catBadge.id='catBadge'; catBadge.style.cssText='background:rgba(106,189,230,0.15);color:#6ABDE6;font-family:Bebas Neue,sans-serif;font-size:0.88rem;letter-spacing:1px;padding:2px 8px;border-radius:5px;margin-left:6px;'; document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn')); }
   catBadge.textContent = 'COORD';
 
   // Construir COMP_CATS dinámicamente desde las cats activas del club
@@ -5738,7 +5738,7 @@ async function startCoordApp(){
     document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{
       const isActive=tabs[i]===tab;
       t.className='coord-tab'+(isActive?' cta':'');
-      const dot=t.querySelector('.ctdot'); if(dot) dot.style.background=isActive?'#4d73f5':'transparent';
+      const dot=t.querySelector('.ctdot'); if(dot) dot.style.background=isActive?'#6ABDE6':'transparent';
     });
     document.querySelectorAll('#coord-app .coord-view').forEach(v=>v.classList.remove('active'));
     const vEl=document.getElementById('cv-'+tab); if(vEl) vEl.classList.add('active');
@@ -5765,22 +5765,22 @@ async function startCoordApp(){
     const overlay=document.createElement('div');
     overlay.id='suspEntOverlay';
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto';
-    let html=`<div style="background:#0d2280;border:1px solid #1e3ab0;border-radius:16px;padding:20px;width:100%;max-width:420px;margin:auto">
+    let html=`<div style="background:#091729;border:1px solid #0e3050;border-radius:16px;padding:20px;width:100%;max-width:420px;margin:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#4d73f5">SUSPENSIONES — ${MES_L[M-1].toUpperCase()}</div>
-        <button onclick="document.getElementById('suspEntOverlay').remove()" style="background:transparent;border:1px solid #1e3ab0;color:#7a9ccc;border-radius:6px;padding:3px 9px;font-size:0.8rem;cursor:pointer">✕</button>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:#6ABDE6">SUSPENSIONES — ${MES_L[M-1].toUpperCase()}</div>
+        <button onclick="document.getElementById('suspEntOverlay').remove()" style="background:transparent;border:1px solid #0e3050;color:#4a7a99;border-radius:6px;padding:3px 9px;font-size:0.8rem;cursor:pointer">✕</button>
       </div>
-      <div style="font-size:0.72rem;color:#7a9ccc;margin-bottom:14px">Tildá los días que no se entrenó. Se descuentan del total estimado del mes.</div>`;
+      <div style="font-size:0.72rem;color:#4a7a99;margin-bottom:14px">Tildá los días que no se entrenó. Se descuentan del total estimado del mes.</div>`;
     _coordDiasEnt.slice().sort((a,b)=>parseInt(a)-parseInt(b)).forEach(dow=>{
       const dias=grupos[dow]||[];
-      html+=`<div style="font-size:0.62rem;color:#7a9ccc;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${DIA_L[parseInt(dow)]}</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">`;
+      html+=`<div style="font-size:0.62rem;color:#4a7a99;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${DIA_L[parseInt(dow)]}</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">`;
       dias.forEach(d=>{
         const dd=String(d).padStart(2,'0'); const susp=!!suspEnt[dd];
-        html+=`<button onclick="window.coordToggleSuspEnt('${mesActual}','${dd}',this)" style="background:${susp?'rgba(255,23,68,0.15)':'rgba(77,115,245,0.1)'};border:1px solid ${susp?'rgba(255,23,68,0.4)':'#1e3ab0'};color:${susp?'#ff4d6d':'#7a9ccc'};border-radius:8px;padding:6px 12px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">${susp?'✓ ':''} ${DIA_L[parseInt(dow)]} ${d}</button>`;
+        html+=`<button onclick="window.coordToggleSuspEnt('${mesActual}','${dd}',this)" style="background:${susp?'rgba(255,23,68,0.15)':'rgba(77,115,245,0.1)'};border:1px solid ${susp?'rgba(255,23,68,0.4)':'#0e3050'};color:${susp?'#ff4d6d':'#4a7a99'};border-radius:8px;padding:6px 12px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">${susp?'✓ ':''} ${DIA_L[parseInt(dow)]} ${d}</button>`;
       });
       html+=`</div>`;
     });
-    html+=`<button onclick="document.getElementById('suspEntOverlay').remove()" style="width:100%;background:#4d73f5;color:#fff;border:none;border-radius:9px;padding:10px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-top:4px">Listo</button></div>`;
+    html+=`<button onclick="document.getElementById('suspEntOverlay').remove()" style="width:100%;background:#6ABDE6;color:#fff;border:none;border-radius:9px;padding:10px;font-size:0.85rem;font-weight:700;cursor:pointer;margin-top:4px">Listo</button></div>`;
     overlay.innerHTML=html; document.body.appendChild(overlay);
     overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
   };
@@ -5791,7 +5791,7 @@ async function startCoordApp(){
       if(suspEnt[dd]){
         await remove(ref(db,path));
         if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={}; delete _coordSuspEnt[mesActual][dd];
-        btn.style.background='rgba(77,115,245,0.1)'; btn.style.borderColor='#1e3ab0'; btn.style.color='#7a9ccc';
+        btn.style.background='rgba(77,115,245,0.1)'; btn.style.borderColor='#0e3050'; btn.style.color='#4a7a99';
         btn.textContent=btn.textContent.replace('✓','').trim();
       } else {
         await set(ref(db,path),true);
@@ -5861,8 +5861,8 @@ async function startCoordApp(){
                 const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===proximaF2.fecha);
                 const wa=citEntry&&citEntry.whatsappShared;
                 h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                  <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-                  <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+                  <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
+                  <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
                   ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
                 </div>`;
               });
@@ -5871,8 +5871,8 @@ async function startCoordApp(){
               <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
             sinCitar.forEach(cat=>{
               h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-                <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
+                <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
               </div>`;
             });
             h+=`</div></div>`;
@@ -5907,8 +5907,8 @@ async function startCoordApp(){
               const citEntry=Object.values(D[cat.key].cit).find(x=>x.fecha===targetFecha);
               const wa=citEntry&&citEntry.whatsappShared;
               h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-                <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+                <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
+                <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
                 ${wa?`<span style="font-size:0.7rem;color:#25D366;margin-left:auto">📱</span>`:''}
               </div>`;
             });
@@ -5917,8 +5917,8 @@ async function startCoordApp(){
             <div style="font-size:0.6rem;color:#ff4d6d;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">✗ Faltan</div>`;
           sinCitar.forEach(cat=>{
             h+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">
-              <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
-              <span style="font-size:0.78rem;color:#e8efff">${cat.label}</span>
+              <div style="width:7px;height:7px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
+              <span style="font-size:0.78rem;color:#e8f4ff">${cat.label}</span>
             </div>`;
           });
           h+=`</div></div>`;
@@ -6002,9 +6002,9 @@ async function startCoordApp(){
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px">
-            <button onclick="window._coordNavMes('${mesPrev}')" style="background:rgba(77,115,245,0.12);border:1px solid rgba(77,115,245,0.3);color:#4d73f5;border-radius:6px;padding:2px 9px;font-size:0.75rem;font-weight:700;cursor:pointer">←</button>
+            <button onclick="window._coordNavMes('${mesPrev}')" style="background:rgba(77,115,245,0.12);border:1px solid rgba(77,115,245,0.3);color:#6ABDE6;border-radius:6px;padding:2px 9px;font-size:0.75rem;font-weight:700;cursor:pointer">←</button>
             <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Carga — ${MES_L[msM-1]}${esMesActual?' (actual)':''}</div>
-            <button onclick="window._coordNavMes('${mesSig}')" style="background:${hayMesSig?'rgba(77,115,245,0.12)':'transparent'};border:1px solid ${hayMesSig?'rgba(77,115,245,0.3)':'rgba(77,115,245,0.1)'};color:${hayMesSig?'#4d73f5':'#2a3a5a'};border-radius:6px;padding:2px 9px;font-size:0.75rem;font-weight:700;cursor:${hayMesSig?'pointer':'default'}">→</button>
+            <button onclick="window._coordNavMes('${mesSig}')" style="background:${hayMesSig?'rgba(77,115,245,0.12)':'transparent'};border:1px solid ${hayMesSig?'rgba(77,115,245,0.3)':'rgba(77,115,245,0.1)'};color:${hayMesSig?'#6ABDE6':'#2a3a5a'};border-radius:6px;padding:2px 9px;font-size:0.75rem;font-weight:700;cursor:${hayMesSig?'pointer':'default'}">→</button>
           </div>
           ${totalMes>0?`<div style="font-size:0.65rem;color:var(--muted)">${totalMes} en el mes${suspCount?` · <span style="color:#ffab40">${suspCount} susp.</span>`:''}${esMesActual&&diasRef?` · ${diasRef} a hoy`:''}</div>`:''}
         </div>`;
@@ -6019,14 +6019,14 @@ async function startCoordApp(){
           barCargado=Math.round(cargados/totalMes*100);
           barRef=esMesActual?Math.round(diasRef/totalMes*100):0;
         } else {
-          colBar='#4d73f5'; semaforo='';
+          colBar='#6ABDE6'; semaforo='';
           labelDer=`<span style="font-size:0.72rem;color:var(--muted)">${cargados} cargado${cargados!==1?'s':''}</span>`;
           barCargado=cargados>0?100:0; barRef=0;
         }
         h+=`<div style="margin-bottom:9px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <div style="display:flex;align-items:center;gap:6px">
-              <div style="width:8px;height:8px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+              <div style="width:8px;height:8px;border-radius:50%;background:${CAT_COL_R[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
               <span style="font-size:0.8rem;font-weight:500">${cat.label}</span>
               ${semaforo?`<span style="font-size:0.75rem">${semaforo}</span>`:''}
             </div>
@@ -6085,7 +6085,7 @@ async function startCoordApp(){
       _suspEntHtml=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Suspensiones de entrenamiento</div>
-          <button onclick="window.coordAbrirSuspEnt()" style="background:${suspCount?'rgba(255,171,64,0.12)':'rgba(77,115,245,0.12)'};border:1px solid ${suspCount?'rgba(255,171,64,0.3)':'rgba(77,115,245,0.3)'};color:${suspCount?'#ffab40':'#4d73f5'};border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">⚙ ${MES_L2[now.getMonth()]}${suspCount?' ('+suspCount+' susp.)':''}</button>
+          <button onclick="window.coordAbrirSuspEnt()" style="background:${suspCount?'rgba(255,171,64,0.12)':'rgba(77,115,245,0.12)'};border:1px solid ${suspCount?'rgba(255,171,64,0.3)':'rgba(77,115,245,0.3)'};color:${suspCount?'#ffab40':'#6ABDE6'};border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">⚙ ${MES_L2[now.getMonth()]}${suspCount?' ('+suspCount+' susp.)':''}</button>
         </div>
       </div>`;
     }
@@ -6219,8 +6219,8 @@ async function startCoordApp(){
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div style="font-size:0.72rem;color:var(--muted);width:70px">Club</div>
-        <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${clubAvg}%;background:#4d73f5;border-radius:4px"></div></div>
-        <div style="font-size:0.72rem;font-weight:600;color:#4d73f5;width:30px;text-align:right">${clubAvg}%</div>
+        <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${clubAvg}%;background:#6ABDE6;border-radius:4px"></div></div>
+        <div style="font-size:0.72rem;font-weight:600;color:#6ABDE6;width:30px;text-align:right">${clubAvg}%</div>
       </div>`;
 
     // Ausencias
@@ -6428,7 +6428,7 @@ async function startCoordApp(){
         ?`<span style="background:rgba(34,205,120,0.15);color:#22cd78;border:1px solid rgba(34,205,120,0.3);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">✓ Al día</span>`
         :`<span style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.25);font-size:0.65rem;padding:2px 8px;border-radius:12px;font-weight:600">Falta F${faltanFechas.map(f=>f.fecha).join(', F')}</span>`;
       hEstado+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-        <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL[cat.key]||'#4d73f5'};flex-shrink:0"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COL[cat.key]||'#6ABDE6'};flex-shrink:0"></div>
         <div style="flex:1;font-size:0.82rem;font-weight:500">${cat.label}</div>
         ${badge}
       </div>`;
@@ -6465,7 +6465,7 @@ async function startCoordApp(){
     const maxG=ranking.length?ranking[0].g:1;
     const top=buildRanking('total',null)[0];
     if(top){
-      const col=CAT_COL[top.cat]||'#4d73f5';
+      const col=CAT_COL[top.cat]||'#6ABDE6';
       const catLbl=COMP_CATS.find(c=>c.key===top.cat)?.label||top.cat;
       h+=`<div style="background:${col}22;border:1px solid ${col}55;border-radius:12px;padding:13px 15px;margin-bottom:16px;display:flex;align-items:center;gap:12px"><div style="font-size:2rem">&#11088;</div><div><div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:2px">Goleador histórico del club</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text)">${top.nombre}</div><div style="font-size:0.72rem;color:${col};font-weight:700">${catLbl} &middot; ${top.g} goles totales</div></div></div>`;
     }
@@ -6481,7 +6481,7 @@ async function startCoordApp(){
     } else {
       ranking.forEach((p,i)=>{
         const pct=maxG>0?Math.round(p.g/maxG*100):0;
-        const col=CAT_COL[p.cat]||'#4d73f5';
+        const col=CAT_COL[p.cat]||'#6ABDE6';
         const isTop=i===0;
         const catLbl=COMP_CATS.find(c=>c.key===p.cat)?.label||p.cat;
         h+=`<div style="display:grid;grid-template-columns:90px 1fr 28px;align-items:center;gap:8px;margin-bottom:6px"><div style="text-align:right"><div style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div><div style="font-size:0.62rem;color:${col};font-weight:600">${catLbl}</div></div><div style="position:relative;height:${isTop?'26px':'20px'};background:var(--surface2);border-radius:4px;overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${col};border-radius:4px;opacity:${isTop?'1':'0.75'}"></div></div><span style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);text-align:right">${p.g}</span></div>`;
@@ -6564,7 +6564,7 @@ async function startCoordApp(){
     const CAT_COL_L={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
     catRanks.forEach(({cat,pos,total,pts,w,d,l,pj,res})=>{
       const posCol=pos===1?'var(--yellow)':pos<=3?'var(--green)':pos>total-3?'var(--red)':'var(--muted)';
-      const col=CAT_COL_L[cat.key]||'#4d73f5';
+      const col=CAT_COL_L[cat.key]||'#6ABDE6';
       // Calcular puntos acumulados por fecha
       const resSorted=[...res].sort((a,b)=>(a.f||0)-(b.f||0));
       const ptsByF=[];
@@ -6629,7 +6629,7 @@ async function startCoordApp(){
         <div style="font-size:0.72rem;font-weight:700;margin-bottom:8px">📋 Cargar desde texto</div>
         <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px">Pegá el fixture en formato "1,LA PLATA V,V" (fecha,rival,L/V/-) — una por línea</div>
         <textarea id="fixtureTextInput" style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px;font-size:0.78rem;font-family:monospace;resize:vertical" placeholder="1,LA PLATA V,V&#10;2,DEF.SAN LORENZO,L&#10;3,CATELLA,V..."></textarea>
-        <button onclick="window.coordParseFix()" style="margin-top:8px;background:#4d73f5;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:0.78rem;font-weight:700;cursor:pointer;width:100%">Parsear e importar</button>
+        <button onclick="window.coordParseFix()" style="margin-top:8px;background:#6ABDE6;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:0.78rem;font-weight:700;cursor:pointer;width:100%">Parsear e importar</button>
       </div>`;
 
       // Tabla editable
@@ -6655,7 +6655,7 @@ async function startCoordApp(){
             <option value="L">Local</option><option value="V">Visitante</option><option value="-">Libre</option>
           </select>
         </div>
-        <button onclick="window.coordAddFecha()" style="margin-top:8px;background:rgba(77,115,245,0.15);color:#4d73f5;border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:7px 14px;font-size:0.78rem;font-weight:700;cursor:pointer;width:100%">+ Agregar</button>
+        <button onclick="window.coordAddFecha()" style="margin-top:8px;background:rgba(77,115,245,0.15);color:#6ABDE6;border:1px solid rgba(77,115,245,0.3);border-radius:7px;padding:7px 14px;font-size:0.78rem;font-weight:700;cursor:pointer;width:100%">+ Agregar</button>
       </div>`;
       h+=`<button onclick="window.coordSaveFix()" style="margin-top:14px;background:var(--green);color:#000;border:none;border-radius:9px;padding:11px;font-size:0.85rem;font-weight:700;cursor:pointer;width:100%">💾 Guardar fixture</button>`;
       el.innerHTML=h;
@@ -6783,7 +6783,7 @@ async function startCoordApp(){
           h+=`<div class="prow" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:8px">
             <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
               <div style="font-weight:700;font-size:0.88rem">${u.email||uid}</div>
-              <span style="font-size:0.68rem;padding:2px 8px;border-radius:10px;background:rgba(77,115,245,0.15);color:#4d73f5">${u.role==='coordinator'?'Coordinador':'Profe'}</span>
+              <span style="font-size:0.68rem;padding:2px 8px;border-radius:10px;background:rgba(77,115,245,0.15);color:#6ABDE6">${u.role==='coordinator'?'Coordinador':'Profe'}</span>
             </div>
             <div style="font-size:0.75rem;color:var(--muted)">${catList}</div>
           </div>`;
