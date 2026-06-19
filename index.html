@@ -6418,16 +6418,26 @@ async function startCoordApp(){
     let fechasJugadasGlobal=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]&&_playedNums.has(+f.fecha));
     if(!fechasJugadasGlobal.length && _playedNums.size){
       // FIXTURE_C incompleto: generar fechas desde los números conocidos
+      // Intentar recuperar el rival desde el key de stats
       fechasJugadasGlobal=[..._playedNums].sort((a,b)=>a-b).map(fn=>{
         const fc=FIXTURE_C.find(f=>f.fecha===fn);
-        return fc || {fecha:fn, rival:'—', cond:'?'};
+        if(fc) return fc;
+        // Buscar rival en stats keys de cualquier cat
+        const pat=new RegExp('^fecha'+String(fn).padStart(2,'0')+'_(.+)$');
+        let rival='—';
+        for(const cat of COMP_CATS){
+          const k=Object.keys(D[cat.key].stats||{}).find(k=>pat.test(k));
+          if(k){ rival=k.replace(pat,'$1').replace(/_/g,' ').toUpperCase(); break; }
+        }
+        return {fecha:fn, rival, cond:'?'};
       });
     }
 
-    // Helper: resultado de SC_RESULTS para una cat y fecha
-    const _getRes=(cat,fn)=>{ const r=(SC_RESULTS[cat.num]||[]).find(x=>+x.f===+fn); return r?{gf:r.gf,gc:r.gc}:null; };
     const _statKey=f=>'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-    const _hasGoles=(cat,f)=>{ const st=(D[cat.key].stats||{})[_statKey(f)]; return !!(st&&st.jugadores&&Object.keys(st.jugadores).length>0); };
+    // Buscar stats por número de fecha (independiente del rival en el key)
+    const _getStatByFecha=(cat,fn)=>{ const pat=new RegExp('^fecha'+String(fn).padStart(2,'0')+'_'); const k=Object.keys(D[cat.key].stats||{}).find(k=>pat.test(k)); return k?(D[cat.key].stats||{})[k]:null; };
+    const _hasGoles=(cat,f)=>{ const st=_getStatByFecha(cat,f.fecha); return !!(st&&st.jugadores&&Object.keys(st.jugadores).length>0); };
+    const _getRes=(cat,fn)=>{ const r=(SC_RESULTS[cat.num]||[]).find(x=>+x.f===+fn); return r?{gf:r.gf,gc:r.gc}:null; };
 
     let hEstado=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:12px">
       <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px">Carga de goles — ${fechasJugadasGlobal.length} partidos jugados</div>`;
