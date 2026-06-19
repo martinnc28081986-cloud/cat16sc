@@ -5635,7 +5635,10 @@ async function startCoordApp(){
   function globalActiveFecha(){
     // Fixture completo: FIXTURE_C + FIXTURE_DEFAULT para fechas faltantes
     const allFechas = [...FIXTURE_C];
-    console.log('[GAF2] FIXTURE_C.length='+FIXTURE_C.length+' FIXTURE_DEFAULT.length='+(typeof FIXTURE_DEFAULT!=='undefined'?FIXTURE_DEFAULT.length:'undef'));
+    console.log('[GAF2] FIXTURE_C:', JSON.stringify(FIXTURE_C.map(f=>({f:f.fecha,c:f.cond,r:(f.rival||'').substring(0,8)}))));
+    console.log('[GAF2] SC_RESULTS keys:', JSON.stringify(Object.keys(SC_RESULTS)), 'played F:', [...(()=>{const s=new Set();COMP_CATS.forEach(cat=>(SC_RESULTS[cat.num]||[]).forEach(r=>s.add(+r.f)));return s;})()].sort((a,b)=>a-b));
+    console.log('[GAF2] COMP_CATS:', COMP_CATS.map(c=>c.key+'#'+c.num).join(','));
+    COMP_CATS.forEach(cat=>console.log('[GAF2] D['+cat.key+'].cit keys:', Object.keys(D[cat.key].cit).length, Object.keys(D[cat.key].cit).join('|').substring(0,80)));
     const knownFechas = new Set(allFechas.map(f=>+f.fecha));
     const fallback = (typeof FIXTURE_DEFAULT!=='undefined'?FIXTURE_DEFAULT:[]).concat(window.FIXTURE||[]);
     fallback.forEach(f=>{ if(!knownFechas.has(+f.fecha)){ allFechas.push(f); knownFechas.add(+f.fecha); } });
