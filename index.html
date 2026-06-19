@@ -6174,8 +6174,14 @@ async function startCoordApp(){
     const pCol2=p=>p>=75?'#22cd78':p>=50?'#D4AF37':'#ff5068';
 
     // Citaciones del jugador
-    const citEntries=Object.values(cit).filter(x=>x&&x.citados&&x.fecha);
-    const citDondeEsta=citEntries.filter(x=>(x.citados||[]).includes(nombre)).sort((a,b)=>+a.fecha-+b.fecha);
+    // Todas las citaciones (regulares + extras), con _key y _sortKey para ordenar cronológicamente
+    const citEntries=Object.entries(cit)
+      .filter(([k,x])=>x&&x.citados&&(x.fecha||x.fecha_str||x.ts))
+      .map(([k,x])=>({...x,_key:k,_isExtra:k.startsWith('extra_'),
+        _sortKey: k.startsWith('extra_') ? (x.fecha_str||String(x.ts||0)) : String(+x.fecha).padStart(3,'0')
+      }));
+    const citDondeEsta=citEntries.filter(x=>(x.citados||[]).includes(nombre))
+      .sort((a,b)=>a._sortKey.localeCompare(b._sortKey));
     const totalCitF=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]).length;
     const jugCitado=citDondeEsta.length;
     const jugCitPct=totalCitF?Math.round(jugCitado/totalCitF*100):0;
@@ -6228,9 +6234,15 @@ async function startCoordApp(){
       h+=`<div style="font-size:0.75rem;color:var(--muted);">Sin citaciones en el período</div>`;
     } else {
       [...citDondeEsta].reverse().forEach(x=>{
-        h+=`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:rgba(106,189,230,0.07);border-radius:6px;border-left:2px solid #6ABDE6;">
-          <span style="font-size:0.72rem;font-weight:700;color:#6ABDE6;">F${x.fecha}</span>
-          <span style="font-size:0.7rem;color:#e8f4ff;flex:1;">${x.rival||'—'}</span>
+        const lbl = x._isExtra
+          ? (x.fecha_str ? x.fecha_str.substring(8,10)+'/'+x.fecha_str.substring(5,7) : '🏆')
+          : `F${x.fecha}`;
+        const lblCol = x._isExtra ? '#D4AF37' : '#6ABDE6';
+        const border = x._isExtra ? '#D4AF37' : '#6ABDE6';
+        const rivalLbl = x._isExtra ? `${x.rival||'—'} ${x.torneo_nombre?'('+x.torneo_nombre+')':''}` : (x.rival||'—');
+        h+=`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:rgba(106,189,230,0.07);border-radius:6px;border-left:2px solid ${border};">
+          <span style="font-size:0.72rem;font-weight:700;color:${lblCol};flex-shrink:0;">${lbl}</span>
+          <span style="font-size:0.7rem;color:#e8f4ff;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${rivalLbl}</span>
           <span style="font-size:0.62rem;color:var(--muted);">✓</span>
         </div>`;
       });
