@@ -2597,7 +2597,7 @@ function renderCitStats(){
     // Clave comparable: extras usan fecha_str (YYYY-MM-DD), regulares usan número de fecha padded.
     // Para mezclarlos: asumimos que cada fecha del torneo cae en semanas consecutivas desde F1.
     // Si hay fecha_str en el extra, la comparamos directamente. Si no, usamos ts convertido a fecha.
-    const FIXTURE_C_SORTED = [...FIXTURE_C].sort((a,b)=>a.fecha-b.fecha);
+    const _FIXTURE_REF = (typeof FIXTURE_C !== 'undefined' ? FIXTURE_C : (window.FIXTURE||[])); const FIXTURE_C_SORTED = [..._FIXTURE_REF].sort((a,b)=>a.fecha-b.fecha);
     const _fechaToDate = fn => {
       const f = FIXTURE_C_SORTED.find(x=>x.fecha===+fn);
       return f && f.dateStr ? f.dateStr : null; // dateStr si existe en el fixture
@@ -6446,36 +6446,45 @@ async function startCoordApp(){
     if(!fechasJugadasGlobal.length){
       hEstado+=`<div style="font-size:0.8rem;color:var(--muted);">Sin partidos jugados registrados aún.</div>`;
     } else {
+      // Una fila por partido, columnas = cats ordenadas de mayor a menor (2013→2020)
       const CATS_SORTED=[...COMP_CATS].sort((a,b)=>a.num-b.num);
-      hEstado+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">`;
+      hEstado+=`<div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:4px 8px 8px 0;color:var(--muted);font-weight:600;white-space:nowrap;min-width:110px;">Partido</th>`;
+      CATS_SORTED.forEach(cat=>{
+        hEstado+=`<th style="text-align:center;padding:4px 6px 8px;color:${CAT_COL[cat.key]||'#6ABDE6'};font-weight:700;white-space:nowrap;">${cat.label.replace('Cat ','')}</th>`;
+      });
+      hEstado+=`</tr></thead><tbody>`;
+
       [...fechasJugadasGlobal].reverse().forEach(f=>{
-        const condLabel=f.cond==='L'?'L':'V';
-        // Contar cuántas cats tienen goles ok
-        let okCount=0, totalCount=CATS_SORTED.length;
-        let badgesHtml='';
+        hEstado+=`<tr style="border-top:1px solid var(--border);">
+          <td style="padding:6px 8px 6px 0;white-space:nowrap;">
+            <span style="font-weight:700;color:var(--muted);font-size:0.68rem;">F${f.fecha}</span>
+            <span style="color:#e8f4ff;margin-left:4px;">${f.rival}</span>
+            <span style="font-size:0.62rem;color:var(--muted);margin-left:4px;">${f.cond==='L'?'L':'V'}</span>
+          </td>`;
         CATS_SORTED.forEach(cat=>{
           const res=_getRes(cat,f.fecha);
           const tieneGoles=_hasGoles(cat,f);
+          // Si el equipo no metió goles (gf=0), no hay nada que declarar → verde por defecto
           const sinGolesQueDec=res && res.gf===0;
           const ok=tieneGoles||sinGolesQueDec;
-          if(ok) okCount++;
-          const catCol=CAT_COL[cat.key]||'#6ABDE6';
+          const resStr=res?`${res.gf}-${res.gc}`:'—';
           const bg=ok?'rgba(34,205,120,0.12)':'rgba(255,80,104,0.08)';
           const col=ok?'#22cd78':'#ff5068';
           const border=ok?'rgba(34,205,120,0.3)':'rgba(255,80,104,0.2)';
-          const mark=tieneGoles?'✓':sinGolesQueDec?'–':'✗';
-          badgesHtml+=`<span style="font-size:0.62rem;font-weight:700;padding:1px 4px;border-radius:3px;background:${bg};color:${col};border:1px solid ${border};">${cat.label.replace('Cat ','').replace(' ','').trim()}${mark}</span>`;
+          hEstado+=`<td style="text-align:center;padding:5px 6px;">
+            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;background:${bg};border:1px solid ${border};border-radius:6px;padding:3px 7px;min-width:36px;">
+              <span style="font-weight:700;color:${col};font-size:0.72rem;">${resStr}</span>
+              <span style="font-size:0.55rem;color:${col};opacity:0.8;">${tieneGoles?'✓':sinGolesQueDec?'–':'✗'}</span>
+            </div>
+          </td>`;
         });
-        const allOk=okCount===totalCount;
-        const statusCol=allOk?'#22cd78':'#ff5068';
-        hEstado+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 7px;">
-          <div style="font-size:0.62rem;color:var(--muted);margin-bottom:1px;">F${f.fecha} · ${condLabel}</div>
-          <div style="font-size:0.72rem;font-weight:700;color:#e8f4ff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.rival}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:2px;">${badgesHtml}</div>
-          <div style="font-size:0.62rem;font-weight:700;color:${statusCol};margin-top:3px;text-align:right;">${okCount}/${totalCount}</div>
-        </div>`;
+        hEstado+=`</tr>`;
       });
-      hEstado+=`</div>`;
+      hEstado+=`</tbody></table></div>`;
     }
     hEstado+=`</div>`;
     let h=hEstado;
