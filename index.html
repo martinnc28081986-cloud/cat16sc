@@ -5507,6 +5507,11 @@ async function startCoordApp(){
       if(cfg.torneoActivo) TORNEO_ID = cfg.torneoActivo;
       if(cfg.ligaNombre) _ligaNombreCoord = cfg.ligaNombre;
       CLUB_LIGA_NOMBRE = _ligaNombreCoord || CLUB_PATH.split('/').pop().toUpperCase().replace(/-/g,' ');
+      // Si tiene ligaId pero no ligaNombre, guardarlo automáticamente para que el panel de suspensiones lo use
+      if(cfg.ligaId && !cfg.ligaNombre && CLUB_LIGA_NOMBRE){
+        _ligaNombreCoord = CLUB_LIGA_NOMBRE;
+        update(ref(db, CLUB_PATH+'/config'), {ligaNombre: CLUB_LIGA_NOMBRE}).catch(()=>{});
+      }
     }
     if(clubSnap.exists()){
       const club = clubSnap.val();
@@ -6764,10 +6769,11 @@ async function startCoordApp(){
 
       let _fix = [];
       try {
-        if(_ligaIdCoord && _ligaNombreCoord){
+        if(_ligaIdCoord && (_ligaNombreCoord || CLUB_LIGA_NOMBRE)){
+          const myLigaNombre = _ligaNombreCoord || CLUB_LIGA_NOMBRE;
           const schedSnap = await get(ref(db, 'ligas/'+_ligaIdCoord+'/schedule'));
           if(schedSnap.exists()){
-            const myN = _ligaNombreCoord.toUpperCase().trim();
+            const myN = myLigaNombre.toUpperCase().trim();
             const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
             _fix = Object.entries(schedSnap.val()).map(([k,matches])=>{
               const fecha = parseInt(k); if(isNaN(fecha)) return null;
