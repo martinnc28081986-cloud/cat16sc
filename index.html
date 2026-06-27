@@ -811,6 +811,11 @@ onValue(ref(db, 'presence'), snap => {
 let _suspensions = {};
 let _suspensionesEnt = {};
 let _onSuspensionChange = null;
+// Estado del tab Suspensiones — global para funcionar con y sin startCoordApp
+let _suspTabFixture = null;
+let _suspTabLoaded = false;
+let _coordSuspEntGlobal = {};
+let _coordDiasEntGlobal = [];
 onValue(ref(db, CLUB_PATH+'/config/suspensions'), snap => {
   _suspensions = snap.val() || {};
   if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
@@ -5736,8 +5741,11 @@ async function startCoordApp(){
   let coordFirebaseLoaded=false, coordActiveTab='resumen', coordPresFilter=null, coordPresMode='month';
   let coordJugadorSel=null; // {catKey, nombre}
   let coordJugadorMes='todo';
-  let _coordDiasEnt=[];
-  let _coordSuspEnt={};
+  _coordDiasEntGlobal=[];
+  _coordSuspEntGlobal={};
+  // Alias locales para compatibilidad con el resto del código
+  let _coordDiasEnt = _coordDiasEntGlobal;
+  let _coordSuspEnt = _coordSuspEntGlobal;
 
   function refresh(){ renderCoordTab(coordActiveTab); }
   _onSuspensionChange = refresh;
@@ -5767,7 +5775,7 @@ async function startCoordApp(){
         get(ref(db, CLUB_PATH+'/'+cat.key+'/goleadores_historicos')).then(s=>{ D[cat.key].hist=s.val()||{}; }).catch(()=>{}),
         get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/stats')).then(s=>{ D[cat.key].stats=s.val()||{}; }).catch(()=>{})
       ]);
-      reads.push(get(ref(db, CLUB_PATH+'/diasEntrenamiento')).then(s=>{ if(s.exists()) _coordDiasEnt=s.val()||[]; }).catch(()=>{}));
+      reads.push(get(ref(db, CLUB_PATH+'/diasEntrenamiento')).then(s=>{ if(s.exists()){ _coordDiasEnt=s.val()||[]; _coordDiasEntGlobal=_coordDiasEnt; } }).catch(()=>{}));
       reads.push(get(ref(db, CLUB_PATH+'/config/suspensionesEnt')).then(s=>{ if(s.exists()) _coordSuspEnt=s.val()||{}; }).catch(()=>{}));
       await Promise.all(reads);
     } catch(e){}
@@ -6052,7 +6060,7 @@ async function startCoordApp(){
           </div>
         </div>`;
       });
-      if(!_coordDiasEnt.length){
+      if(!_coordDiasEntGlobal.length){
         h+=`<div style="font-size:0.7rem;color:var(--muted);margin-top:6px;padding:8px;background:rgba(77,115,245,0.07);border-radius:8px;border:1px solid rgba(77,115,245,0.15)">
           💡 Configurá los días de entrenamiento en el panel SA para ver el progreso esperado del mes
         </div>`;
@@ -6757,10 +6765,7 @@ async function startCoordApp(){
   };
 
   // ── TAB SUSPENSIONES ──
-  let _suspTabFixture = null;
-  let _suspTabLoaded = false;
-
-  async function renderCoordSuspensiones(forceReload){
+  window.renderCoordSuspensiones = async function renderCoordSuspensiones(forceReload){
     const el = document.getElementById('cv-suspensiones');
     if(!el) return;
 
@@ -6830,8 +6835,16 @@ async function startCoordApp(){
 
       try {
         const sEnt = await get(ref(db, CLUB_PATH+'/config/suspensionesEnt'));
-        if(sEnt.exists()) _coordSuspEnt = sEnt.val() || {};
+        if(sEnt.exists()) _coordSuspEntGlobal = sEnt.val() || {};
       } catch(e){}
+
+      // Leer días de entrenamiento si no están cargados
+      if(!_coordDiasEntGlobal.length){
+        try {
+          const dEnt = await get(ref(db, CLUB_PATH+'/diasEntrenamiento'));
+          if(dEnt.exists()) _coordDiasEntGlobal = dEnt.val() || [];
+        } catch(e){}
+      }
 
       // Siempre marcar como cargado para que la navegación de mes no vuelva a Firebase
       _suspTabLoaded = true;
@@ -6886,7 +6899,7 @@ async function startCoordApp(){
     h += `<div class="csec" style="margin-top:24px">🏋 Entrenamientos</div>`;
     h += `<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px">Los días suspendidos bloquean la toma de lista y se descuentan del estimado mensual.</div>`;
 
-    if(!_coordDiasEnt.length){
+    if(!_coordDiasEntGlobal.length){
       h += `<div style="font-size:0.72rem;color:var(--muted);padding:10px;background:rgba(77,115,245,0.07);border:1px solid rgba(77,115,245,0.15);border-radius:8px">
         💡 Configurá los días de entrenamiento en el panel SA para habilitar esta sección.
       </div>`;
@@ -6898,7 +6911,7 @@ async function startCoordApp(){
       if(!window._coordSuspMesSel) window._coordSuspMesSel = mesActual;
       const mesSel = window._coordSuspMesSel;
       const [sY, sM] = mesSel.split('-').map(Number);
-      const suspEntMes = (_coordSuspEnt && _coordSuspEnt[mesSel]) || {};
+      const suspEntMes = (_coordSuspEntGlobal && _coordSuspEntGlobal[mesSel]) || {};
 
       h += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">${MES_L[sM-1]} ${sY}</span>
@@ -6913,10 +6926,10 @@ async function startCoordApp(){
       for(let d=1; d<=ultimoDia; d++){
         const dt = new Date(sY, sM-1, d);
         const dow = String(dt.getDay());
-        if(_coordDiasEnt.includes(dow)){ if(!grupos[dow]) grupos[dow]=[]; grupos[dow].push(d); }
+        if(_coordDiasEntGlobal.includes(dow)){ if(!grupos[dow]) grupos[dow]=[]; grupos[dow].push(d); }
       }
 
-      _coordDiasEnt.slice().sort((a,b)=>parseInt(a)-parseInt(b)).forEach(dow => {
+      _coordDiasEntGlobal.slice().sort((a,b)=>parseInt(a)-parseInt(b)).forEach(dow => {
         const dias = grupos[dow] || [];
         if(!dias.length) return;
         h += `<div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:10px">${DIA_L[parseInt(dow)]}</div>`;
