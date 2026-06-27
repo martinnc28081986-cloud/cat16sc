@@ -1459,8 +1459,24 @@ function renderFechaSelector(){
   // Restaurar selección previa (si sigue válida y no está suspendida)
   if(prev && !_suspensions[parseInt(prev)]) sel.value=prev;
   else if(prev && _suspensions[parseInt(prev)]){
-    sel.value='';
-    loadFecha('');
+    // La fecha previa fue suspendida → auto-seleccionar la próxima disponible
+    _getActiveFecha(FIXTURE, _suspensions).then(next => {
+      if(next){
+        sel.value = next.fecha;
+        loadFecha(String(next.fecha));
+      } else {
+        sel.value='';
+        loadFecha('');
+      }
+    });
+  } else if(!prev){
+    // Sin selección previa → auto-seleccionar la próxima fecha no citada
+    _getActiveFecha(FIXTURE, _suspensions).then(next => {
+      if(next && !sel.value){
+        sel.value = next.fecha;
+        loadFecha(String(next.fecha));
+      }
+    });
   }
 }
 renderFechaSelector();
