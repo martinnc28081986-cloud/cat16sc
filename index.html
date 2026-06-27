@@ -1459,24 +1459,8 @@ function renderFechaSelector(){
   // Restaurar selección previa (si sigue válida y no está suspendida)
   if(prev && !_suspensions[parseInt(prev)]) sel.value=prev;
   else if(prev && _suspensions[parseInt(prev)]){
-    // La fecha previa fue suspendida → auto-seleccionar la próxima disponible
-    _getActiveFecha(FIXTURE, _suspensions).then(next => {
-      if(next){
-        sel.value = next.fecha;
-        loadFecha(String(next.fecha));
-      } else {
-        sel.value='';
-        loadFecha('');
-      }
-    });
-  } else if(!prev){
-    // Sin selección previa → auto-seleccionar la próxima fecha no citada
-    _getActiveFecha(FIXTURE, _suspensions).then(next => {
-      if(next && !sel.value){
-        sel.value = next.fecha;
-        loadFecha(String(next.fecha));
-      }
-    });
+    sel.value='';
+    loadFecha('');
   }
 }
 renderFechaSelector();
@@ -6063,7 +6047,8 @@ async function startCoordApp(){
     const suspCount2=Object.keys(_suspensions).length;
     h+=`<div class="csec" style="margin-top:16px">🗓 Suspensiones${suspCount2?` <span style="font-size:0.72rem;color:var(--red);font-family:'DM Sans',sans-serif;letter-spacing:0">${suspCount2} suspendida${suspCount2!==1?'s':''}</span>`:''}</div>`;
     h+=`<div style="font-size:0.73rem;color:var(--muted);margin-bottom:10px">Tildá las fechas suspendidas. Se actualiza en tiempo real para todos los equipos.</div>`;
-    FIXTURE_C.filter(f=>f.cond!=='-').forEach(f=>{
+    const _suspFixture = (FIXTURE_C && FIXTURE_C.length) ? FIXTURE_C : (window.FIXTURE && window.FIXTURE.length ? window.FIXTURE : []);
+    _suspFixture.filter(f=>f.cond!=='-').forEach(f=>{
       const susp=!!_suspensions[f.fecha];
       const bordCol=susp?'rgba(255,23,68,0.35)':'var(--border)';
       const btnBg=susp?'rgba(255,23,68,0.15)':'transparent';
