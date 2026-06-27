@@ -6752,7 +6752,6 @@ async function startCoordApp(){
   };
 
   // ── TAB SUSPENSIONES ──
-  // Cache para no releer Firebase en cada navegación de mes
   let _suspTabFixture = null;
   let _suspTabLoaded = false;
 
@@ -6760,15 +6759,11 @@ async function startCoordApp(){
     const el = document.getElementById('cv-suspensiones');
     if(!el) return;
 
-    // Solo mostrar spinner la primera vez o si se fuerza reload
     if(!_suspTabLoaded || forceReload){
       el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px"><div class="spinner" style="margin:0 auto 10px"></div>Cargando…</div>';
 
-      // ── Usar variables ya cargadas en startCoordApp ──
-      // FIXTURE_C ya fue construido, usarlo directamente
       let _fix = [];
       try {
-        // Primero intentar con _ligaIdCoord y _ligaNombreCoord (ya cargados)
         if(_ligaIdCoord && _ligaNombreCoord){
           const schedSnap = await get(ref(db, 'ligas/'+_ligaIdCoord+'/schedule'));
           if(schedSnap.exists()){
@@ -6789,7 +6784,7 @@ async function startCoordApp(){
           if(!_fix.length){
             const ligaFixSnap = await get(ref(db, 'ligas/'+_ligaIdCoord+'/fixture'));
             if(ligaFixSnap.exists()){
-              const clubFixConds = clubFixtureConds || {};
+              const clubFixConds = (typeof clubFixtureConds !== 'undefined' ? clubFixtureConds : {});
               _fix = Object.entries(ligaFixSnap.val()).map(([k,v])=>{
                 const fecha = parseInt(k); if(isNaN(fecha)) return null;
                 const rival = (v.rival||'—').toUpperCase().trim();
@@ -6800,16 +6795,9 @@ async function startCoordApp(){
             }
           }
         }
-        // Fallback: FIXTURE_C ya construido en startCoordApp
-        if(!_fix.length && FIXTURE_C && FIXTURE_C.length) _fix = [...FIXTURE_C];
-        // Fallback: fixture del club desde config
-        if(!_fix.length && clubFixtureConds && Object.keys(clubFixtureConds).length){
-          _fix = Object.entries(clubFixtureConds).map(([k,v])=>{
-            const fecha = parseInt(k); if(isNaN(fecha)) return null;
-            return {fecha, rival:v.rival||'F'+k, cond:v.cond||'L'};
-          }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
-        }
-        // Fallback: leer fixture directo del club en Firebase
+        // Fallback: FIXTURE_C ya cargado en startCoordApp
+        if(!_fix.length && typeof FIXTURE_C !== 'undefined' && FIXTURE_C.length) _fix = [...FIXTURE_C];
+        // Fallback: fixture guardado en config del club
         if(!_fix.length){
           const cfixSnap = await get(ref(db, CLUB_PATH+'/config/fixture'));
           if(cfixSnap.exists()){
@@ -6819,21 +6807,25 @@ async function startCoordApp(){
             }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
           }
         }
-      } catch(e){ console.warn('renderCoordSuspensiones: error leyendo fixture', e); }
+      } catch(e){ console.warn('renderCoordSuspensiones: error fixture', e); }
 
       _suspTabFixture = _fix;
 
-      // Leer suspensionesEnt frescos
       try {
         const sEnt = await get(ref(db, CLUB_PATH+'/config/suspensionesEnt'));
         if(sEnt.exists()) _coordSuspEnt = sEnt.val() || {};
       } catch(e){}
 
+      // Siempre marcar como cargado para que la navegación de mes no vuelva a Firebase
       _suspTabLoaded = true;
     }
 
-    const fixture = _suspTabFixture || [];
+    // ── A partir de acá: solo renderiza HTML, sin Firebase ──
+    _renderSuspTab(el);
+  }
 
+  function _renderSuspTab(el){
+    const fixture = _suspTabFixture || [];
     const jugables = fixture.filter(f => f.cond !== '-');
 
     const MES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -6894,8 +6886,8 @@ async function startCoordApp(){
       h += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">${MES_L[sM-1]} ${sY}</span>
         <div style="display:flex;gap:6px">
-          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM-2,1))}';renderCoordTab('suspensiones')" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:#6ABDE6;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer">‹ ${MES_L[new Date(sY,sM-2,1).getMonth()].substring(0,3)}</button>
-          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM,1))}';renderCoordTab('suspensiones')" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:#6ABDE6;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer">${MES_L[new Date(sY,sM,1).getMonth()].substring(0,3)} ›</button>
+          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM-2,1))}';_renderSuspTab(document.getElementById('cv-suspensiones'))" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:#6ABDE6;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer">‹ ${MES_L[new Date(sY,sM-2,1).getMonth()].substring(0,3)}</button>
+          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM,1))}';_renderSuspTab(document.getElementById('cv-suspensiones'))" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:#6ABDE6;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer">${MES_L[new Date(sY,sM,1).getMonth()].substring(0,3)} ›</button>
         </div>
       </div>`;
 
@@ -6925,6 +6917,7 @@ async function startCoordApp(){
 
     el.innerHTML = h;
   }
+  window._renderSuspTab = _renderSuspTab;
 
   // ── TAB HORARIOS ──
   async function renderCoordHorarios(){
