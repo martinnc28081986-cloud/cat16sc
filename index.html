@@ -725,12 +725,14 @@
     <div class="coord-tab"     onclick="window.coordTab('citaciones')"><span style="font-size:18px;line-height:1">⭐</span>Citaciones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('goleadores')"><span style="font-size:18px;line-height:1">⚽</span>Goles<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab"     onclick="window.coordTab('liga')"><span style="font-size:18px;line-height:1">🏆</span>Liga<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('suspensiones')"><span style="font-size:18px;line-height:1">⛔</span>Suspensiones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="cv-resumen"    class="coord-view active"></div>
   <div id="cv-presencias" class="coord-view"></div>
   <div id="cv-citaciones" class="coord-view"></div>
   <div id="cv-goleadores" class="coord-view"></div>
   <div id="cv-liga"       class="coord-view"></div>
+  <div id="cv-suspensiones" class="coord-view"></div>
   <div id="cv-fixture"    class="coord-view"></div>
   <div id="cv-horarios"   class="coord-view"></div>
   <div id="cv-profes"     class="coord-view"></div>
@@ -5853,7 +5855,8 @@ async function startCoordApp(){
         btn.style.background='rgba(255,23,68,0.15)'; btn.style.borderColor='rgba(255,23,68,0.4)'; btn.style.color='#ff4d6d';
         if(!btn.textContent.includes('✓')) btn.textContent='✓  '+btn.textContent.trim();
       }
-      if(coordActiveTab==='resumen'||coordActiveTab==='presencias') renderCoordTab(coordActiveTab);
+      if(coordActiveTab==='suspensiones') renderCoordTab('suspensiones');
+      else if(coordActiveTab==='presencias') renderCoordTab('presencias');
     }catch(e){ showToast('Error al guardar'); }
   };
   window.coordJugadorSelect=function(val){
@@ -5870,6 +5873,7 @@ async function startCoordApp(){
     if(tab==='citaciones') renderCitaciones();
     if(tab==='goleadores') renderGoleadores();
     if(tab==='liga')       renderLiga();
+    if(tab==='suspensiones') renderCoordSuspensiones();
     if(tab==='fixture')    renderCoordFixture();
     if(tab==='horarios')   renderCoordHorarios();
     if(tab==='profes')     renderCoordProfes();
@@ -6051,42 +6055,6 @@ async function startCoordApp(){
       h+=`</div>`;
     }
 
-    // ── PANEL DE SUSPENSIONES ──
-    const suspCount2=Object.keys(_suspensions).length;
-    h+=`<div class="csec" style="margin-top:16px">🗓 Suspensiones${suspCount2?` <span style="font-size:0.72rem;color:var(--red);font-family:'DM Sans',sans-serif;letter-spacing:0">${suspCount2} suspendida${suspCount2!==1?'s':''}</span>`:''}</div>`;
-    h+=`<div style="font-size:0.73rem;color:var(--muted);margin-bottom:10px">Tildá las fechas suspendidas. Se actualiza en tiempo real para todos los equipos.</div>`;
-    let _suspFix = (FIXTURE_C && FIXTURE_C.length) ? FIXTURE_C : [];
-    if(!_suspFix.length){
-      const _citFechas = new Map();
-      COMP_CATS.forEach(cat=>{
-        Object.values(D[cat.key].cit||{}).forEach(cit=>{
-          if(cit.fecha && !_citFechas.has(+cit.fecha)){
-            _citFechas.set(+cit.fecha, {fecha:+cit.fecha, rival:cit.rival||'—', cond:cit.cond||'L'});
-          }
-        });
-      });
-      if(_citFechas.size) _suspFix = [..._citFechas.values()].sort((a,b)=>a.fecha-b.fecha);
-    }
-    if(!_suspFix.length && window.FIXTURE && window.FIXTURE.length) _suspFix = window.FIXTURE;
-    if(!_suspFix.length) _suspFix = Array.from({length:22},(_,i)=>({fecha:i+1,rival:'F'+(i+1),cond:'L'}));
-    _suspFix.filter(f=>f.cond!=='-').forEach(f=>{
-      const susp=!!_suspensions[f.fecha];
-      const bordCol=susp?'rgba(255,23,68,0.35)':'var(--border)';
-      const btnBg=susp?'rgba(255,23,68,0.15)':'transparent';
-      const btnCol=susp?'var(--red)':'var(--muted)';
-      const btnBord=susp?'var(--red)':'var(--border)';
-      h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--surface2);border:1px solid ${bordCol};border-radius:8px;margin-bottom:5px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:1px;color:var(--muted);width:22px">F${f.fecha}</span>
-          <span style="font-weight:600;font-size:0.85rem">${f.rival}</span>
-          <span style="font-size:0.65rem;color:var(--muted)">${f.cond==='L'?'Local':'Visita'}</span>
-          ${susp?'<span style="font-size:0.65rem;color:var(--red);font-weight:700">SUSPENDIDA</span>':''}
-        </div>
-        <button onclick="window.toggleSusp(${f.fecha})" style="background:${btnBg};border:1px solid ${btnBord};color:${btnCol};border-radius:6px;padding:5px 11px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
-          ${susp?'✓ Suspendida':'Suspender'}
-        </button>
-      </div>`;
-    });
     el.innerHTML=h;
   }
 
@@ -6096,18 +6064,6 @@ async function startCoordApp(){
     const el=document.getElementById('cv-presencias');
     if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto 10px"></div>Cargando presencias…</div>'; return; }
     var _suspEntHtml='';
-    if(_coordDiasEnt.length){
-      const now=new Date(); const mesActual=now.toISOString().substring(0,7);
-      const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
-      const suspCount=Object.keys(suspEnt).length;
-      const MES_L2=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-      _suspEntHtml=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Suspensiones de entrenamiento</div>
-          <button onclick="window.coordAbrirSuspEnt()" style="background:${suspCount?'rgba(255,171,64,0.12)':'rgba(77,115,245,0.12)'};border:1px solid ${suspCount?'rgba(255,171,64,0.3)':'rgba(77,115,245,0.3)'};color:${suspCount?'#ffab40':'#6ABDE6'};border-radius:7px;padding:4px 12px;font-size:0.72rem;font-weight:700;cursor:pointer">⚙ ${MES_L2[now.getMonth()]}${suspCount?' ('+suspCount+' susp.)':''}</button>
-        </div>
-      </div>`;
-    }
 
     // ── SELECTOR DE JUGADOR ──
     let jugSel=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px">
@@ -6129,11 +6085,11 @@ async function startCoordApp(){
     jugSel+=`</select></div>`;
 
     if(coordJugadorSel){
-      el.innerHTML=_suspEntHtml+jugSel;
+      el.innerHTML=jugSel;
       renderCoordJugador(el);
       return;
     }
-    let h=_suspEntHtml+jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
+    let h=jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
     ALL_CATS.forEach(cat=>{ h+=`<button class="cfilter${coordPresFilter===cat.key?' on':''}" onclick="window.coordPF('${cat.key}')">${cat.label.replace('Cat ','')}</button>`; });
     h+=`</div><div class="cfilter-row">
       <button class="cfilter${coordPresMode==='day'?' on':''}" onclick="window.coordPM('day')">Por Día</button>
@@ -6794,6 +6750,150 @@ async function startCoordApp(){
     showCoordToast('✓ Fixture importado ('+FIXTURE.length+' fechas)');
     renderCoordFixture();
   };
+
+  // ── TAB SUSPENSIONES ──
+  async function renderCoordSuspensiones(){
+    const el = document.getElementById('cv-suspensiones');
+    if(!el) return;
+    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px"><div class="spinner" style="margin:0 auto 10px"></div>Cargando…</div>';
+
+    // ── Leer fixture fresco desde Firebase ──
+    let fixture = [];
+    try {
+      const cfgVal = ((await get(ref(db, CLUB_PATH+'/config'))).val()) || {};
+      const ligaId = cfgVal.ligaId || null;
+      const ligaNombre = cfgVal.ligaNombre || _ligaNombreCoord || '';
+      const clubFixConds = cfgVal.fixture || {};
+
+      if(ligaId && ligaNombre){
+        const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
+        if(schedSnap.exists()){
+          const myN = ligaNombre.toUpperCase().trim();
+          const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
+          fixture = Object.entries(schedSnap.val()).map(([k,matches])=>{
+            const fecha = parseInt(k); if(isNaN(fecha)) return null;
+            const arr = Array.isArray(matches) ? matches : Object.values(matches);
+            const libre = arr.find(m => m.libre && m5(m.libre)===m5(myN));
+            if(libre) return {fecha, rival:'LIBRE', cond:'-'};
+            const asLocal = arr.find(m => m.local && (m.local.toUpperCase().trim()===myN || m5(m.local)===m5(myN)));
+            if(asLocal) return {fecha, rival:asLocal.visitante||'', cond:'L'};
+            const asVisit = arr.find(m => m.visitante && (m.visitante.toUpperCase().trim()===myN || m5(m.visitante)===m5(myN)));
+            if(asVisit) return {fecha, rival:asVisit.local||'', cond:'V'};
+            return null;
+          }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
+        }
+      }
+      if(!fixture.length && ligaId){
+        const ligaFixSnap = await get(ref(db, 'ligas/'+ligaId+'/fixture'));
+        if(ligaFixSnap.exists()){
+          fixture = Object.entries(ligaFixSnap.val()).map(([k,v])=>{
+            const fecha = parseInt(k); if(isNaN(fecha)) return null;
+            const rival = (v.rival||'—').toUpperCase().trim();
+            const condEntry = clubFixConds[String(fecha)] || clubFixConds[fecha] || {};
+            const cond = condEntry.cond || (rival==='LIBRE'?'-':'L');
+            return {fecha, rival, cond};
+          }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
+        }
+      }
+      if(!fixture.length) fixture = [...(FIXTURE_C.length ? FIXTURE_C : (window.FIXTURE||[]))];
+    } catch(e){ console.warn('renderCoordSuspensiones: error leyendo fixture', e); }
+
+    const jugables = fixture.filter(f => f.cond !== '-');
+
+    // ── Leer suspensionesEnt frescos ──
+    try {
+      const sEnt = await get(ref(db, CLUB_PATH+'/config/suspensionesEnt'));
+      if(sEnt.exists()) _coordSuspEnt = sEnt.val() || {};
+    } catch(e){}
+
+    const MES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const DIA_L = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const now = new Date();
+    const mesActual = now.toISOString().substring(0,7);
+    const [Y, M] = mesActual.split('-').map(Number);
+
+    let h = '';
+
+    // Banner informativo
+    h += `<div style="background:rgba(255,171,64,0.08);border:1px solid rgba(255,171,64,0.2);border-radius:8px;padding:9px 12px;margin-bottom:16px;font-size:0.72rem;color:#ffab40;display:flex;align-items:center;gap:7px">
+      ⚠️ Las suspensiones se aplican en tiempo real a todos los profes del club.
+    </div>`;
+
+    // ── SECCIÓN FECHAS DE PARTIDO ──
+    h += `<div class="csec">🗓 Fechas de partido</div>`;
+    h += `<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px">Las fechas suspendidas bloquean la citación en todos los equipos.</div>`;
+
+    if(!jugables.length){
+      h += `<div class="empty-msg">No hay fixture cargado para este club.</div>`;
+    } else {
+      jugables.forEach(f => {
+        const susp = !!_suspensions[f.fecha];
+        h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--surface2);border:1px solid ${susp?'rgba(255,23,68,0.35)':'var(--border)'};border-radius:8px;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:1px;color:var(--muted);width:22px">F${f.fecha}</span>
+            <span style="font-weight:600;font-size:0.85rem">${f.rival}</span>
+            <span style="font-size:0.65rem;color:var(--muted)">${f.cond==='L'?'Local':'Visita'}</span>
+            ${susp?'<span style="font-size:0.62rem;color:var(--red);font-weight:700;letter-spacing:0.5px">⛔ SUSPENDIDA</span>':''}
+          </div>
+          <button onclick="window.toggleSusp(${f.fecha})" style="background:${susp?'rgba(255,23,68,0.15)':'transparent'};border:1px solid ${susp?'rgba(255,23,68,0.4)':'var(--border)'};color:${susp?'var(--red)':'var(--muted)'};border-radius:6px;padding:5px 11px;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+            ${susp?'✓ Suspendida':'Suspender'}
+          </button>
+        </div>`;
+      });
+    }
+
+    // ── SECCIÓN ENTRENAMIENTOS ──
+    h += `<div class="csec" style="margin-top:24px">🏋 Entrenamientos</div>`;
+    h += `<div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px">Los días suspendidos bloquean la toma de lista y se descuentan del estimado mensual.</div>`;
+
+    if(!_coordDiasEnt.length){
+      h += `<div style="font-size:0.72rem;color:var(--muted);padding:10px;background:rgba(77,115,245,0.07);border:1px solid rgba(77,115,245,0.15);border-radius:8px">
+        💡 Configurá los días de entrenamiento en el panel SA para habilitar esta sección.
+      </div>`;
+    } else {
+      // Navegación de mes
+      const prevMes = new Date(Y, M-2, 1); const nextMes = new Date(Y, M, 1);
+      const fmtMes = d => MES_L[d.getMonth()]+' '+d.getFullYear();
+      const mesKey = d => d.toISOString().substring(0,7);
+      if(!window._coordSuspMesSel) window._coordSuspMesSel = mesActual;
+      const mesSel = window._coordSuspMesSel;
+      const [sY, sM] = mesSel.split('-').map(Number);
+      const suspEntMes = (_coordSuspEnt && _coordSuspEnt[mesSel]) || {};
+
+      h += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">${MES_L[sM-1]} ${sY}</span>
+        <div style="display:flex;gap:6px">
+          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM-2,1))}';renderCoordTab('suspensiones')" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:#6ABDE6;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer">‹ ${MES_L[new Date(sY,sM-2,1).getMonth()].substring(0,3)}</button>
+          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM,1))}';renderCoordTab('suspensiones')" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:#6ABDE6;border-radius:6px;padding:3px 10px;font-size:0.72rem;font-weight:700;cursor:pointer">${MES_L[new Date(sY,sM,1).getMonth()].substring(0,3)} ›</button>
+        </div>
+      </div>`;
+
+      const ultimoDia = new Date(sY, sM, 0).getDate();
+      const grupos = {};
+      for(let d=1; d<=ultimoDia; d++){
+        const dt = new Date(sY, sM-1, d);
+        const dow = String(dt.getDay());
+        if(_coordDiasEnt.includes(dow)){ if(!grupos[dow]) grupos[dow]=[]; grupos[dow].push(d); }
+      }
+
+      _coordDiasEnt.slice().sort((a,b)=>parseInt(a)-parseInt(b)).forEach(dow => {
+        const dias = grupos[dow] || [];
+        if(!dias.length) return;
+        h += `<div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;margin-top:10px">${DIA_L[parseInt(dow)]}</div>`;
+        h += `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">`;
+        dias.forEach(d => {
+          const dd = String(d).padStart(2,'0');
+          const susp = !!suspEntMes[dd];
+          h += `<button onclick="window.coordToggleSuspEnt('${mesSel}','${dd}',this)" style="background:${susp?'rgba(255,23,68,0.15)':'rgba(77,115,245,0.1)'};border:1px solid ${susp?'rgba(255,23,68,0.4)':'#0e3050'};color:${susp?'#ff4d6d':'#4a7a99'};border-radius:8px;padding:6px 10px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+            ${susp?'✓ ':''}${DIA_L[parseInt(dow)]} ${d}
+          </button>`;
+        });
+        h += `</div>`;
+      });
+    }
+
+    el.innerHTML = h;
+  }
 
   // ── TAB HORARIOS ──
   async function renderCoordHorarios(){
