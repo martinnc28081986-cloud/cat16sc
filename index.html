@@ -1459,8 +1459,16 @@ function renderFechaSelector(){
   // Restaurar selección previa (si sigue válida y no está suspendida)
   if(prev && !_suspensions[parseInt(prev)]) sel.value=prev;
   else if(prev && _suspensions[parseInt(prev)]){
-    sel.value='';
-    loadFecha('');
+    // La fecha previa fue suspendida → auto-seleccionar la próxima disponible
+    _getActiveFecha(FIXTURE, _suspensions).then(next => {
+      if(next){ sel.value=next.fecha; loadFecha(String(next.fecha)); }
+      else { sel.value=''; loadFecha(''); }
+    });
+  } else if(!prev){
+    // Sin selección previa → auto-seleccionar la próxima fecha no citada
+    _getActiveFecha(FIXTURE, _suspensions).then(next => {
+      if(next && !sel.value){ sel.value=next.fecha; loadFecha(String(next.fecha)); }
+    });
   }
 }
 renderFechaSelector();
@@ -6047,8 +6055,21 @@ async function startCoordApp(){
     const suspCount2=Object.keys(_suspensions).length;
     h+=`<div class="csec" style="margin-top:16px">🗓 Suspensiones${suspCount2?` <span style="font-size:0.72rem;color:var(--red);font-family:'DM Sans',sans-serif;letter-spacing:0">${suspCount2} suspendida${suspCount2!==1?'s':''}</span>`:''}</div>`;
     h+=`<div style="font-size:0.73rem;color:var(--muted);margin-bottom:10px">Tildá las fechas suspendidas. Se actualiza en tiempo real para todos los equipos.</div>`;
-    const _suspFixture = (FIXTURE_C && FIXTURE_C.length) ? FIXTURE_C : (window.FIXTURE && window.FIXTURE.length ? window.FIXTURE : []);
-    _suspFixture.filter(f=>f.cond!=='-').forEach(f=>{
+    let _suspFix = (FIXTURE_C && FIXTURE_C.length) ? FIXTURE_C : [];
+    if(!_suspFix.length){
+      const _citFechas = new Map();
+      COMP_CATS.forEach(cat=>{
+        Object.values(D[cat.key].cit||{}).forEach(cit=>{
+          if(cit.fecha && !_citFechas.has(+cit.fecha)){
+            _citFechas.set(+cit.fecha, {fecha:+cit.fecha, rival:cit.rival||'—', cond:cit.cond||'L'});
+          }
+        });
+      });
+      if(_citFechas.size) _suspFix = [..._citFechas.values()].sort((a,b)=>a.fecha-b.fecha);
+    }
+    if(!_suspFix.length && window.FIXTURE && window.FIXTURE.length) _suspFix = window.FIXTURE;
+    if(!_suspFix.length) _suspFix = Array.from({length:22},(_,i)=>({fecha:i+1,rival:'F'+(i+1),cond:'L'}));
+    _suspFix.filter(f=>f.cond!=='-').forEach(f=>{
       const susp=!!_suspensions[f.fecha];
       const bordCol=susp?'rgba(255,23,68,0.35)':'var(--border)';
       const btnBg=susp?'rgba(255,23,68,0.15)':'transparent';
