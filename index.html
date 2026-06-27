@@ -5790,7 +5790,7 @@ async function startCoordApp(){
 
   window.coordTab=function(tab){
     coordActiveTab=tab;
-    const tabs=['resumen','presencias','citaciones','goleadores','liga','fixture','horarios','profes'];
+    const tabs=['resumen','presencias','citaciones','goleadores','liga','suspensiones','fixture','horarios','profes'];
     document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{
       const isActive=tabs[i]===tab;
       t.className='coord-tab'+(isActive?' cta':'');
@@ -6752,59 +6752,89 @@ async function startCoordApp(){
   };
 
   // ── TAB SUSPENSIONES ──
-  async function renderCoordSuspensiones(){
+  // Cache para no releer Firebase en cada navegación de mes
+  let _suspTabFixture = null;
+  let _suspTabLoaded = false;
+
+  async function renderCoordSuspensiones(forceReload){
     const el = document.getElementById('cv-suspensiones');
     if(!el) return;
-    el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px"><div class="spinner" style="margin:0 auto 10px"></div>Cargando…</div>';
 
-    // ── Leer fixture fresco desde Firebase ──
-    let fixture = [];
-    try {
-      const cfgVal = ((await get(ref(db, CLUB_PATH+'/config'))).val()) || {};
-      const ligaId = cfgVal.ligaId || null;
-      const ligaNombre = cfgVal.ligaNombre || _ligaNombreCoord || '';
-      const clubFixConds = cfgVal.fixture || {};
+    // Solo mostrar spinner la primera vez o si se fuerza reload
+    if(!_suspTabLoaded || forceReload){
+      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px"><div class="spinner" style="margin:0 auto 10px"></div>Cargando…</div>';
 
-      if(ligaId && ligaNombre){
-        const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
-        if(schedSnap.exists()){
-          const myN = ligaNombre.toUpperCase().trim();
-          const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
-          fixture = Object.entries(schedSnap.val()).map(([k,matches])=>{
+      // ── Usar variables ya cargadas en startCoordApp ──
+      // FIXTURE_C ya fue construido, usarlo directamente
+      let _fix = [];
+      try {
+        // Primero intentar con _ligaIdCoord y _ligaNombreCoord (ya cargados)
+        if(_ligaIdCoord && _ligaNombreCoord){
+          const schedSnap = await get(ref(db, 'ligas/'+_ligaIdCoord+'/schedule'));
+          if(schedSnap.exists()){
+            const myN = _ligaNombreCoord.toUpperCase().trim();
+            const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
+            _fix = Object.entries(schedSnap.val()).map(([k,matches])=>{
+              const fecha = parseInt(k); if(isNaN(fecha)) return null;
+              const arr = Array.isArray(matches) ? matches : Object.values(matches);
+              const libre = arr.find(m => m.libre && m5(m.libre)===m5(myN));
+              if(libre) return {fecha, rival:'LIBRE', cond:'-'};
+              const asLocal = arr.find(m => m.local && (m.local.toUpperCase().trim()===myN || m5(m.local)===m5(myN)));
+              if(asLocal) return {fecha, rival:asLocal.visitante||'', cond:'L'};
+              const asVisit = arr.find(m => m.visitante && (m.visitante.toUpperCase().trim()===myN || m5(m.visitante)===m5(myN)));
+              if(asVisit) return {fecha, rival:asVisit.local||'', cond:'V'};
+              return null;
+            }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
+          }
+          if(!_fix.length){
+            const ligaFixSnap = await get(ref(db, 'ligas/'+_ligaIdCoord+'/fixture'));
+            if(ligaFixSnap.exists()){
+              const clubFixConds = clubFixtureConds || {};
+              _fix = Object.entries(ligaFixSnap.val()).map(([k,v])=>{
+                const fecha = parseInt(k); if(isNaN(fecha)) return null;
+                const rival = (v.rival||'—').toUpperCase().trim();
+                const condEntry = clubFixConds[String(fecha)] || clubFixConds[fecha] || {};
+                const cond = condEntry.cond || (rival==='LIBRE'?'-':'L');
+                return {fecha, rival, cond};
+              }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
+            }
+          }
+        }
+        // Fallback: FIXTURE_C ya construido en startCoordApp
+        if(!_fix.length && FIXTURE_C && FIXTURE_C.length) _fix = [...FIXTURE_C];
+        // Fallback: fixture del club desde config
+        if(!_fix.length && clubFixtureConds && Object.keys(clubFixtureConds).length){
+          _fix = Object.entries(clubFixtureConds).map(([k,v])=>{
             const fecha = parseInt(k); if(isNaN(fecha)) return null;
-            const arr = Array.isArray(matches) ? matches : Object.values(matches);
-            const libre = arr.find(m => m.libre && m5(m.libre)===m5(myN));
-            if(libre) return {fecha, rival:'LIBRE', cond:'-'};
-            const asLocal = arr.find(m => m.local && (m.local.toUpperCase().trim()===myN || m5(m.local)===m5(myN)));
-            if(asLocal) return {fecha, rival:asLocal.visitante||'', cond:'L'};
-            const asVisit = arr.find(m => m.visitante && (m.visitante.toUpperCase().trim()===myN || m5(m.visitante)===m5(myN)));
-            if(asVisit) return {fecha, rival:asVisit.local||'', cond:'V'};
-            return null;
+            return {fecha, rival:v.rival||'F'+k, cond:v.cond||'L'};
           }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
         }
-      }
-      if(!fixture.length && ligaId){
-        const ligaFixSnap = await get(ref(db, 'ligas/'+ligaId+'/fixture'));
-        if(ligaFixSnap.exists()){
-          fixture = Object.entries(ligaFixSnap.val()).map(([k,v])=>{
-            const fecha = parseInt(k); if(isNaN(fecha)) return null;
-            const rival = (v.rival||'—').toUpperCase().trim();
-            const condEntry = clubFixConds[String(fecha)] || clubFixConds[fecha] || {};
-            const cond = condEntry.cond || (rival==='LIBRE'?'-':'L');
-            return {fecha, rival, cond};
-          }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
+        // Fallback: leer fixture directo del club en Firebase
+        if(!_fix.length){
+          const cfixSnap = await get(ref(db, CLUB_PATH+'/config/fixture'));
+          if(cfixSnap.exists()){
+            _fix = Object.entries(cfixSnap.val()).map(([k,v])=>{
+              const fecha = parseInt(k); if(isNaN(fecha)) return null;
+              return {fecha, rival:(v.rival||'F'+k).toUpperCase(), cond:v.cond||'L'};
+            }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
+          }
         }
-      }
-      if(!fixture.length) fixture = [...(FIXTURE_C.length ? FIXTURE_C : (window.FIXTURE||[]))];
-    } catch(e){ console.warn('renderCoordSuspensiones: error leyendo fixture', e); }
+      } catch(e){ console.warn('renderCoordSuspensiones: error leyendo fixture', e); }
+
+      _suspTabFixture = _fix;
+
+      // Leer suspensionesEnt frescos
+      try {
+        const sEnt = await get(ref(db, CLUB_PATH+'/config/suspensionesEnt'));
+        if(sEnt.exists()) _coordSuspEnt = sEnt.val() || {};
+      } catch(e){}
+
+      _suspTabLoaded = true;
+    }
+
+    const fixture = _suspTabFixture || [];
 
     const jugables = fixture.filter(f => f.cond !== '-');
-
-    // ── Leer suspensionesEnt frescos ──
-    try {
-      const sEnt = await get(ref(db, CLUB_PATH+'/config/suspensionesEnt'));
-      if(sEnt.exists()) _coordSuspEnt = sEnt.val() || {};
-    } catch(e){}
 
     const MES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const DIA_L = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -6815,8 +6845,9 @@ async function startCoordApp(){
     let h = '';
 
     // Banner informativo
-    h += `<div style="background:rgba(255,171,64,0.08);border:1px solid rgba(255,171,64,0.2);border-radius:8px;padding:9px 12px;margin-bottom:16px;font-size:0.72rem;color:#ffab40;display:flex;align-items:center;gap:7px">
-      ⚠️ Las suspensiones se aplican en tiempo real a todos los profes del club.
+    h += `<div style="background:rgba(255,171,64,0.08);border:1px solid rgba(255,171,64,0.2);border-radius:8px;padding:9px 12px;margin-bottom:16px;font-size:0.72rem;color:#ffab40;display:flex;align-items:center;justify-content:space-between;gap:7px">
+      <span>⚠️ Las suspensiones se aplican en tiempo real a todos los profes del club.</span>
+      <button onclick="_suspTabLoaded=false;renderCoordSuspensiones(true)" style="background:transparent;border:1px solid rgba(255,171,64,0.3);color:#ffab40;border-radius:6px;padding:3px 9px;font-size:0.68rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">↺ Actualizar</button>
     </div>`;
 
     // ── SECCIÓN FECHAS DE PARTIDO ──
