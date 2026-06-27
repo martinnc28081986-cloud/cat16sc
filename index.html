@@ -6769,11 +6769,23 @@ async function startCoordApp(){
 
       let _fix = [];
       try {
-        if(_ligaIdCoord && (_ligaNombreCoord || CLUB_LIGA_NOMBRE)){
-          const myLigaNombre = _ligaNombreCoord || CLUB_LIGA_NOMBRE;
-          const schedSnap = await get(ref(db, 'ligas/'+_ligaIdCoord+'/schedule'));
+        // Leer config directo de Firebase — no depende de variables de startCoordApp
+        const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
+        const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
+        const ligaId = cfg.ligaId || null;
+        // ligaNombre: desde config, o desde variable global, o desde nombre del club mapeado
+        const clubId = CLUB_PATH.split('/').pop();
+        const _clubNombreMap = {'sagrado-corazon':'SAGR. CORAZON','hernandez':'HERNANDEZ','el-ciclon':'EL CICLON'};
+        const ligaNombre = cfg.ligaNombre
+          || (typeof CLUB_LIGA_NOMBRE !== 'undefined' && CLUB_LIGA_NOMBRE ? CLUB_LIGA_NOMBRE : '')
+          || _clubNombreMap[clubId]
+          || clubId.toUpperCase().replace(/-/g,' ');
+        const clubFixConds = cfg.fixture || {};
+
+        if(ligaId && ligaNombre){
+          const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
           if(schedSnap.exists()){
-            const myN = myLigaNombre.toUpperCase().trim();
+            const myN = ligaNombre.toUpperCase().trim();
             const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
             _fix = Object.entries(schedSnap.val()).map(([k,matches])=>{
               const fecha = parseInt(k); if(isNaN(fecha)) return null;
@@ -6788,9 +6800,8 @@ async function startCoordApp(){
             }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
           }
           if(!_fix.length){
-            const ligaFixSnap = await get(ref(db, 'ligas/'+_ligaIdCoord+'/fixture'));
+            const ligaFixSnap = await get(ref(db, 'ligas/'+ligaId+'/fixture'));
             if(ligaFixSnap.exists()){
-              const clubFixConds = (typeof clubFixtureConds !== 'undefined' ? clubFixtureConds : {});
               _fix = Object.entries(ligaFixSnap.val()).map(([k,v])=>{
                 const fecha = parseInt(k); if(isNaN(fecha)) return null;
                 const rival = (v.rival||'—').toUpperCase().trim();
@@ -6801,8 +6812,8 @@ async function startCoordApp(){
             }
           }
         }
-        // Fallback: FIXTURE_C ya cargado en startCoordApp
-        if(!_fix.length && typeof FIXTURE_C !== 'undefined' && FIXTURE_C.length) _fix = [...FIXTURE_C];
+        // Fallback: FIXTURE_C si está disponible
+        if(!_fix.length && typeof FIXTURE_C !== 'undefined' && FIXTURE_C && FIXTURE_C.length) _fix = [...FIXTURE_C];
         // Fallback: fixture guardado en config del club
         if(!_fix.length){
           const cfixSnap = await get(ref(db, CLUB_PATH+'/config/fixture'));
