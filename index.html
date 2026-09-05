@@ -1392,6 +1392,83 @@ function deriveFixtureFromSchedule(schedule, ligaNombre){
 }
 
 // ══════════════════════════════════════════════════════════════
+//  TABLAS POR ZONA — arrancan en cero al cambiar de zona
+//  La tabla no se hardcodea más por zona: se arma con los equipos
+//  del schedule de la zona activa. Zona nueva = todos en cero, y
+//  se va llenando con los resultados de ESA zona.
+// ══════════════════════════════════════════════════════════════
+
+// Todos los equipos que aparecen en un schedule de liga
+function equiposDeSchedule(schedule){
+  const eq = new Set();
+  Object.values(schedule||{}).forEach(matches=>{
+    (Array.isArray(matches) ? matches : Object.values(matches||{})).forEach(m=>{
+      [m.h, m.a, m.local, m.visitante, m.libre].forEach(n=>{ if(n) eq.add(String(n).trim()); });
+    });
+  });
+  return [...eq].sort((a,b)=>a.localeCompare(b));
+}
+
+// Arma la tabla desde los resultados cargados (2 puntos por victoria, 1 por empate).
+// Los equipos sin partidos quedan igual en la tabla, en cero.
+function calcularPosicionesDesdeResultados(teamResultsCat, equipos){
+  const filas = {};
+  (equipos||[]).forEach(eq=>{ filas[eq] = {eq, pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0}; });
+  Object.entries(teamResultsCat||{}).forEach(([eq, partidos])=>{
+    const f = filas[eq] || (filas[eq] = {eq, pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0});
+    (partidos||[]).forEach(p=>{
+      const gf = Number(p.gf)||0, gc = Number(p.gc)||0;
+      f.pj++; f.gf += gf; f.gc += gc;
+      if(gf > gc){ f.pg++; f.pts += 2; }
+      else if(gf === gc){ f.pe++; f.pts += 1; }
+      else f.pp++;
+    });
+  });
+  return Object.values(filas).sort((a,b)=>
+    (b.pts-a.pts) || ((b.gf-b.gc)-(a.gf-a.gc)) || (b.gf-a.gf) || a.eq.localeCompare(b.eq));
+}
+
+// Deja LIGA_DATA en cero para una zona nueva. Se llama en cada carga: si los datos
+// que hay no son de la zona activa, se descartan y la tabla arranca de cero con los
+// equipos del schedule. Así al cambiar de zona no hay que tocar nada a mano.
+function prepararTablasDeZona(ligaIdActivo, schedule){
+  try{
+    if(!ligaIdActivo) return false;
+    const equipos = equiposDeSchedule(schedule);
+    const mirandoArchivo = (typeof esHistorico === 'function') && esHistorico();
+
+    // Contexto de la zona vigente — lo usa la guarda del liga_data.json
+    if(equipos.length && !mirandoArchivo){
+      window._ligaIdActivo = ligaIdActivo;
+      window._equiposZonaActiva = equipos;
+    }
+
+    let reiniciada = false;
+    const datosSonDeEstaZona = LIGA_DATA.zona && LIGA_DATA.zona === ligaIdActivo;
+    if(!datosSonDeEstaZona && equipos.length){
+      const cats = Object.keys(LIGA_DATA.posiciones||{}).map(Number).filter(n=>!isNaN(n));
+      const catsFinal = cats.length ? cats : [13,14,15,16,17,18,19,20];
+      const posiciones = {}, teamResults = {}, scResults = {};
+      catsFinal.forEach(c=>{
+        teamResults[c] = {};
+        scResults[c]   = [];
+        posiciones[c]  = calcularPosicionesDesdeResultados({}, equipos);
+      });
+      Object.keys(LIGA_DATA).forEach(k=>{ delete LIGA_DATA[k]; });
+      Object.assign(LIGA_DATA, { updatedAt:'', zona: ligaIdActivo, posiciones, teamResults, scResults });
+      window._tablaEnCero = true;
+      reiniciada = true;
+      console.log('[MI PLANTEL] Zona nueva ('+ligaIdActivo+'): tabla iniciada en cero con', equipos.length, 'equipos');
+    }
+
+    // Ya sabiendo cuál es la zona, reintentar el liga_data.json que haya llegado antes
+    if(typeof aplicarLigaDataJson === 'function') aplicarLigaDataJson();
+    return reiniciada;
+  }catch(e){ console.warn('prepararTablasDeZona:', e); return false; }
+}
+window.prepararTablasDeZona = prepararTablasDeZona;
+
+// ══════════════════════════════════════════════════════════════
 //  SELECTOR DE TEMPORADA — profe y coordinador
 //  Cambiar de temporada solo cambia a dónde LEE la app.
 //  Nada se borra ni se mueve: cada temporada vive en su propio
@@ -1569,6 +1646,8 @@ async function loadClubConfig(){
     // Si el usuario eligió una temporada a mano se respeta; si no, la vigente
     TORNEO_ID = window._viewTorneo || TORNEO_ACTIVO;
     DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath+'/torneos/'+TORNEO_ID;
+    // Tablas y resultados de liga de la temporada que se está viendo
+    aplicarLigaDataDeTemporada();
 
     // ── Leer datos de la liga compartida si existe ligaId ──
     // Mirando una temporada archivada se usa la liga de ESA temporada, no la actual
@@ -1581,6 +1660,9 @@ async function loadClubConfig(){
         if(ligaSnap.exists()) ligaData = ligaSnap.val();
       } catch(e){ console.warn('Error leyendo liga:', e); }
     }
+
+    // Zona nueva → la tabla arranca en cero con los equipos de esta zona
+    if(ligaData && ligaData.schedule) prepararTablasDeZona(ligaId, ligaData.schedule);
 
     const catKey = CFG.dbPath;
 
@@ -3945,7 +4027,7 @@ async function renderTablas(){
     });
   }
 
-  let html='<div class="upd-lbl">Actualizado: '+LIGA_DATA.updatedAt+'</div>';
+  let html='<div class="upd-lbl">'+_updLabel()+'</div>';
 
   // ── PRÓXIMO RIVAL COMPARADOR ──
   if(nextF && rivalData){
@@ -4124,310 +4206,692 @@ async function renderTablas(){
 
 // ── LIGA DATA — actualizar semanalmente desde lisfi.com.ar ──
 // Última actualización: 31/03/2026 (Fechas 1-5 jugadas — incluye Fecha 4)
-const LIGA_DATA = {
-  updatedAt: '31/03/2026',
+const LIGA_DATA_ACTUAL = {
+  updatedAt: '05/09/2026',
+  // Zona a la que pertenecen estos datos — la guarda de abajo la usa para
+  // no pisar la tabla con un liga_data.json que todavía sea de la zona anterior.
+  zona: 'lisfi-zona-campeonato-2026',
 
-  // ── Resultados de Sagrado Corazón ──
+  // ── Resultados de Sagrado Corazón (LISFI Zona Campeonato 2026) ──
   scResults: {
-    13: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:1, gc:2 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:3, gc:0 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:0, gc:2 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:3, gc:1 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:2 },
-    ],
-    14: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:1, gc:1 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:3, gc:1 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:1, gc:1 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:0, gc:1 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:1, gc:0 },
-    ],
-    15: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:1, gc:1 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:2, gc:0 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:0, gc:0 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:2, gc:0 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:3, gc:2 },
-    ],
-    16: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:2, gc:2 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:4, gc:0 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:4, gc:1 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:1, gc:3 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:0, gc:3 },
-    ],
-    17: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:6, gc:1 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:5, gc:2 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:4, gc:1 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:1, gc:1 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:8 },
-    ],
-    18: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:3, gc:0 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:4, gc:1 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:1, gc:0 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:5, gc:1 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:0 },
-    ],
-    19: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:3, gc:0 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:1, gc:0 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:1, gc:0 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:1, gc:2 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:0 },
-    ],
-    20: [
-      { fecha:1, rival:'LA PLATA V',      cond:'V', gf:3, gc:0 },
-      { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:1, gc:0 },
-      { fecha:3, rival:'CATELLA',         cond:'V', gf:0, gc:2 },
-      { fecha:4, rival:'CRISFA V.',       cond:'L', gf:2, gc:1 },
-      { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:0 },
-    ],
+    13: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:1, gc:3 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:1, gc:0 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:2, gc:1 } ],
+    14: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:1, gc:3 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:1, gc:0 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:0, gc:1 } ],
+    15: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:0, gc:1 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:1, gc:0 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:3, gc:0 } ],
+    16: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:0, gc:2 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:1, gc:5 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:1, gc:3 } ],
+    17: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:0, gc:2 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:0, gc:0 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:3, gc:2 } ],
+    18: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:2, gc:3 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:2, gc:0 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:3, gc:2 } ],
+    19: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:4, gc:0 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:4, gc:0 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:0, gc:0 } ],
+    20: [ { fecha:1, rival:'CAMBACERES', cond:'L', gf:2, gc:0 }, { fecha:2, rival:'CAP.CHICA', cond:'V', gf:2, gc:0 }, { fecha:3, rival:'DEFENSA', cond:'L', gf:7, gc:0 } ],
   },
 
-  // ── Últimos resultados de cada rival — POR CATEGORÍA ──
-  rivalResults: {
-    16: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:0}, {f:2,vs:'La Plata V',gf:1,gc:3}, {f:3,vs:'Def.S.L.',gf:8,gc:0}, {f:4,vs:'Catella',gf:7,gc:0}, {f:5,vs:'CRISFA V.',gf:1,gc:2} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:1,gc:1}, {f:2,vs:'Cap.Chica',gf:2,gc:1}, {f:4,vs:'Hernandez',gf:0,gc:3}, {f:5,vs:'N.Fuerza',gf:7,gc:0} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:1,gc:2}, {f:3,vs:'Hernandez',gf:0,gc:2}, {f:4,vs:'N.Fuerza',gf:4,gc:1} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:2,gc:7}, {f:2,vs:'N.Fuerza',gf:3,gc:2}, {f:4,vs:'ADAFI',gf:0,gc:7}, {f:5,vs:'Villa P.',gf:1,gc:1} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:1,gc:1}, {f:2,vs:'Hernandez',gf:1,gc:3}, {f:3,vs:'N.Fuerza',gf:4,gc:1}, {f:5,vs:'ADAFI',gf:2,gc:1} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:3,gc:3}, {f:3,vs:'ADAFI',gf:0,gc:8}, {f:4,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'La Plata V',gf:0,gc:6} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:7,gc:2}, {f:2,vs:'CRISFA V.',gf:3,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Cambaceres',gf:3,gc:0} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:3,gc:1}, {f:3,vs:'Villa P.',gf:8,gc:0}, {f:5,vs:'Def.S.L.',gf:6,gc:0} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:3,gc:3}, {f:2,vs:'Catella',gf:2,gc:3}, {f:3,vs:'CRISFA V.',gf:1,gc:4}, {f:4,vs:'Cap.Chica',gf:1,gc:4}, {f:5,vs:'Cambaceres',gf:0,gc:7} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:0,gc:5}, {f:3,vs:'La Plata V',gf:0,gc:8}, {f:4,vs:'Def.S.L.',gf:2,gc:0}, {f:5,vs:'Catella',gf:1,gc:1} ],
-    },
+  // ── Resultados de todos los equipos de la zona (por categoría) ──
+  teamResults: {
     13: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:8,gc:0}, {f:2,vs:'La Plata V',gf:0,gc:1}, {f:3,vs:'Def.S.L.',gf:9,gc:1}, {f:4,vs:'Catella',gf:4,gc:0}, {f:5,vs:'CRISFA V.',gf:8,gc:0} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:3,gc:0}, {f:2,vs:'Cap.Chica',gf:1,gc:3}, {f:4,vs:'Hernandez',gf:0,gc:3}, {f:5,vs:'N.Fuerza',gf:0,gc:1} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:3,gc:1}, {f:3,vs:'Hernandez',gf:1,gc:2}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:2,gc:2}, {f:2,vs:'N.Fuerza',gf:0,gc:1}, {f:4,vs:'ADAFI',gf:0,gc:4}, {f:5,vs:'Villa P.',gf:2,gc:1} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:0,gc:3}, {f:2,vs:'Hernandez',gf:2,gc:4}, {f:3,vs:'N.Fuerza',gf:1,gc:3}, {f:5,vs:'ADAFI',gf:0,gc:8} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:1,gc:3}, {f:3,vs:'ADAFI',gf:1,gc:9}, {f:4,vs:'Villa P.',gf:2,gc:5}, {f:5,vs:'La Plata V',gf:0,gc:4} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:2,gc:2}, {f:2,vs:'CRISFA V.',gf:4,gc:2}, {f:3,vs:'Cap.Chica',gf:2,gc:1}, {f:4,vs:'Cambaceres',gf:3,gc:0} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:1,gc:0}, {f:3,vs:'Villa P.',gf:3,gc:1}, {f:5,vs:'Def.S.L.',gf:4,gc:0} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:3,gc:1}, {f:2,vs:'Catella',gf:1,gc:0}, {f:3,vs:'CRISFA V.',gf:3,gc:1}, {f:4,vs:'Cap.Chica',gf:0,gc:2}, {f:5,vs:'Cambaceres',gf:1,gc:0} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:0,gc:8}, {f:3,vs:'La Plata V',gf:1,gc:3}, {f:4,vs:'Def.S.L.',gf:5,gc:2}, {f:5,vs:'Catella',gf:1,gc:2} ],
-    },
-    20: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:0,gc:2}, {f:2,vs:'La Plata V',gf:2,gc:0}, {f:3,vs:'Def.S.L.',gf:1,gc:0}, {f:4,vs:'Catella',gf:0,gc:6}, {f:5,vs:'CRISFA V.',gf:0,gc:4} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:1,gc:2}, {f:2,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Hernandez',gf:0,gc:2} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:0,gc:2}, {f:3,vs:'Hernandez',gf:0,gc:2}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:3,gc:1}, {f:2,vs:'N.Fuerza',gf:2,gc:0}, {f:4,vs:'ADAFI',gf:6,gc:0}, {f:5,vs:'Villa P.',gf:5,gc:2} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:2,gc:1}, {f:2,vs:'Hernandez',gf:1,gc:2}, {f:3,vs:'N.Fuerza',gf:2,gc:0}, {f:5,vs:'ADAFI',gf:4,gc:0} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:0,gc:2}, {f:3,vs:'ADAFI',gf:0,gc:1}, {f:4,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'La Plata V',gf:3,gc:0} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:1,gc:3}, {f:2,vs:'CRISFA V.',gf:2,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Cambaceres',gf:2,gc:0} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:0,gc:2}, {f:3,vs:'Villa P.',gf:0,gc:3}, {f:5,vs:'Def.S.L.',gf:0,gc:3} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:2,gc:0}, {f:2,vs:'Catella',gf:0,gc:2}, {f:3,vs:'CRISFA V.',gf:0,gc:2}, {f:4,vs:'Cap.Chica',gf:0,gc:2} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:0}, {f:3,vs:'La Plata V',gf:3,gc:0}, {f:4,vs:'Def.S.L.',gf:2,gc:0}, {f:5,vs:'Catella',gf:2,gc:5} ],
-    },
-    19: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:1}, {f:2,vs:'La Plata V',gf:2,gc:0}, {f:3,vs:'Def.S.L.',gf:2,gc:0}, {f:4,vs:'Catella',gf:4,gc:1}, {f:5,vs:'CRISFA V.',gf:6,gc:2} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:0,gc:8}, {f:2,vs:'Cap.Chica',gf:1,gc:4}, {f:4,vs:'Hernandez',gf:1,gc:5}, {f:5,vs:'N.Fuerza',gf:1,gc:1} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:4,gc:1}, {f:3,vs:'Hernandez',gf:0,gc:2}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:0,gc:8}, {f:2,vs:'N.Fuerza',gf:2,gc:0}, {f:4,vs:'ADAFI',gf:1,gc:4}, {f:5,vs:'Villa P.',gf:3,gc:3} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:8,gc:0}, {f:2,vs:'Hernandez',gf:1,gc:2}, {f:3,vs:'N.Fuerza',gf:8,gc:0}, {f:5,vs:'ADAFI',gf:2,gc:6} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:2,gc:0}, {f:3,vs:'ADAFI',gf:0,gc:2}, {f:4,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'La Plata V',gf:0,gc:2} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:8,gc:0}, {f:2,vs:'CRISFA V.',gf:2,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Cambaceres',gf:5,gc:1} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:0,gc:2}, {f:3,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'Def.S.L.',gf:2,gc:0} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:0,gc:2}, {f:2,vs:'Catella',gf:0,gc:2}, {f:3,vs:'CRISFA V.',gf:0,gc:8}, {f:4,vs:'Cap.Chica',gf:0,gc:2}, {f:5,vs:'Cambaceres',gf:1,gc:1} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:1,gc:5}, {f:3,vs:'La Plata V',gf:2,gc:0}, {f:4,vs:'Def.S.L.',gf:2,gc:0}, {f:5,vs:'Catella',gf:3,gc:3} ],
-    },
-    17: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:0,gc:2}, {f:2,vs:'La Plata V',gf:1,gc:2}, {f:3,vs:'Def.S.L.',gf:5,gc:1}, {f:4,vs:'Catella',gf:1,gc:5}, {f:5,vs:'CRISFA V.',gf:0,gc:3} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:3,gc:2}, {f:2,vs:'Cap.Chica',gf:4,gc:2}, {f:4,vs:'Hernandez',gf:0,gc:4}, {f:5,vs:'N.Fuerza',gf:3,gc:0} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:2,gc:4}, {f:3,vs:'Hernandez',gf:1,gc:2}, {f:4,vs:'N.Fuerza',gf:3,gc:2} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:1,gc:4}, {f:2,vs:'N.Fuerza',gf:1,gc:2}, {f:4,vs:'ADAFI',gf:5,gc:1}, {f:5,vs:'Villa P.',gf:2,gc:2} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:2,gc:3}, {f:2,vs:'Hernandez',gf:1,gc:1}, {f:3,vs:'N.Fuerza',gf:0,gc:1}, {f:5,vs:'ADAFI',gf:3,gc:0} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:0,gc:3}, {f:3,vs:'ADAFI',gf:1,gc:5}, {f:4,vs:'Villa P.',gf:0,gc:3}, {f:5,vs:'La Plata V',gf:0,gc:2} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:4,gc:1}, {f:2,vs:'CRISFA V.',gf:1,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:1}, {f:4,vs:'Cambaceres',gf:4,gc:0} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:2,gc:1}, {f:3,vs:'Villa P.',gf:3,gc:2}, {f:5,vs:'Def.S.L.',gf:2,gc:0} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:3,gc:0}, {f:2,vs:'Catella',gf:2,gc:1}, {f:3,vs:'CRISFA V.',gf:1,gc:0}, {f:4,vs:'Cap.Chica',gf:2,gc:3}, {f:5,vs:'Cambaceres',gf:0,gc:3} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:0}, {f:3,vs:'La Plata V',gf:2,gc:3}, {f:4,vs:'Def.S.L.',gf:3,gc:0}, {f:5,vs:'Catella',gf:2,gc:2} ],
-    },
-    15: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:1,gc:2}, {f:2,vs:'La Plata V',gf:0,gc:3}, {f:3,vs:'Def.S.L.',gf:1,gc:0}, {f:4,vs:'Catella',gf:2,gc:0}, {f:5,vs:'CRISFA V.',gf:7,gc:0} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:5,gc:0}, {f:2,vs:'Cap.Chica',gf:1,gc:3}, {f:4,vs:'Hernandez',gf:1,gc:0}, {f:5,vs:'N.Fuerza',gf:5,gc:0} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:3,gc:1}, {f:3,vs:'Hernandez',gf:0,gc:0}, {f:4,vs:'N.Fuerza',gf:5,gc:0} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:1,gc:5}, {f:2,vs:'N.Fuerza',gf:4,gc:0}, {f:4,vs:'ADAFI',gf:0,gc:2}, {f:5,vs:'Villa P.',gf:2,gc:1} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:0,gc:5}, {f:2,vs:'Hernandez',gf:1,gc:1}, {f:3,vs:'N.Fuerza',gf:2,gc:0}, {f:5,vs:'ADAFI',gf:0,gc:7} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:7,gc:0}, {f:3,vs:'ADAFI',gf:0,gc:1}, {f:4,vs:'Villa P.',gf:2,gc:3}, {f:5,vs:'La Plata V',gf:0,gc:4} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:5,gc:1}, {f:2,vs:'CRISFA V.',gf:1,gc:1}, {f:3,vs:'Cap.Chica',gf:0,gc:0}, {f:4,vs:'Cambaceres',gf:0,gc:1} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:3,gc:0}, {f:3,vs:'Villa P.',gf:3,gc:4}, {f:5,vs:'Def.S.L.',gf:4,gc:0} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:0,gc:7}, {f:2,vs:'Catella',gf:0,gc:4}, {f:3,vs:'CRISFA V.',gf:0,gc:2}, {f:4,vs:'Cap.Chica',gf:0,gc:5}, {f:5,vs:'Cambaceres',gf:0,gc:5} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:1}, {f:3,vs:'La Plata V',gf:4,gc:3}, {f:4,vs:'Def.S.L.',gf:3,gc:2}, {f:5,vs:'Catella',gf:1,gc:2} ],
-    },
-    18: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:2}, {f:2,vs:'La Plata V',gf:4,gc:1}, {f:3,vs:'Def.S.L.',gf:5,gc:3}, {f:4,vs:'Catella',gf:7,gc:1}, {f:5,vs:'CRISFA V.',gf:5,gc:1} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:2,gc:0}, {f:2,vs:'Cap.Chica',gf:8,gc:0}, {f:4,vs:'Hernandez',gf:6,gc:1}, {f:5,vs:'N.Fuerza',gf:2,gc:1} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:0,gc:8}, {f:3,vs:'Hernandez',gf:1,gc:9}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:1,gc:8}, {f:2,vs:'N.Fuerza',gf:1,gc:0}, {f:4,vs:'ADAFI',gf:1,gc:7}, {f:5,vs:'Villa P.',gf:0,gc:5} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:0,gc:2}, {f:2,vs:'Hernandez',gf:2,gc:5}, {f:3,vs:'N.Fuerza',gf:1,gc:3}, {f:5,vs:'ADAFI',gf:1,gc:5} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:2,gc:0}, {f:3,vs:'ADAFI',gf:3,gc:5}, {f:4,vs:'Villa P.',gf:1,gc:0}, {f:5,vs:'La Plata V',gf:5,gc:1} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:8,gc:1}, {f:2,vs:'CRISFA V.',gf:5,gc:2}, {f:3,vs:'Cap.Chica',gf:9,gc:1}, {f:4,vs:'Cambaceres',gf:1,gc:6} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:1,gc:4}, {f:3,vs:'Villa P.',gf:1,gc:1}, {f:5,vs:'Def.S.L.',gf:1,gc:5} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:0,gc:2}, {f:2,vs:'Catella',gf:0,gc:1}, {f:3,vs:'CRISFA V.',gf:3,gc:1}, {f:4,vs:'Cap.Chica',gf:0,gc:2}, {f:5,vs:'Cambaceres',gf:1,gc:2} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:5}, {f:3,vs:'La Plata V',gf:1,gc:1}, {f:4,vs:'Def.S.L.',gf:0,gc:1}, {f:5,vs:'Catella',gf:5,gc:0} ],
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:5,gc:1}, {f:2,vs:'El Carmen',gf:0,gc:2}, {f:3,vs:'S.J.Bautista',gf:1,gc:0} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:3,gc:1}, {f:2,vs:'FIE 25',gf:1,gc:0}, {f:3,vs:'Universitario',gf:0,gc:1} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:1,gc:0}, {f:2,vs:'Sagr. Corazón',gf:0,gc:1}, {f:3,vs:'FIE 25',gf:0,gc:0} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:1,gc:1}, {f:2,vs:'La Curva',gf:0,gc:1}, {f:3,vs:'Sagr. Corazón',gf:1,gc:2} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:3,gc:0}, {f:2,vs:'ADAFI',gf:2,gc:0}, {f:3,vs:'Everton',gf:1,gc:0} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:0,gc:3}, {f:2,vs:'V.S Carlos Bco.',gf:2,gc:1} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:1,gc:0}, {f:2,vs:'Universitario',gf:2,gc:1}, {f:3,vs:'El Carmen',gf:0,gc:1} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:0,gc:1}, {f:2,vs:'Cambaceres',gf:0,gc:1}, {f:3,vs:'Cap.Chica',gf:0,gc:0} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:3,gc:0}, {f:2,vs:'Talleres B.',gf:3,gc:0} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:0,gc:1}, {f:2,vs:'Defensa',gf:1,gc:0} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:0,gc:3}, {f:3,vs:'ADAFI',gf:0,gc:1} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:1,gc:3}, {f:2,vs:'Cap.Chica',gf:1,gc:0}, {f:3,vs:'Defensa',gf:2,gc:1} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:0,gc:3}, {f:3,vs:'V.S Carlos Bco.',gf:2,gc:1} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:1,gc:5}, {f:2,vs:'Everton',gf:1,gc:2}, {f:3,vs:'Cambaceres',gf:1,gc:0} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:1,gc:1}, {f:2,vs:'Estud. LH',gf:1,gc:2}, {f:3,vs:'Talleres B.',gf:1,gc:2} ],
     },
     14: {
-      'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:0}, {f:2,vs:'La Plata V',gf:6,gc:0}, {f:3,vs:'Def.S.L.',gf:2,gc:0}, {f:4,vs:'Catella',gf:4,gc:0}, {f:5,vs:'CRISFA V.',gf:2,gc:2} ],
-      'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:3,gc:1}, {f:2,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Hernandez',gf:3,gc:1}, {f:5,vs:'N.Fuerza',gf:8,gc:0} ],
-      'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:0,gc:2}, {f:3,vs:'Hernandez',gf:0,gc:1}, {f:4,vs:'N.Fuerza',gf:4,gc:0} ],
-      'CATELLA':      [ {f:1,vs:'Hernandez',gf:0,gc:0}, {f:2,vs:'N.Fuerza',gf:5,gc:2}, {f:4,vs:'ADAFI',gf:0,gc:4}, {f:5,vs:'Villa P.',gf:1,gc:1} ],
-      'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:1,gc:3}, {f:2,vs:'Hernandez',gf:0,gc:2}, {f:3,vs:'N.Fuerza',gf:1,gc:0}, {f:5,vs:'ADAFI',gf:2,gc:2} ],
-      'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:0,gc:4}, {f:3,vs:'ADAFI',gf:0,gc:2}, {f:4,vs:'Villa P.',gf:0,gc:0}, {f:5,vs:'La Plata V',gf:2,gc:3} ],
-      'HERNANDEZ':    [ {f:1,vs:'Catella',gf:0,gc:0}, {f:2,vs:'CRISFA V.',gf:2,gc:0}, {f:3,vs:'Cap.Chica',gf:1,gc:0}, {f:4,vs:'Cambaceres',gf:1,gc:3} ],
-      'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:0,gc:6}, {f:3,vs:'Villa P.',gf:1,gc:2}, {f:5,vs:'Def.S.L.',gf:3,gc:2} ],
-      'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:4,gc:0}, {f:2,vs:'Catella',gf:2,gc:5}, {f:3,vs:'CRISFA V.',gf:0,gc:1}, {f:4,vs:'Cap.Chica',gf:0,gc:4}, {f:5,vs:'Cambaceres',gf:0,gc:8} ],
-      'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:0,gc:5}, {f:3,vs:'La Plata V',gf:2,gc:1}, {f:4,vs:'Def.S.L.',gf:0,gc:0}, {f:5,vs:'Catella',gf:1,gc:1} ],
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:1,gc:0}, {f:2,vs:'El Carmen',gf:1,gc:2}, {f:3,vs:'S.J.Bautista',gf:0,gc:2} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:3,gc:1}, {f:2,vs:'FIE 25',gf:2,gc:0}, {f:3,vs:'Universitario',gf:1,gc:1} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:1,gc:1}, {f:2,vs:'Sagr. Corazón',gf:0,gc:1}, {f:3,vs:'FIE 25',gf:0,gc:2} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:3,gc:1}, {f:2,vs:'La Curva',gf:1,gc:0}, {f:3,vs:'Sagr. Corazón',gf:1,gc:0} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:2,gc:1}, {f:2,vs:'ADAFI',gf:2,gc:1}, {f:3,vs:'Everton',gf:1,gc:1} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:2,gc:1}, {f:2,vs:'V.S Carlos Bco.',gf:4,gc:3} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:0,gc:3}, {f:2,vs:'Universitario',gf:0,gc:1}, {f:3,vs:'El Carmen',gf:1,gc:1} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:3,gc:0}, {f:2,vs:'Cambaceres',gf:0,gc:2}, {f:3,vs:'Cap.Chica',gf:2,gc:0} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:1,gc:2}, {f:2,vs:'Talleres B.',gf:3,gc:5} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:1,gc:1}, {f:2,vs:'Defensa',gf:0,gc:1} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:1,gc:2}, {f:3,vs:'ADAFI',gf:2,gc:0} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:1,gc:3}, {f:2,vs:'Cap.Chica',gf:1,gc:0}, {f:3,vs:'Defensa',gf:0,gc:1} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:5,gc:3}, {f:3,vs:'V.S Carlos Bco.',gf:2,gc:1} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:0,gc:1}, {f:2,vs:'Everton',gf:1,gc:0}, {f:3,vs:'Cambaceres',gf:1,gc:1} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:1,gc:3}, {f:2,vs:'Estud. LH',gf:3,gc:4}, {f:3,vs:'Talleres B.',gf:1,gc:2} ],
+    },
+    15: {
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:2,gc:4}, {f:2,vs:'El Carmen',gf:3,gc:3}, {f:3,vs:'S.J.Bautista',gf:3,gc:2} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:1,gc:0}, {f:2,vs:'FIE 25',gf:0,gc:2}, {f:3,vs:'Universitario',gf:2,gc:2} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:0,gc:0}, {f:2,vs:'Sagr. Corazón',gf:0,gc:1}, {f:3,vs:'FIE 25',gf:0,gc:1} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:1,gc:3}, {f:2,vs:'La Curva',gf:2,gc:4}, {f:3,vs:'Sagr. Corazón',gf:0,gc:3} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:1,gc:0}, {f:2,vs:'ADAFI',gf:3,gc:3}, {f:3,vs:'Everton',gf:3,gc:2} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:1,gc:1}, {f:2,vs:'V.S Carlos Bco.',gf:1,gc:0} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:0,gc:3}, {f:2,vs:'Universitario',gf:1,gc:4}, {f:3,vs:'El Carmen',gf:2,gc:3} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:3,gc:0}, {f:2,vs:'Cambaceres',gf:2,gc:0}, {f:3,vs:'Cap.Chica',gf:1,gc:0} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:1,gc:1}, {f:2,vs:'Talleres B.',gf:3,gc:0} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:0,gc:0}, {f:2,vs:'Defensa',gf:4,gc:2} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:0,gc:1}, {f:3,vs:'ADAFI',gf:2,gc:3} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:0,gc:1}, {f:2,vs:'Cap.Chica',gf:1,gc:0}, {f:3,vs:'Defensa',gf:3,gc:0} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:0,gc:3}, {f:3,vs:'V.S Carlos Bco.',gf:1,gc:1} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:4,gc:2}, {f:2,vs:'Everton',gf:4,gc:1}, {f:3,vs:'Cambaceres',gf:2,gc:2} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:3,gc:1}, {f:2,vs:'Estud. LH',gf:0,gc:1}, {f:3,vs:'Talleres B.',gf:1,gc:1} ],
+    },
+    16: {
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:0,gc:1}, {f:2,vs:'El Carmen',gf:2,gc:3}, {f:3,vs:'S.J.Bautista',gf:1,gc:5} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:2,gc:0}, {f:2,vs:'FIE 25',gf:2,gc:0}, {f:3,vs:'Universitario',gf:2,gc:1} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:6,gc:1}, {f:2,vs:'Sagr. Corazón',gf:5,gc:1}, {f:3,vs:'FIE 25',gf:1,gc:0} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:1,gc:2}, {f:2,vs:'La Curva',gf:1,gc:1}, {f:3,vs:'Sagr. Corazón',gf:3,gc:1} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:3,gc:3}, {f:2,vs:'ADAFI',gf:3,gc:2}, {f:3,vs:'Everton',gf:2,gc:0} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:0,gc:2}, {f:2,vs:'V.S Carlos Bco.',gf:0,gc:0} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:0,gc:1}, {f:2,vs:'Universitario',gf:0,gc:2}, {f:3,vs:'El Carmen',gf:0,gc:2} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:1,gc:0}, {f:2,vs:'Cambaceres',gf:0,gc:2}, {f:3,vs:'Cap.Chica',gf:0,gc:1} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:2,gc:0}, {f:2,vs:'Talleres B.',gf:1,gc:1} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:1,gc:6}, {f:2,vs:'Defensa',gf:1,gc:1} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:3,gc:3}, {f:3,vs:'ADAFI',gf:5,gc:1} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:0,gc:2}, {f:2,vs:'Cap.Chica',gf:1,gc:5}, {f:3,vs:'Defensa',gf:1,gc:3} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:1,gc:1}, {f:3,vs:'V.S Carlos Bco.',gf:3,gc:0} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:1,gc:0}, {f:2,vs:'Everton',gf:2,gc:0}, {f:3,vs:'Cambaceres',gf:1,gc:2} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:2,gc:1}, {f:2,vs:'Estud. LH',gf:0,gc:0}, {f:3,vs:'Talleres B.',gf:0,gc:3} ],
+    },
+    17: {
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:0,gc:1}, {f:2,vs:'El Carmen',gf:1,gc:1}, {f:3,vs:'S.J.Bautista',gf:1,gc:5} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:2,gc:0}, {f:2,vs:'FIE 25',gf:1,gc:0}, {f:3,vs:'Universitario',gf:1,gc:2} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:0,gc:2}, {f:2,vs:'Sagr. Corazón',gf:0,gc:0}, {f:3,vs:'FIE 25',gf:1,gc:3} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:0,gc:2}, {f:2,vs:'La Curva',gf:0,gc:7}, {f:3,vs:'Sagr. Corazón',gf:2,gc:3} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:0,gc:2}, {f:2,vs:'ADAFI',gf:1,gc:1}, {f:3,vs:'Everton',gf:1,gc:4} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:0,gc:1}, {f:2,vs:'V.S Carlos Bco.',gf:1,gc:5} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:3,gc:1}, {f:2,vs:'Universitario',gf:1,gc:1}, {f:3,vs:'El Carmen',gf:4,gc:1} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:1,gc:3}, {f:2,vs:'Cambaceres',gf:0,gc:1}, {f:3,vs:'Cap.Chica',gf:3,gc:1} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:1,gc:0}, {f:2,vs:'Talleres B.',gf:3,gc:2} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:2,gc:0}, {f:2,vs:'Defensa',gf:7,gc:0} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:2,gc:0}, {f:3,vs:'ADAFI',gf:5,gc:1} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:0,gc:2}, {f:2,vs:'Cap.Chica',gf:0,gc:0}, {f:3,vs:'Defensa',gf:3,gc:2} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:2,gc:3}, {f:3,vs:'V.S Carlos Bco.',gf:1,gc:3} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:1,gc:0}, {f:2,vs:'Everton',gf:1,gc:1}, {f:3,vs:'Cambaceres',gf:2,gc:1} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:2,gc:0}, {f:2,vs:'Estud. LH',gf:5,gc:1}, {f:3,vs:'Talleres B.',gf:3,gc:1} ],
+    },
+    18: {
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:7,gc:1}, {f:2,vs:'El Carmen',gf:4,gc:2}, {f:3,vs:'S.J.Bautista',gf:2,gc:2} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:3,gc:2}, {f:2,vs:'FIE 25',gf:1,gc:4}, {f:3,vs:'Universitario',gf:8,gc:0} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:0,gc:2}, {f:2,vs:'Sagr. Corazón',gf:0,gc:2}, {f:3,vs:'FIE 25',gf:0,gc:2} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:2,gc:3}, {f:2,vs:'La Curva',gf:0,gc:4}, {f:3,vs:'Sagr. Corazón',gf:2,gc:3} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:3,gc:0}, {f:2,vs:'ADAFI',gf:2,gc:4}, {f:3,vs:'Everton',gf:1,gc:2} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:3,gc:2}, {f:2,vs:'V.S Carlos Bco.',gf:5,gc:0} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:3,gc:1}, {f:2,vs:'Universitario',gf:5,gc:0}, {f:3,vs:'El Carmen',gf:2,gc:1} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:1,gc:3}, {f:2,vs:'Cambaceres',gf:4,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:0} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:2,gc:3}, {f:2,vs:'Talleres B.',gf:0,gc:2} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:2,gc:0}, {f:2,vs:'Defensa',gf:4,gc:0} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:0,gc:3}, {f:3,vs:'ADAFI',gf:2,gc:2} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:2,gc:3}, {f:2,vs:'Cap.Chica',gf:2,gc:0}, {f:3,vs:'Defensa',gf:3,gc:2} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:2,gc:0}, {f:3,vs:'V.S Carlos Bco.',gf:2,gc:2} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:1,gc:7}, {f:2,vs:'Everton',gf:0,gc:5}, {f:3,vs:'Cambaceres',gf:0,gc:8} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:3,gc:2}, {f:2,vs:'Estud. LH',gf:0,gc:5}, {f:3,vs:'Talleres B.',gf:2,gc:2} ],
+    },
+    19: {
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:2,gc:0}, {f:2,vs:'El Carmen',gf:4,gc:2}, {f:3,vs:'S.J.Bautista',gf:1,gc:2} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:0,gc:4}, {f:2,vs:'FIE 25',gf:0,gc:6}, {f:3,vs:'Universitario',gf:0,gc:1} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:0,gc:2}, {f:2,vs:'Sagr. Corazón',gf:0,gc:4}, {f:3,vs:'FIE 25',gf:0,gc:6} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:2,gc:0}, {f:2,vs:'La Curva',gf:0,gc:2}, {f:3,vs:'Sagr. Corazón',gf:0,gc:0} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:1,gc:1}, {f:2,vs:'ADAFI',gf:2,gc:4}, {f:3,vs:'Everton',gf:0,gc:5} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:0,gc:1}, {f:2,vs:'V.S Carlos Bco.',gf:2,gc:0} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:1,gc:4}, {f:2,vs:'Universitario',gf:2,gc:0}, {f:3,vs:'El Carmen',gf:5,gc:0} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:4,gc:1}, {f:2,vs:'Cambaceres',gf:6,gc:0}, {f:3,vs:'Cap.Chica',gf:6,gc:0} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:1,gc:0}, {f:2,vs:'Talleres B.',gf:1,gc:0} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:2,gc:0}, {f:2,vs:'Defensa',gf:2,gc:0} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:1,gc:1}, {f:3,vs:'ADAFI',gf:2,gc:1} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:4,gc:0}, {f:2,vs:'Cap.Chica',gf:4,gc:0}, {f:3,vs:'Defensa',gf:0,gc:0} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:0,gc:1}, {f:3,vs:'V.S Carlos Bco.',gf:2,gc:0} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:0,gc:2}, {f:2,vs:'Everton',gf:0,gc:2}, {f:3,vs:'Cambaceres',gf:1,gc:0} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:0,gc:2}, {f:2,vs:'Estud. LH',gf:0,gc:2}, {f:3,vs:'Talleres B.',gf:0,gc:2} ],
+    },
+    20: {
+      'ADAFI':             [ {f:1,vs:'Universitario',gf:0,gc:2}, {f:2,vs:'El Carmen',gf:2,gc:0}, {f:3,vs:'S.J.Bautista',gf:1,gc:2} ],
+      'Cambaceres':        [ {f:1,vs:'Sagr. Corazón',gf:0,gc:2}, {f:2,vs:'FIE 25',gf:0,gc:1}, {f:3,vs:'Universitario',gf:1,gc:1} ],
+      'Cap.Chica':         [ {f:1,vs:'La Curva',gf:0,gc:2}, {f:2,vs:'Sagr. Corazón',gf:0,gc:2}, {f:3,vs:'FIE 25',gf:0,gc:2} ],
+      'Defensa':           [ {f:1,vs:'V.S Carlos Bco.',gf:1,gc:1}, {f:2,vs:'La Curva',gf:0,gc:2}, {f:3,vs:'Sagr. Corazón',gf:0,gc:7} ],
+      'El Carmen':         [ {f:1,vs:'S.J.Bautista',gf:0,gc:0}, {f:2,vs:'ADAFI',gf:0,gc:2}, {f:3,vs:'Everton',gf:0,gc:0} ],
+      'Estud. LH':         [ {f:1,vs:'Hernandez',gf:3,gc:0}, {f:2,vs:'V.S Carlos Bco.',gf:8,gc:0} ],
+      'Everton':           [ {f:1,vs:'FIE 25',gf:1,gc:0}, {f:2,vs:'Universitario',gf:5,gc:0}, {f:3,vs:'El Carmen',gf:0,gc:0} ],
+      'FIE 25':            [ {f:1,vs:'Everton',gf:0,gc:1}, {f:2,vs:'Cambaceres',gf:1,gc:0}, {f:3,vs:'Cap.Chica',gf:2,gc:0} ],
+      'Hernandez':         [ {f:1,vs:'Estud. LH',gf:0,gc:3}, {f:2,vs:'Talleres B.',gf:1,gc:1} ],
+      'La Curva':          [ {f:1,vs:'Cap.Chica',gf:2,gc:0}, {f:2,vs:'Defensa',gf:2,gc:0} ],
+      'S.J.Bautista':      [ {f:1,vs:'El Carmen',gf:0,gc:0}, {f:3,vs:'ADAFI',gf:2,gc:1} ],
+      'Sagr. Corazón':     [ {f:1,vs:'Cambaceres',gf:2,gc:0}, {f:2,vs:'Cap.Chica',gf:2,gc:0}, {f:3,vs:'Defensa',gf:7,gc:0} ],
+      'Talleres B.':       [ {f:2,vs:'Hernandez',gf:1,gc:1}, {f:3,vs:'V.S Carlos Bco.',gf:0,gc:2} ],
+      'Universitario':     [ {f:1,vs:'ADAFI',gf:2,gc:0}, {f:2,vs:'Everton',gf:0,gc:5}, {f:3,vs:'Cambaceres',gf:1,gc:1} ],
+      'V.S Carlos Bco.':   [ {f:1,vs:'Defensa',gf:1,gc:1}, {f:2,vs:'Estud. LH',gf:0,gc:8}, {f:3,vs:'Talleres B.',gf:2,gc:0} ],
     },
   },
 
-  // ── Tabla de posiciones por categoría ──
-  // Calculada con F1+F2+F3+F4+F5. LISFI: 2pts x victoria, 1 empate, 0 derrota
+  // ── Tabla de posiciones ──
   posiciones: {
-    16: [
-      {eq:'Hernandez',      pj:4,pg:4,pe:0,pp:0,gf:15,gc: 3, pts:8},
-      {eq:'La Plata V',     pj:4,pg:3,pe:1,pp:0,gf:19,gc: 3, pts:7},
-      {eq:'CRISFA V.',      pj:5,pg:3,pe:1,pp:1,gf:11,gc: 7, pts:7},
-      {eq:'ADAFI',          pj:5,pg:3,pe:0,pp:2,gf:22,gc: 5, pts:6},
-      {eq:'Cambaceres',     pj:4,pg:2,pe:1,pp:1,gf:10,gc: 5, pts:5},
-      {eq:'Sagr. Corazón',  pj:5,pg:2,pe:1,pp:2,gf:11,gc: 9, pts:5},
-      {eq:'Cap.Chica',      pj:4,pg:2,pe:0,pp:2,gf: 8,gc: 5, pts:4},
-      {eq:'Villa Progreso', pj:4,pg:1,pe:1,pp:2,gf: 3,gc:14, pts:3},
-      {eq:'Catella',        pj:5,pg:1,pe:1,pp:3,gf: 7,gc:21, pts:3},
-      {eq:'N.Fuerza',       pj:5,pg:0,pe:1,pp:4,gf: 7,gc:21, pts:1},
-      {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:1,pp:4,gf: 3,gc:23, pts:1},
-    ],
     13: [
-      {eq:'ADAFI',          pj:5,pg:4,pe:0,pp:1,gf:29,gc: 2, pts:8},
-      {eq:'La Plata V',     pj:4,pg:4,pe:0,pp:0,gf:10,gc: 2, pts:8},
-      {eq:'N.Fuerza',       pj:5,pg:4,pe:0,pp:1,gf: 8,gc: 4, pts:8},
-      {eq:'Hernandez',      pj:4,pg:3,pe:1,pp:0,gf:11,gc: 5, pts:7},
-      {eq:'Cap.Chica',      pj:4,pg:2,pe:1,pp:1,gf: 8,gc: 5, pts:5},
-      {eq:'Sagr. Corazón',  pj:5,pg:2,pe:1,pp:2,gf: 9,gc: 7, pts:5},
-      {eq:'Catella',        pj:5,pg:2,pe:1,pp:2,gf: 6,gc: 8, pts:5},
-      {eq:'Cambaceres',     pj:4,pg:1,pe:0,pp:3,gf: 4,gc: 7, pts:2},
-      {eq:'Villa Progreso', pj:4,pg:1,pe:0,pp:3,gf: 7,gc:15, pts:2},
-      {eq:'CRISFA V.',      pj:5,pg:0,pe:0,pp:5,gf: 4,gc:21, pts:0},
-      {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:0,pp:5,gf: 4,gc:24, pts:0},
-    ],
-    18: [
-      {eq:'ADAFI',          pj:5,pg:5,pe:0,pp:0,gf:26,gc: 8, pts:10},
-      {eq:'Sagr. Corazón',  pj:5,pg:5,pe:0,pp:0,gf:15,gc: 2, pts:10},
-      {eq:'Cambaceres',     pj:4,pg:4,pe:0,pp:0,gf:18,gc: 2, pts:8},
-      {eq:'Hernandez',      pj:4,pg:3,pe:0,pp:1,gf:23,gc:10, pts:6},
-      {eq:'Def. S. Lorenzo',pj:5,pg:3,pe:0,pp:2,gf:12,gc:10, pts:6},
-      {eq:'Villa Progreso', pj:4,pg:1,pe:1,pp:2,gf: 8,gc: 7, pts:3},
-      {eq:'N.Fuerza',       pj:5,pg:1,pe:0,pp:4,gf: 4,gc: 8, pts:2},
-      {eq:'Cap.Chica',      pj:4,pg:1,pe:0,pp:3,gf: 3,gc:19, pts:2},
-      {eq:'Catella',        pj:5,pg:1,pe:0,pp:4,gf: 3,gc:21, pts:2},
-      {eq:'La Plata V',     pj:4,pg:0,pe:1,pp:3,gf: 3,gc:13, pts:1},
-      {eq:'CRISFA V.',      pj:5,pg:0,pe:0,pp:5,gf: 5,gc:20, pts:0},
-    ],
-    20: [
-      {eq:'Catella',        pj:5,pg:5,pe:0,pp:0,gf:18,gc: 3, pts:10},
-      {eq:'Sagr. Corazón',  pj:5,pg:4,pe:0,pp:1,gf: 8,gc: 3, pts:8},
-      {eq:'CRISFA V.',      pj:5,pg:3,pe:0,pp:2,gf:10,gc: 5, pts:6},
-      {eq:'Villa Progreso', pj:4,pg:3,pe:0,pp:1,gf: 9,gc: 5, pts:6},
-      {eq:'Hernandez',      pj:4,pg:3,pe:0,pp:1,gf: 7,gc: 4, pts:6},
-      {eq:'ADAFI',          pj:5,pg:2,pe:0,pp:3,gf: 3,gc:12, pts:4},
-      {eq:'Cambaceres',     pj:3,pg:1,pe:0,pp:2,gf: 3,gc: 4, pts:2},
-      {eq:'Def. S. Lorenzo',pj:5,pg:1,pe:0,pp:4,gf: 3,gc: 6, pts:2},
-      {eq:'N.Fuerza',       pj:4,pg:1,pe:0,pp:3,gf: 2,gc: 6, pts:2},
-      {eq:'Cap.Chica',      pj:4,pg:1,pe:0,pp:3,gf: 2,gc: 6, pts:2},
-      {eq:'La Plata V',     pj:4,pg:0,pe:0,pp:4,gf: 0,gc:11, pts:0},
-    ],
-    19: [
-      {eq:'ADAFI',          pj:5,pg:5,pe:0,pp:0,gf:19,gc: 4, pts:10},
-      {eq:'Hernandez',      pj:4,pg:4,pe:0,pp:0,gf:17,gc: 2, pts:8},
-      {eq:'Sagr. Corazón',  pj:5,pg:4,pe:0,pp:1,gf: 8,gc: 2, pts:8},
-      {eq:'CRISFA V.',      pj:5,pg:3,pe:0,pp:2,gf:21,gc: 9, pts:6},
-      {eq:'Villa Progreso', pj:4,pg:2,pe:1,pp:1,gf: 8,gc: 8, pts:5},
-      {eq:'Cap.Chica',      pj:4,pg:2,pe:0,pp:2,gf: 6,gc: 5, pts:4},
-      {eq:'Catella',        pj:5,pg:1,pe:1,pp:3,gf: 6,gc:16, pts:3},
-      {eq:'Def. S. Lorenzo',pj:5,pg:1,pe:0,pp:4,gf: 2,gc: 7, pts:2},
-      {eq:'La Plata V',     pj:4,pg:1,pe:0,pp:3,gf: 2,gc: 7, pts:2},
-      {eq:'N.Fuerza',       pj:5,pg:0,pe:1,pp:4,gf: 1,gc:15, pts:1},
-      {eq:'Cambaceres',     pj:4,pg:0,pe:1,pp:3,gf: 3,gc:18, pts:1},
-    ],
-    17: [
-      {eq:'Hernandez',      pj:4,pg:3,pe:1,pp:0,gf:11,gc: 3, pts:7},
-      {eq:'Sagr. Corazón',  pj:5,pg:3,pe:1,pp:1,gf:18,gc:13, pts:7},
-      {eq:'Cambaceres',     pj:4,pg:3,pe:0,pp:1,gf:10,gc: 8, pts:6},
-      {eq:'N.Fuerza',       pj:5,pg:3,pe:0,pp:2,gf: 8,gc: 7, pts:6},
-      {eq:'La Plata V',     pj:4,pg:3,pe:0,pp:1,gf: 8,gc: 9, pts:6},
-      {eq:'Villa Progreso', pj:4,pg:2,pe:1,pp:1,gf: 9,gc: 5, pts:5},
-      {eq:'Cap.Chica',      pj:4,pg:2,pe:0,pp:2,gf:14,gc:10, pts:4},
-      {eq:'CRISFA V.',      pj:5,pg:1,pe:2,pp:2,gf: 7,gc: 6, pts:4},
-      {eq:'Catella',        pj:5,pg:1,pe:1,pp:3,gf:10,gc:13, pts:3},
-      {eq:'ADAFI',          pj:5,pg:1,pe:0,pp:4,gf: 7,gc:13, pts:2},
-      {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:0,pp:5,gf: 3,gc:18, pts:0},
-    ],
-    15: [
-      {eq:'Sagr. Corazón',  pj:5,pg:3,pe:2,pp:0,gf: 8,gc: 3, pts:8},
-      {eq:'Cambaceres',     pj:4,pg:3,pe:0,pp:1,gf:12,gc: 3, pts:6},
-      {eq:'ADAFI',          pj:5,pg:3,pe:0,pp:2,gf:11,gc: 5, pts:6},
-      {eq:'Villa Progreso', pj:4,pg:3,pe:0,pp:1,gf:10,gc: 8, pts:6},
-      {eq:'La Plata V',     pj:4,pg:2,pe:1,pp:1,gf:11,gc: 5, pts:5},
-      {eq:'Cap.Chica',      pj:4,pg:2,pe:1,pp:1,gf:10,gc: 4, pts:5},
-      {eq:'Catella',        pj:5,pg:2,pe:1,pp:2,gf: 7,gc: 8, pts:5},
-      {eq:'Hernandez',      pj:4,pg:1,pe:2,pp:1,gf: 6,gc: 3, pts:4},
-      {eq:'CRISFA V.',      pj:5,pg:1,pe:1,pp:3,gf: 3,gc:15, pts:3},
-      {eq:'Def. S. Lorenzo',pj:5,pg:1,pe:0,pp:4,gf: 9,gc:10, pts:2},
-      {eq:'N.Fuerza',       pj:5,pg:0,pe:0,pp:5,gf: 0,gc:23, pts:0},
+      {eq:'El Carmen',         pj:3,pg:3,pe:0,pp:0,gf: 6,gc: 0, pts:6},
+      {eq:'Hernandez',         pj:2,pg:2,pe:0,pp:0,gf: 6,gc: 0, pts:4},
+      {eq:'ADAFI',             pj:3,pg:2,pe:0,pp:1,gf: 6,gc: 3, pts:4},
+      {eq:'Cambaceres',        pj:3,pg:2,pe:0,pp:1,gf: 4,gc: 2, pts:4},
+      {eq:'Sagr. Corazón',     pj:3,pg:2,pe:0,pp:1,gf: 4,gc: 4, pts:4},
+      {eq:'Everton',           pj:3,pg:2,pe:0,pp:1,gf: 3,gc: 2, pts:4},
+      {eq:'Cap.Chica',         pj:3,pg:1,pe:1,pp:1,gf: 1,gc: 1, pts:3},
+      {eq:'Universitario',     pj:3,pg:1,pe:0,pp:2,gf: 3,gc: 7, pts:2},
+      {eq:'Estud. LH',         pj:2,pg:1,pe:0,pp:1,gf: 2,gc: 4, pts:2},
+      {eq:'Talleres B.',       pj:2,pg:1,pe:0,pp:1,gf: 2,gc: 4, pts:2},
+      {eq:'La Curva',          pj:2,pg:1,pe:0,pp:1,gf: 1,gc: 1, pts:2},
+      {eq:'V.S Carlos Bco.',   pj:3,pg:0,pe:1,pp:2,gf: 3,gc: 5, pts:1},
+      {eq:'Defensa',           pj:3,pg:0,pe:1,pp:2,gf: 2,gc: 4, pts:1},
+      {eq:'FIE 25',            pj:3,pg:0,pe:1,pp:2,gf: 0,gc: 2, pts:1},
+      {eq:'S.J.Bautista',      pj:2,pg:0,pe:0,pp:2,gf: 0,gc: 4, pts:0},
     ],
     14: [
-      {eq:'ADAFI',          pj:5,pg:4,pe:1,pp:0,gf:19,gc: 2, pts:9},
-      {eq:'Cambaceres',     pj:4,pg:4,pe:0,pp:0,gf:16,gc: 2, pts:8},
-      {eq:'Sagr. Corazón',  pj:5,pg:2,pe:2,pp:1,gf: 6,gc: 4, pts:6},
-      {eq:'Hernandez',      pj:4,pg:2,pe:1,pp:1,gf: 4,gc: 3, pts:5},
-      {eq:'Catella',        pj:5,pg:1,pe:3,pp:1,gf: 7,gc: 8, pts:5},
-      {eq:'CRISFA V.',      pj:5,pg:2,pe:1,pp:2,gf: 5,gc: 7, pts:5},
-      {eq:'Villa Progreso', pj:4,pg:1,pe:2,pp:1,gf: 3,gc: 7, pts:4},
-      {eq:'La Plata V',     pj:4,pg:1,pe:1,pp:2,gf: 5,gc:11, pts:3},
-      {eq:'Cap.Chica',      pj:4,pg:1,pe:0,pp:3,gf: 4,gc: 4, pts:2},
-      {eq:'N.Fuerza',       pj:5,pg:1,pe:0,pp:4,gf: 6,gc:18, pts:2},
-      {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:1,pp:4,gf: 3,gc:12, pts:1},
+      {eq:'Defensa',           pj:3,pg:3,pe:0,pp:0,gf: 5,gc: 1, pts:6},
+      {eq:'Cambaceres',        pj:3,pg:2,pe:1,pp:0,gf: 6,gc: 2, pts:5},
+      {eq:'El Carmen',         pj:3,pg:2,pe:1,pp:0,gf: 5,gc: 3, pts:5},
+      {eq:'Talleres B.',       pj:2,pg:2,pe:0,pp:0,gf: 7,gc: 4, pts:4},
+      {eq:'Estud. LH',         pj:2,pg:2,pe:0,pp:0,gf: 6,gc: 4, pts:4},
+      {eq:'FIE 25',            pj:3,pg:2,pe:0,pp:1,gf: 5,gc: 2, pts:4},
+      {eq:'Universitario',     pj:3,pg:1,pe:1,pp:1,gf: 2,gc: 2, pts:3},
+      {eq:'S.J.Bautista',      pj:2,pg:1,pe:0,pp:1,gf: 3,gc: 2, pts:2},
+      {eq:'ADAFI',             pj:3,pg:1,pe:0,pp:2,gf: 2,gc: 4, pts:2},
+      {eq:'Sagr. Corazón',     pj:3,pg:1,pe:0,pp:2,gf: 2,gc: 4, pts:2},
+      {eq:'La Curva',          pj:2,pg:0,pe:1,pp:1,gf: 1,gc: 2, pts:1},
+      {eq:'Cap.Chica',         pj:3,pg:0,pe:1,pp:2,gf: 1,gc: 4, pts:1},
+      {eq:'Everton',           pj:3,pg:0,pe:1,pp:2,gf: 1,gc: 5, pts:1},
+      {eq:'V.S Carlos Bco.',   pj:3,pg:0,pe:0,pp:3,gf: 5,gc: 9, pts:0},
+      {eq:'Hernandez',         pj:2,pg:0,pe:0,pp:2,gf: 4,gc: 7, pts:0},
     ],
-  }
+    15: [
+      {eq:'FIE 25',            pj:3,pg:3,pe:0,pp:0,gf: 6,gc: 0, pts:6},
+      {eq:'Universitario',     pj:3,pg:2,pe:1,pp:0,gf:10,gc: 5, pts:5},
+      {eq:'El Carmen',         pj:3,pg:2,pe:1,pp:0,gf: 7,gc: 5, pts:5},
+      {eq:'Sagr. Corazón',     pj:3,pg:2,pe:0,pp:1,gf: 4,gc: 1, pts:4},
+      {eq:'ADAFI',             pj:3,pg:1,pe:1,pp:1,gf: 8,gc: 9, pts:3},
+      {eq:'Hernandez',         pj:2,pg:1,pe:1,pp:0,gf: 4,gc: 1, pts:3},
+      {eq:'La Curva',          pj:2,pg:1,pe:1,pp:0,gf: 4,gc: 2, pts:3},
+      {eq:'V.S Carlos Bco.',   pj:3,pg:1,pe:1,pp:1,gf: 4,gc: 3, pts:3},
+      {eq:'Cambaceres',        pj:3,pg:1,pe:1,pp:1,gf: 3,gc: 4, pts:3},
+      {eq:'Estud. LH',         pj:2,pg:1,pe:1,pp:0,gf: 2,gc: 1, pts:3},
+      {eq:'Talleres B.',       pj:2,pg:0,pe:1,pp:1,gf: 1,gc: 4, pts:1},
+      {eq:'Cap.Chica',         pj:3,pg:0,pe:1,pp:2,gf: 0,gc: 2, pts:1},
+      {eq:'Everton',           pj:3,pg:0,pe:0,pp:3,gf: 3,gc:10, pts:0},
+      {eq:'Defensa',           pj:3,pg:0,pe:0,pp:3,gf: 3,gc:10, pts:0},
+      {eq:'S.J.Bautista',      pj:2,pg:0,pe:0,pp:2,gf: 2,gc: 4, pts:0},
+    ],
+    16: [
+      {eq:'Cap.Chica',         pj:3,pg:3,pe:0,pp:0,gf:12,gc: 2, pts:6},
+      {eq:'Cambaceres',        pj:3,pg:3,pe:0,pp:0,gf: 6,gc: 1, pts:6},
+      {eq:'El Carmen',         pj:3,pg:2,pe:1,pp:0,gf: 8,gc: 5, pts:5},
+      {eq:'Universitario',     pj:3,pg:2,pe:0,pp:1,gf: 4,gc: 2, pts:4},
+      {eq:'S.J.Bautista',      pj:2,pg:1,pe:1,pp:0,gf: 8,gc: 4, pts:3},
+      {eq:'Defensa',           pj:3,pg:1,pe:1,pp:1,gf: 5,gc: 4, pts:3},
+      {eq:'Talleres B.',       pj:2,pg:1,pe:1,pp:0,gf: 4,gc: 1, pts:3},
+      {eq:'Hernandez',         pj:2,pg:1,pe:1,pp:0,gf: 3,gc: 1, pts:3},
+      {eq:'V.S Carlos Bco.',   pj:3,pg:1,pe:1,pp:1,gf: 2,gc: 4, pts:3},
+      {eq:'FIE 25',            pj:3,pg:1,pe:0,pp:2,gf: 1,gc: 3, pts:2},
+      {eq:'La Curva',          pj:2,pg:0,pe:1,pp:1,gf: 2,gc: 7, pts:1},
+      {eq:'Estud. LH',         pj:2,pg:0,pe:1,pp:1,gf: 0,gc: 2, pts:1},
+      {eq:'ADAFI',             pj:3,pg:0,pe:0,pp:3,gf: 3,gc: 9, pts:0},
+      {eq:'Sagr. Corazón',     pj:3,pg:0,pe:0,pp:3,gf: 2,gc:10, pts:0},
+      {eq:'Everton',           pj:3,pg:0,pe:0,pp:3,gf: 0,gc: 5, pts:0},
+    ],
+    17: [
+      {eq:'V.S Carlos Bco.',   pj:3,pg:3,pe:0,pp:0,gf:10,gc: 2, pts:6},
+      {eq:'Everton',           pj:3,pg:2,pe:1,pp:0,gf: 8,gc: 3, pts:5},
+      {eq:'Universitario',     pj:3,pg:2,pe:1,pp:0,gf: 4,gc: 2, pts:5},
+      {eq:'La Curva',          pj:2,pg:2,pe:0,pp:0,gf: 9,gc: 0, pts:4},
+      {eq:'S.J.Bautista',      pj:2,pg:2,pe:0,pp:0,gf: 7,gc: 1, pts:4},
+      {eq:'Hernandez',         pj:2,pg:2,pe:0,pp:0,gf: 4,gc: 2, pts:4},
+      {eq:'Cambaceres',        pj:3,pg:2,pe:0,pp:1,gf: 4,gc: 2, pts:4},
+      {eq:'Sagr. Corazón',     pj:3,pg:1,pe:1,pp:1,gf: 3,gc: 4, pts:3},
+      {eq:'FIE 25',            pj:3,pg:1,pe:0,pp:2,gf: 4,gc: 5, pts:2},
+      {eq:'ADAFI',             pj:3,pg:0,pe:1,pp:2,gf: 2,gc: 7, pts:1},
+      {eq:'El Carmen',         pj:3,pg:0,pe:1,pp:2,gf: 2,gc: 7, pts:1},
+      {eq:'Cap.Chica',         pj:3,pg:0,pe:1,pp:2,gf: 1,gc: 5, pts:1},
+      {eq:'Talleres B.',       pj:2,pg:0,pe:0,pp:2,gf: 3,gc: 6, pts:0},
+      {eq:'Defensa',           pj:3,pg:0,pe:0,pp:3,gf: 2,gc:12, pts:0},
+      {eq:'Estud. LH',         pj:2,pg:0,pe:0,pp:2,gf: 1,gc: 6, pts:0},
+    ],
+    18: [
+      {eq:'Everton',           pj:3,pg:3,pe:0,pp:0,gf:10,gc: 2, pts:6},
+      {eq:'ADAFI',             pj:3,pg:2,pe:1,pp:0,gf:13,gc: 5, pts:5},
+      {eq:'Cambaceres',        pj:3,pg:2,pe:0,pp:1,gf:12,gc: 6, pts:4},
+      {eq:'Estud. LH',         pj:2,pg:2,pe:0,pp:0,gf: 8,gc: 2, pts:4},
+      {eq:'FIE 25',            pj:3,pg:2,pe:0,pp:1,gf: 7,gc: 4, pts:4},
+      {eq:'Sagr. Corazón',     pj:3,pg:2,pe:0,pp:1,gf: 7,gc: 5, pts:4},
+      {eq:'La Curva',          pj:2,pg:2,pe:0,pp:0,gf: 6,gc: 0, pts:4},
+      {eq:'V.S Carlos Bco.',   pj:3,pg:1,pe:1,pp:1,gf: 5,gc: 9, pts:3},
+      {eq:'Talleres B.',       pj:2,pg:1,pe:1,pp:0,gf: 4,gc: 2, pts:3},
+      {eq:'El Carmen',         pj:3,pg:1,pe:0,pp:2,gf: 6,gc: 6, pts:2},
+      {eq:'S.J.Bautista',      pj:2,pg:0,pe:1,pp:1,gf: 2,gc: 5, pts:1},
+      {eq:'Defensa',           pj:3,pg:0,pe:0,pp:3,gf: 4,gc:10, pts:0},
+      {eq:'Hernandez',         pj:2,pg:0,pe:0,pp:2,gf: 2,gc: 5, pts:0},
+      {eq:'Universitario',     pj:3,pg:0,pe:0,pp:3,gf: 1,gc:20, pts:0},
+      {eq:'Cap.Chica',         pj:3,pg:0,pe:0,pp:3,gf: 0,gc: 6, pts:0},
+    ],
+    19: [
+      {eq:'FIE 25',            pj:3,pg:3,pe:0,pp:0,gf:16,gc: 1, pts:6},
+      {eq:'Sagr. Corazón',     pj:3,pg:2,pe:1,pp:0,gf: 8,gc: 0, pts:5},
+      {eq:'Everton',           pj:3,pg:2,pe:0,pp:1,gf: 8,gc: 4, pts:4},
+      {eq:'ADAFI',             pj:3,pg:2,pe:0,pp:1,gf: 7,gc: 4, pts:4},
+      {eq:'La Curva',          pj:2,pg:2,pe:0,pp:0,gf: 4,gc: 0, pts:4},
+      {eq:'Hernandez',         pj:2,pg:2,pe:0,pp:0,gf: 2,gc: 0, pts:4},
+      {eq:'S.J.Bautista',      pj:2,pg:1,pe:1,pp:0,gf: 3,gc: 2, pts:3},
+      {eq:'Defensa',           pj:3,pg:1,pe:1,pp:1,gf: 2,gc: 2, pts:3},
+      {eq:'Estud. LH',         pj:2,pg:1,pe:0,pp:1,gf: 2,gc: 1, pts:2},
+      {eq:'Talleres B.',       pj:2,pg:1,pe:0,pp:1,gf: 2,gc: 1, pts:2},
+      {eq:'Universitario',     pj:3,pg:1,pe:0,pp:2,gf: 1,gc: 4, pts:2},
+      {eq:'El Carmen',         pj:3,pg:0,pe:1,pp:2,gf: 3,gc:10, pts:1},
+      {eq:'V.S Carlos Bco.',   pj:3,pg:0,pe:0,pp:3,gf: 0,gc: 6, pts:0},
+      {eq:'Cambaceres',        pj:3,pg:0,pe:0,pp:3,gf: 0,gc:11, pts:0},
+      {eq:'Cap.Chica',         pj:3,pg:0,pe:0,pp:3,gf: 0,gc:12, pts:0},
+    ],
+    20: [
+      {eq:'Sagr. Corazón',     pj:3,pg:3,pe:0,pp:0,gf:11,gc: 0, pts:6},
+      {eq:'Everton',           pj:3,pg:2,pe:1,pp:0,gf: 6,gc: 0, pts:5},
+      {eq:'Estud. LH',         pj:2,pg:2,pe:0,pp:0,gf:11,gc: 0, pts:4},
+      {eq:'La Curva',          pj:2,pg:2,pe:0,pp:0,gf: 4,gc: 0, pts:4},
+      {eq:'FIE 25',            pj:3,pg:2,pe:0,pp:1,gf: 3,gc: 1, pts:4},
+      {eq:'Universitario',     pj:3,pg:1,pe:1,pp:1,gf: 3,gc: 6, pts:3},
+      {eq:'V.S Carlos Bco.',   pj:3,pg:1,pe:1,pp:1,gf: 3,gc: 9, pts:3},
+      {eq:'S.J.Bautista',      pj:2,pg:1,pe:1,pp:0,gf: 2,gc: 1, pts:3},
+      {eq:'ADAFI',             pj:3,pg:1,pe:0,pp:2,gf: 3,gc: 4, pts:2},
+      {eq:'El Carmen',         pj:3,pg:0,pe:2,pp:1,gf: 0,gc: 2, pts:2},
+      {eq:'Talleres B.',       pj:2,pg:0,pe:1,pp:1,gf: 1,gc: 3, pts:1},
+      {eq:'Hernandez',         pj:2,pg:0,pe:1,pp:1,gf: 1,gc: 4, pts:1},
+      {eq:'Cambaceres',        pj:3,pg:0,pe:1,pp:2,gf: 1,gc: 4, pts:1},
+      {eq:'Defensa',           pj:3,pg:0,pe:1,pp:2,gf: 1,gc:10, pts:1},
+      {eq:'Cap.Chica',         pj:3,pg:0,pe:0,pp:3,gf: 0,gc: 6, pts:0},
+    ],
+  },
 };
+
+// ── ARCHIVO: datos de liga de temporadas anteriores ──
+// Se usan cuando el selector de temporada apunta a una temporada archivada, para que
+// las tablas y los últimos resultados sean los de ESA zona y no los de la actual.
+// (el 'rivalResults' original se renombró a teamResults, que es la clave que leen los
+//  renderers — antes quedaba muerto y por eso los rivales aparecían sin resultados)
+const LIGA_DATA_ARCHIVO = {
+  'lisfi-2026-zona2b': {
+    zona: 'lisfi-ii-zona-b-2026',
+      updatedAt: '31/03/2026',
+    
+      // ── Resultados de Sagrado Corazón ──
+      scResults: {
+        13: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:1, gc:2 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:3, gc:0 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:0, gc:2 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:3, gc:1 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:2 },
+        ],
+        14: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:1, gc:1 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:3, gc:1 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:1, gc:1 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:0, gc:1 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:1, gc:0 },
+        ],
+        15: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:1, gc:1 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:2, gc:0 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:0, gc:0 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:2, gc:0 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:3, gc:2 },
+        ],
+        16: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:2, gc:2 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:4, gc:0 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:4, gc:1 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:1, gc:3 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:0, gc:3 },
+        ],
+        17: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:6, gc:1 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:5, gc:2 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:4, gc:1 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:1, gc:1 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:8 },
+        ],
+        18: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:3, gc:0 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:4, gc:1 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:1, gc:0 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:5, gc:1 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:0 },
+        ],
+        19: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:3, gc:0 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:1, gc:0 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:1, gc:0 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:1, gc:2 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:0 },
+        ],
+        20: [
+          { fecha:1, rival:'LA PLATA V',      cond:'V', gf:3, gc:0 },
+          { fecha:2, rival:'DEF.SAN LORENZO', cond:'V', gf:1, gc:0 },
+          { fecha:3, rival:'CATELLA',         cond:'V', gf:0, gc:2 },
+          { fecha:4, rival:'CRISFA V.',       cond:'L', gf:2, gc:1 },
+          { fecha:5, rival:'CAP.CHICA',       cond:'V', gf:2, gc:0 },
+        ],
+      },
+    
+      // ── Últimos resultados de cada rival — POR CATEGORÍA ──
+      teamResults: {
+        16: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:0}, {f:2,vs:'La Plata V',gf:1,gc:3}, {f:3,vs:'Def.S.L.',gf:8,gc:0}, {f:4,vs:'Catella',gf:7,gc:0}, {f:5,vs:'CRISFA V.',gf:1,gc:2} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:1,gc:1}, {f:2,vs:'Cap.Chica',gf:2,gc:1}, {f:4,vs:'Hernandez',gf:0,gc:3}, {f:5,vs:'N.Fuerza',gf:7,gc:0} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:1,gc:2}, {f:3,vs:'Hernandez',gf:0,gc:2}, {f:4,vs:'N.Fuerza',gf:4,gc:1} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:2,gc:7}, {f:2,vs:'N.Fuerza',gf:3,gc:2}, {f:4,vs:'ADAFI',gf:0,gc:7}, {f:5,vs:'Villa P.',gf:1,gc:1} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:1,gc:1}, {f:2,vs:'Hernandez',gf:1,gc:3}, {f:3,vs:'N.Fuerza',gf:4,gc:1}, {f:5,vs:'ADAFI',gf:2,gc:1} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:3,gc:3}, {f:3,vs:'ADAFI',gf:0,gc:8}, {f:4,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'La Plata V',gf:0,gc:6} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:7,gc:2}, {f:2,vs:'CRISFA V.',gf:3,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Cambaceres',gf:3,gc:0} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:3,gc:1}, {f:3,vs:'Villa P.',gf:8,gc:0}, {f:5,vs:'Def.S.L.',gf:6,gc:0} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:3,gc:3}, {f:2,vs:'Catella',gf:2,gc:3}, {f:3,vs:'CRISFA V.',gf:1,gc:4}, {f:4,vs:'Cap.Chica',gf:1,gc:4}, {f:5,vs:'Cambaceres',gf:0,gc:7} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:0,gc:5}, {f:3,vs:'La Plata V',gf:0,gc:8}, {f:4,vs:'Def.S.L.',gf:2,gc:0}, {f:5,vs:'Catella',gf:1,gc:1} ],
+        },
+        13: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:8,gc:0}, {f:2,vs:'La Plata V',gf:0,gc:1}, {f:3,vs:'Def.S.L.',gf:9,gc:1}, {f:4,vs:'Catella',gf:4,gc:0}, {f:5,vs:'CRISFA V.',gf:8,gc:0} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:3,gc:0}, {f:2,vs:'Cap.Chica',gf:1,gc:3}, {f:4,vs:'Hernandez',gf:0,gc:3}, {f:5,vs:'N.Fuerza',gf:0,gc:1} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:3,gc:1}, {f:3,vs:'Hernandez',gf:1,gc:2}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:2,gc:2}, {f:2,vs:'N.Fuerza',gf:0,gc:1}, {f:4,vs:'ADAFI',gf:0,gc:4}, {f:5,vs:'Villa P.',gf:2,gc:1} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:0,gc:3}, {f:2,vs:'Hernandez',gf:2,gc:4}, {f:3,vs:'N.Fuerza',gf:1,gc:3}, {f:5,vs:'ADAFI',gf:0,gc:8} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:1,gc:3}, {f:3,vs:'ADAFI',gf:1,gc:9}, {f:4,vs:'Villa P.',gf:2,gc:5}, {f:5,vs:'La Plata V',gf:0,gc:4} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:2,gc:2}, {f:2,vs:'CRISFA V.',gf:4,gc:2}, {f:3,vs:'Cap.Chica',gf:2,gc:1}, {f:4,vs:'Cambaceres',gf:3,gc:0} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:1,gc:0}, {f:3,vs:'Villa P.',gf:3,gc:1}, {f:5,vs:'Def.S.L.',gf:4,gc:0} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:3,gc:1}, {f:2,vs:'Catella',gf:1,gc:0}, {f:3,vs:'CRISFA V.',gf:3,gc:1}, {f:4,vs:'Cap.Chica',gf:0,gc:2}, {f:5,vs:'Cambaceres',gf:1,gc:0} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:0,gc:8}, {f:3,vs:'La Plata V',gf:1,gc:3}, {f:4,vs:'Def.S.L.',gf:5,gc:2}, {f:5,vs:'Catella',gf:1,gc:2} ],
+        },
+        20: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:0,gc:2}, {f:2,vs:'La Plata V',gf:2,gc:0}, {f:3,vs:'Def.S.L.',gf:1,gc:0}, {f:4,vs:'Catella',gf:0,gc:6}, {f:5,vs:'CRISFA V.',gf:0,gc:4} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:1,gc:2}, {f:2,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Hernandez',gf:0,gc:2} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:0,gc:2}, {f:3,vs:'Hernandez',gf:0,gc:2}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:3,gc:1}, {f:2,vs:'N.Fuerza',gf:2,gc:0}, {f:4,vs:'ADAFI',gf:6,gc:0}, {f:5,vs:'Villa P.',gf:5,gc:2} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:2,gc:1}, {f:2,vs:'Hernandez',gf:1,gc:2}, {f:3,vs:'N.Fuerza',gf:2,gc:0}, {f:5,vs:'ADAFI',gf:4,gc:0} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:0,gc:2}, {f:3,vs:'ADAFI',gf:0,gc:1}, {f:4,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'La Plata V',gf:3,gc:0} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:1,gc:3}, {f:2,vs:'CRISFA V.',gf:2,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Cambaceres',gf:2,gc:0} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:0,gc:2}, {f:3,vs:'Villa P.',gf:0,gc:3}, {f:5,vs:'Def.S.L.',gf:0,gc:3} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:2,gc:0}, {f:2,vs:'Catella',gf:0,gc:2}, {f:3,vs:'CRISFA V.',gf:0,gc:2}, {f:4,vs:'Cap.Chica',gf:0,gc:2} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:0}, {f:3,vs:'La Plata V',gf:3,gc:0}, {f:4,vs:'Def.S.L.',gf:2,gc:0}, {f:5,vs:'Catella',gf:2,gc:5} ],
+        },
+        19: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:1}, {f:2,vs:'La Plata V',gf:2,gc:0}, {f:3,vs:'Def.S.L.',gf:2,gc:0}, {f:4,vs:'Catella',gf:4,gc:1}, {f:5,vs:'CRISFA V.',gf:6,gc:2} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:0,gc:8}, {f:2,vs:'Cap.Chica',gf:1,gc:4}, {f:4,vs:'Hernandez',gf:1,gc:5}, {f:5,vs:'N.Fuerza',gf:1,gc:1} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:4,gc:1}, {f:3,vs:'Hernandez',gf:0,gc:2}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:0,gc:8}, {f:2,vs:'N.Fuerza',gf:2,gc:0}, {f:4,vs:'ADAFI',gf:1,gc:4}, {f:5,vs:'Villa P.',gf:3,gc:3} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:8,gc:0}, {f:2,vs:'Hernandez',gf:1,gc:2}, {f:3,vs:'N.Fuerza',gf:8,gc:0}, {f:5,vs:'ADAFI',gf:2,gc:6} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:2,gc:0}, {f:3,vs:'ADAFI',gf:0,gc:2}, {f:4,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'La Plata V',gf:0,gc:2} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:8,gc:0}, {f:2,vs:'CRISFA V.',gf:2,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Cambaceres',gf:5,gc:1} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:0,gc:2}, {f:3,vs:'Villa P.',gf:0,gc:2}, {f:5,vs:'Def.S.L.',gf:2,gc:0} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:0,gc:2}, {f:2,vs:'Catella',gf:0,gc:2}, {f:3,vs:'CRISFA V.',gf:0,gc:8}, {f:4,vs:'Cap.Chica',gf:0,gc:2}, {f:5,vs:'Cambaceres',gf:1,gc:1} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:1,gc:5}, {f:3,vs:'La Plata V',gf:2,gc:0}, {f:4,vs:'Def.S.L.',gf:2,gc:0}, {f:5,vs:'Catella',gf:3,gc:3} ],
+        },
+        17: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:0,gc:2}, {f:2,vs:'La Plata V',gf:1,gc:2}, {f:3,vs:'Def.S.L.',gf:5,gc:1}, {f:4,vs:'Catella',gf:1,gc:5}, {f:5,vs:'CRISFA V.',gf:0,gc:3} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:3,gc:2}, {f:2,vs:'Cap.Chica',gf:4,gc:2}, {f:4,vs:'Hernandez',gf:0,gc:4}, {f:5,vs:'N.Fuerza',gf:3,gc:0} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:2,gc:4}, {f:3,vs:'Hernandez',gf:1,gc:2}, {f:4,vs:'N.Fuerza',gf:3,gc:2} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:1,gc:4}, {f:2,vs:'N.Fuerza',gf:1,gc:2}, {f:4,vs:'ADAFI',gf:5,gc:1}, {f:5,vs:'Villa P.',gf:2,gc:2} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:2,gc:3}, {f:2,vs:'Hernandez',gf:1,gc:1}, {f:3,vs:'N.Fuerza',gf:0,gc:1}, {f:5,vs:'ADAFI',gf:3,gc:0} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:0,gc:3}, {f:3,vs:'ADAFI',gf:1,gc:5}, {f:4,vs:'Villa P.',gf:0,gc:3}, {f:5,vs:'La Plata V',gf:0,gc:2} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:4,gc:1}, {f:2,vs:'CRISFA V.',gf:1,gc:1}, {f:3,vs:'Cap.Chica',gf:2,gc:1}, {f:4,vs:'Cambaceres',gf:4,gc:0} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:2,gc:1}, {f:3,vs:'Villa P.',gf:3,gc:2}, {f:5,vs:'Def.S.L.',gf:2,gc:0} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:3,gc:0}, {f:2,vs:'Catella',gf:2,gc:1}, {f:3,vs:'CRISFA V.',gf:1,gc:0}, {f:4,vs:'Cap.Chica',gf:2,gc:3}, {f:5,vs:'Cambaceres',gf:0,gc:3} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:0}, {f:3,vs:'La Plata V',gf:2,gc:3}, {f:4,vs:'Def.S.L.',gf:3,gc:0}, {f:5,vs:'Catella',gf:2,gc:2} ],
+        },
+        15: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:1,gc:2}, {f:2,vs:'La Plata V',gf:0,gc:3}, {f:3,vs:'Def.S.L.',gf:1,gc:0}, {f:4,vs:'Catella',gf:2,gc:0}, {f:5,vs:'CRISFA V.',gf:7,gc:0} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:5,gc:0}, {f:2,vs:'Cap.Chica',gf:1,gc:3}, {f:4,vs:'Hernandez',gf:1,gc:0}, {f:5,vs:'N.Fuerza',gf:5,gc:0} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:3,gc:1}, {f:3,vs:'Hernandez',gf:0,gc:0}, {f:4,vs:'N.Fuerza',gf:5,gc:0} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:1,gc:5}, {f:2,vs:'N.Fuerza',gf:4,gc:0}, {f:4,vs:'ADAFI',gf:0,gc:2}, {f:5,vs:'Villa P.',gf:2,gc:1} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:0,gc:5}, {f:2,vs:'Hernandez',gf:1,gc:1}, {f:3,vs:'N.Fuerza',gf:2,gc:0}, {f:5,vs:'ADAFI',gf:0,gc:7} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:7,gc:0}, {f:3,vs:'ADAFI',gf:0,gc:1}, {f:4,vs:'Villa P.',gf:2,gc:3}, {f:5,vs:'La Plata V',gf:0,gc:4} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:5,gc:1}, {f:2,vs:'CRISFA V.',gf:1,gc:1}, {f:3,vs:'Cap.Chica',gf:0,gc:0}, {f:4,vs:'Cambaceres',gf:0,gc:1} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:3,gc:0}, {f:3,vs:'Villa P.',gf:3,gc:4}, {f:5,vs:'Def.S.L.',gf:4,gc:0} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:0,gc:7}, {f:2,vs:'Catella',gf:0,gc:4}, {f:3,vs:'CRISFA V.',gf:0,gc:2}, {f:4,vs:'Cap.Chica',gf:0,gc:5}, {f:5,vs:'Cambaceres',gf:0,gc:5} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:1}, {f:3,vs:'La Plata V',gf:4,gc:3}, {f:4,vs:'Def.S.L.',gf:3,gc:2}, {f:5,vs:'Catella',gf:1,gc:2} ],
+        },
+        18: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:2}, {f:2,vs:'La Plata V',gf:4,gc:1}, {f:3,vs:'Def.S.L.',gf:5,gc:3}, {f:4,vs:'Catella',gf:7,gc:1}, {f:5,vs:'CRISFA V.',gf:5,gc:1} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:2,gc:0}, {f:2,vs:'Cap.Chica',gf:8,gc:0}, {f:4,vs:'Hernandez',gf:6,gc:1}, {f:5,vs:'N.Fuerza',gf:2,gc:1} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:0,gc:8}, {f:3,vs:'Hernandez',gf:1,gc:9}, {f:4,vs:'N.Fuerza',gf:2,gc:0} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:1,gc:8}, {f:2,vs:'N.Fuerza',gf:1,gc:0}, {f:4,vs:'ADAFI',gf:1,gc:7}, {f:5,vs:'Villa P.',gf:0,gc:5} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:0,gc:2}, {f:2,vs:'Hernandez',gf:2,gc:5}, {f:3,vs:'N.Fuerza',gf:1,gc:3}, {f:5,vs:'ADAFI',gf:1,gc:5} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:2,gc:0}, {f:3,vs:'ADAFI',gf:3,gc:5}, {f:4,vs:'Villa P.',gf:1,gc:0}, {f:5,vs:'La Plata V',gf:5,gc:1} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:8,gc:1}, {f:2,vs:'CRISFA V.',gf:5,gc:2}, {f:3,vs:'Cap.Chica',gf:9,gc:1}, {f:4,vs:'Cambaceres',gf:1,gc:6} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:1,gc:4}, {f:3,vs:'Villa P.',gf:1,gc:1}, {f:5,vs:'Def.S.L.',gf:1,gc:5} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:0,gc:2}, {f:2,vs:'Catella',gf:0,gc:1}, {f:3,vs:'CRISFA V.',gf:3,gc:1}, {f:4,vs:'Cap.Chica',gf:0,gc:2}, {f:5,vs:'Cambaceres',gf:1,gc:2} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:2,gc:5}, {f:3,vs:'La Plata V',gf:1,gc:1}, {f:4,vs:'Def.S.L.',gf:0,gc:1}, {f:5,vs:'Catella',gf:5,gc:0} ],
+        },
+        14: {
+          'ADAFI':        [ {f:1,vs:'Villa P.',gf:5,gc:0}, {f:2,vs:'La Plata V',gf:6,gc:0}, {f:3,vs:'Def.S.L.',gf:2,gc:0}, {f:4,vs:'Catella',gf:4,gc:0}, {f:5,vs:'CRISFA V.',gf:2,gc:2} ],
+          'CAMBACERES':   [ {f:1,vs:'CRISFA V.',gf:3,gc:1}, {f:2,vs:'Cap.Chica',gf:2,gc:0}, {f:4,vs:'Hernandez',gf:3,gc:1}, {f:5,vs:'N.Fuerza',gf:8,gc:0} ],
+          'CAP.CHICA':    [ {f:2,vs:'Cambaceres',gf:0,gc:2}, {f:3,vs:'Hernandez',gf:0,gc:1}, {f:4,vs:'N.Fuerza',gf:4,gc:0} ],
+          'CATELLA':      [ {f:1,vs:'Hernandez',gf:0,gc:0}, {f:2,vs:'N.Fuerza',gf:5,gc:2}, {f:4,vs:'ADAFI',gf:0,gc:4}, {f:5,vs:'Villa P.',gf:1,gc:1} ],
+          'CRISFA V':     [ {f:1,vs:'Cambaceres',gf:1,gc:3}, {f:2,vs:'Hernandez',gf:0,gc:2}, {f:3,vs:'N.Fuerza',gf:1,gc:0}, {f:5,vs:'ADAFI',gf:2,gc:2} ],
+          'DEF.SAN LORENZO': [ {f:1,vs:'N.Fuerza',gf:0,gc:4}, {f:3,vs:'ADAFI',gf:0,gc:2}, {f:4,vs:'Villa P.',gf:0,gc:0}, {f:5,vs:'La Plata V',gf:2,gc:3} ],
+          'HERNANDEZ':    [ {f:1,vs:'Catella',gf:0,gc:0}, {f:2,vs:'CRISFA V.',gf:2,gc:0}, {f:3,vs:'Cap.Chica',gf:1,gc:0}, {f:4,vs:'Cambaceres',gf:1,gc:3} ],
+          'LA PLATA V':   [ {f:2,vs:'ADAFI',gf:0,gc:6}, {f:3,vs:'Villa P.',gf:1,gc:2}, {f:5,vs:'Def.S.L.',gf:3,gc:2} ],
+          'N.FUERZA':     [ {f:1,vs:'Def.S.L.',gf:4,gc:0}, {f:2,vs:'Catella',gf:2,gc:5}, {f:3,vs:'CRISFA V.',gf:0,gc:1}, {f:4,vs:'Cap.Chica',gf:0,gc:4}, {f:5,vs:'Cambaceres',gf:0,gc:8} ],
+          'VILLA PROGRESO': [ {f:1,vs:'ADAFI',gf:0,gc:5}, {f:3,vs:'La Plata V',gf:2,gc:1}, {f:4,vs:'Def.S.L.',gf:0,gc:0}, {f:5,vs:'Catella',gf:1,gc:1} ],
+        },
+      },
+    
+      // ── Tabla de posiciones por categoría ──
+      // Calculada con F1+F2+F3+F4+F5. LISFI: 2pts x victoria, 1 empate, 0 derrota
+      posiciones: {
+        16: [
+          {eq:'Hernandez',      pj:4,pg:4,pe:0,pp:0,gf:15,gc: 3, pts:8},
+          {eq:'La Plata V',     pj:4,pg:3,pe:1,pp:0,gf:19,gc: 3, pts:7},
+          {eq:'CRISFA V.',      pj:5,pg:3,pe:1,pp:1,gf:11,gc: 7, pts:7},
+          {eq:'ADAFI',          pj:5,pg:3,pe:0,pp:2,gf:22,gc: 5, pts:6},
+          {eq:'Cambaceres',     pj:4,pg:2,pe:1,pp:1,gf:10,gc: 5, pts:5},
+          {eq:'Sagr. Corazón',  pj:5,pg:2,pe:1,pp:2,gf:11,gc: 9, pts:5},
+          {eq:'Cap.Chica',      pj:4,pg:2,pe:0,pp:2,gf: 8,gc: 5, pts:4},
+          {eq:'Villa Progreso', pj:4,pg:1,pe:1,pp:2,gf: 3,gc:14, pts:3},
+          {eq:'Catella',        pj:5,pg:1,pe:1,pp:3,gf: 7,gc:21, pts:3},
+          {eq:'N.Fuerza',       pj:5,pg:0,pe:1,pp:4,gf: 7,gc:21, pts:1},
+          {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:1,pp:4,gf: 3,gc:23, pts:1},
+        ],
+        13: [
+          {eq:'ADAFI',          pj:5,pg:4,pe:0,pp:1,gf:29,gc: 2, pts:8},
+          {eq:'La Plata V',     pj:4,pg:4,pe:0,pp:0,gf:10,gc: 2, pts:8},
+          {eq:'N.Fuerza',       pj:5,pg:4,pe:0,pp:1,gf: 8,gc: 4, pts:8},
+          {eq:'Hernandez',      pj:4,pg:3,pe:1,pp:0,gf:11,gc: 5, pts:7},
+          {eq:'Cap.Chica',      pj:4,pg:2,pe:1,pp:1,gf: 8,gc: 5, pts:5},
+          {eq:'Sagr. Corazón',  pj:5,pg:2,pe:1,pp:2,gf: 9,gc: 7, pts:5},
+          {eq:'Catella',        pj:5,pg:2,pe:1,pp:2,gf: 6,gc: 8, pts:5},
+          {eq:'Cambaceres',     pj:4,pg:1,pe:0,pp:3,gf: 4,gc: 7, pts:2},
+          {eq:'Villa Progreso', pj:4,pg:1,pe:0,pp:3,gf: 7,gc:15, pts:2},
+          {eq:'CRISFA V.',      pj:5,pg:0,pe:0,pp:5,gf: 4,gc:21, pts:0},
+          {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:0,pp:5,gf: 4,gc:24, pts:0},
+        ],
+        18: [
+          {eq:'ADAFI',          pj:5,pg:5,pe:0,pp:0,gf:26,gc: 8, pts:10},
+          {eq:'Sagr. Corazón',  pj:5,pg:5,pe:0,pp:0,gf:15,gc: 2, pts:10},
+          {eq:'Cambaceres',     pj:4,pg:4,pe:0,pp:0,gf:18,gc: 2, pts:8},
+          {eq:'Hernandez',      pj:4,pg:3,pe:0,pp:1,gf:23,gc:10, pts:6},
+          {eq:'Def. S. Lorenzo',pj:5,pg:3,pe:0,pp:2,gf:12,gc:10, pts:6},
+          {eq:'Villa Progreso', pj:4,pg:1,pe:1,pp:2,gf: 8,gc: 7, pts:3},
+          {eq:'N.Fuerza',       pj:5,pg:1,pe:0,pp:4,gf: 4,gc: 8, pts:2},
+          {eq:'Cap.Chica',      pj:4,pg:1,pe:0,pp:3,gf: 3,gc:19, pts:2},
+          {eq:'Catella',        pj:5,pg:1,pe:0,pp:4,gf: 3,gc:21, pts:2},
+          {eq:'La Plata V',     pj:4,pg:0,pe:1,pp:3,gf: 3,gc:13, pts:1},
+          {eq:'CRISFA V.',      pj:5,pg:0,pe:0,pp:5,gf: 5,gc:20, pts:0},
+        ],
+        20: [
+          {eq:'Catella',        pj:5,pg:5,pe:0,pp:0,gf:18,gc: 3, pts:10},
+          {eq:'Sagr. Corazón',  pj:5,pg:4,pe:0,pp:1,gf: 8,gc: 3, pts:8},
+          {eq:'CRISFA V.',      pj:5,pg:3,pe:0,pp:2,gf:10,gc: 5, pts:6},
+          {eq:'Villa Progreso', pj:4,pg:3,pe:0,pp:1,gf: 9,gc: 5, pts:6},
+          {eq:'Hernandez',      pj:4,pg:3,pe:0,pp:1,gf: 7,gc: 4, pts:6},
+          {eq:'ADAFI',          pj:5,pg:2,pe:0,pp:3,gf: 3,gc:12, pts:4},
+          {eq:'Cambaceres',     pj:3,pg:1,pe:0,pp:2,gf: 3,gc: 4, pts:2},
+          {eq:'Def. S. Lorenzo',pj:5,pg:1,pe:0,pp:4,gf: 3,gc: 6, pts:2},
+          {eq:'N.Fuerza',       pj:4,pg:1,pe:0,pp:3,gf: 2,gc: 6, pts:2},
+          {eq:'Cap.Chica',      pj:4,pg:1,pe:0,pp:3,gf: 2,gc: 6, pts:2},
+          {eq:'La Plata V',     pj:4,pg:0,pe:0,pp:4,gf: 0,gc:11, pts:0},
+        ],
+        19: [
+          {eq:'ADAFI',          pj:5,pg:5,pe:0,pp:0,gf:19,gc: 4, pts:10},
+          {eq:'Hernandez',      pj:4,pg:4,pe:0,pp:0,gf:17,gc: 2, pts:8},
+          {eq:'Sagr. Corazón',  pj:5,pg:4,pe:0,pp:1,gf: 8,gc: 2, pts:8},
+          {eq:'CRISFA V.',      pj:5,pg:3,pe:0,pp:2,gf:21,gc: 9, pts:6},
+          {eq:'Villa Progreso', pj:4,pg:2,pe:1,pp:1,gf: 8,gc: 8, pts:5},
+          {eq:'Cap.Chica',      pj:4,pg:2,pe:0,pp:2,gf: 6,gc: 5, pts:4},
+          {eq:'Catella',        pj:5,pg:1,pe:1,pp:3,gf: 6,gc:16, pts:3},
+          {eq:'Def. S. Lorenzo',pj:5,pg:1,pe:0,pp:4,gf: 2,gc: 7, pts:2},
+          {eq:'La Plata V',     pj:4,pg:1,pe:0,pp:3,gf: 2,gc: 7, pts:2},
+          {eq:'N.Fuerza',       pj:5,pg:0,pe:1,pp:4,gf: 1,gc:15, pts:1},
+          {eq:'Cambaceres',     pj:4,pg:0,pe:1,pp:3,gf: 3,gc:18, pts:1},
+        ],
+        17: [
+          {eq:'Hernandez',      pj:4,pg:3,pe:1,pp:0,gf:11,gc: 3, pts:7},
+          {eq:'Sagr. Corazón',  pj:5,pg:3,pe:1,pp:1,gf:18,gc:13, pts:7},
+          {eq:'Cambaceres',     pj:4,pg:3,pe:0,pp:1,gf:10,gc: 8, pts:6},
+          {eq:'N.Fuerza',       pj:5,pg:3,pe:0,pp:2,gf: 8,gc: 7, pts:6},
+          {eq:'La Plata V',     pj:4,pg:3,pe:0,pp:1,gf: 8,gc: 9, pts:6},
+          {eq:'Villa Progreso', pj:4,pg:2,pe:1,pp:1,gf: 9,gc: 5, pts:5},
+          {eq:'Cap.Chica',      pj:4,pg:2,pe:0,pp:2,gf:14,gc:10, pts:4},
+          {eq:'CRISFA V.',      pj:5,pg:1,pe:2,pp:2,gf: 7,gc: 6, pts:4},
+          {eq:'Catella',        pj:5,pg:1,pe:1,pp:3,gf:10,gc:13, pts:3},
+          {eq:'ADAFI',          pj:5,pg:1,pe:0,pp:4,gf: 7,gc:13, pts:2},
+          {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:0,pp:5,gf: 3,gc:18, pts:0},
+        ],
+        15: [
+          {eq:'Sagr. Corazón',  pj:5,pg:3,pe:2,pp:0,gf: 8,gc: 3, pts:8},
+          {eq:'Cambaceres',     pj:4,pg:3,pe:0,pp:1,gf:12,gc: 3, pts:6},
+          {eq:'ADAFI',          pj:5,pg:3,pe:0,pp:2,gf:11,gc: 5, pts:6},
+          {eq:'Villa Progreso', pj:4,pg:3,pe:0,pp:1,gf:10,gc: 8, pts:6},
+          {eq:'La Plata V',     pj:4,pg:2,pe:1,pp:1,gf:11,gc: 5, pts:5},
+          {eq:'Cap.Chica',      pj:4,pg:2,pe:1,pp:1,gf:10,gc: 4, pts:5},
+          {eq:'Catella',        pj:5,pg:2,pe:1,pp:2,gf: 7,gc: 8, pts:5},
+          {eq:'Hernandez',      pj:4,pg:1,pe:2,pp:1,gf: 6,gc: 3, pts:4},
+          {eq:'CRISFA V.',      pj:5,pg:1,pe:1,pp:3,gf: 3,gc:15, pts:3},
+          {eq:'Def. S. Lorenzo',pj:5,pg:1,pe:0,pp:4,gf: 9,gc:10, pts:2},
+          {eq:'N.Fuerza',       pj:5,pg:0,pe:0,pp:5,gf: 0,gc:23, pts:0},
+        ],
+        14: [
+          {eq:'ADAFI',          pj:5,pg:4,pe:1,pp:0,gf:19,gc: 2, pts:9},
+          {eq:'Cambaceres',     pj:4,pg:4,pe:0,pp:0,gf:16,gc: 2, pts:8},
+          {eq:'Sagr. Corazón',  pj:5,pg:2,pe:2,pp:1,gf: 6,gc: 4, pts:6},
+          {eq:'Hernandez',      pj:4,pg:2,pe:1,pp:1,gf: 4,gc: 3, pts:5},
+          {eq:'Catella',        pj:5,pg:1,pe:3,pp:1,gf: 7,gc: 8, pts:5},
+          {eq:'CRISFA V.',      pj:5,pg:2,pe:1,pp:2,gf: 5,gc: 7, pts:5},
+          {eq:'Villa Progreso', pj:4,pg:1,pe:2,pp:1,gf: 3,gc: 7, pts:4},
+          {eq:'La Plata V',     pj:4,pg:1,pe:1,pp:2,gf: 5,gc:11, pts:3},
+          {eq:'Cap.Chica',      pj:4,pg:1,pe:0,pp:3,gf: 4,gc: 4, pts:2},
+          {eq:'N.Fuerza',       pj:5,pg:1,pe:0,pp:4,gf: 6,gc:18, pts:2},
+          {eq:'Def. S. Lorenzo',pj:5,pg:0,pe:1,pp:4,gf: 3,gc:12, pts:1},
+        ],
+      }
+  },
+};
+
+
+// LIGA_DATA es el dataset que lee toda la app. Arranca con el de la temporada vigente
+// y aplicarLigaDataDeTemporada() lo cambia cuando se mira una temporada archivada.
+const LIGA_DATA = JSON.parse(JSON.stringify(LIGA_DATA_ACTUAL));
+
+function aplicarLigaDataDeTemporada(){
+  try {
+    const d = (typeof esHistorico === "function" && esHistorico() && LIGA_DATA_ARCHIVO[TORNEO_ID])
+      ? LIGA_DATA_ARCHIVO[TORNEO_ID]
+      : LIGA_DATA_ACTUAL;
+    Object.keys(LIGA_DATA).forEach(k => { delete LIGA_DATA[k]; });
+    Object.assign(LIGA_DATA, JSON.parse(JSON.stringify(d)));
+  } catch(e){ console.warn('aplicarLigaDataDeTemporada:', e); }
+}
+window.aplicarLigaDataDeTemporada = aplicarLigaDataDeTemporada;
 
 
 // ════════════════════════════════════════════════
 // CARGA DINÁMICA DE LIGA_DATA DESDE liga_data.json
 // El fetch arranca apenas carga la página; startCoordApp lo espera.
 // ════════════════════════════════════════════════
+// ── GUARDA DE ZONA ──
+// El scraper que genera liga_data.json es externo a este archivo y puede seguir
+// apuntando a la zona anterior. Si los datos que llegan no son de la zona vigente
+// se ignoran, así la tabla de la zona nueva no se mezcla con equipos que ya no juegan.
+function _ligaDataEsDeZonaActual(d){
+  // 1) Si el JSON declara su zona, se compara con la zona vigente
+  const zonaVigente = window._ligaIdActivo || LIGA_DATA_ACTUAL.zona;
+  const z = d.zona || d.ligaId || d.liga_id;
+  if(z && zonaVigente) return String(z).trim() === String(zonaVigente).trim();
+  // 2) Si no la declara, se compara por equipos contra los de la zona vigente
+  const norm = s => String(s||'').toUpperCase().replace(/[.\s]/g,'').substring(0,5);
+  const actuales = new Set();
+  if(window._equiposZonaActiva && window._equiposZonaActiva.length){
+    window._equiposZonaActiva.forEach(e => actuales.add(norm(e)));
+  } else {
+    Object.values(LIGA_DATA_ACTUAL.posiciones||{}).forEach(arr => (arr||[]).forEach(r => actuales.add(norm(r.eq))));
+  }
+  const entrantes = new Set();
+  Object.values(d.posiciones||{}).forEach(arr => (arr||[]).forEach(r => entrantes.add(norm(r.eq))));
+  Object.values(d.teamResults||{}).forEach(o => Object.keys(o||{}).forEach(e => entrantes.add(norm(e))));
+  if(!actuales.size || !entrantes.size) return true; // sin con qué comparar, se acepta
+  let comunes = 0;
+  entrantes.forEach(e => { if(actuales.has(e)) comunes++; });
+  return (comunes / entrantes.size) >= 0.7; // 70% de equipos en común = misma zona
+}
+
+// Etiqueta "Actualizado" del encabezado de tablas
+function _updLabel(){
+  if(window._tablaEnCero && !LIGA_DATA.updatedAt)
+    return '<span style="color:var(--yellow)">Tabla nueva · sin resultados cargados</span>';
+  const base = LIGA_DATA.updatedAt ? 'Actualizado: '+LIGA_DATA.updatedAt : '';
+  return window._ligaDataDesactualizada
+    ? base + ' · <span style="color:var(--yellow)">sin actualización automática</span>'
+    : base;
+}
+window._updLabel = _updLabel;
+
+// Vuelca el liga_data.json guardado si corresponde a la zona vigente.
+// Se llama al recibir el JSON y otra vez cuando ya se sabe cuál es la zona activa
+// (el fetch puede llegar antes que la config del club).
+function aplicarLigaDataJson(){
+  const d = window._ligaDataRaw;
+  if(!d) return false;
+  if(!_ligaDataEsDeZonaActual(d)){
+    window._ligaDataDesactualizada = true;
+    return false;
+  }
+  window._ligaDataDesactualizada = false;
+  const num = o => Object.fromEntries(Object.entries(o).map(([k,v]) => [Number(k), v]));
+
+  if(d.posiciones && Object.keys(d.posiciones).length > 0){
+    LIGA_DATA_ACTUAL.posiciones = num(d.posiciones);
+  }
+  if(d.scResults && Object.values(d.scResults).some(arr => arr && arr.length > 0)){
+    LIGA_DATA_ACTUAL.scResults = num(d.scResults);
+  }
+  if(d.teamResults && Object.keys(d.teamResults).length > 0){
+    LIGA_DATA_ACTUAL.teamResults = num(d.teamResults);
+    // Si el scraper manda resultados pero no tabla, la tabla se calcula sola
+    if(!d.posiciones || Object.keys(d.posiciones).length === 0){
+      const eq = window._equiposZonaActiva || [];
+      LIGA_DATA_ACTUAL.posiciones = Object.fromEntries(
+        Object.entries(LIGA_DATA_ACTUAL.teamResults).map(([c,tr]) => [Number(c), calcularPosicionesDesdeResultados(tr, eq)])
+      );
+    }
+  }
+  if(d.updatedAt) LIGA_DATA_ACTUAL.updatedAt = d.updatedAt;
+  if(window._ligaIdActivo) LIGA_DATA_ACTUAL.zona = window._ligaIdActivo;
+
+  window._tablaEnCero = false;
+  aplicarLigaDataDeTemporada(); // volcar al dataset activo (respeta la temporada que se esté viendo)
+  return true;
+}
+window.aplicarLigaDataJson = aplicarLigaDataJson;
+
 window._ligaDataReady = (async () => {
   try {
     const res = await fetch('liga_data.json?_=' + Date.now());
     if (!res.ok) return;
-    const d = await res.json();
-    if (d.posiciones && Object.keys(d.posiciones).length > 0) {
-      LIGA_DATA.posiciones = Object.fromEntries(
-        Object.entries(d.posiciones).map(([k,v]) => [Number(k), v])
-      );
+    window._ligaDataRaw = await res.json();
+    if(aplicarLigaDataJson()){
+      console.log('✅ liga_data.json cargado —', LIGA_DATA.updatedAt);
+    } else {
+      console.warn('⚠️ liga_data.json no corresponde a la zona vigente — ignorado por ahora. Zona vigente:', window._ligaIdActivo || LIGA_DATA_ACTUAL.zona);
     }
-    if (d.scResults && Object.keys(d.scResults).length > 0) {
-      // Solo reemplazar si el JSON trae resultados reales (al menos 1 fecha)
-      const hasData = Object.values(d.scResults).some(arr => arr.length > 0);
-      if (hasData) {
-        LIGA_DATA.scResults = Object.fromEntries(
-          Object.entries(d.scResults).map(([k,v]) => [Number(k), v])
-        );
-      }
-    }
-    if (d.teamResults && Object.keys(d.teamResults).length > 0) {
-      LIGA_DATA.teamResults = Object.fromEntries(
-        Object.entries(d.teamResults).map(([k,v]) => [Number(k), v])
-      );
-    }
-    if (d.updatedAt) LIGA_DATA.updatedAt = d.updatedAt;
-    console.log('✅ liga_data.json cargado —', LIGA_DATA.updatedAt);
   } catch(e) {
     console.warn('liga_data.json no disponible, usando datos hardcodeados:', e.message);
   }
@@ -5865,6 +6329,8 @@ async function startCoordApp(){
       }catch(e){}
     }
   }
+  // Tablas y resultados de liga de la temporada que se está viendo
+  aplicarLigaDataDeTemporada();
 
   // Esperar que el fetch de liga_data.json termine (max 5s)
   await Promise.race([
@@ -5918,6 +6384,8 @@ async function startCoordApp(){
       if(schedSnap.exists()){
         // Mismo parser que usa el profe — soporta {h,a} y {local,visitante}
         FIXTURE_C = deriveFixtureFromSchedule(schedSnap.val(), _ligaNombreCoord);
+        // Zona nueva → la tabla del panel arranca en cero con los equipos de esta zona
+        prepararTablasDeZona(ligaId, schedSnap.val());
       }
     }
 
@@ -6873,7 +7341,7 @@ async function startCoordApp(){
     let tW=0,tD=0,tL=0,tGF=0,tGC=0,tPJ=0;
     GEN_CAT_NUMS.forEach(num=>{ (SC_RESULTS[num]||[]).forEach(r=>{ if(r.gf>r.gc)tW++;else if(r.gf===r.gc)tD++;else tL++; tGF+=r.gf;tGC+=r.gc;tPJ++; }); });
     const tPts=tW*2+tD;
-    let h=`<div style="font-size:0.68rem;color:var(--muted);text-align:right;margin-bottom:10px">${LIGA_DATA.updatedAt?`Actualizado: ${LIGA_DATA.updatedAt} · Fuente: LISFI`:(_ligaIdCoord||'LIGA').toUpperCase().replace(/-/g,' ')}</div>`;
+    let h=`<div style="font-size:0.68rem;color:var(--muted);text-align:right;margin-bottom:10px">${LIGA_DATA.updatedAt?`${_updLabel()} · Fuente: LISFI`:(_ligaIdCoord||'LIGA').toUpperCase().replace(/-/g,' ')}</div>`;
 
     // ── TABLA GENERAL ACUMULADA ──
     const scGen=POS_GENERAL.find(p=>isSC(p.eq));
