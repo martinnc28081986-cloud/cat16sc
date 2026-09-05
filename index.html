@@ -1572,6 +1572,9 @@ const MIGRACION = {
   fechas:      15,
   liga:        'LISFI',
   zona:        'Campeonato',
+  // URL de la zona en lisfi.com.ar — queda guardada en ligas/{ligaId}/meta para que
+  // el scraper lea de ahí a qué zona apuntar, en vez de tenerla hardcodeada.
+  fuente:      'https://www.lisfi.com.ar/index.php/zona-camp-2026',
 };
 
 async function migrarTemporadaSiHaceFalta(){
@@ -1603,6 +1606,19 @@ async function migrarTemporadaSiHaceFalta(){
     if(!schedSnap.exists()){
       await set(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'), SCHEDULE_ZONA_CAMPEONATO_2026);
     }
+
+    // 1b) Meta de la zona — es lo que lee el scraper para saber qué zona scrapear.
+    //     Con esto, al cambiar de zona el scraper se reapunta solo: no hay URLs fijas.
+    await update(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta'), {
+      ligaId:   MIGRACION.ligaId,
+      nombre:   MIGRACION.nombre,
+      liga:     MIGRACION.liga,
+      zona:     MIGRACION.zona,
+      fechas:   MIGRACION.fechas,
+      fuente:   MIGRACION.fuente,
+      equipos:  equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026),
+      vigenteDesde: new Date().toISOString().slice(0,10)
+    });
 
     // 2) Registro de temporadas: la anterior queda como archivo consultable
     const temporadas = Object.assign({}, cfg.temporadas || {});
@@ -4791,13 +4807,45 @@ const LIGA_DATA_ARCHIVO = {
 // y aplicarLigaDataDeTemporada() lo cambia cuando se mira una temporada archivada.
 const LIGA_DATA = JSON.parse(JSON.stringify(LIGA_DATA_ACTUAL));
 
+// Los resultados por equipo vienen en dos formatos según la fuente:
+// el scraper manda {fecha, rival, cond, gf, gc} y los datos viejos {f, vs, gf, gc}.
+// Se normalizan a la forma que leen los renderers (r.fecha / r.rival).
+function _normResultado(r){
+  if(!r || typeof r !== 'object') return r;
+  return {
+    fecha: (r.fecha !== undefined ? r.fecha : r.f),
+    rival: (r.rival !== undefined ? r.rival : r.vs) || '',
+    cond:  r.cond || '',
+    gf: Number(r.gf)||0,
+    gc: Number(r.gc)||0
+  };
+}
+function _normalizarLigaData(d){
+  if(d && d.teamResults){
+    Object.keys(d.teamResults).forEach(cat=>{
+      const porEquipo = d.teamResults[cat] || {};
+      Object.keys(porEquipo).forEach(eq=>{
+        porEquipo[eq] = (porEquipo[eq]||[]).map(_normResultado)
+          .sort((a,b)=>(a.fecha||0)-(b.fecha||0));
+      });
+    });
+  }
+  if(d && d.scResults){
+    Object.keys(d.scResults).forEach(cat=>{
+      d.scResults[cat] = (d.scResults[cat]||[]).map(_normResultado)
+        .sort((a,b)=>(a.fecha||0)-(b.fecha||0));
+    });
+  }
+  return d;
+}
+
 function aplicarLigaDataDeTemporada(){
   try {
     const d = (typeof esHistorico === "function" && esHistorico() && LIGA_DATA_ARCHIVO[TORNEO_ID])
       ? LIGA_DATA_ARCHIVO[TORNEO_ID]
       : LIGA_DATA_ACTUAL;
     Object.keys(LIGA_DATA).forEach(k => { delete LIGA_DATA[k]; });
-    Object.assign(LIGA_DATA, JSON.parse(JSON.stringify(d)));
+    Object.assign(LIGA_DATA, _normalizarLigaData(JSON.parse(JSON.stringify(d))));
   } catch(e){ console.warn('aplicarLigaDataDeTemporada:', e); }
 }
 window.aplicarLigaDataDeTemporada = aplicarLigaDataDeTemporada;
@@ -4826,7 +4874,9 @@ function _ligaDataEsDeZonaActual(d){
   }
   const entrantes = new Set();
   Object.values(d.posiciones||{}).forEach(arr => (arr||[]).forEach(r => entrantes.add(norm(r.eq))));
-  Object.values(d.teamResults||{}).forEach(o => Object.keys(o||{}).forEach(e => entrantes.add(norm(e))));
+  // el scraper actual manda 'rivalResults'; se acepta como alias de 'teamResults'
+  Object.values(d.teamResults||d.rivalResults||{}).forEach(o => Object.keys(o||{}).forEach(e => entrantes.add(norm(e))));
+  Object.values(d.scResults||{}).forEach(arr => (arr||[]).forEach(r => { if(r && r.rival) entrantes.add(norm(r.rival)); }));
   if(!actuales.size || !entrantes.size) return true; // sin con qué comparar, se acepta
   let comunes = 0;
   entrantes.forEach(e => { if(actuales.has(e)) comunes++; });
@@ -4863,8 +4913,10 @@ function aplicarLigaDataJson(){
   if(d.scResults && Object.values(d.scResults).some(arr => arr && arr.length > 0)){
     LIGA_DATA_ACTUAL.scResults = num(d.scResults);
   }
-  if(d.teamResults && Object.keys(d.teamResults).length > 0){
-    LIGA_DATA_ACTUAL.teamResults = num(d.teamResults);
+  // 'rivalResults' es como lo llama el scraper actual; los renderers leen 'teamResults'
+  const _tr = d.teamResults || d.rivalResults;
+  if(_tr && Object.keys(_tr).length > 0){
+    LIGA_DATA_ACTUAL.teamResults = num(_tr);
     // Si el scraper manda resultados pero no tabla, la tabla se calcula sola
     if(!d.posiciones || Object.keys(d.posiciones).length === 0){
       const eq = window._equiposZonaActiva || [];
@@ -5710,6 +5762,13 @@ window.saSubirScheduleZonaCampeonato2026 = async function(btn){
     log('📤 Subiendo schedule completo (15 fechas · 15 equipos)...');
     await set(ref(db, `ligas/${LIGA_ID}/schedule`), SCHEDULE);
     log('✓ Schedule subido', 'var(--green)');
+    await update(ref(db, `ligas/${LIGA_ID}/meta`), {
+      ligaId: LIGA_ID, nombre: MIGRACION.nombre, liga: MIGRACION.liga, zona: MIGRACION.zona,
+      fechas: MIGRACION.fechas, fuente: MIGRACION.fuente,
+      equipos: equiposDeSchedule(SCHEDULE),
+      vigenteDesde: new Date().toISOString().slice(0,10)
+    });
+    log('✓ Meta de la zona guardada (la lee el scraper)', 'var(--green)');
     await update(ref(db, 'clubs/sagrado-corazon/config'), { ligaNombre: 'SAGR. CORAZON', ligaId: LIGA_ID, torneoActivo: LIGA_ID });
     await update(ref(db, 'clubs/hernandez/config'), { ligaNombre: 'HERNANDEZ', ligaId: LIGA_ID, torneoActivo: LIGA_ID });
     log('✓ ligaNombre/ligaId/torneoActivo actualizados para Sagrado Corazón y Hernandez', 'var(--green)');
