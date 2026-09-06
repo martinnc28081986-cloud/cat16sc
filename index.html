@@ -2863,15 +2863,16 @@ function ASIS(){
 function CITS(){
   const anio = anioVista();
   const out = {};
-  if(_todasLasZonas){
-    // Se quita el prefijo de zona: las pantallas esperan la clave pelada
-    Object.entries(datosDelAnio(anio).citaciones).forEach(([k,v]) => {
-      out[(v && v._key) || k] = v;
-    });
-  }
+  // OJO: la clave se deja CON el prefijo de zona ("zona::fecha01_rival").
+  // Las claves de citación se repiten entre zonas — las fechas arrancan de 1 en
+  // cada zona y los rivales son los mismos — así que sacando el prefijo, la
+  // fecha 1 de la Zona Campeonato pisaba a la fecha 1 de la Zona II B y el
+  // acumulado del jugador quedaba corto. Nadie de acá para abajo usa la clave:
+  // solo se recorren los valores.
+  if(_todasLasZonas) Object.assign(out, datosDelAnio(anio).citaciones);
   Object.keys(citaciones || {}).forEach(k => {
     if(anioDeCitacion(citaciones[k], TORNEO_ID) !== anio) return;
-    out[k] = Object.assign({}, citaciones[k], {_zona: TORNEO_ID, _key: k});
+    out[TORNEO_ID + '::' + k] = Object.assign({}, citaciones[k], {_zona: TORNEO_ID, _key: k});
   });
   return out;
 }
@@ -3711,7 +3712,7 @@ function renderCitStats(){
     if(!totAnio){ statsList.innerHTML='<div class="empty-msg">Sin encuentros registrados aún</div>'; return; }
     const ps=PLAYERS.map(name=>{const count=allAnio.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:totAnio?Math.round(count/totAnio*100):0};}).sort((a,b)=>b.pct-a.pct);
     statsList.innerHTML='';
-    ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+tot+' encuentros</div>';statsList.appendChild(c);});
+    ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+totAnio+' encuentros</div>';statsList.appendChild(c);});
     return;
   }
 
@@ -3839,7 +3840,7 @@ function renderCitStats(){
   if(!totAnio){ statsList.innerHTML=''; return; }
   const ps=PLAYERS.map(name=>{const count=allAnio.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:totAnio?Math.round(count/totAnio*100):0};}).sort((a,b)=>b.pct-a.pct);
   statsList.innerHTML='';
-  ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+tot+' partidos</div>';statsList.appendChild(c);});
+  ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+totAnio+' partidos</div>';statsList.appendChild(c);});
 }
 
 
