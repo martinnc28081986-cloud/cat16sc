@@ -8,7 +8,8 @@ reapunta solo en la corrida siguiente.
 
 Orden de resolución de la zona:
   1) Variables de entorno (override manual):  LISFI_ZONA_URL / LIGA_ID
-  2) Firebase:  clubs/{CLUB_ID}/config/ligaId  ->  ligas/{ligaId}/meta/fuente
+  2) Firebase:  ligas/_activa/{CLUB_ID}  (nodo público, lo escribe la app)
+                y como respaldo clubs/{CLUB_ID}/config/ligaId -> ligas/{ligaId}/meta/fuente
   3) Fallback hardcodeado de abajo
 
 Calcula las posiciones desde los resultados (más robusto que scrapear la tabla)
@@ -73,7 +74,21 @@ def resolver_zona():
         print(f"🔧 Zona por variable de entorno: {env_url}")
         return (env_id or FALLBACK_LIGA_ID), env_url.rstrip("/"), None
 
-    # 2) Firebase — es donde la app deja la zona vigente al migrar de temporada
+    # 2a) Puntero público: ligas/_activa/{club}. Es el único nodo que la app deja
+    #     abierto para lectura sin login, justamente para esto.
+    activa = _fb(f"ligas/_activa/{CLUB_ID}")
+    if activa and activa.get("fuente"):
+        liga_id = env_id or activa.get("ligaId") or FALLBACK_LIGA_ID
+        print(f"🔗 Zona leída de Firebase (puntero público): {liga_id}")
+        print(f"   fuente: {activa['fuente']}")
+        equipos = None
+        meta = _fb(f"ligas/{liga_id}/meta")
+        if meta and meta.get("equipos"):
+            equipos = meta["equipos"]
+            print(f"   equipos esperados: {len(equipos)}")
+        return liga_id, str(activa["fuente"]).rstrip("/"), equipos
+
+    # 2b) Config del club (requiere que las reglas permitan leerla)
     liga_id = env_id or _fb(f"clubs/{CLUB_ID}/config/ligaId")
     if liga_id:
         meta = _fb(f"ligas/{liga_id}/meta") or {}
