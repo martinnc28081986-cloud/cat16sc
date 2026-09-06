@@ -939,6 +939,165 @@ let CLUB_LIGA_NOMBRE = ''; // nombre del club en la liga — se actualiza en loa
 let DB_PREFIX = CLUB_PATH+'/cat16/torneos/'+TORNEO_ID; // se actualiza en loadClubConfig y startCoordApp
 const CAT_PREFIX = () => DB_PREFIX.split('/torneos/')[0]; // nivel cat sin torneo
 
+
+/* ══════════════════════════════════════════════════════════════
+   ACUMULADOS POR AÑO
+   ─────────────────────────────────────────────────────────────
+   Los datos se guardan por zona: clubs/{club}/{cat}/torneos/{zona}/
+   Pero hay cosas que no son de la zona sino del AÑO: los entrenamientos,
+   las citaciones, los goles y la rotación de camisetas siguen su curso
+   aunque en septiembre se cambie de zona.
+
+   Antes, al cambiar de zona, todos esos contadores volvían a cero en la
+   mitad del año: el historial decía "todavía no hay sesiones", la rotación
+   de camisetas quedaba en 0 para todos y los goles arrancaban de nuevo.
+
+   Acá se lee el nodo torneos entero UNA vez y se reagrupa por año calendario.
+   No se movió ni un dato: la escritura sigue igual que siempre.
+   La categoría es el año de nacimiento y no cambia (cat2014 son siempre los
+   mismos pibes), así que agrupar por año dentro de la categoría es correcto.
+   ══════════════════════════════════════════════════════════════ */
+
+// Todas las zonas de esta categoría, tal como están en Firebase. Se baja una
+// sola vez por sesión; null = todavía no se bajó.
+let _todasLasZonas = null;
+let _todasLasZonasDe = null;   // para qué categoría se bajó (al saltar de club/cat hay que rehacerlo)
+
+function _claveCache(){ return CAT_PREFIX(); }
+
+async function cargarTodasLasZonas(forzar){
+  const clave = _claveCache();
+  if(!forzar && _todasLasZonas && _todasLasZonasDe === clave) return _todasLasZonas;
+  try{
+    const snap = await get(ref(db, clave+'/torneos'));
+    _todasLasZonas   = snap.exists() ? (snap.val() || {}) : {};
+    _todasLasZonasDe = clave;
+  }catch(e){
+    console.warn('cargarTodasLasZonas:', e && e.message);
+    _todasLasZonas = {}; _todasLasZonasDe = clave;
+  }
+  return _todasLasZonas;
+}
+window.cargarTodasLasZonas = cargarTodasLasZonas;
+
+// Al cambiar de club, de categoría o de temporada, la cache no sirve más.
+function limpiarCacheDeZonas(){ _todasLasZonas = null; _todasLasZonasDe = null; }
+window.limpiarCacheDeZonas = limpiarCacheDeZonas;
+
+// ── De qué año es cada cosa ────────────────────────────────────
+// El año de la zona, sacado de su id: 'lisfi-zona-campeonato-2026' -> 2026.
+// Es el último recurso, para registros viejos que no tienen fecha propia.
+function _anioDeZona(zonaId){
+  const m = String(zonaId||'').match(/(20\d{2})/);
+  if(m) return +m[1];
+  try{
+    const meta = torneoMeta(zonaId) || {};
+    const m2 = String(meta.ligaId||meta.nombre||'').match(/(20\d{2})/);
+    if(m2) return +m2[1];
+  }catch(e){}
+  return null;
+}
+
+// Año de una sesión de entrenamiento. La clave YA es la fecha (2026-08-28),
+// así que sale directo y sin ambigüedad.
+function anioDeSesion(fechaClave, zonaId){
+  const m = String(fechaClave||'').match(/^(\d{4})-\d{2}-\d{2}/);
+  return m ? +m[1] : _anioDeZona(zonaId);
+}
+
+// Año de una citación. Por orden de confianza:
+//   fecha_str (la fecha real del partido) -> ts (amistosos) -> año de la zona.
+function anioDeCitacion(cit, zonaId){
+  if(cit){
+    const m = String(cit.fecha_str||'').match(/^(\d{4})-\d{2}-\d{2}/);
+    if(m) return +m[1];
+    if(cit.ts){
+      const d = new Date(cit.ts);
+      if(!isNaN(d)) return d.getFullYear();
+    }
+  }
+  return _anioDeZona(zonaId);
+}
+
+// ── Los datos de un año, con el desglose por zona ──────────────
+// Devuelve:
+//   { anio, sesiones:{fecha:{...,_zona}}, citaciones:{key:{...,_zona}},
+//     stats:{key:{...}}, zonas:[{id,nombre,sesiones,partidos}] }
+function datosDelAnio(anio, todas){
+  const zonas = todas || _todasLasZonas || {};
+  const out = { anio, sesiones:{}, citaciones:{}, stats:{}, zonas:[] };
+
+  Object.keys(zonas).forEach(zonaId => {
+    const z = zonas[zonaId] || {};
+    let nSes = 0, nPart = 0;
+
+    Object.entries(z.attendance || {}).forEach(([fecha, val]) => {
+      if(anioDeSesion(fecha, zonaId) !== anio) return;
+      // La clave es la fecha, así que dos zonas nunca chocan en el mismo día.
+      out.sesiones[fecha] = Object.assign({}, val, {_zona: zonaId});
+      nSes++;
+    });
+
+    Object.entries(z.citaciones || {}).forEach(([key, val]) => {
+      if(anioDeCitacion(val, zonaId) !== anio) return;
+      // Las claves de citación SÍ pueden repetirse entre zonas ("fecha01_rival"),
+      // por eso se les antepone la zona.
+      const k = zonaId + '::' + key;
+      out.citaciones[k] = Object.assign({}, val, {_zona: zonaId, _key: key});
+      if(val && val.citados && val.citados.length) nPart++;
+      if(z.stats && z.stats[key]) out.stats[k] = z.stats[key];
+    });
+
+    if(nSes || nPart){
+      let nombre = zonaId;
+      try{ nombre = (torneoMeta(zonaId)||{}).nombre || zonaId; }catch(e){}
+      out.zonas.push({id: zonaId, nombre, sesiones: nSes, partidos: nPart});
+    }
+  });
+
+  out.zonas.sort((a,b)=> String(a.id).localeCompare(String(b.id)));
+  return out;
+}
+window.datosDelAnio = datosDelAnio;
+
+// Años que tienen algún dato en esta categoría, del más nuevo al más viejo.
+// Siempre incluye el año en curso, aunque esté vacío.
+function aniosConDatos(todas){
+  const zonas = todas || _todasLasZonas || {};
+  const s = new Set([new Date().getFullYear()]);
+  Object.keys(zonas).forEach(zonaId => {
+    const z = zonas[zonaId] || {};
+    Object.keys(z.attendance || {}).forEach(f => { const a = anioDeSesion(f, zonaId); if(a) s.add(a); });
+    Object.values(z.citaciones || {}).forEach(c => { const a = anioDeCitacion(c, zonaId); if(a) s.add(a); });
+  });
+  return [...s].sort((a,b)=>b-a);
+}
+window.aniosConDatos = aniosConDatos;
+
+// Año que se está mirando. Arranca en el actual.
+let _anioVista = new Date().getFullYear();
+function anioVista(){ return _anioVista; }
+function setAnioVista(a){ _anioVista = +a || new Date().getFullYear(); }
+window.anioVista = anioVista;
+window.setAnioVista = setAnioVista;
+
+// ── Camisetas ──────────────────────────────────────────────────
+// Cuántas veces llevó cada uno las camisetas en el año, y cuándo fue la última.
+// Esto NO tiene selector: una rotación que se reinicia a mitad de año no es
+// una rotación. Siempre cuenta el año entero.
+function camisetasDelAnio(anio, todas){
+  const d = datosDelAnio(anio || anioVista(), todas);
+  const cuenta = {}, ultima = {};
+  Object.values(d.citaciones).forEach(c => {
+    if(!c || !c.camisetero) return;
+    cuenta[c.camisetero] = (cuenta[c.camisetero]||0) + 1;
+    const f = c.fecha_str || (c.ts ? new Date(c.ts).toISOString().slice(0,10) : '');
+    if(f && (!ultima[c.camisetero] || f > ultima[c.camisetero])) ultima[c.camisetero] = f;
+  });
+  return {cuenta, ultima};
+}
+window.camisetasDelAnio = camisetasDelAnio;
+
 // ── TEMPORADAS ──
 // TORNEO_ACTIVO = la temporada vigente del club (config.torneoActivo)
 // TORNEO_ID     = la que se está viendo (puede ser una archivada)
@@ -999,6 +1158,7 @@ function esHistorico(){
 // Limpia el estado de temporada al cambiar de club o de categoría.
 function resetContextoTemporada(){
   window._viewTorneo        = null;
+  if(typeof limpiarCacheDeZonas === 'function') limpiarCacheDeZonas();
   window._clubLigaNombreDe  = null;   // el nombre de liga del club anterior no vale acá
   window._migracionIntentada = false;
   window._tablaEnCero       = false;
@@ -1928,6 +2088,26 @@ async function migrarTemporadaSiHaceFalta(){
 
 function startApp(cat){
 
+// Devuelve la config de una categoría. Si no está en CAT_CONFIG, se deriva de la
+// clave: 'cat2021' -> dbPath 'cat2021'. Todos los años entra una categoría nueva
+// (y sale la más grande), así que esto no puede depender de una lista fija.
+function configDeCategoria(cat){
+  const clave = String(cat || 'cat16');
+  const base  = CAT_CONFIG[clave];
+  if(base) return Object.assign({}, base);
+
+  // ¿Tiene forma de categoría? cat2021, cat13, cat16...
+  if(/^cat\d{2,4}$/.test(clave)){
+    console.log('[MI PLANTEL] Categoría', clave, 'sin config propia — se arma automática');
+    return { label:'MI PLANTEL', dbPath: clave, matchTime:'', address:'' };
+  }
+
+  // Ni siquiera parece una categoría: recién ahí el fallback, pero avisando.
+  console.warn('[MI PLANTEL] Categoría desconocida:', clave, '— se usa cat16');
+  return Object.assign({}, CAT_CONFIG['cat16']);
+}
+window.configDeCategoria = configDeCategoria;
+
 const CAT_CONFIG = {
   cat16: {
     label: 'MI PLANTEL',
@@ -1985,7 +2165,14 @@ const CAT_CONFIG = {
   },
 };
 
-const CFG = CAT_CONFIG[cat] || CAT_CONFIG['cat16'];
+// Config de la categoría. CAT_CONFIG solo tiene overrides (horario de partido,
+// dirección); todo lo demás se arma solo a partir de la clave. Esto es lo que
+// permite que en 2027 entre cat2021 sin tocar el código.
+//
+// OJO con el fallback viejo: era CAT_CONFIG[cat] || CAT_CONFIG['cat16'], así que
+// una categoría nueva heredaba dbPath:'cat16' y escribía ENCIMA de los datos de
+// cat16, sin avisar.
+const CFG = configDeCategoria(cat);
 // Identidad del club: la semilla del propio club (si existe) y después Firebase.
 // Nunca la de otro club.
 (function(){
@@ -3077,26 +3264,49 @@ function renderCitList(){
   document.getElementById('citPct').textContent=Math.round(n/PLAYERS.length*100)+'%';
 }
 
+// La rotación de camisetas cuenta TODO EL AÑO, no la zona.
+// Antes contaba solo las citaciones de la zona en curso, así que al cambiar de
+// zona en septiembre volvía a cero para todos y la app sugería pibes que ya se
+// las habían llevado. Una rotación que se reinicia a mitad de año no es rotación.
 function renderCamSelector(){
   const el=document.getElementById('camSelector'); if(!el)return;
-  // Contar veces que cada jugador llevó las camisetas
-  const camCounts={};
+
+  const camCounts={}, ultimaVez={};
   PLAYERS.forEach(p=>camCounts[p]=0);
-  Object.values(citaciones).forEach(m=>{
-    if(m.camisetero && camCounts[m.camisetero]!==undefined) camCounts[m.camisetero]++;
-  });
+
+  if(_todasLasZonas){
+    // Ya tenemos todas las zonas: se cuenta el año entero.
+    const {cuenta, ultima} = camisetasDelAnio(anioVista());
+    Object.keys(cuenta).forEach(n => { if(camCounts[n]!==undefined) camCounts[n]=cuenta[n]; });
+    Object.assign(ultimaVez, ultima);
+  } else {
+    // Todavía no bajaron: se muestra lo de la zona actual y se pide el resto.
+    Object.values(citaciones).forEach(m=>{
+      if(m.camisetero && camCounts[m.camisetero]!==undefined) camCounts[m.camisetero]++;
+    });
+    cargarTodasLasZonas().then(()=>{ try{ renderCamSelector(); }catch(e){} });
+  }
+
   el.innerHTML='';
   const none=document.createElement('button');
   none.className='cam-btn'+(selectedCamisetero===null?' selected':'');
   none.textContent='Ninguno';
   none.onclick=()=>{selectedCamisetero=null;renderCamSelector();};
   el.appendChild(none);
-  // Ordenar por menos veces primero (para facilitar la rotación)
-  [...PLAYERS].sort((a,b)=>camCounts[a]-camCounts[b]).forEach(name=>{
+
+  // De menos a más veces: el primero de la lista es a quien le toca.
+  // Con la misma cantidad, primero el que hace más que no lleva.
+  [...PLAYERS].sort((a,b)=>
+    (camCounts[a]-camCounts[b]) || String(ultimaVez[a]||'').localeCompare(String(ultimaVez[b]||''))
+  ).forEach(name=>{
     const btn=document.createElement('button');
     btn.className='cam-btn'+(selectedCamisetero===name?' selected':'');
     const veces=camCounts[name];
-    btn.innerHTML=name+(veces>0?' <span style="font-size:var(--f-micro);opacity:0.7;font-weight:400">'+veces+'x</span>':'');
+    const u=ultimaVez[name];
+    const uTxt = u ? ' · '+u.slice(8,10)+'/'+u.slice(5,7) : '';
+    btn.innerHTML = name + (veces>0
+      ? ' <span style="font-size:var(--f-micro);opacity:0.7;font-weight:400">'+veces+'x'+uTxt+'</span>'
+      : '');
     btn.onclick=()=>{selectedCamisetero=selectedCamisetero===name?null:name;renderCamSelector();};
     el.appendChild(btn);
   });
@@ -4205,15 +4415,31 @@ async function renderPosPartido(){
     }
   }));
 
-  // Tabla acumulada 2026
-  const golesAcum={}, tarAcum={};
+  // ── Tabla acumulada del AÑO, no de la zona ──
+  // La lista de partidos de arriba es de la zona en curso (es la que se edita),
+  // pero los goles del año tienen que sumar todas las zonas: en 2026 se jugaron
+  // la Zona II B y la Zona Campeonato, y antes cada una contaba por separado.
+  const ANIO = anioVista();
+  await cargarTodasLasZonas();
+  const _statsAnio = Object.assign({}, datosDelAnio(ANIO).stats);
+  // Lo que se acaba de editar en esta zona pisa a lo que vino en el lote
+  Object.keys(_ppCache).forEach(key=>{
+    if(_ppCache[key]) _statsAnio[TORNEO_ID+'::'+key] = _ppCache[key];
+  });
+
+  const golesAcum={}, tarAcum={}, golesPorZona={};
   let enContraTotal=0;
-  partidos.forEach(([key])=>{
-    const st=_ppCache[key]; if(!st||!st.jugadores) return;
+  Object.entries(_statsAnio).forEach(([k, st])=>{
+    if(!st || !st.jugadores) return;
+    const zona = k.includes('::') ? k.split('::')[0] : TORNEO_ID;
     Object.entries(st.jugadores).forEach(([n,d])=>{
       golesAcum[n]=(golesAcum[n]||0)+(d.goles||0);
       if(!tarAcum[n]) tarAcum[n]={a:0,r:0};
       tarAcum[n].a+=(d.amarilla||0); tarAcum[n].r+=(d.roja||0);
+      if(d.goles){
+        if(!golesPorZona[n]) golesPorZona[n]={};
+        golesPorZona[n][zona]=(golesPorZona[n][zona]||0)+d.goles;
+      }
     });
     enContraTotal+=(st.enContra||0);
   });
@@ -4316,29 +4542,34 @@ async function renderPosPartido(){
     h+=`</div>`;
   });
 
-  // Tabla de goleadores con histórico por año
-  const AÑOS_HIST = ['2025','2024','2023','2022'];
-  // Unir jugadores de 2026 y de histórico
+  // Tabla de goleadores con histórico por año.
+  // Los años viejos salen de goleadores_historicos; el año en curso, de arriba.
+  // OJO: antes el año estaba escrito a mano ('2026' y ['2025','2024',...]), así
+  // que en 2027 la columna iba a seguir diciendo 2026.
   const todosJug = new Set([...Object.keys(golesAcum), ...Object.keys(hist)]);
   const goleadores = [...todosJug].map(nombre => {
-    const g2026 = golesAcum[nombre]||0;
+    const gAnio = golesAcum[nombre]||0;
     const histAnios = hist[nombre]||{};
-    const histTotal = Object.values(histAnios).reduce((a,b)=>a+b,0);
-    return {nombre, g2026, histAnios, histTotal, total: g2026+histTotal};
+    // Si el histórico ya trae el año en curso, no se cuenta dos veces
+    const histTotal = Object.entries(histAnios)
+      .filter(([y])=>+y !== ANIO)
+      .reduce((a,[,g])=>a+g,0);
+    return {nombre, g2026:gAnio, histAnios, histTotal, total: gAnio+histTotal};
   }).filter(j=>j.total>0).sort((a,b)=>b.total-a.total);
 
   if(goleadores.length>0||enContraTotal>0){
     h+=`<div class="stitle" style="margin-top:var(--sp-6);">Goleadores</div>`;
     // Determinar qué años históricos tienen datos reales
-    const AÑOS_CON_DATOS = ['2025','2024','2023','2022'].filter(y =>
-      goleadores.some(j => j.histAnios[y] > 0)
-    );
+    // Los años que realmente tienen datos, del más nuevo al más viejo
+    const AÑOS_CON_DATOS = [...new Set(goleadores.flatMap(j=>Object.keys(j.histAnios)))]
+      .filter(y => +y !== ANIO && goleadores.some(j => j.histAnios[y] > 0))
+      .sort((a,b)=>+b-+a);
     const thStyle=`color:var(--muted);font-size:var(--f-micro);font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:var(--sp-3) var(--sp-3);border-bottom:1px solid var(--border);text-align:center;`;
     h+=`<table style="width:100%;border-collapse:collapse;font-size:var(--f-sm);">
       <thead><tr>
         <th style="${thStyle}width:22px;">#</th>
         <th style="${thStyle}text-align:left;">Jugador</th>
-        <th style="${thStyle}">2026</th>
+        <th style="${thStyle}">${ANIO}</th>
         ${AÑOS_CON_DATOS.map(y=>`<th style="${thStyle}">${y}</th>`).join('')}
         <th style="${thStyle}color:var(--win);">Total</th>
       </tr></thead><tbody>`;
