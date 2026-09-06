@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MI PLANTEL</title>
-<meta name="theme-color" content="var(--bg)">
+<!-- theme-color pinta la barra de estado del celu: acá NO se puede usar var(), va el color literal de --bg -->
+<meta name="theme-color" content="#0a0f18">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -37,6 +38,13 @@
     --s1:4px; --s2:8px; --s3:12px; --s4:20px;
     --r-sm:6px; --r-md:10px; --r-full:999px;
 
+    /* ── Componentes RGB: sirven para armar tintes con transparencia ──
+       --accent-rgb lo reescribe aplicarColorDeClub() junto con --accent. ── */
+    --accent-rgb:74,168,224;
+    --draw-rgb:240,180,41;
+    --win-rgb:34,197,94;
+    --loss-rgb:239,68,68;
+
     /* ── Alias históricos: el código viejo los sigue usando ── */
     --green:var(--accent);
     --red:var(--loss);
@@ -45,27 +53,44 @@
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overscroll-behavior:none; }
 
-  header { background:repeating-linear-gradient(90deg,var(--accent) 0px,var(--accent) 22px,#f0f4ff 22px,#f0f4ff 44px); border-bottom:2px solid #3a8ab8; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
-  .logo { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); letter-spacing:3px; color:#021529; font-weight:900; text-shadow:0 1px 4px rgba(212,175,55,0.8), 0 0 12px rgba(212,175,55,0.4); }
-  .sync-dot { width:8px; height:8px; border-radius:50%; background:#021529; display:inline-block; margin-right:5px; transition:background 0.3s; }
+  header { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .logo-wrap { display:flex; align-items:center; gap:10px; }
+  .logo-mark { width:3px; align-self:stretch; min-height:34px; background:var(--accent); border-radius:var(--r-full); flex:none; }
+  .logo { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); letter-spacing:3px; color:var(--text); font-weight:900; line-height:1.05; }
+  .header-sub { font-size:var(--f-micro); color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; margin-top:2px; font-weight:700; }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block; margin-right:5px; transition:background 0.3s; }
   .sync-dot.live { background:var(--accent); animation:pulse 2s infinite; }
   .sync-dot.error { background:var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .header-right { display:flex; align-items:center; font-size:var(--f-sm); color:#021529; font-weight:700; text-shadow:0 1px 3px rgba(212,175,55,0.5); }
+  .header-right { display:flex; align-items:center; font-size:var(--f-sm); color:var(--muted); font-weight:600; }
+
+  /* ── ÍCONOS SVG ──
+     Reemplazan a los emojis en la navegación. Toman el color del texto
+     que los rodea (currentColor), así que cambian solos con el estado
+     activo/inactivo y con el color de cada club. El tamaño lo da el
+     font-size del contenedor (1em). ── */
+  .ico { display:inline-block; width:1em; height:1em; line-height:0; flex:none; vertical-align:-0.125em; }
+  .ico svg { width:100%; height:100%; display:block; stroke:currentColor; fill:none;
+             stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .ico svg .solid { fill:currentColor; stroke:none; }
 
   /* ── BOTTOM NAV ── */
-  .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:#030810; border-top:1px solid #0e2040; display:flex; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--surface); border-top:1px solid var(--border); display:flex; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
   .bnav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; border-radius:var(--r-md); padding:8px 4px 6px; border:1px solid transparent; transition:all 0.2s; }
   .bnav-item .bnav-icon { font-size:var(--f-xl); line-height:1; }
-  .bnav-item .bnav-lbl { font-size:var(--f-micro); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#3a4a6a; }
+  .bnav-item .bnav-lbl { font-size:var(--f-micro); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); }
+  .bnav-item .bnav-icon { color:var(--muted); }
+  .bnav-item.active-b .bnav-icon { color:var(--accent); }
+  .bnav-item.active-y .bnav-icon { color:var(--draw); }
+  .bnav-item.active-g .bnav-icon { color:var(--win); }
   .bnav-item .bnav-dot { width:5px; height:5px; border-radius:50%; background:transparent; }
-  .bnav-item.active-b { background:rgba(106,189,230,0.15); border-color:rgba(106,189,230,0.45); }
+  .bnav-item.active-b { background:rgba(var(--accent-rgb),0.15); border-color:rgba(var(--accent-rgb),0.45); }
   .bnav-item.active-b .bnav-lbl { color:var(--accent); }
   .bnav-item.active-b .bnav-dot { background:var(--accent); }
-  .bnav-item.active-y { background:rgba(212,175,55,0.15); border-color:rgba(212,175,55,0.35); }
+  .bnav-item.active-y { background:rgba(var(--draw-rgb),0.15); border-color:rgba(var(--draw-rgb),0.35); }
   .bnav-item.active-y .bnav-lbl { color:var(--draw); }
   .bnav-item.active-y .bnav-dot { background:var(--draw); }
-  .bnav-item.active-g { background:rgba(34,205,120,0.12); border-color:rgba(34,205,120,0.3); }
+  .bnav-item.active-g { background:rgba(var(--win-rgb),0.12); border-color:rgba(var(--win-rgb),0.3); }
   .bnav-item.active-g .bnav-lbl { color:var(--win); }
   .bnav-item.active-g .bnav-dot { background:var(--win); }
   /* ── SUBTABS (arriba, dentro de cada sección) ── */
@@ -81,12 +106,12 @@
   .tab { flex-shrink:0; padding:5px 8px; border-radius:var(--r-full); font-size:var(--f-micro); font-weight:600; letter-spacing:0.1px; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; transition:all 0.2s; white-space:nowrap; }
   .tabs-par-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:3px; padding:0 4px 7px; }
   .tab-icon-btn { display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 2px; border-radius:var(--r-md); font-size:var(--f-micro); font-weight:700; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; letter-spacing:0.1px; transition:all 0.2s; }
-  .tab-icon-btn .tib-icon { font-size:var(--f-md); line-height:1; }
+  .tab-icon-btn .tib-icon { font-size:var(--f-lg); line-height:1; }
   .tab-icon-btn .tib-lbl { font-size:var(--f-micro); text-align:center; line-height:1.2; }
-  .tab-icon-btn.ay { color:var(--yellow); background:rgba(255,171,64,.12); border-color:rgba(255,171,64,.3); }
-  .tab.ag { color:var(--accent); background:rgba(106,189,230,0.12); border-color:rgba(106,189,230,0.3); }
-  .tab.ay { color:var(--draw); background:rgba(212,175,55,0.12); border-color:rgba(212,175,55,0.3); }
-  .tab.agg { color:var(--win); background:rgba(34,205,120,0.12); border-color:rgba(34,205,120,0.3); }
+  .tab-icon-btn.ay { color:var(--yellow); background:rgba(var(--draw-rgb),0.12); border-color:rgba(var(--draw-rgb),0.3); }
+  .tab.ag { color:var(--accent); background:rgba(var(--accent-rgb),0.12); border-color:rgba(var(--accent-rgb),0.3); }
+  .tab.ay { color:var(--draw); background:rgba(var(--draw-rgb),0.12); border-color:rgba(var(--draw-rgb),0.3); }
+  .tab.agg { color:var(--win); background:rgba(var(--win-rgb),0.12); border-color:rgba(var(--win-rgb),0.3); }
   /* padding inferior para no quedar tapado por bottom-nav */
   .view { padding-bottom:80px !important; }
 
@@ -221,7 +246,7 @@
   .login-btn { width:100%; padding:12px; border-radius:var(--r-md); border:none; background:var(--green); color:#000; font-family:'DM Sans',sans-serif; font-weight:700; font-size:var(--f-md); cursor:pointer; transition:opacity 0.15s; margin-top:2px; }
   .login-btn:hover { opacity:0.85; }
   .login-btn:disabled { opacity:0.4; cursor:not-allowed; }
-  .logout-btn { background:transparent; border:1px solid #333; color:#666; font-size:var(--f-micro); padding:4px 9px; border-radius:var(--r-sm); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:600; margin-left:8px; transition:all 0.15s; }
+  .logout-btn { background:transparent; border:1px solid var(--border); color:var(--muted); font-size:var(--f-micro); padding:4px 9px; border-radius:var(--r-sm); cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:600; margin-left:8px; transition:all 0.15s; }
   .logout-btn:hover { border-color:var(--red); color:var(--red); }
 
   .loading-screen { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; z-index:9999; }
@@ -277,7 +302,7 @@
   .offline-banner { background:var(--yellow); color:#000; text-align:center; font-size:var(--f-sm); font-weight:700; padding:7px 14px; display:none; letter-spacing:0.4px; }
   .offline-banner.show { display:block; }
 
-  .next-match { font-size:var(--f-micro); color:#021529; margin-top:3px; letter-spacing:0.2px; font-weight:700; text-shadow:0 1px 3px rgba(212,175,55,0.7); }
+  .next-match { font-size:var(--f-micro); color:var(--accent); margin-top:3px; letter-spacing:0.2px; font-weight:700; }
 
   .trend-wrap { background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-md); padding:12px 14px 8px; margin-bottom:12px; display:none; }
 
@@ -345,9 +370,9 @@
   .cam-bar-fill { height:100%; border-radius:var(--r-sm); background:var(--yellow); transition:width 0.6s ease; }
 
   /* ── COORDINADOR ── */
-  .coord-tabs { display:flex; position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--surface2); border-top:1px solid #1e3a9e; padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
-  .coord-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; border-radius:var(--r-md); padding:8px 4px 6px; border:1px solid transparent; font-size:var(--f-micro); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:#3a4a6a; white-space:nowrap; transition:all 0.2s; }
-  .coord-tab.cta { background:rgba(106,189,230,0.15); border-color:rgba(106,189,230,0.45); color:var(--accent); }
+  .coord-tabs { display:flex; align-items:stretch; position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--surface2); border-top:1px solid var(--border); padding:6px 8px 10px; gap:6px; max-width:720px; margin:0 auto; }
+  .coord-tab { flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; cursor:pointer; border-radius:var(--r-md); padding:8px 3px 6px; border:1px solid transparent; font-size:var(--f-micro); font-weight:700; text-transform:uppercase; letter-spacing:0.3px; color:var(--muted); text-align:center; line-height:1.15; overflow-wrap:break-word; hyphens:auto; transition:all 0.2s; }
+  .coord-tab.cta { background:rgba(var(--accent-rgb),0.15); border-color:rgba(var(--accent-rgb),0.45); color:var(--accent); }
   .coord-view { padding-bottom:80px !important; }
   .coord-view { display:none; padding:14px; max-width:720px; margin:0 auto; }
   .coord-view.active { display:block; }
@@ -450,10 +475,11 @@
 </div>
 
 <header>
-  <div style="display:flex;align-items:center;gap:10px">
+  <div class="logo-wrap">
+    <span class="logo-mark"></span>
     <div>
       <div class="logo">MI PLANTEL</div>
-      <div id="headerSubEl" style="font-size:var(--f-micro);color:#021529;letter-spacing:1.5px;text-transform:uppercase;margin-top:1px;font-weight:700;text-shadow:0 1px 3px rgba(212,175,55,0.6);">LISFI Zona Campeonato 2026</div>
+      <div id="headerSubEl" class="header-sub">LISFI Zona Campeonato 2026</div>
       <div id="nextMatchEl" class="next-match"></div>
     </div>
   </div>
@@ -492,11 +518,11 @@
   </div>
   <div class="tab-section-label tsl-par" id="subtabLabelPar" style="display:none"><span class="tgl-dot tgl-dot-par"></span>Partido</div>
   <div class="tabs-par-grid" id="subtabsPar" style="display:none">
-    <div class="tab-icon-btn" onclick="switchTab('tablas')"><span class="tib-icon">📊</span><span class="tib-lbl">Tablas</span></div>
-    <div class="tab-icon-btn" onclick="switchTab('cit-stats')"><span class="tib-icon">📋</span><span class="tib-lbl">Historial</span></div>
-    <div class="tab-icon-btn" onclick="switchTab('citaciones')"><span class="tib-icon">⭐</span><span class="tib-lbl">Citaciones</span></div>
-    <div class="tab-icon-btn" onclick="switchTab('formacion')"><span class="tib-icon">🏟️</span><span class="tib-lbl">Formación</span></div>
-    <div class="tab-icon-btn" onclick="switchTab('pospartido')"><span class="tib-icon">⚽</span><span class="tib-lbl">Pos partido</span></div>
+    <div class="tab-icon-btn" onclick="switchTab('tablas')"><span class="tib-icon"><span class="ico" data-ico="tabla"></span></span><span class="tib-lbl">Tablas</span></div>
+    <div class="tab-icon-btn" onclick="switchTab('cit-stats')"><span class="tib-icon"><span class="ico" data-ico="lista"></span></span><span class="tib-lbl">Historial</span></div>
+    <div class="tab-icon-btn" onclick="switchTab('citaciones')"><span class="tib-icon"><span class="ico" data-ico="estrella"></span></span><span class="tib-lbl">Citaciones</span></div>
+    <div class="tab-icon-btn" onclick="switchTab('formacion')"><span class="tib-icon"><span class="ico" data-ico="cancha"></span></span><span class="tib-lbl">Formación</span></div>
+    <div class="tab-icon-btn" onclick="switchTab('pospartido')"><span class="tib-icon"><span class="ico" data-ico="pelota"></span></span><span class="tib-lbl">Pos partido</span></div>
   </div>
   <div class="tab-section-label tsl-plantel" id="subtabLabelPlantel" style="display:none"><span class="tgl-dot tgl-dot-plantel"></span>Plantel</div>
   <div class="tabs tabs-plantel" id="subtabsPlantel" style="display:none">
@@ -507,17 +533,17 @@
 <!-- BOTTOM NAV — profe/escuelita -->
 <div class="bottom-nav" id="bottomNavProfe">
   <div class="bnav-item active-b" id="bnav-ent" onclick="switchSection('ent')">
-    <div class="bnav-icon">🏃</div>
+    <div class="bnav-icon"><span class="ico" data-ico="cono"></span></div>
     <div class="bnav-lbl">Entreno</div>
     <div class="bnav-dot"></div>
   </div>
   <div class="bnav-item" id="bnav-par" onclick="switchSection('par')">
-    <div class="bnav-icon">⚽</div>
+    <div class="bnav-icon"><span class="ico" data-ico="pelota"></span></div>
     <div class="bnav-lbl">Partido</div>
     <div class="bnav-dot"></div>
   </div>
   <div class="bnav-item" id="bnav-plantel" onclick="switchSection('plantel')">
-    <div class="bnav-icon">👥</div>
+    <div class="bnav-icon"><span class="ico" data-ico="plantel"></span></div>
     <div class="bnav-lbl">Plantel</div>
     <div class="bnav-dot"></div>
   </div>
@@ -769,10 +795,10 @@
   </div>
 </div>
   <div class="coord-tabs" id="saTabsEl">
-    <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:var(--f-lg);line-height:1">🏟️</span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:block"></span></div>
-    <div class="coord-tab" onclick="window.saTab('facturacion')"><span style="font-size:var(--f-lg);line-height:1">💳</span>Facturación<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab" onclick="window.saTab('usuarios')"><span style="font-size:var(--f-lg);line-height:1">👥</span>Usuarios<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab" onclick="window.saTab('datos')"><span style="font-size:var(--f-lg);line-height:1">📤</span>Datos<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="cancha"></span></span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:block"></span></div>
+    <div class="coord-tab" onclick="window.saTab('facturacion')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="tarjeta"></span></span>Factu&shy;ración<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab" onclick="window.saTab('usuarios')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="plantel"></span></span>Usuarios<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab" onclick="window.saTab('datos')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="subir"></span></span>Datos<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="sa-clubes"      class="coord-view active"></div>
   <div id="sa-facturacion" class="coord-view"></div>
@@ -783,12 +809,12 @@
 <!-- COORDINADOR -->
 <div id="coord-app" style="display:none">
   <div class="coord-tabs" id="coordTabsEl">
-    <div class="coord-tab cta" onclick="window.coordTab('resumen')"><span style="font-size:var(--f-lg);line-height:1">📊</span>Resumen<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('presencias')"><span style="font-size:var(--f-lg);line-height:1">🏃</span>Presencias<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('citaciones')"><span style="font-size:var(--f-lg);line-height:1">⭐</span>Citaciones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('goleadores')"><span style="font-size:var(--f-lg);line-height:1">⚽</span>Goles<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('liga')"><span style="font-size:var(--f-lg);line-height:1">🏆</span>Liga<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('suspensiones')"><span style="font-size:var(--f-lg);line-height:1">⛔</span>Suspensiones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab cta" onclick="window.coordTab('resumen')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="tabla"></span></span>Resumen<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('presencias')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="presencia"></span></span>Presen&shy;cias<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('citaciones')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="estrella"></span></span>Cita&shy;ciones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('goleadores')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="pelota"></span></span>Goles<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('liga')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="copa"></span></span>Liga<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab"     onclick="window.coordTab('suspensiones')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="prohibido"></span></span>Suspen&shy;siones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="cv-resumen"    class="coord-view active"></div>
   <div id="cv-presencias" class="coord-view"></div>
@@ -800,6 +826,78 @@
   <div id="cv-horarios"   class="coord-view"></div>
   <div id="cv-profes"     class="coord-view"></div>
 </div>
+
+<!-- ÍCONOS: script aparte, sin imports, para que no dependan del módulo -->
+<script>
+/* ══════════════════════════════════════════════════════════════
+   ÍCONOS SVG
+   Reemplazan a los emojis de la navegación. Ventajas: se ven igual
+   en Android, iPhone y escritorio (el emoji lo dibuja cada sistema
+   a su manera), toman el color del club automáticamente y no se
+   deforman al cambiar el tamaño de letra.
+
+   Cómo se usan en el HTML:  <span class="ico" data-ico="pelota"></span>
+   pintarIconos() recorre la página y les mete el dibujo adentro.
+   ══════════════════════════════════════════════════════════════ */
+var ICONOS = {
+  // Entreno: cono de entrenamiento
+  cono:      '<path d="M12 3.6 17.6 16.4H6.4L12 3.6Z"/><path d="M3 20.2h18"/><path d="M6.4 16.4h11.2"/>',
+  // Partido / goles: pelota
+  pelota:    '<circle cx="12" cy="12" r="8.6"/><path d="M12 7.1l3.9 2.8-1.5 4.6H9.6L8.1 9.9 12 7.1Z"/><path d="M12 3.4v3.7M19.9 9.9l-4 0M16.9 19.1l-2.5-4.6M7.1 19.1l2.5-4.6M4.1 9.9l4 0"/>',
+  // Plantel / usuarios: dos personas
+  plantel:   '<circle cx="9.4" cy="8" r="3.1"/><path d="M3.5 19.6c0-3.3 2.6-5.1 5.9-5.1s5.9 1.8 5.9 5.1"/><path d="M16.4 6.5a3.1 3.1 0 0 1 0 6"/><path d="M18 14.8c1.7.7 2.9 2.1 2.9 4.8"/>',
+  // Presencias: persona con tilde
+  presencia: '<circle cx="9.6" cy="8" r="3.1"/><path d="M3.8 19.6c0-3.3 2.6-5.1 5.8-5.1 .8 0 1.6.1 2.3.3"/><path d="M14.2 17.4l2.2 2.2 4.3-4.7"/>',
+  // Tablas / resumen: barras
+  tabla:     '<path d="M4.2 3.8v16h15.6"/><path d="M8 16.6v-4.4M12 16.6V7.4M16 16.6v-6.6"/>',
+  // Historial: lista
+  lista:     '<path d="M9 6.6h11M9 12h11M9 17.4h11"/><circle class="solid" cx="4.9" cy="6.6" r="1.3"/><circle class="solid" cx="4.9" cy="12" r="1.3"/><circle class="solid" cx="4.9" cy="17.4" r="1.3"/>',
+  // Citaciones: estrella
+  estrella:  '<path d="M12 3.9l2.6 5.3 5.8.85-4.2 4.1 1 5.8-5.2-2.75L6.8 20l1-5.8-4.2-4.1 5.8-.85L12 3.9Z"/>',
+  // Formación / clubes: cancha
+  cancha:    '<rect x="3" y="5.2" width="18" height="13.6" rx="1.8"/><path d="M12 5.2v13.6"/><circle cx="12" cy="12" r="2.8"/>',
+  // Facturación: tarjeta
+  tarjeta:   '<rect x="2.6" y="5.2" width="18.8" height="13.6" rx="2.4"/><path d="M2.6 10h18.8"/><path d="M6.2 14.8h3.6"/>',
+  // Datos: subir
+  subir:     '<path d="M12 15.8V3.9"/><path d="M7.6 8.3 12 3.9l4.4 4.4"/><path d="M4.2 14.6v3.8c0 .9.7 1.6 1.6 1.6h12.4c.9 0 1.6-.7 1.6-1.6v-3.8"/>',
+  // Fechas: calendario
+  calendario: '<rect x="3.4" y="5" width="17.2" height="15.4" rx="2.2"/><path d="M3.4 9.6h17.2"/><path d="M8.2 3.4v3.4M15.8 3.4v3.4"/><path d="M7.6 13.4h2M11 13.4h2M14.4 13.4h2M7.6 16.8h2M11 16.8h2"/>',
+  // Liga: copa
+  copa:      '<path d="M8 3.9h8v5.4a4 4 0 0 1-8 0V3.9Z"/><path d="M8 5.6H5.2v1.7a3.2 3.2 0 0 0 3.1 3.2"/><path d="M16 5.6h2.8v1.7a3.2 3.2 0 0 1-3.1 3.2"/><path d="M12 13.3v3.4"/><path d="M9.4 20.1c0-1.7 1.2-3 2.6-3s2.6 1.3 2.6 3"/><path d="M8.2 20.1h7.6"/>',
+  // Suspensiones: prohibido
+  prohibido: '<circle cx="12" cy="12" r="8.6"/><path d="M6 6l12 12"/>'
+};
+
+// Devuelve el SVG de un ícono listo para insertar en un innerHTML.
+function icono(nombre){
+  const d = ICONOS[nombre];
+  if(!d) return '';
+  return '<span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg></span>';
+}
+
+// Busca todos los <span class="ico" data-ico="..."> que todavía estén
+// vacíos y les dibuja el ícono adentro. Se puede llamar con un
+// contenedor (por ejemplo después de armar una vista con innerHTML).
+function pintarIconos(raiz){
+  try{
+    const root = raiz || document;
+    root.querySelectorAll('.ico[data-ico]').forEach(el=>{
+      if(el.firstElementChild) return;              // ya está pintado
+      const d = ICONOS[el.getAttribute('data-ico')];
+      if(!d) return;
+      el.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+    });
+  }catch(e){ console.warn('pintarIconos:', e); }
+}
+window.ICONOS = ICONOS;
+window.icono = icono;
+window.pintarIconos = pintarIconos;
+// Este script es clásico y va antes del módulo grande: si alguna vez
+// falla la carga del SDK de Firebase (sin señal, CDN caído), los íconos
+// de la navegación se dibujan igual.
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ pintarIconos(); });
+else pintarIconos();
+</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -1274,11 +1372,16 @@ function aplicarColorDeClub(cfg){
   try{
     const c = cfg && (cfg.color || cfg.colorAcento);
     if(c && /^#[0-9a-f]{6}$/i.test(String(c).trim())){
-      document.documentElement.style.setProperty('--accent', String(c).trim());
+      const hex = String(c).trim();
+      document.documentElement.style.setProperty('--accent', hex);
+      // Mismo color en componentes RGB, para los tintes rgba(var(--accent-rgb),X)
+      const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+      document.documentElement.style.setProperty('--accent-rgb', r+','+g+','+b);
     }
   }catch(e){}
 }
 window.aplicarColorDeClub = aplicarColorDeClub;
+
 
 // Nombre del club dentro de la liga (el que aparece en el schedule).
 // Un solo criterio para toda la app: config de Firebase → semilla → global → id.
@@ -1505,7 +1608,7 @@ function applyReadOnlyUI(){
   const sb = document.getElementById('saveBtn');
   if(sb){
     sb.disabled = bloqueado;
-    sb.textContent = bloqueado ? '🔒 Solo lectura' : '💾 Guardar';
+    sb.textContent = bloqueado ? 'Solo lectura' : 'Guardar';
     sb.style.opacity = bloqueado ? '0.45' : '';
   }
 }
@@ -2804,12 +2907,12 @@ window.loadFecha=function(val){
     document.getElementById('fixtureSubEl').innerHTML='<span style="color:var(--red);font-weight:600">⛔ Esta fecha fue suspendida por el coordinador. No se puede citar.</span>';
     markedCit={}; selectedCamisetero=null;
     renderCitList(); renderCamSelector();
-    if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='🔒 Fecha suspendida'; }
+    if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='Fecha suspendida'; }
     return;
   }
 
   info.style.display='block';
-  if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='💾 Guardar partido'; }
+  if(saveBtn){ saveBtn.disabled=false; saveBtn.textContent='Guardar partido'; }
   const condLabel=f.cond==='L'?'Local':f.cond==='V'?'Visitante':'Libre';
   const condCls=f.cond==='L'?'fb-local':f.cond==='V'?'fb-visit':'fb-libre';
   document.getElementById('fixtureTitleEl').innerHTML='Fecha '+f.fecha+' &mdash; vs '+_fmtRival(f.rival)+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
@@ -2879,7 +2982,7 @@ function renderPlantelMgr(){
   const el=document.getElementById('plantel-mgr'); if(!el) return;
   const data=window._escuelitaPlayerKeys||{};
   const entries=Object.entries(data).sort((a,b)=>a[1].name.localeCompare(b[1].name));
-  let h=`<div class="stitle">👥 Plantel — Gestionar</div>
+  let h=`<div class="stitle">${icono('plantel')} Plantel — Gestionar</div>
   <div style="margin-bottom:12px">`;
   entries.forEach(([key,p])=>{
     h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:5px">
@@ -3262,7 +3365,7 @@ function renderCitStats(){
       const camBadge=saved.camisetero?'<div style="font-size:var(--f-sm);color:var(--yellow);margin-top:3px">&#128085; Camisetas: '+saved.camisetero+'</div>':'';
       const esExtra=!!saved.tipo;
       const tipoLabel=saved.tipo==='torneo'?(saved.torneo_nombre||'Torneo'):'Amistoso';
-      const extraBadge=esExtra?'<span style="background:rgba(106,189,230,0.15);color:#7a9af7;font-size:var(--f-micro);padding:2px 8px;border-radius:var(--r-full);margin-right:5px;font-weight:700;text-transform:uppercase">'+tipoLabel+'</span>':'';
+      const extraBadge=esExtra?'<span style="background:rgba(var(--accent-rgb),0.15);color:#7a9af7;font-size:var(--f-micro);padding:2px 8px;border-radius:var(--r-full);margin-right:5px;font-weight:700;text-transform:uppercase">'+tipoLabel+'</span>':'';
       const titlePrefix=esExtra?extraBadge:'Fecha '+saved.fecha+' &mdash; ';
       const titleRival=(esExtra?'':'')+' vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
       const c=document.createElement('div'); c.className='card';
@@ -3392,7 +3495,7 @@ function renderPlantel(){
     PLAYERS_INACTIVE.forEach(nombre => {
       html += `<div class="prow" style="justify-content:space-between;margin-bottom:6px;opacity:0.6">
         <div style="font-size:var(--f-md)">${nombre}</div>
-        <button onclick="window.reactivatePlayer('${nombre.replace(/'/g,"\'")}')" style="background:rgba(34,205,120,0.1);color:var(--win);border:1px solid rgba(34,205,120,0.3);border-radius:var(--r-sm);padding:4px 10px;font-size:var(--f-sm);font-weight:600;cursor:pointer">Reactivar</button>
+        <button onclick="window.reactivatePlayer('${nombre.replace(/'/g,"\'")}')" style="background:rgba(34,205,120,0.1);color:var(--win);border:1px solid rgba(var(--win-rgb),0.3);border-radius:var(--r-sm);padding:4px 10px;font-size:var(--f-sm);font-weight:600;cursor:pointer">Reactivar</button>
       </div>`;
     });
   }
@@ -3518,7 +3621,7 @@ function _getResultData(key){
   if(gf===null || gc===null) return null;
   const result = gf>gc?'V':gf<gc?'L':'E';
   const color = result==='V'?'var(--win)':result==='L'?'var(--loss)':'var(--draw)';
-  const bg = result==='V'?'rgba(34,205,120,0.12)':result==='L'?'rgba(255,23,68,0.12)':'rgba(255,171,64,0.12)';
+  const bg = result==='V'?'rgba(var(--win-rgb),0.12)':result==='L'?'rgba(255,23,68,0.12)':'rgba(255,171,64,0.12)';
   return {score:gf+'-'+gc, result, color, bg};
 }
 
@@ -3560,7 +3663,7 @@ function renderFormacion(){
       const citCount = (curData.citados||[]).length;
       const volverLabel = proximoF ? 'F'+proximoF.fecha+' vs '+_fmtRival(proximoF.rival) : '';
       const volverBtn = (!esProximo && proximoKey) ? '<button id="formVolverBtn" style="margin-top:5px;background:rgba(34,205,120,.12);border:1px solid rgba(34,205,120,.3);color:var(--win);font-size:var(--f-micro);font-weight:700;padding:3px 9px;border-radius:var(--r-sm);cursor:pointer;font-family:DM Sans,sans-serif;">&#8594; Ir al próximo ('+volverLabel+')</button>' : '';
-      headerEl.innerHTML = '<div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:2px;">'+(esProximo?'⟶ Próximo partido':'📋 Partido anterior')+'</div>'
+      headerEl.innerHTML = '<div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:2px;">'+(esProximo?'⟶ Próximo partido':icono('lista')+' Partido anterior')+'</div>'
         +'<div style="font-weight:700;font-size:var(--f-md);">F'+curData.fecha+' vs '+_fmtRival(curData.rival||'')+' <span class="fixture-badge '+condCls+'">'+condLabel+'</span>'+resHtml+'</div>'
         +'<div style="font-size:var(--f-micro);color:var(--muted);margin-top:2px;">'+(citCount?citCount+' citados':'Sin citación')+'</div>'
         +volverBtn;
@@ -3993,7 +4096,7 @@ async function renderPosPartido(){
     const scoreHtml=rd?`<span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-xl);letter-spacing:2px;color:${rd.col};">${rd.score}</span>`:'';
     const badgeHtml=cargado
       ?`<span style="font-size:var(--f-micro);font-weight:700;padding:2px 8px;border-radius:var(--r-sm);background:rgba(34,205,120,.12);color:var(--win);border:1px solid rgba(34,205,120,.3);">&#10003; Cargado</span>`
-      :`<span style="font-size:var(--f-micro);font-weight:700;padding:2px 8px;border-radius:var(--r-sm);background:rgba(255,171,64,.12);color:var(--yellow);border:1px solid rgba(255,171,64,.3);">Cargar &#9660;</span>`;
+      :`<span style="font-size:var(--f-micro);font-weight:700;padding:2px 8px;border-radius:var(--r-sm);background:rgba(var(--draw-rgb),0.12);color:var(--yellow);border:1px solid rgba(var(--draw-rgb),0.3);">Cargar &#9660;</span>`;
     const extraBadge=esExtra?`<div style="margin-bottom:3px"><span style="background:rgba(77,115,245,0.15);color:#7a9af7;font-size:var(--f-micro);padding:1px 8px;border-radius:var(--r-full);font-weight:700;text-transform:uppercase">${tipoLabel}</span></div>`:'';
     const headerTitle=esExtra
       ?`<div style="font-size:var(--f-md);font-weight:600;">vs ${_fmtRival(m.rival)}</div>`
@@ -5458,7 +5561,7 @@ window.saGuardarZona = async function(btn){
     btn.textContent = '✓ Zona cargada';
   } catch(e){
     linea('❌ Error: ' + e.message, 'var(--red)');
-    btn.disabled = false; btn.textContent = '💾 Guardar zona y migrar clubes';
+    btn.disabled = false; btn.textContent = 'Guardar zona y migrar clubes';
   }
 };
 
@@ -5520,7 +5623,7 @@ function _planBadge(club){
   const ahora = Date.now();
   if(!club.plan || club.plan==='trial'){
     const dias = _daysUntil(club.trialEnd||0);
-    if(dias>0) return `<span style="background:rgba(34,205,120,0.15);color:var(--win);border:1px solid rgba(34,205,120,0.3);border-radius:var(--r-full);padding:2px 10px;font-size:var(--f-sm);font-weight:700">🟢 TRIAL — ${dias}d</span>`;
+    if(dias>0) return `<span style="background:rgba(34,205,120,0.15);color:var(--win);border:1px solid rgba(var(--win-rgb),0.3);border-radius:var(--r-full);padding:2px 10px;font-size:var(--f-sm);font-weight:700">🟢 TRIAL — ${dias}d</span>`;
     else return `<span style="background:rgba(255,23,68,0.15);color:var(--red);border:1px solid rgba(255,23,68,0.3);border-radius:var(--r-full);padding:2px 10px;font-size:var(--f-sm);font-weight:700">🔴 VENCIDO</span>`;
   }
   if(club.plan==='activo'){
@@ -5548,7 +5651,7 @@ async function renderSAClubes(){
 
     if(ids.length===0){
       html += `<div class="coord-ok-box" style="text-align:center;padding:24px">
-        <div style="font-size:var(--f-2xl);margin-bottom:8px">🏟️</div>
+        <div style="font-size:var(--f-2xl);margin-bottom:8px;color:var(--muted)">${icono('cancha')}</div>
         <div style="font-weight:700;margin-bottom:4px">No hay clubes registrados</div>
         <div style="font-size:var(--f-sm);color:var(--muted)">Agregá el primer club con el botón de arriba</div>
       </div>`;
@@ -6116,7 +6219,7 @@ window.saGestionarPlan = async function(clubId){
 
   overlay.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-full);padding:24px;width:100%;max-width:380px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);letter-spacing:2px;color:var(--accent);margin-bottom:4px">💳 GESTIONAR PLAN</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);letter-spacing:2px;color:var(--accent);margin-bottom:4px">${icono('tarjeta')} GESTIONAR PLAN</div>
       <div style="font-size:var(--f-md);font-weight:700;margin-bottom:4px">${nombre}</div>
       <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:16px">
         Plan actual: <b style="color:${planActual==='activo'?'var(--win)':'var(--draw)'}">${planActual==='activo'?'ACTIVO':'TRIAL'}</b>
@@ -6208,7 +6311,7 @@ function renderSADatos(){
   const el = document.getElementById('sa-datos');
   el.innerHTML = `
     <div style="padding:14px">
-      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:14px">📤 Carga de datos a Firebase</div>
+      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:14px">${icono('subir')} Carga de datos a Firebase</div>
 
       <div class="coord-ok-box" style="margin-bottom:16px;border:1px solid rgba(34,205,120,.45)">
         <div style="font-weight:700;margin-bottom:4px">🆕 Cargar una zona nueva desde LISFI</div>
@@ -6242,8 +6345,8 @@ function renderSADatos(){
         </div>
 
         <div style="display:flex;gap:8px">
-          <button onclick="window.saAnalizarZona()" class="btn btn-oly" style="flex:1">🔎 Analizar fixture</button>
-          <button onclick="window.saGuardarZona(this)" class="btn btn-g" style="flex:1">💾 Guardar zona y migrar clubes</button>
+          <button onclick="window.saAnalizarZona()" class="btn btn-oly" style="flex:1">Analizar fixture</button>
+          <button onclick="window.saGuardarZona(this)" class="btn btn-g" style="flex:1">Guardar zona y migrar clubes</button>
         </div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-top:8px">
           ¿No aparece el cuadro para pegar? Se muestra solo si el navegador no puede bajar la página.
@@ -6254,52 +6357,52 @@ function renderSADatos(){
       </div>
 
       <div class="coord-ok-box" style="margin-bottom:12px;border:1px solid rgba(34,205,120,.4)">
-        <div style="font-weight:700;margin-bottom:4px">📅 Schedule completo LISFI Zona Campeonato 2026 <span style="font-size:var(--f-micro);color:var(--win);font-weight:700">· TEMPORADA ACTUAL</span></div>
+        <div style="font-weight:700;margin-bottom:4px">${icono('calendario')} Schedule completo LISFI Zona Campeonato 2026 <span style="font-size:var(--f-micro);color:var(--win);font-weight:700">· TEMPORADA ACTUAL</span></div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:12px">
           15 fechas · 15 equipos → <code style="background:var(--surface2);padding:1px 5px;border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">ligas/lisfi-zona-campeonato-2026/schedule</code><br>
           Migra <b>todos los clubes</b> que juegan esta zona: mueve el torneo activo y deja la temporada anterior como archivo consultable. No toca los datos viejos.
         </div>
-        <button onclick="window.saSubirScheduleZonaCampeonato2026(this)" class="btn btn-g" style="width:100%">🚀 Subir zona y migrar clubes</button>
+        <button onclick="window.saSubirScheduleZonaCampeonato2026(this)" class="btn btn-g" style="width:100%">Subir zona y migrar clubes</button>
         <div id="scheduleCampeonatoLog" style="margin-top:10px;font-size:var(--f-sm);line-height:1.8;display:none"></div>
       </div>
 
       <div class="coord-ok-box" style="margin-bottom:12px;opacity:.7">
-        <div style="font-weight:700;margin-bottom:4px">📅 Schedule completo LISFI II Zona B 2026 <span style="font-size:var(--f-micro);color:var(--muted);font-weight:700">· temporada anterior</span></div>
+        <div style="font-weight:700;margin-bottom:4px">${icono('calendario')} Schedule completo LISFI II Zona B 2026 <span style="font-size:var(--f-micro);color:var(--muted);font-weight:700">· temporada anterior</span></div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:12px">
           22 fechas · 11 equipos → <code style="background:var(--surface2);padding:1px 5px;border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">ligas/lisfi-ii-zona-b-2026/schedule</code><br>
           Cada club con <b>ligaNombre</b> configurado deriva su fixture automáticamente.
         </div>
-        <button onclick="window.saSubirScheduleLISFI(this)" class="btn btn-g" style="width:100%">🚀 Subir schedule completo</button>
+        <button onclick="window.saSubirScheduleLISFI(this)" class="btn btn-g" style="width:100%">Subir schedule completo</button>
         <div id="scheduleLog" style="margin-top:10px;font-size:var(--f-sm);line-height:1.8;display:none"></div>
       </div>
 
       <div class="coord-ok-box" style="margin-bottom:12px">
-        <div style="font-weight:700;margin-bottom:4px">📋 Fixture LISFI II Zona B 2026 — Sagrado Corazón</div>
+        <div style="font-weight:700;margin-bottom:4px">${icono('lista')} Fixture LISFI II Zona B 2026 — Sagrado Corazón</div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:12px">
           22 fechas → <code style="background:var(--surface2);padding:1px 5px;border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">ligas/lisfi-ii-zona-b-2026/fixture</code><br>
           Condiciones L/V → <code style="background:var(--surface2);padding:1px 5px;border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">clubs/sagrado-corazon/config</code>
         </div>
-        <button onclick="window.saSubirFixtureLISFI(this)" class="btn btn-g" style="width:100%">🚀 Subir fixture</button>
+        <button onclick="window.saSubirFixtureLISFI(this)" class="btn btn-g" style="width:100%">Subir fixture</button>
         <div id="lisfiLog" style="margin-top:10px;font-size:var(--f-sm);line-height:1.8;display:none"></div>
       </div>
 
       <div class="coord-ok-box" style="margin-bottom:12px">
-        <div style="font-weight:700;margin-bottom:4px">📋 Fixture LAFIR 2026 — El Ciclón</div>
+        <div style="font-weight:700;margin-bottom:4px">${icono('lista')} Fixture LAFIR 2026 — El Ciclón</div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:12px">
           15 fechas → <code style="background:var(--surface2);padding:1px 5px;border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">ligas/lafir-torneo-general-2026/fixture</code><br>
           Condiciones L/V → <code style="background:var(--surface2);padding:1px 5px;border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">clubs/el-ciclon/config</code>
         </div>
-        <button onclick="window.saSubirFixtureLAFIR(this)" class="btn btn-g" style="width:100%">🚀 Subir fixture</button>
+        <button onclick="window.saSubirFixtureLAFIR(this)" class="btn btn-g" style="width:100%">Subir fixture</button>
         <div id="lafirLog" style="margin-top:10px;font-size:var(--f-sm);line-height:1.8;display:none"></div>
       </div>
 
       <div class="coord-ok-box" style="margin-bottom:12px">
-        <div style="font-weight:700;margin-bottom:4px">👥 Jugadores — Sagrado Corazón</div>
+        <div style="font-weight:700;margin-bottom:4px">${icono('plantel')} Jugadores — Sagrado Corazón</div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:12px">
           Carga inicial de jugadores para cat13, cat2015, cat16, cat2017 y cat2018.<br>
           Solo agrega jugadores nuevos — nunca sobreescribe ni borra datos existentes.
         </div>
-        <button onclick="window.saSubirPlayers(this)" class="btn btn-g" style="width:100%">👥 Subir jugadores faltantes</button>
+        <button onclick="window.saSubirPlayers(this)" class="btn btn-g" style="width:100%">Subir jugadores faltantes</button>
         <div id="playersLog" style="margin-top:10px;font-size:var(--f-sm);line-height:1.8;display:none;font-family:monospace"></div>
       </div>
     </div>
@@ -6347,7 +6450,7 @@ window.saSubirScheduleZonaCampeonato2026 = async function(btn){
     btn.textContent = '✓ Subido';
   } catch(e) {
     log('❌ Error: ' + e.message, 'var(--red)');
-    btn.disabled = false; btn.textContent = '🚀 Subir schedule Zona Campeonato';
+    btn.disabled = false; btn.textContent = 'Subir schedule Zona Campeonato';
   }
 };
 
@@ -6394,7 +6497,7 @@ window.saSubirScheduleLISFI = async function(btn){
     btn.textContent = '✓ Subido';
   } catch(e) {
     log('❌ Error: ' + e.message, 'var(--red)');
-    btn.disabled = false; btn.textContent = '🚀 Subir schedule completo';
+    btn.disabled = false; btn.textContent = 'Subir schedule completo';
   }
 };
 
@@ -6437,7 +6540,7 @@ window.saSubirFixtureLISFI = async function(btn){
     btn.textContent = '✓ Subido';
   } catch(e) {
     log('❌ Error: ' + e.message, 'var(--red)');
-    btn.disabled = false; btn.textContent = '🚀 Subir fixture';
+    btn.disabled = false; btn.textContent = 'Subir fixture';
   }
 };
 
@@ -6491,7 +6594,7 @@ window.saSubirFixtureLAFIR = async function(btn){
   } catch(e) {
     log('❌ Error: ' + e.message, 'var(--red)');
     btn.disabled = false;
-    btn.textContent = '🚀 Subir fixture';
+    btn.textContent = 'Subir fixture';
   }
 };
 
@@ -6637,7 +6740,7 @@ window.saEditarClub = async function(clubId){
         <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:4px 12px;font-size:var(--f-sm);font-weight:700;cursor:pointer">+ Agregar usuario</button>
       </div>
       <div style="margin-bottom:16px">${usersHtml}</div>
-      <button onclick="window._saGuardarEdicion('${clubId}')" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar cambios</button>
+      <button onclick="window._saGuardarEdicion('${clubId}')" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;margin-bottom:8px">Guardar cambios</button>
       <button onclick="document.getElementById('saEditOverlay').remove()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r-md);padding:10px;font-size:var(--f-md);cursor:pointer">Cancelar</button>
     </div>
   `;
@@ -6752,7 +6855,7 @@ window._saEditUserCats = async function(uid, email, clubId){
             ${c.label}
           </label>`).join('')}
       </div>
-      <button id="saveEditCatsBtn" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;margin-bottom:8px">💾 Guardar categorías</button>
+      <button id="saveEditCatsBtn" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;margin-bottom:8px">Guardar categorías</button>
       <button onclick="document.getElementById('saEditCatsOverlay').remove()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r-md);padding:10px;font-size:var(--f-md);cursor:pointer">Cancelar</button>
     </div>`;
   document.body.appendChild(ov);
@@ -6770,7 +6873,7 @@ window._saEditUserCats = async function(uid, email, clubId){
       showToast('✓ Categorías actualizadas');
       ov.remove();
       window.saEditarClub(clubId); // refrescar vista del club
-    } catch(e){ showToast('Error: '+e.message); this.disabled=false; this.textContent='💾 Guardar categorías'; }
+    } catch(e){ showToast('Error: '+e.message); this.disabled=false; this.textContent='Guardar categorías'; }
   };
 };
 
@@ -6975,7 +7078,7 @@ async function startCoordApp(){
   const subEl = document.querySelector('header div div div[style*="0.62rem"]');
   if(subEl) subEl.textContent = _clubNombreCoord + ' — Vista Global';
   let catBadge = document.getElementById('catBadge');
-  if(!catBadge){ catBadge=document.createElement('span'); catBadge.id='catBadge'; catBadge.style.cssText='background:rgba(106,189,230,0.15);color:var(--accent);font-family:Bebas Neue,sans-serif;font-size:var(--f-md);letter-spacing:1px;padding:2px 8px;border-radius:var(--r-sm);margin-left:6px;'; document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn')); }
+  if(!catBadge){ catBadge=document.createElement('span'); catBadge.id='catBadge'; catBadge.style.cssText='background:rgba(var(--accent-rgb),0.15);color:var(--accent);font-family:Bebas Neue,sans-serif;font-size:var(--f-md);letter-spacing:1px;padding:2px 8px;border-radius:var(--r-sm);margin-left:6px;'; document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn')); }
   catBadge.textContent = 'COORD';
 
   // Selector de temporada (coordinador ve las mismas temporadas que los profes)
@@ -7356,8 +7459,8 @@ async function startCoordApp(){
         const s = catCitStatus.find(x=>x.cat.key===cat.key);
         const atrasada = s.last && s.fecha < maxFecha;
         const color = CAT_COL_R[cat.key]||'var(--accent)';
-        const borderCol = !s.last ? 'rgba(255,80,104,0.3)' : atrasada ? 'rgba(212,175,55,0.35)' : 'rgba(106,189,230,0.3)';
-        const bgCol = !s.last ? 'rgba(255,80,104,0.06)' : atrasada ? 'rgba(212,175,55,0.06)' : 'rgba(106,189,230,0.06)';
+        const borderCol = !s.last ? 'rgba(var(--loss-rgb),0.3)' : atrasada ? 'rgba(var(--draw-rgb),0.35)' : 'rgba(var(--accent-rgb),0.3)';
+        const bgCol = !s.last ? 'rgba(var(--loss-rgb),0.06)' : atrasada ? 'rgba(var(--draw-rgb),0.06)' : 'rgba(var(--accent-rgb),0.06)';
         h+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r-sm);background:${bgCol};border:1px solid ${borderCol}">
           <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
           <span style="font-size:var(--f-sm);font-weight:600;color:var(--text);min-width:72px">${cat.label}</span>
@@ -7402,7 +7505,7 @@ async function startCoordApp(){
           </div>
           ${diff!==null?`<div style="text-align:right">
             <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:4px">vs ${MES_S[parseInt(prevMonths[0].split('-')[1])-1]}</div>
-            <div style="font-size:var(--f-sm);font-weight:700;color:${diff>=0?'var(--win)':'#ff4444'};background:${diff>=0?'rgba(34,205,120,0.12)':'rgba(255,68,68,0.12)'};border:1px solid ${diff>=0?'rgba(34,205,120,0.25)':'rgba(255,68,68,0.25)'};border-radius:var(--r-full);padding:4px 12px">${diff>=0?'▲':'▼'} ${Math.abs(diff)}%</div>
+            <div style="font-size:var(--f-sm);font-weight:700;color:${diff>=0?'var(--win)':'#ff4444'};background:${diff>=0?'rgba(var(--win-rgb),0.12)':'rgba(255,68,68,0.12)'};border:1px solid ${diff>=0?'rgba(34,205,120,0.25)':'rgba(255,68,68,0.25)'};border-radius:var(--r-full);padding:4px 12px">${diff>=0?'▲':'▼'} ${Math.abs(diff)}%</div>
           </div>`:''}
         </div>
         <div style="display:flex;gap:8px">`;
@@ -7587,12 +7690,12 @@ async function startCoordApp(){
 
     // Selector de mes
     let h=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;overflow-x:auto">`;
-    h+=`<button onclick="window.coordJugadorMesChange('todo')" style="padding:4px 12px;border-radius:var(--r-full);border:1px solid ${coordJugadorMes==='todo'?'rgba(106,189,230,0.5)':'var(--border)'};background:${coordJugadorMes==='todo'?'rgba(106,189,230,0.15)':'transparent'};color:${coordJugadorMes==='todo'?'var(--accent)':'var(--muted)'};font-size:var(--f-sm);cursor:pointer;white-space:nowrap">Todo</button>`;
+    h+=`<button onclick="window.coordJugadorMesChange('todo')" style="padding:4px 12px;border-radius:var(--r-full);border:1px solid ${coordJugadorMes==='todo'?'rgba(106,189,230,0.5)':'var(--border)'};background:${coordJugadorMes==='todo'?'rgba(var(--accent-rgb),0.15)':'transparent'};color:${coordJugadorMes==='todo'?'var(--accent)':'var(--muted)'};font-size:var(--f-sm);cursor:pointer;white-space:nowrap">Todo</button>`;
     mesesDisp.forEach(ym=>{
       const [y,m]=ym.split('-');
       const lbl=MES_S2[parseInt(m)-1]+' '+y;
       const act=coordJugadorMes===ym;
-      h+=`<button onclick="window.coordJugadorMesChange('${ym}')" style="padding:4px 12px;border-radius:var(--r-full);border:1px solid ${act?'rgba(106,189,230,0.5)':'var(--border)'};background:${act?'rgba(106,189,230,0.15)':'transparent'};color:${act?'var(--accent)':'var(--muted)'};font-size:var(--f-sm);cursor:pointer;white-space:nowrap">${lbl}</button>`;
+      h+=`<button onclick="window.coordJugadorMesChange('${ym}')" style="padding:4px 12px;border-radius:var(--r-full);border:1px solid ${act?'rgba(106,189,230,0.5)':'var(--border)'};background:${act?'rgba(var(--accent-rgb),0.15)':'transparent'};color:${act?'var(--accent)':'var(--muted)'};font-size:var(--f-sm);cursor:pointer;white-space:nowrap">${lbl}</button>`;
     });
     h+=`</div>`;
 
@@ -7627,7 +7730,7 @@ async function startCoordApp(){
     // Header
     const inicial=nombre.trim()[0]||'?';
     h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);">
-      <div style="width:36px;height:36px;border-radius:50%;background:rgba(106,189,230,0.15);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:var(--f-md);color:var(--accent);flex-shrink:0;">${inicial}</div>
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(var(--accent-rgb),0.15);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:var(--f-md);color:var(--accent);flex-shrink:0;">${inicial}</div>
       <div>
         <div style="font-size:var(--f-md);font-weight:600;color:var(--text);">${nombre}</div>
         <div style="font-size:var(--f-micro);color:var(--muted);">${cat.label}</div>
@@ -7683,7 +7786,7 @@ async function startCoordApp(){
 
     // ── COL DERECHA: Presencias por semana ──
     h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;overflow-y:auto;max-height:480px;">
-      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">📅 Entrenamientos</div>`;
+      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">${icono('calendario')} Entrenamientos</div>`;
 
     // Agrupar sesiones por semana ISO
     const getWeek=d=>{ const dt=new Date(d+'T12:00:00'); const tmp=new Date(dt); tmp.setHours(0,0,0,0); tmp.setDate(tmp.getDate()+4-(tmp.getDay()||7)); const y=tmp.getFullYear(); const w=Math.ceil(((tmp-new Date(y,0,1))/864e5+1)/7); return `${y}-W${String(w).padStart(2,'0')}`; };
@@ -7888,9 +7991,9 @@ async function startCoordApp(){
           const sinGolesQueDec=res && res.gf===0;
           const ok=tieneGoles||sinGolesQueDec;
           const resStr=res?`${res.gf}-${res.gc}`:'—';
-          const bg=ok?'rgba(34,205,120,0.12)':'rgba(255,80,104,0.08)';
+          const bg=ok?'rgba(var(--win-rgb),0.12)':'rgba(255,80,104,0.08)';
           const col=ok?'var(--win)':'var(--loss)';
-          const border=ok?'rgba(34,205,120,0.3)':'rgba(255,80,104,0.2)';
+          const border=ok?'rgba(var(--win-rgb),0.3)':'rgba(255,80,104,0.2)';
           hEstado+=`<td style="text-align:center;padding:5px 6px;">
             <div style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;background:${bg};border:1px solid ${border};border-radius:var(--r-sm);padding:3px 7px;min-width:36px;">
               <span style="font-weight:700;color:${col};font-size:var(--f-sm);">${resStr}</span>
@@ -7969,7 +8072,7 @@ async function startCoordApp(){
     // ── TABLA GENERAL ACUMULADA ──
     const scGen=POS_GENERAL.find(p=>isSC(p.eq));
     const scGenPos=POS_GENERAL.findIndex(p=>isSC(p.eq))+1;
-    h+=`<div class="csec" style="margin-top:0">🏆 Posiciones General${_isLisfi?' — Zona Campeonato':''}</div>`;
+    h+=`<div class="csec" style="margin-top:0">${icono('copa')} Posiciones General${_isLisfi?' — Zona Campeonato':''}</div>`;
     // Destacado SC
     if(scGen){
       h+=`<div style="background:rgba(34,85,238,0.1);border:1px solid rgba(34,85,238,0.35);border-radius:var(--r-md);padding:12px 15px;margin-bottom:10px;display:flex;align-items:center;gap:14px">
@@ -8095,7 +8198,7 @@ async function startCoordApp(){
 
       // Botón cargar desde texto
       h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:14px">
-        <div style="font-size:var(--f-sm);font-weight:700;margin-bottom:8px">📋 Cargar desde texto</div>
+        <div style="font-size:var(--f-sm);font-weight:700;margin-bottom:8px">${icono('lista')} Cargar desde texto</div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:6px">Pegá el fixture en formato "1,LA PLATA V,V" (fecha,rival,L/V/-) — una por línea</div>
         <textarea id="fixtureTextInput" style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);padding:8px;font-size:var(--f-sm);font-family:monospace;resize:vertical" placeholder="1,LA PLATA V,V&#10;2,DEF.SAN LORENZO,L&#10;3,CATELLA,V..."></textarea>
         <button onclick="window.coordParseFix()" style="margin-top:8px;background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);padding:8px 16px;font-size:var(--f-sm);font-weight:700;cursor:pointer;width:100%">Parsear e importar</button>
@@ -8126,7 +8229,7 @@ async function startCoordApp(){
         </div>
         <button onclick="window.coordAddFecha()" style="margin-top:8px;background:rgba(77,115,245,0.15);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:7px 14px;font-size:var(--f-sm);font-weight:700;cursor:pointer;width:100%">+ Agregar</button>
       </div>`;
-      h+=`<button onclick="window.coordSaveFix()" style="margin-top:14px;background:var(--green);color:#000;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;width:100%">💾 Guardar fixture</button>`;
+      h+=`<button onclick="window.coordSaveFix()" style="margin-top:14px;background:var(--green);color:#000;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;width:100%">Guardar fixture</button>`;
       el.innerHTML=h;
     }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
   }
@@ -8294,7 +8397,7 @@ async function startCoordApp(){
     </div>`;
 
     // ── SECCIÓN FECHAS DE PARTIDO ──
-    h += `<div class="csec">🗓 Fechas de partido</div>`;
+    h += `<div class="csec">${icono('calendario')} Fechas de partido</div>`;
     h += `<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:12px">Las fechas suspendidas bloquean la citación en todos los equipos.</div>`;
 
     if(!jugables.length){
@@ -8317,7 +8420,7 @@ async function startCoordApp(){
     }
 
     // ── SECCIÓN ENTRENAMIENTOS ──
-    h += `<div class="csec" style="margin-top:24px">🏋 Entrenamientos</div>`;
+    h += `<div class="csec" style="margin-top:24px">${icono('cono')} Entrenamientos</div>`;
     h += `<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:12px">Los días suspendidos bloquean la toma de lista y se descuentan del estimado mensual.</div>`;
 
     if(!_coordDiasEntGlobal.length){
@@ -8394,7 +8497,7 @@ async function startCoordApp(){
         <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px">Dirección de la cancha (local)</div>
         <input type="text" id="clubAddress" value="${address}" placeholder="Av. 13 y 610 Villa Elvira" style="padding:8px 12px;font-size:var(--f-md);width:100%;box-sizing:border-box">
       </div>`;
-      h+=`<button onclick="window.coordSaveHorarios()" style="margin-top:14px;background:var(--green);color:#000;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;width:100%">💾 Guardar</button>`;
+      h+=`<button onclick="window.coordSaveHorarios()" style="margin-top:14px;background:var(--green);color:#000;border:none;border-radius:var(--r-md);padding:11px;font-size:var(--f-md);font-weight:700;cursor:pointer;width:100%">Guardar</button>`;
       el.innerHTML=h;
     }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
   }
@@ -8488,8 +8591,8 @@ async function startCoordApp(){
     start_url: "./",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#0d0d0d",
-    theme_color: "#0d0d0d",
+    background_color: "#0a0f18",
+    theme_color: "#0a0f18",
     icons: [
       {
         src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='24' fill='%2307186b'/%3E%3Ctext x='50%25' y='52%25' dominant-baseline='middle' text-anchor='middle' font-size='90' fill='%234d73f5'%3E%E2%9A%BD%3C/text%3E%3Ctext x='50%25' y='82%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='28' font-weight='900' letter-spacing='3' fill='%234d73f5'%3EMI PLANTEL%3C/text%3E%3C/svg%3E",
