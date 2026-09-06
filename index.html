@@ -1069,13 +1069,47 @@ function anioDeCitacion(cit, zonaId){
   return _anioDeZona(zonaId);
 }
 
+// ── Corte por temporada archivada ──────────────────────────────
+// Mirando una temporada vieja hay que ver el año TAL COMO ESTABA cuando esa
+// temporada terminó: se suman las zonas anteriores del mismo año, pero no las
+// que se jugaron después. Sin esto, abrir la Zona II B 2026 mostraba también
+// los partidos de la Zona Campeonato, que se jugó más tarde.
+// Devuelve la fecha del último registro de la zona archivada ('aaaa-mm-dd'),
+// o null cuando se está en la temporada vigente (ahí no se corta nada).
+function _fechaDeCorte(todas){
+  try{
+    if(typeof esHistorico !== 'function' || !esHistorico()) return null;
+    const z = (todas || _todasLasZonas || {})[TORNEO_ID];
+    if(!z) return null;
+    let max = '';
+    Object.keys(z.attendance || {}).forEach(f => { if(f > max) max = f; });
+    Object.values(z.citaciones || {}).forEach(c => {
+      const f = _fechaDeRegistro(c);
+      if(f && f > max) max = f;
+    });
+    return max || null;
+  }catch(e){ return null; }
+}
+
+// La fecha de una citación como 'aaaa-mm-dd', para poder compararla como texto.
+function _fechaDeRegistro(cit){
+  if(!cit) return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(String(cit.fecha_str||''))) return String(cit.fecha_str).slice(0,10);
+  if(cit.ts){
+    const d = new Date(cit.ts);
+    if(!isNaN(d)) return d.toISOString().slice(0,10);
+  }
+  return '';
+}
+
 // ── Los datos de un año, con el desglose por zona ──────────────
 // Devuelve:
 //   { anio, sesiones:{fecha:{...,_zona}}, citaciones:{key:{...,_zona}},
-//     stats:{key:{...}}, zonas:[{id,nombre,sesiones,partidos}] }
+//     stats:{key:{...}}, zonas:[{id,nombre,sesiones,partidos}], corte }
 function datosDelAnio(anio, todas){
   const zonas = todas || _todasLasZonas || {};
-  const out = { anio, sesiones:{}, citaciones:{}, stats:{}, zonas:[] };
+  const corte = _fechaDeCorte(todas);
+  const out = { anio, sesiones:{}, citaciones:{}, stats:{}, zonas:[], corte };
 
   Object.keys(zonas).forEach(zonaId => {
     const z = zonas[zonaId] || {};
@@ -1083,6 +1117,7 @@ function datosDelAnio(anio, todas){
 
     Object.entries(z.attendance || {}).forEach(([fecha, val]) => {
       if(anioDeSesion(fecha, zonaId) !== anio) return;
+      if(corte && fecha > corte) return;              // pasó después: no cuenta
       // La clave es la fecha, así que dos zonas nunca chocan en el mismo día.
       out.sesiones[fecha] = Object.assign({}, val, {_zona: zonaId});
       nSes++;
@@ -1090,6 +1125,12 @@ function datosDelAnio(anio, todas){
 
     Object.entries(z.citaciones || {}).forEach(([key, val]) => {
       if(anioDeCitacion(val, zonaId) !== anio) return;
+      // Un registro sin fecha propia solo se descarta si es de OTRA zona: los de
+      // la zona archivada son suyos por definición y no pueden ser posteriores.
+      if(corte && zonaId !== TORNEO_ID){
+        const f = _fechaDeRegistro(val);
+        if(!f || f > corte) return;
+      }
       // Las claves de citación SÍ pueden repetirse entre zonas ("fecha01_rival"),
       // por eso se les antepone la zona.
       const k = zonaId + '::' + key;
@@ -1900,6 +1941,19 @@ window.switchTorneo = async function(id){
   window._viewTorneo = (id === TORNEO_ACTIVO) ? null : id;
   showToast('Cargando ' + torneoMeta(id).nombre + '…');
 
+  // Soltar todo lo que pertenece a la temporada que se está dejando. Cada zona
+  // tiene su propio fixture (los rivales de la fecha 4 no son los mismos), así
+  // que arrastrar la fecha elegida o el cache de "fecha activa" mezcla las dos.
+  limpiarCacheDeZonas();
+  if(typeof window._invalidateActiveFecha === 'function') window._invalidateActiveFecha();
+  window._activeFechaCache = null; window._activeFechaTs = 0;
+  if(typeof window._resetFechaElegida === 'function') window._resetFechaElegida();
+  // El año que se mira lo fija la temporada: entrando a una zona de 2026 hay que
+  // pararse en 2026, aunque el calendario ya esté en 2027. Al volver a la
+  // temporada vigente se vuelve al año en curso.
+  const _anioDeTorneo = (id === TORNEO_ACTIVO) ? new Date().getFullYear() : _anioDeZona(id);
+  if(_anioDeTorneo) setAnioVista(_anioDeTorneo);
+
   const role = (window._userProfile && window._userProfile.role) || '';
   if(role === 'coordinator' || window._isCoordView){
     // Coordinador: soltar listeners y rearmar el panel con la temporada elegida
@@ -2598,6 +2652,9 @@ let selHistMonth=null, selStatsMonth=null;
 let activeTab='tomar';
 let currentFecha = null;
 let currentPartidoExtra = null;
+// Temporada con la que se pintó el cartel de la fecha (el "Fecha 4 — vs X").
+// Lo escribe loadFecha; renderFechaSelector lo compara con TORNEO_ID.
+let _fixtureInfoTorneo = null;
 let _torneosExtraNombres = [];
 let selectedCamisetero = null;
 let pitchPlayers={}, benchPlayers=[], selectedPlayer=null, pitchTapReady=false;
@@ -2619,7 +2676,15 @@ function renderFechaSelector(){
     sel.appendChild(opt);
   });
   // Restaurar selección previa (si sigue válida y no está suspendida)
-  if(prev && !_suspensions[parseInt(prev)]) sel.value=prev;
+  if(prev && !_suspensions[parseInt(prev)]){
+    sel.value=prev;
+    // Si el cartel de abajo se pintó con OTRA temporada, hay que repintarlo: el
+    // número de fecha existe en las dos, pero el rival no es el mismo. Antes
+    // quedaba "Fecha 4 vs Estud. Lh" (zona actual) mientras el desplegable ya
+    // decía "Fecha 4 - CRISFA V." (zona archivada), y al guardar se guardaba
+    // contra CRISFA, que es lo que dice el FIXTURE vigente.
+    if(_fixtureInfoTorneo !== TORNEO_ID) loadFecha(prev);
+  }
   else if(prev && _suspensions[parseInt(prev)]){
     // La fecha previa fue suspendida → auto-seleccionar la próxima disponible
     _getActiveFecha(FIXTURE, _suspensions).then(next => {
@@ -2634,6 +2699,19 @@ function renderFechaSelector(){
   }
 }
 renderFechaSelector();
+
+// Al cambiar de temporada hay que soltar la fecha elegida: el número existe en
+// las dos zonas pero es otro partido. Sin esto quedaban marcados los citados de
+// la fecha anterior sobre un partido que no es el mismo.
+window._resetFechaElegida = function(){
+  currentFecha = null;
+  currentPartidoExtra = null;
+  _fixtureInfoTorneo = null;
+  markedCit = {};
+  selectedCamisetero = null;
+  const sel = document.getElementById('citFechaSelect'); if(sel) sel.value = '';
+  const info = document.getElementById('fixtureInfo');   if(info) info.style.display = 'none';
+};
 
 // ── SYNC ──
 // setSS y _CAT_LABELS se movieron a nivel de módulo (los usan los tres roles).
@@ -2957,7 +3035,10 @@ function CITS(){
 }
 
 // Barra de años. Solo aparece si hay más de un año con datos.
+// En una temporada archivada no aparece: el año ya lo fija la temporada elegida,
+// y elegir otro mostraría datos de afuera de lo que decís estar mirando.
 function barraDeAnios(alCambiar){
+  if(typeof esHistorico === 'function' && esHistorico()) return '';
   const anios = aniosConDatos();
   if(anios.length < 2) return '';
   const btn = a => '<button class="chip'+(anioVista()===a?' cg':'')+'" '+
@@ -3390,6 +3471,9 @@ window.loadPartidoExtra = function(key){
 window.loadFecha=function(val){
   currentFecha=val?parseInt(val):null;
   currentPartidoExtra=null;
+  // Con qué temporada se pintó este cartel. Sin esto, al cambiar de temporada
+  // el cartel se quedaba con el rival de la anterior (ver renderFechaSelector).
+  _fixtureInfoTorneo = TORNEO_ID;
   const info=document.getElementById('fixtureInfo');
   const saveBtn=document.getElementById('citSaveBtn');
   if(!val){info.style.display='none';if(saveBtn)saveBtn.disabled=false;return;}
@@ -3481,8 +3565,10 @@ function renderCitList(){
     else {
       leyenda.style.display='flex';
       leyenda.innerHTML =
-        '<span><b>Últimos '+ultimos.length+' partidos</b> de '+anioVista()+', '+
-          'del más reciente al más viejo:</span>'+
+        '<span><b>Últimos '+ultimos.length+' partidos</b> de '+anioVista()+
+          ((typeof esHistorico==='function' && esHistorico())
+            ? ' hasta el cierre de esta temporada' : '')+
+          ', del más reciente al más viejo:</span>'+
         '<span><span class="pt pc"></span> jugó todo</span>'+
         '<span><span class="pt pm"></span> entró o salió</span>'+
         '<span><span class="pt pf"></span> faltó</span>'+
