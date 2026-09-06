@@ -1,0 +1,17 @@
+{
+  "generadoEl": "06/09/2026 16:34",
+  "zonas": [
+    {
+      "ligaId": "lisfi-zona-campeonato-2026",
+      "archivo": "liga_data_lisfi-zona-campeonato-2026.json",
+      "fuente": "https://www.lisfi.com.ar/index.php/zona-camp-2026",
+      "clubes": [
+        "hernandez",
+        "sagrado-corazon"
+      ],
+      "updatedAt": "06/09/2026",
+      "equipos": 15
+    }
+  ],
+  "fallidas": []
+}
