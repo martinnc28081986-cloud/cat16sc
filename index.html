@@ -3474,7 +3474,8 @@ function renderCitList(){
     else {
       leyenda.style.display='flex';
       leyenda.innerHTML =
-        '<span><b>Últimos '+ultimos.length+' partidos</b> de '+anioVista()+':</span>'+
+        '<span><b>Últimos '+ultimos.length+' partidos</b> de '+anioVista()+', '+
+          'del más reciente al más viejo:</span>'+
         '<span><span class="pt pc"></span> jugó todo</span>'+
         '<span><span class="pt pm"></span> entró o salió</span>'+
         '<span><span class="pt pn"></span> no citado</span>'+
@@ -3486,17 +3487,25 @@ function renderCitList(){
   PLAYERS.forEach(name=>{
     const citado=markedCit[name]===true;
 
-    // Racha: un punto por partido, del más viejo al más nuevo
+    // Racha: un punto por partido. Se RECORRE del más viejo al más nuevo (así
+    // sinCitar cuenta bien las fechas seguidas afuera, que terminan en el último
+    // partido), pero se PINTA al revés: cada punto nuevo va adelante, así el
+    // último partido queda pegado al nombre y hacia la derecha van los anteriores.
     let puntos='', sinCitar=0;
-    ultimos.forEach(p=>{
+    ultimos.forEach((p, i)=>{
       const j = jugoEnPartido(p.cit, p.stats, name);   // null si no fue citado
       const cls = j === null   ? 'pn'    // no citado
                 : j === 'todo' ? 'pc'    // jugó todo
                                 : 'pm';  // entró o salió: jugó una parte
-      const tit = j === null ? 'no citado'
+      const est = j === null ? 'no citado'
                 : j === 'todo' ? 'jugó todo'
                 : (j === 'entro' ? 'entró desde el banco' : 'salió antes del final');
-      puntos += '<span class="pt '+cls+'" title="'+tit+'"></span>';
+      // Cuántos partidos para atrás está este punto, para el tooltip
+      const atras = ultimos.length - 1 - i;
+      const cuando = atras === 0 ? 'último partido'
+                   : atras === 1 ? 'partido anterior'
+                   : 'hace ' + atras + ' partidos';
+      puntos = '<span class="pt '+cls+'" title="'+cuando+': '+est+'"></span>' + puntos;
       sinCitar = (j === null) ? sinCitar + 1 : 0;
     });
     const avisa = ultimos.length >= RACHA_AVISO && sinCitar >= RACHA_AVISO;
@@ -4785,15 +4794,13 @@ async function renderPosPartido(){
     if(_ppCache[key]) _statsAnio[TORNEO_ID+'::'+key] = _ppCache[key];
   });
 
-  const golesAcum={}, tarAcum={}, golesPorZona={};
+  const golesAcum={}, golesPorZona={};
   let enContraTotal=0;
   Object.entries(_statsAnio).forEach(([k, st])=>{
     if(!st || !st.jugadores) return;
     const zona = k.includes('::') ? k.split('::')[0] : TORNEO_ID;
     Object.entries(st.jugadores).forEach(([n,d])=>{
       golesAcum[n]=(golesAcum[n]||0)+(d.goles||0);
-      if(!tarAcum[n]) tarAcum[n]={a:0,r:0};
-      tarAcum[n].a+=(d.amarilla||0); tarAcum[n].r+=(d.roja||0);
       if(d.goles){
         if(!golesPorZona[n]) golesPorZona[n]={};
         golesPorZona[n][zona]=(golesPorZona[n][zona]||0)+d.goles;
@@ -4867,8 +4874,6 @@ async function renderPosPartido(){
       (m.citados||[]).forEach(nombre=>{
         const st2=(_ppEditStats.jugadores||{})[nombre]||{};
         const g=st2.goles||0;
-        const am=st2.amarilla||0;
-        const ro=st2.roja||0;
         const enc=nombre.replace(/&/g,'&amp;');
         h+=`<div class="prow" style="margin-bottom:var(--sp-3);">
           <div style="font-weight:500;font-size:var(--f-md);flex:1;">${nombre}</div>
@@ -4878,10 +4883,6 @@ async function renderPosPartido(){
             <button data-pp-mas="${enc}" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green);color:#000;font-size:var(--f-lg);cursor:pointer;font-weight:700;line-height:1;">+</button>
           </div>
           <button data-pp-jugo="${enc}" class="jchip j-${_jugoDe(st2)}" style="margin-left:var(--sp-3)">${JUGO_ET[_jugoDe(st2)]}</button>
-          <div style="display:flex;gap:var(--sp-2);margin-left:var(--sp-2);">
-            <button data-pp-card-a="${enc}" style="width:19px;height:25px;border-radius:var(--r-sm);font-size:var(--f-sm);font-weight:700;border:1px solid ${am?'#c8980a':'var(--border)'};background:${am?'#e8b400':'transparent'};color:${am?'#3a2800':'var(--muted)'};cursor:pointer;">A</button>
-            <button data-pp-card-r="${enc}" style="width:19px;height:25px;border-radius:var(--r-sm);font-size:var(--f-sm);font-weight:700;border:1px solid ${ro?'#9a1a1a':'var(--border)'};background:${ro?'#d83030':'transparent'};color:${ro?'#fff':'var(--muted)'};cursor:pointer;">R</button>
-          </div>
         </div>`;
       });
 
@@ -4937,11 +4938,9 @@ async function renderPosPartido(){
     goleadores.forEach((j,i)=>{
       const pos=i+1;
       const col=posCol[pos]||'var(--muted)';
-      const tar=tarAcum[j.nombre]||{a:0,r:0};
-      const tarStr=(tar.a||tar.r)?` <span style="font-size:var(--f-micro);color:var(--muted);">${tar.a?'A'+tar.a:''}${tar.r?' R'+tar.r:''}</span>`:'';
       h+=`<tr>
         <td style="padding:var(--sp-3) var(--sp-3);border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-weight:700;color:${col};">${pos}</td>
-        <td style="padding:var(--sp-3) var(--sp-3);border-bottom:1px solid rgba(255,255,255,.04);font-weight:500;">${j.nombre}${tarStr}</td>
+        <td style="padding:var(--sp-3) var(--sp-3);border-bottom:1px solid rgba(255,255,255,.04);font-weight:500;">${j.nombre}</td>
         <td style="padding:var(--sp-3) var(--sp-3);border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);">${j.g2026||'—'}</span></td>
         ${AÑOS_CON_DATOS.map(y=>`<td style="padding:var(--sp-3) var(--sp-3);border-bottom:1px solid rgba(255,255,255,.04);text-align:center;font-size:var(--f-sm);color:var(--muted);">${j.histAnios[y]||'—'}</td>`).join('')}
         <td style="padding:var(--sp-3) var(--sp-2);border-bottom:1px solid rgba(255,255,255,.04);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);color:var(--win);">${j.total}</span></td>
@@ -4951,7 +4950,7 @@ async function renderPosPartido(){
     if(enContraTotal>0){
       h+=`<tr>
         <td style="padding:var(--sp-3) var(--sp-3);text-align:center;color:var(--muted);">—</td>
-        <td style="padding:var(--sp-3) var(--sp-3);font-size:var(--f-sm);color:var(--muted);">En contra (2026)</td>
+        <td style="padding:var(--sp-3) var(--sp-3);font-size:var(--f-sm);color:var(--muted);">En contra (${ANIO})</td>
         <td style="padding:var(--sp-3) var(--sp-3);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);color:var(--red);">${enContraTotal}</span></td>
         ${AÑOS_CON_DATOS.map(()=>`<td></td>`).join('')}
         <td style="padding:var(--sp-3) var(--sp-3);text-align:center;"><span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);color:var(--red);">${enContraTotal}</span></td>
@@ -4992,8 +4991,6 @@ document.addEventListener('click',function(e){
   const t=e.target;
   if(t.dataset.ppMas){ _ppAdjust(t.dataset.ppMas,1); return; }
   if(t.dataset.ppMenos){ _ppAdjust(t.dataset.ppMenos,-1); return; }
-  if(t.dataset.ppCardA){ _ppToggleCard(t.dataset.ppCardA,'amarilla'); return; }
-  if(t.dataset.ppCardR){ _ppToggleCard(t.dataset.ppCardR,'roja'); return; }
   if(t.dataset.ppJugo){ _ppCiclarJugo(t.dataset.ppJugo); return; }
   if(t.dataset.ppEcMas){ _ppEditStats.enContra=(_ppEditStats.enContra||0)+1; renderPosPartido(); return; }
   if(t.dataset.ppEcMenos){ _ppEditStats.enContra=Math.max(0,(_ppEditStats.enContra||0)-1); renderPosPartido(); return; }
@@ -5014,12 +5011,9 @@ function _ppAdjust(nombre,delta){
   renderPosPartido();
 }
 
-function _ppToggleCard(nombre,tipo){
-  if(!_ppEditStats.jugadores) _ppEditStats.jugadores={};
-  if(!_ppEditStats.jugadores[nombre]) _ppEditStats.jugadores[nombre]={};
-  _ppEditStats.jugadores[nombre][tipo]=_ppEditStats.jugadores[nombre][tipo]?0:1;
-  renderPosPartido();
-}
+// Las tarjetas (amarilla/roja) se sacaron: no servían como estadística.
+// Los partidos viejos pueden tener amarilla/roja guardados en Firebase; quedan
+// ahí sin molestar, la app ya no los lee ni los muestra.
 
 window._ppGuardar=async function(){
   if(_roGuard()) return; // temporada archivada: solo lectura
@@ -8923,6 +8917,9 @@ async function startCoordApp(){
     const CAT_COL={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
     const golAnio=window._coordGolYear||'total';
     const golCat=window._coordGolCat2||'all';
+    // Año en curso, calculado: antes decía '2026' escrito a mano, así que en
+    // 2027 el botón iba a seguir diciendo 2026 y no había forma de ver el año nuevo.
+    const ANIO_ACT=String(new Date().getFullYear());
     const g26={};
     COMP_CATS.forEach(cat=>{
       const g={};
@@ -9040,7 +9037,7 @@ async function startCoordApp(){
         if(catFilter&&cat.key!==catFilter) return;
         let jugs={};
         if(anio==='total'){ jugs={...(g26[cat.key]||{})}; Object.values(gHist[cat.key]||{}).forEach(yD=>{ Object.entries(yD).forEach(([n,g])=>{ jugs[n]=(jugs[n]||0)+g; }); }); }
-        else if(anio==='2026'){ jugs=g26[cat.key]||{}; }
+        else if(anio===ANIO_ACT){ jugs=g26[cat.key]||{}; }
         else { jugs=(gHist[cat.key]||{})[anio]||{}; }
         Object.entries(jugs).forEach(([nombre,g])=>{
           if(g<=0) return;
@@ -9061,7 +9058,12 @@ async function startCoordApp(){
     }
     h+=`<div style="margin-bottom:var(--sp-5)"><select onchange="window._coordGolCat2=this.value;window.coordTab('goleadores')" style="font-size:var(--f-sm);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);width:100%"><option value="all" ${golCat==='all'?'selected':''}>Todas las categorías</option>${COMP_CATS.map(c=>`<option value="${c.key}" ${golCat===c.key?'selected':''}>${c.label}</option>`).join('')}</select></div>`;
     h+=`<div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-6);flex-wrap:wrap">`;
-    [['total','Total'],['2026','2026'],['2025','2025'],['2024','2024'],['2023','2023'],['2022','2022']].forEach(([val,lbl])=>{
+    // Los años salen de los datos, no de una lista fija: el año en curso siempre,
+    // más los años del histórico que tengan goles cargados, del más nuevo al más viejo.
+    const _aniosHist=[...new Set(COMP_CATS.flatMap(c=>Object.keys(gHist[c.key]||{})))]
+      .filter(y=>y!==ANIO_ACT && COMP_CATS.some(c=>Object.values((gHist[c.key]||{})[y]||{}).some(g=>g>0)))
+      .sort((a,b)=>+b-+a);
+    [['total','Total'],[ANIO_ACT,ANIO_ACT],..._aniosHist.map(y=>[y,y])].forEach(([val,lbl])=>{
       const active=val===golAnio;
       h+=`<button onclick="window._coordGolYear='${val}';window.coordTab('goleadores')" style="font-size:var(--f-sm);padding:var(--sp-2) var(--sp-5);border-radius:var(--r-full);border:1px solid ${active?'rgba(77,115,245,0.5)':'var(--border)'};background:${active?'rgba(77,115,245,0.15)':'transparent'};color:${active?'var(--green)':'var(--muted)'};font-weight:${active?'700':'400'};cursor:pointer">${lbl}</button>`;
     });
