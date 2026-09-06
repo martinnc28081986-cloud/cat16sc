@@ -1730,6 +1730,14 @@ async function migrarClubAZona(clubId, zonaDef){
       });
     } catch(e){ console.warn('No se pudo escribir el puntero público de zona:', e); }
 
+    // Última foto de la zona que estamos por cerrar. Se guarda ANTES de mover el
+    // torneo activo: después, el scraper ya apunta a la zona nueva y esos datos
+    // no vuelven a pasar por acá.
+    const _zonaVieja = cfg.ligaId;
+    if(_zonaVieja && _zonaVieja !== Z.ligaId){
+      await guardarSnapshotDeZona(_zonaVieja, LIGA_DATA_ACTUAL);
+    }
+
     if(cfg.torneoActivo === Z.torneoNuevo && cfg.temporadas) return 'ya-migrado';
 
     // Registro de temporadas: la anterior queda consultable desde el selector.
@@ -2061,6 +2069,11 @@ async function loadClubConfig(){
       } catch(e){ console.warn('Error leyendo liga:', e); }
     }
 
+    // Foto de resultados de esa zona (la usa el selector de temporadas).
+    // Va ANTES de prepararTablasDeZona para que la tabla no se reinicie en cero
+    // teniendo datos guardados.
+    if(ligaData && registrarResultadosDeLiga(ligaId, ligaData)) aplicarLigaDataDeTemporada();
+
     // Zona nueva → la tabla arranca en cero con los equipos de esta zona
     if(ligaData && ligaData.schedule) prepararTablasDeZona(ligaId, ligaData.schedule);
 
@@ -2338,6 +2351,9 @@ function _getPlayedFechas(){
 function renderNextMatch(){
   const el=document.getElementById('nextMatchEl'); if(!el)return;
   if(window._isEscuelita){ el.textContent=''; return; }
+  // En una temporada archivada no hay próximo partido. Sin esto mostraba el
+  // rival de la zona vigente arriba del fixture de la zona vieja.
+  if(typeof esHistorico==='function' && esHistorico()){ el.textContent=''; return; }
   _getActiveFecha(FIXTURE, _suspensions).then(next => {
     if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
     const condLabel=next.cond==='L'?'Local':'Visitante';
@@ -3307,6 +3323,9 @@ function renderCitStats(){
   const _resByFecha={};
   _scResTL.forEach(r=>{ _resByFecha[r.fecha]= r.gf>r.gc?'V':r.gf<r.gc?'L':'E'; });
 
+  // ¿Estamos mirando una temporada archivada? Cambia qué significan las burbujas.
+  const _esArchivo = (typeof esHistorico==='function') && esHistorico();
+
   const dotsHtml=FIXTURE.map(f=>{
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const saved=citaciones[key];
@@ -3314,16 +3333,22 @@ function renderCitStats(){
     const isLibre=f.cond==='-';
     const isSusp=_suspensions[f.fecha];
     const res=_resByFecha[f.fecha]||''; // resultado real del scraper
-    let bg,col;
+    let bg,col,bd='1px solid transparent';
     if(res==='V'){bg='var(--win)';col='#fff';}
     else if(res==='L'){bg='var(--loss)';col='#fff';}
     else if(res==='E'){bg='var(--draw)';col='#000';}
     else if(isSusp){bg='rgba(255,23,68,0.2)';col='#ff5555';}
     else if(isLibre){bg='#2a3a5e';col='#5a7aae';}
+    else if(_esArchivo){
+      // Temporada terminada: no existe "próximo". Si citamos pero no hay
+      // resultado cargado, se marca con un borde en vez de pintarla de azul.
+      bg='var(--surface2)'; col='var(--muted)';
+      if(isCitada) bd='1px solid var(--border)';
+    }
     else if(isCitada){bg='var(--accent)';col='#fff';} // citada pero sin resultado aún
     else if(f===proximaFecha){bg='var(--accent)';col='#fff';}
     else{bg='var(--surface2)';col='var(--muted)';}
-    return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';display:flex;align-items:center;justify-content:center;font-size:var(--f-micro);font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
+    return '<div style="flex-shrink:0"><div style="width:20px;height:20px;border-radius:50%;background:'+bg+';color:'+col+';border:'+bd+';display:flex;align-items:center;justify-content:center;font-size:var(--f-micro);font-weight:700;">'+(isLibre?'L':String(f.fecha))+'</div></div>';
   }).join('');
 
   if(timelineEl) timelineEl.innerHTML=`
@@ -3340,9 +3365,11 @@ function renderCitStats(){
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--win);margin-right:var(--sp-1)"></span>V</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--draw);margin-right:var(--sp-1)"></span>E</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--loss);margin-right:var(--sp-1)"></span>L</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:var(--sp-1)"></span>Próximo</span>
+        ${_esArchivo ? '' : '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:var(--sp-1)"></span>Próximo</span>'}
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a3a5e;margin-right:var(--sp-1)"></span>Libre</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--surface2);margin-right:var(--sp-1)"></span>Pendiente</span>
+        ${_esArchivo
+          ? '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);margin-right:var(--sp-1)"></span>Citada, sin resultado cargado</span>'
+          : '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--surface2);margin-right:var(--sp-1)"></span>Pendiente</span>'}
       </div>
     </div>`;
 
@@ -5192,16 +5219,28 @@ function _normalizarLigaData(d){
 function _datasetDeTemporada(){
   if(typeof esHistorico !== 'function' || !esHistorico()) return LIGA_DATA_ACTUAL;
 
-  const porTorneo = LIGA_DATA_ARCHIVO[TORNEO_ID];
-  if(porTorneo) return porTorneo;
-
   const ligaIdArchivo = torneoMeta(TORNEO_ID).ligaId;
-  if(ligaIdArchivo){
-    const porZona = Object.keys(LIGA_DATA_ARCHIVO)
+
+  // 1) La foto guardada en Firebase (ligas/{ligaId}/resultados). Es la buena:
+  //    se actualiza sola con cada scrapeo, así que llega completa a fin de temporada.
+  const deFirebase = ligaIdArchivo ? LIGA_RESULTADOS_FB[ligaIdArchivo] : null;
+
+  // 2) El archivo viejo escrito a mano en el código. Queda como respaldo para las
+  //    temporadas que se cerraron antes de que existiera el guardado en Firebase.
+  let delCodigo = LIGA_DATA_ARCHIVO[TORNEO_ID] || null;
+  if(!delCodigo && ligaIdArchivo){
+    delCodigo = Object.keys(LIGA_DATA_ARCHIVO)
       .map(k => LIGA_DATA_ARCHIVO[k])
-      .find(a => a && a.zona && a.zona === ligaIdArchivo);
-    if(porZona) return porZona;
+      .find(a => a && a.zona && a.zona === ligaIdArchivo) || null;
   }
+
+  // Si están las dos, gana la que tenga más partidos cargados.
+  if(deFirebase && delCodigo){
+    return _partidosDeFoto(deFirebase) >= _partidosDeFoto(delCodigo) ? deFirebase : delCodigo;
+  }
+  if(deFirebase) return deFirebase;
+  if(delCodigo)  return delCodigo;
+
   // Sin datos de liga de esa temporada: vacío. prepararTablasDeZona lo va a llenar
   // con los equipos de esa zona, en cero.
   return { updatedAt:'', posiciones:{}, scResults:{}, teamResults:{} };
@@ -5282,6 +5321,120 @@ function _updLabel(){
 window._updLabel = _updLabel;
 
 // Vuelca el JSON sobre un dataset (la temporada vigente o una archivada)
+
+/* ══════════════════════════════════════════════════════════════
+   ARCHIVO DE TEMPORADAS EN FIREBASE
+   ─────────────────────────────────────────────────────────────
+   Antes, los resultados de una temporada terminada estaban escritos
+   a mano en este archivo (LIGA_DATA_ARCHIVO). Eso tenía dos problemas:
+   cada cambio de temporada obligaba a editar el código, y la foto que
+   quedaba era la del día en que alguien se acordó de copiarla (la de
+   Zona II B llegó hasta la fecha 5 de 22).
+
+   Ahora la foto de cada zona vive en Firebase, en:
+
+       ligas/{ligaId}/resultados = {
+         zona, updatedAt, guardadoEl,
+         posiciones:  { 13: [...], 14: [...], ... },
+         teamResults: { 13: { 'HERNANDEZ': [...], ... }, ... }
+       }
+
+   Es de la ZONA, no de un club: teamResults tiene a los 15 equipos,
+   así que la misma foto le sirve a todos los clubes de la liga.
+   Se guarda sola cada vez que llega un liga_data.json nuevo, así que
+   cuando la temporada termina la foto ya está completa y al día.
+   ══════════════════════════════════════════════════════════════ */
+
+// Fotos bajadas de Firebase en esta sesión: ligaId -> dataset
+const LIGA_RESULTADOS_FB = {};
+window.LIGA_RESULTADOS_FB = LIGA_RESULTADOS_FB;
+
+// ¿Este usuario puede escribir el archivo compartido de la liga?
+function puedeGuardarArchivoDeLiga(){
+  const prof = window._userProfile || {};
+  return !!window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
+}
+
+// Deja el dataset en la forma que se guarda: solo lo que es de la zona.
+// scResults/scClub quedan afuera a propósito — son de un club puntual y
+// teamResults ya tiene a todos los equipos.
+function _fotoDeZona(ligaId, d){
+  if(!d) return null;
+  const tr = d.teamResults || d.rivalResults || {};
+  const cats = Object.keys(tr).filter(c => tr[c] && Object.keys(tr[c]).length > 0);
+  if(cats.length === 0) return null;   // sin resultados no se guarda nada
+  const foto = { zona: ligaId, updatedAt: d.updatedAt || '', guardadoEl: new Date().toISOString().slice(0,10),
+                 teamResults: {}, posiciones: {} };
+  cats.forEach(c => { foto.teamResults[c] = tr[c]; });
+  Object.keys(d.posiciones || {}).forEach(c => { foto.posiciones[c] = d.posiciones[c]; });
+  return foto;
+}
+
+// Cuántos partidos tiene una foto en total. Sirve para no pisar una foto
+// completa con una recortada.
+function _partidosDeFoto(foto){
+  let n = 0;
+  Object.values((foto && foto.teamResults) || {}).forEach(cat => {
+    Object.values(cat || {}).forEach(arr => { n += (arr && arr.length) || 0; });
+  });
+  return n;
+}
+
+// Guarda la foto de una zona en Firebase. Idempotente y defensiva:
+// no guarda vacíos, no repite si no cambió, y no pisa una foto que ya
+// tenga más partidos que la que estamos por escribir.
+async function guardarSnapshotDeZona(ligaId, dataset, opts){
+  const o = opts || {};
+  try{
+    if(!ligaId || !String(ligaId).includes('-202')) return 'sin-zona';
+    if(!o.forzar && !puedeGuardarArchivoDeLiga()) return 'sin-permiso';
+
+    const foto = _fotoDeZona(ligaId, dataset);
+    if(!foto) return 'vacio';
+
+    const prev = (await get(ref(db, 'ligas/'+ligaId+'/resultados'))).val();
+    if(prev){
+      const nPrev = _partidosDeFoto(prev), nNueva = _partidosDeFoto(foto);
+      if(!o.forzar && prev.updatedAt === foto.updatedAt && nNueva <= nPrev) return 'sin-cambios';
+      if(!o.forzar && nNueva < nPrev){
+        console.warn('[MI PLANTEL] La foto nueva de', ligaId, 'tiene menos partidos ('+nNueva+') que la guardada ('+nPrev+'). No se pisa.');
+        return 'menos-datos';
+      }
+    }
+    await set(ref(db, 'ligas/'+ligaId+'/resultados'), foto);
+    LIGA_RESULTADOS_FB[ligaId] = foto;
+    console.log('[MI PLANTEL] Archivo de', ligaId, 'guardado —', _partidosDeFoto(foto), 'partidos, al', foto.updatedAt||'—');
+    return 'guardado';
+  }catch(e){
+    console.warn('guardarSnapshotDeZona:', e && e.message);
+    return 'error';
+  }
+}
+window.guardarSnapshotDeZona = guardarSnapshotDeZona;
+
+// Mete en la cache la foto que vino leyendo ligas/{ligaId}
+function registrarResultadosDeLiga(ligaId, ligaNode){
+  if(!ligaId || !ligaNode || !ligaNode.resultados) return false;
+  LIGA_RESULTADOS_FB[ligaId] = ligaNode.resultados;
+  return true;
+}
+window.registrarResultadosDeLiga = registrarResultadosDeLiga;
+
+// Baja la foto de una zona archivada y rearma LIGA_DATA con ella.
+// Solo se llama mirando una temporada archivada — la vigente sale del scraper.
+async function cargarResultadosDeLiga(ligaId){
+  if(!ligaId || !String(ligaId).includes('-202')) return false;
+  if(LIGA_RESULTADOS_FB[ligaId]) return true;   // ya la bajamos en esta sesión
+  try{
+    const snap = await get(ref(db, 'ligas/'+ligaId+'/resultados'));
+    if(!snap.exists()) return false;
+    LIGA_RESULTADOS_FB[ligaId] = snap.val();
+    aplicarLigaDataDeTemporada();
+    return true;
+  }catch(e){ console.warn('cargarResultadosDeLiga:', e && e.message); return false; }
+}
+window.cargarResultadosDeLiga = cargarResultadosDeLiga;
+
 function _volcarLigaData(destino, d, equiposRef){
   const num = o => Object.fromEntries(Object.entries(o).map(([k,v]) => [Number(k), v]));
   if(d.posiciones && Object.keys(d.posiciones).length > 0){
@@ -5319,6 +5472,11 @@ function aplicarLigaDataJson(){
     if(window._ligaIdActivo) LIGA_DATA_ACTUAL.zona = window._ligaIdActivo;
     window._tablaEnCero = false;
     aplicarLigaDataDeTemporada();
+    // Guardar la foto de la zona en Firebase. Esto es lo que hace que el día que
+    // la temporada termine el archivo esté completo, sin que nadie se acuerde de
+    // copiar nada. Es asíncrono a propósito: si falla, no rompe la pantalla.
+    const _zonaViva = window._ligaIdActivo || LIGA_DATA_ACTUAL.zona;
+    if(_zonaViva) guardarSnapshotDeZona(_zonaViva, LIGA_DATA_ACTUAL);
     return true;
   }
 
@@ -6280,6 +6438,38 @@ window.saGestionarPlan = async function(clubId){
   overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
 };
 
+// Guarda a mano la foto de resultados de la zona vigente.
+// Normalmente no hace falta: aplicarLigaDataJson() la guarda sola con cada scrapeo.
+window.saGuardarArchivoZona = async function(btn){
+  const log = document.getElementById('archivoZonaLog');
+  const linea = (t,c) => { if(!log) return; log.style.display='block';
+    log.innerHTML += '<div style="color:'+(c||'var(--muted)')+'">'+t+'</div>'; };
+  if(log){ log.innerHTML=''; log.style.display='block'; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Guardando...'; }
+  try{
+    const zona = window._ligaIdActivo || LIGA_DATA_ACTUAL.zona;
+    if(!zona){ linea('No sé cuál es la zona vigente. Entrá a un club primero.', 'var(--draw)'); return; }
+
+    const partidos = _partidosDeFoto(_fotoDeZona(zona, LIGA_DATA_ACTUAL) || {});
+    linea('Zona: <b>'+zona+'</b>');
+    linea('Datos del scrapeo al: <b>'+(LIGA_DATA_ACTUAL.updatedAt||'—')+'</b> · '+partidos+' partidos');
+
+    const r = await guardarSnapshotDeZona(zona, LIGA_DATA_ACTUAL, {forzar:true});
+    const msg = {
+      'guardado':    ['Guardado. Todos los clubes de la zona lo van a ver como archivo.', 'var(--win)'],
+      'vacio':       ['No hay resultados cargados todavía — no se guardó nada.', 'var(--draw)'],
+      'sin-zona':    ['La zona vigente no tiene formato de liga compartida.', 'var(--draw)'],
+      'sin-permiso': ['Tu usuario no puede escribir el archivo de la liga.', 'var(--loss)'],
+      'error':       ['Error al guardar. Mirá la consola.', 'var(--loss)']
+    }[r] || [r, 'var(--muted)'];
+    linea(msg[0], msg[1]);
+  }catch(e){
+    linea('Error: '+e.message, 'var(--loss)');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Guardar foto de la zona actual'; }
+  }
+};
+
 window._saPlanRenovar = async function(clubId, meses){
   const ms = meses * 30 * 24 * 60 * 60 * 1000;
   // Si ya tiene planEnd futuro, extender desde ahí; sino desde ahora
@@ -6327,6 +6517,18 @@ function renderSADatos(){
   el.innerHTML = `
     <div style="padding:var(--sp-6)">
       <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-6)">${icono('subir')} Carga de datos a Firebase</div>
+
+      <div class="coord-ok-box" style="margin-bottom:var(--sp-6)">
+        <div style="font-weight:700;margin-bottom:var(--sp-2)">${icono('calendario')} Archivo de temporadas</div>
+        <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">
+          Guarda en Firebase la foto de resultados de la zona que se está jugando, en
+          <code style="background:var(--surface2);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-sm);color:var(--accent)">ligas/{zona}/resultados</code>.
+          Esto ya pasa solo cada vez que entra un scrapeo nuevo — el botón es para forzarlo.
+          Es la foto que van a ver todos los clubes cuando esta temporada pase a ser archivo.
+        </div>
+        <button onclick="window.saGuardarArchivoZona(this)" class="btn btn-oly" style="width:100%">Guardar foto de la zona actual</button>
+        <div id="archivoZonaLog" style="margin-top:var(--sp-5);font-size:var(--f-sm);line-height:1.8;display:none"></div>
+      </div>
 
       <div class="coord-ok-box" style="margin-bottom:var(--sp-6);border:1px solid rgba(34,205,120,.45)">
         <div style="font-weight:700;margin-bottom:var(--sp-2)">🆕 Cargar una zona nueva desde LISFI</div>
@@ -7126,6 +7328,9 @@ async function startCoordApp(){
     const ligaId = (esHistorico() ? torneoMeta(TORNEO_ID).ligaId : null) || _cfgVal.ligaId;
     _ligaIdCoord = ligaId || null;
     clubFixtureConds = _cfgVal.fixture || {}; // {1:{cond:'V'}, 9:{cond:'-'}, ...}
+
+    // Mirando el archivo, traer la foto de resultados de esa zona antes de armar nada
+    if(ligaId && esHistorico()) await cargarResultadosDeLiga(ligaId);
 
     // 1) Intentar schedule detallado (partidos con local/visitante/libre)
     if(ligaId && _ligaNombreCoord){
