@@ -1,16 +1,15 @@
 {
-  "generadoEl": "06/09/2026 16:34",
+  "generadoEl": "06/09/2026 18:57",
   "zonas": [
     {
-      "ligaId": "lisfi-zona-campeonato-2026",
-      "archivo": "liga_data_lisfi-zona-campeonato-2026.json",
-      "fuente": "https://www.lisfi.com.ar/index.php/zona-camp-2026",
+      "ligaId": "lisfi-ii-zona-b-2026",
+      "archivo": "liga_data_lisfi-ii-zona-b-2026.json",
+      "fuente": "https://www.lisfi.com.ar/index.php/liga-2b-2026",
       "clubes": [
-        "hernandez",
-        "sagrado-corazon"
+        "(env)"
       ],
       "updatedAt": "06/09/2026",
-      "equipos": 15
+      "equipos": 11
     }
   ],
   "fallidas": []
