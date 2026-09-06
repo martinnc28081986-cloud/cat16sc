@@ -5355,6 +5355,51 @@ function puedeGuardarArchivoDeLiga(){
   return !!window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
 }
 
+// ── OJO CON LAS CLAVES DE FIREBASE ──
+// Realtime Database no acepta  .  #  $  /  [  ]  en el nombre de una clave, y
+// medio LISFI tiene punto: 'Cap.Chica', 'Sagr. Corazón', 'V.S Carlos Bco.',
+// 'Talleres B.', 'S.J.Bautista', 'Estud. LH'. Por eso los resultados NO se
+// guardan como {equipo: [partidos]} sino como una LISTA:
+//     [ {equipo:'Cap.Chica', partidos:[...]}, ... ]
+// Adentro de la app se sigue usando el objeto de siempre; la conversión pasa
+// solo al escribir y al leer Firebase.
+function _trALista(tr){
+  const out = {};
+  Object.keys(tr || {}).forEach(cat => {
+    const porEquipo = tr[cat] || {};
+    out[cat] = Object.keys(porEquipo).map(eq => ({ equipo: eq, partidos: porEquipo[eq] || [] }));
+  });
+  return out;
+}
+function _trDesdeLista(x){
+  const out = {};
+  Object.keys(x || {}).forEach(cat => {
+    const v = x[cat];
+    if(!v) return;
+    // Firebase devuelve las listas como array o como objeto con claves 0,1,2…
+    const filas = Array.isArray(v) ? v : Object.values(v);
+    if(filas.length && filas[0] && filas[0].equipo !== undefined){
+      const porEquipo = {};
+      filas.forEach(f => { if(f && f.equipo) porEquipo[f.equipo] = f.partidos || []; });
+      out[cat] = porEquipo;
+    } else {
+      out[cat] = v;   // formato viejo (objeto por equipo): se acepta igual
+    }
+  });
+  return out;
+}
+
+// Saca los undefined: Firebase tira error si encuentra uno en cualquier nivel.
+function _sinUndefined(v){
+  if(Array.isArray(v)) return v.map(_sinUndefined).filter(x => x !== undefined);
+  if(v && typeof v === 'object'){
+    const o = {};
+    Object.keys(v).forEach(k => { const x = _sinUndefined(v[k]); if(x !== undefined) o[k] = x; });
+    return o;
+  }
+  return v === undefined ? undefined : v;
+}
+
 // Deja el dataset en la forma que se guarda: solo lo que es de la zona.
 // scResults/scClub quedan afuera a propósito — son de un club puntual y
 // teamResults ya tiene a todos los equipos.
@@ -5363,21 +5408,32 @@ function _fotoDeZona(ligaId, d){
   const tr = d.teamResults || d.rivalResults || {};
   const cats = Object.keys(tr).filter(c => tr[c] && Object.keys(tr[c]).length > 0);
   if(cats.length === 0) return null;   // sin resultados no se guarda nada
+  const soloCats = {};
+  cats.forEach(c => { soloCats[c] = tr[c]; });
   const foto = { zona: ligaId, updatedAt: d.updatedAt || '', guardadoEl: new Date().toISOString().slice(0,10),
-                 teamResults: {}, posiciones: {} };
-  cats.forEach(c => { foto.teamResults[c] = tr[c]; });
+                 teamResults: _trALista(soloCats), posiciones: {} };
   Object.keys(d.posiciones || {}).forEach(c => { foto.posiciones[c] = d.posiciones[c]; });
-  return foto;
+  return _sinUndefined(foto);
 }
 
 // Cuántos partidos tiene una foto en total. Sirve para no pisar una foto
-// completa con una recortada.
+// completa con una recortada. Entiende las dos formas: lista y objeto.
 function _partidosDeFoto(foto){
   let n = 0;
   Object.values((foto && foto.teamResults) || {}).forEach(cat => {
-    Object.values(cat || {}).forEach(arr => { n += (arr && arr.length) || 0; });
+    const filas = Array.isArray(cat) ? cat : Object.values(cat || {});
+    filas.forEach(f => {
+      const arr = (f && f.partidos) ? f.partidos : f;   // lista  |  objeto por equipo
+      n += (arr && arr.length) || 0;
+    });
   });
   return n;
+}
+
+// Pasa una foto recién bajada de Firebase a la forma que usa la app
+function _fotoDesdeFirebase(foto){
+  if(!foto) return foto;
+  return Object.assign({}, foto, { teamResults: _trDesdeLista(foto.teamResults) });
 }
 
 // Guarda la foto de una zona en Firebase. Idempotente y defensiva:
@@ -5402,11 +5458,12 @@ async function guardarSnapshotDeZona(ligaId, dataset, opts){
       }
     }
     await set(ref(db, 'ligas/'+ligaId+'/resultados'), foto);
-    LIGA_RESULTADOS_FB[ligaId] = foto;
+    LIGA_RESULTADOS_FB[ligaId] = _fotoDesdeFirebase(foto);
     console.log('[MI PLANTEL] Archivo de', ligaId, 'guardado —', _partidosDeFoto(foto), 'partidos, al', foto.updatedAt||'—');
     return 'guardado';
   }catch(e){
     console.warn('guardarSnapshotDeZona:', e && e.message);
+    window._ultimoErrorArchivo = (e && e.message) || String(e);
     return 'error';
   }
 }
@@ -5415,7 +5472,7 @@ window.guardarSnapshotDeZona = guardarSnapshotDeZona;
 // Mete en la cache la foto que vino leyendo ligas/{ligaId}
 function registrarResultadosDeLiga(ligaId, ligaNode){
   if(!ligaId || !ligaNode || !ligaNode.resultados) return false;
-  LIGA_RESULTADOS_FB[ligaId] = ligaNode.resultados;
+  LIGA_RESULTADOS_FB[ligaId] = _fotoDesdeFirebase(ligaNode.resultados);
   return true;
 }
 window.registrarResultadosDeLiga = registrarResultadosDeLiga;
@@ -5428,7 +5485,7 @@ async function cargarResultadosDeLiga(ligaId){
   try{
     const snap = await get(ref(db, 'ligas/'+ligaId+'/resultados'));
     if(!snap.exists()) return false;
-    LIGA_RESULTADOS_FB[ligaId] = snap.val();
+    LIGA_RESULTADOS_FB[ligaId] = _fotoDesdeFirebase(snap.val());
     aplicarLigaDataDeTemporada();
     return true;
   }catch(e){ console.warn('cargarResultadosDeLiga:', e && e.message); return false; }
@@ -6460,7 +6517,7 @@ window.saGuardarArchivoZona = async function(btn){
       'vacio':       ['No hay resultados cargados todavía — no se guardó nada.', 'var(--draw)'],
       'sin-zona':    ['La zona vigente no tiene formato de liga compartida.', 'var(--draw)'],
       'sin-permiso': ['Tu usuario no puede escribir el archivo de la liga.', 'var(--loss)'],
-      'error':       ['Error al guardar. Mirá la consola.', 'var(--loss)']
+      'error':       ['Error al guardar: ' + (window._ultimoErrorArchivo || 'ver consola'), 'var(--loss)']
     }[r] || [r, 'var(--muted)'];
     linea(msg[0], msg[1]);
   }catch(e){
