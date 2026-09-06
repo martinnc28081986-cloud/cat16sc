@@ -469,6 +469,153 @@
   .stbl td { padding:var(--sp-3) var(--sp-3); text-align:center; border-bottom:1px solid rgba(255,255,255,0.04); }
   .stbl td:nth-child(2) { text-align:left; font-weight:500; }
   .stbl tr.sc-row td { color:var(--green); font-weight:700; background:rgba(34,85,238,0.08); }
+  /* ══════════════════════════════════════════════════════════════
+     PANEL DE COORDINACIÓN
+     Una clase por cosa, todo con los tokens. El panel viejo escribía
+     los colores inline y con hex sueltos, así que la mitad de sus
+     botones no tomaban el color del club. ══════════════════════════ */
+  .cwrap { max-width:1100px; margin:0 auto; padding:var(--sp-5) var(--sp-5) 90px; }
+
+  .ctabs { display:flex; gap:var(--sp-2); overflow-x:auto; padding:var(--sp-4) var(--sp-5);
+           background:var(--surface); border-bottom:1px solid var(--border);
+           position:sticky; top:0; z-index:49; scrollbar-width:none; }
+  .ctabs::-webkit-scrollbar { display:none; }
+  .ctab { flex:none; display:flex; align-items:center; gap:var(--sp-3);
+          padding:var(--sp-3) var(--sp-5); border-radius:var(--r-full);
+          border:1px solid var(--border); background:transparent; color:var(--muted);
+          font-family:'DM Sans',sans-serif; font-size:var(--f-sm); font-weight:600;
+          cursor:pointer; white-space:nowrap; }
+  .ctab .ico svg { width:15px; height:15px; }
+  .ctab.on { border-color:rgba(var(--accent-rgb),.5); background:rgba(var(--accent-rgb),.12); color:var(--accent); }
+  .ctab .pin { min-width:17px; height:17px; padding:0 var(--sp-2); border-radius:var(--r-full);
+               background:var(--loss); color:#fff; font-size:var(--f-micro); font-weight:700;
+               display:flex; align-items:center; justify-content:center; }
+
+  .csec { font-family:'Bebas Neue',sans-serif; font-size:var(--f-lg); letter-spacing:2px;
+          color:var(--muted); text-transform:uppercase; margin:var(--sp-7) 0 var(--sp-4);
+          display:flex; align-items:center; gap:var(--sp-3); }
+  .csec:first-child { margin-top:0; }
+  .csec .ico svg { width:15px; height:15px; }
+  .csec .cont { margin-left:auto; font-family:'DM Sans',sans-serif; font-size:var(--f-sm);
+                letter-spacing:0; text-transform:none; color:var(--muted); font-weight:400; }
+
+  .ccard { background:var(--surface); border:1px solid var(--border);
+           border-radius:var(--r-md); padding:var(--sp-5); margin-bottom:var(--sp-4); }
+  .ccard.acento { border-color:rgba(var(--accent-rgb),.35); background:rgba(var(--accent-rgb),.06); }
+
+  .cet { font-size:var(--f-micro); color:var(--muted); text-transform:uppercase;
+         letter-spacing:1.5px; font-weight:700; }
+  .cbig { font-family:'Bebas Neue',sans-serif; font-size:var(--f-2xl); letter-spacing:2px;
+          line-height:1.1; margin-top:var(--sp-2); }
+  .cnum { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--accent); }
+
+  .cgrid { display:grid; grid-template-columns:1fr; gap:var(--sp-4); }
+  /* Los números chicos van SIEMPRE en fila: apilados en el celular estiraban
+     cada tarjeta tres veces de alto. */
+  .cgrid.kpis { grid-template-columns:repeat(3,1fr); gap:var(--sp-3); }
+  @media (min-width:760px){ .cgrid.dos { grid-template-columns:1fr 1fr; } }
+
+  .ccat { display:inline-flex; align-items:center; gap:var(--sp-3);
+          padding:var(--sp-2) var(--sp-4); border-radius:var(--r-full);
+          border:1px solid var(--border); font-size:var(--f-sm); font-weight:600;
+          background:transparent; color:var(--muted); white-space:nowrap; }
+  .ccat .punto { width:7px; height:7px; border-radius:50%; flex:none; }
+  .ccat.ok    { border-color:rgba(var(--win-rgb),.4);  background:rgba(var(--win-rgb),.10);  color:var(--win); }
+  .ccat.falta { border-color:rgba(var(--loss-rgb),.4); background:rgba(var(--loss-rgb),.10); color:var(--loss); }
+  .ccat.medio { border-color:rgba(var(--draw-rgb),.4); background:rgba(var(--draw-rgb),.10); color:var(--draw); }
+
+  .cpend { display:flex; align-items:center; gap:var(--sp-5); padding:var(--sp-5);
+           border-radius:var(--r-md); background:var(--surface2); border:1px solid var(--border);
+           border-left:3px solid var(--muted); margin-bottom:var(--sp-3); }
+  .cpend.alta  { border-left-color:var(--loss); }
+  .cpend.media { border-left-color:var(--draw); }
+  .cpend .qc { flex:1; min-width:0; }
+  .cpend .qui { font-weight:600; font-size:var(--f-md); }
+  .cpend .que { font-size:var(--f-sm); color:var(--muted); margin-top:var(--sp-1); }
+
+  .ckpi { text-align:center; padding:var(--sp-5) var(--sp-3); }
+  .ckpi .n { font-family:'Bebas Neue',sans-serif; font-size:var(--f-2xl); line-height:1; }
+  .ckpi .l { font-size:var(--f-micro); color:var(--muted); text-transform:uppercase;
+             letter-spacing:1px; margin-top:var(--sp-2); }
+  .ckpi .n.win { color:var(--win); } .ckpi .n.draw { color:var(--draw); }
+  .ckpi .n.loss{ color:var(--loss); } .ckpi .n.acc { color:var(--accent); }
+
+  .cbar { height:6px; background:var(--border); border-radius:var(--r-xs); overflow:hidden; margin-top:var(--sp-3); }
+  .cbar i { display:block; height:100%; border-radius:var(--r-xs); background:var(--accent); }
+  .cbar i.win { background:var(--win); } .cbar i.draw { background:var(--draw); } .cbar i.loss { background:var(--loss); }
+
+  .crow { display:flex; align-items:center; gap:var(--sp-5); padding:var(--sp-4) 0;
+          border-bottom:1px solid rgba(255,255,255,.04); }
+  .crow:last-child { border-bottom:none; }
+  .crow .nom { flex:1; min-width:0; font-weight:500; font-size:var(--f-md); }
+  .crow .val { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); flex:none; }
+  .crow .det { font-size:var(--f-sm); color:var(--muted); flex:none; }
+
+  .ctbl { width:100%; border-collapse:collapse; font-size:var(--f-sm); }
+  .ctbl th { color:var(--muted); font-size:var(--f-micro); font-weight:600; text-transform:uppercase;
+             letter-spacing:.5px; padding:var(--sp-3); border-bottom:1px solid var(--border); text-align:center; }
+  .ctbl th.izq, .ctbl td.izq { text-align:left; }
+  .ctbl td { padding:var(--sp-3); border-bottom:1px solid rgba(255,255,255,.04); text-align:center; }
+  .ctbl tr.nos td { background:rgba(var(--accent-rgb),.10); font-weight:600; }
+  .ctbl tr.nos td:first-child { box-shadow:inset 3px 0 0 var(--accent); }
+  .cscroll { overflow-x:auto; }
+
+  .cbusca { width:100%; padding:var(--sp-4) var(--sp-5); border-radius:var(--r-md);
+            border:1px solid var(--border); background:var(--surface2); color:var(--text);
+            font-family:'DM Sans',sans-serif; font-size:var(--f-md); }
+  .cbusca::placeholder { color:var(--muted); }
+
+  .cvacio { text-align:center; color:var(--muted); font-size:var(--f-sm);
+            padding:var(--sp-8) var(--sp-5); border:1px dashed var(--border);
+            border-radius:var(--r-md); line-height:1.6; }
+
+  .cres { font-family:'Bebas Neue',sans-serif; font-size:var(--f-lg); letter-spacing:1px; }
+  .cres.V { color:var(--win); } .cres.E { color:var(--draw); } .cres.L { color:var(--loss); }
+
+  .cbtn { padding:var(--sp-3) var(--sp-5); border-radius:var(--r-sm); cursor:pointer;
+          border:1px solid var(--border); background:transparent; color:var(--muted);
+          font-family:'DM Sans',sans-serif; font-size:var(--f-sm); font-weight:600; }
+  .cbtn.on { border-color:rgba(var(--accent-rgb),.5); background:rgba(var(--accent-rgb),.12); color:var(--accent); }
+  .cbtn.peligro { border-color:rgba(var(--loss-rgb),.5); color:var(--loss); }
+  .cbtn[disabled] { opacity:.4; cursor:default; }
+  .cfila { display:flex; gap:var(--sp-3); flex-wrap:wrap; align-items:center; margin-bottom:var(--sp-5); }
+
+  .cnota { font-size:var(--f-sm); color:var(--muted); line-height:1.6;
+           border-left:2px solid var(--border); padding-left:var(--sp-5); margin-top:var(--sp-5); }
+
+  /* Fila de jugador: con 120 pibes la lista tiene que ser una línea por cabeza */
+  .cjug { display:flex; align-items:center; gap:var(--sp-4); width:100%;
+          padding:var(--sp-4) var(--sp-5); border-radius:var(--r-md);
+          background:var(--surface); border:1px solid var(--border);
+          margin-bottom:var(--sp-3); cursor:pointer; text-align:left;
+          font-family:'DM Sans',sans-serif; color:var(--text); }
+  .cjug.ojo { border-left:3px solid var(--draw); }
+  .cjug .id { flex:1; min-width:0; }
+  .cjug .nm { font-weight:500; font-size:var(--f-md); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cjug .mt { font-size:var(--f-sm); color:var(--muted); }
+  .cjug .mt .avisa { color:var(--draw); }
+  .cjug .pc { font-family:'Bebas Neue',sans-serif; font-size:var(--f-lg); flex:none; width:44px; text-align:right; }
+  .cjug .racha { margin:0; }
+  @media (max-width:520px){ .cjug .racha { display:none; } }
+
+  /* Diálogo: el mensaje se ve antes de mandarse */
+  .cdlg { position:fixed; inset:0; z-index:200; display:flex; align-items:flex-end;
+          justify-content:center; background:rgba(0,0,0,.6); padding:var(--sp-5); }
+  @media (min-width:600px){ .cdlg { align-items:center; } }
+  .cdlg .caja { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+                padding:var(--sp-6); width:100%; max-width:460px; max-height:88vh; overflow-y:auto; }
+  .cdlg h3 { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); letter-spacing:2px;
+             font-weight:400; margin-bottom:var(--sp-2); }
+  .cdlg .pie { font-size:var(--f-sm); color:var(--muted); line-height:1.6; margin-bottom:var(--sp-5); }
+  .cwa { background:#0b3d2e; border:1px solid #17614a; border-radius:var(--r-md);
+         padding:var(--sp-5); font-size:var(--f-sm); line-height:1.55; white-space:pre-wrap;
+         color:#e6f3ee; margin-bottom:var(--sp-5); }
+  .cwa b { color:#fff; }
+  .cdlg .acc { display:flex; gap:var(--sp-3); }
+  .cdlg .acc button { flex:1; padding:var(--sp-4); border-radius:var(--r-md); cursor:pointer;
+                      font-family:'DM Sans',sans-serif; font-size:var(--f-md); font-weight:600;
+                      border:1px solid var(--border); background:transparent; color:var(--muted); }
+  .cdlg .acc button.pri { border:none; background:#25d366; color:#06281c; }
 </style>
 </head>
 <body style="background:#07186b">
@@ -873,23 +1020,10 @@
 
 <!-- COORDINADOR -->
 <div id="coord-app" style="display:none">
-  <div class="coord-tabs" id="coordTabsEl">
-    <div class="coord-tab cta" onclick="window.coordTab('resumen')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="tabla"></span></span>Resumen<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('presencias')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="presencia"></span></span>Presen&shy;cias<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('citaciones')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="estrella"></span></span>Cita&shy;ciones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('goleadores')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="pelota"></span></span>Goles<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('liga')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="copa"></span></span>Liga<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-    <div class="coord-tab"     onclick="window.coordTab('suspensiones')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="prohibido"></span></span>Suspen&shy;siones<span class="ctdot" style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
-  </div>
-  <div id="cv-resumen"    class="coord-view active"></div>
-  <div id="cv-presencias" class="coord-view"></div>
-  <div id="cv-citaciones" class="coord-view"></div>
-  <div id="cv-goleadores" class="coord-view"></div>
-  <div id="cv-liga"       class="coord-view"></div>
-  <div id="cv-suspensiones" class="coord-view"></div>
-  <div id="cv-fixture"    class="coord-view"></div>
-  <div id="cv-horarios"   class="coord-view"></div>
-  <div id="cv-profes"     class="coord-view"></div>
+  <!-- Las pestañas y el cuerpo los dibuja startCoordApp: así la lista de vistas
+       vive en un solo lugar y no hay que tocar el HTML para agregar una. -->
+  <div class="ctabs" id="coordTabsEl"></div>
+  <div class="cwrap" id="coordVista"></div>
 </div>
 
 <!-- ÍCONOS: script aparte, sin imports, para que no dependan del módulo -->
@@ -1101,6 +1235,32 @@ function _fechaDeRegistro(cit){
   }
   return '';
 }
+
+/* ── Cuánto jugó cada citado ────────────────────────────────────
+   En LISFI a un jugador citado hay que ponerlo sí o sí, así que "citado pero se
+   quedó en el banco" no existe. Los casos posibles son: jugó todo, entró desde
+   el banco, salió antes del final, o faltó — lo citaron y no se presentó, que no
+   es lo mismo que no haber sido citado y por eso tiene su propio estado.
+
+   'todo' es el valor por defecto y NO se guarda: en un partido normal el profe
+   no toca nada. Vive acá, a nivel de módulo, porque lo usan el profe (que carga)
+   y el coordinador (que mira), y el coordinador no pasa por startApp. */
+const JUGO_ORDEN = ['todo','entro','salio','falto'];
+const JUGO_ET = { todo:'Todo', entro:'Entró', salio:'Salió', falto:'Faltó' };
+
+function _jugoDe(st){
+  const v = st && st.jugo;
+  return JUGO_ORDEN.indexOf(v) >= 0 ? v : 'todo';
+}
+window._jugoDe = _jugoDe;
+
+// Devuelve 'todo' | 'entro' | 'salio' | 'falto', o null si no estuvo citado.
+function jugoEnPartido(cit, stats, nombre){
+  if(!cit || !(cit.citados||[]).includes(nombre)) return null;
+  const st = (stats && stats.jugadores && stats.jugadores[nombre]) || null;
+  return _jugoDe(st);
+}
+window.jugoEnPartido = jugoEnPartido;
 
 // ── Los datos de un año, con el desglose por zona ──────────────
 // Devuelve:
@@ -1369,13 +1529,31 @@ let _suspTabFixture = null;
 let _suspTabLoaded = false;
 let _coordSuspEntGlobal = {};
 let _coordDiasEntGlobal = [];
-onValue(ref(db, CLUB_PATH+'/config/suspensions'), snap => {
-  _suspensions = snap.val() || {};
-  if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
-});
-onValue(ref(db, CLUB_PATH+'/config/suspensionesEnt'), snap => {
-  _suspensionesEnt = snap.val() || {};
-});
+/* ── SUSPENSIONES ───────────────────────────────────────────────
+   Estos listeners arrancaban acá, antes del login, con el CLUB_PATH por
+   defecto — y nunca se volvían a suscribir. Resultado: cualquier club que no
+   fuera el del arranque veía las suspensiones de ESE club, y cuando su
+   coordinador suspendía una fecha, la pantalla le mostraba otra cosa.
+   Ahora se suscriben recién cuando se sabe qué club es, y se re-suscriben al
+   cambiar de club o de sesión. */
+let _unsubSusp = [];
+function suscribirSuspensiones(){
+  _unsubSusp.forEach(u => { try{ u(); }catch(e){} });
+  _unsubSusp = [];
+  _suspensions = {}; _suspensionesEnt = {};
+  const rutaClub = CLUB_PATH;
+  _unsubSusp.push(onValue(ref(db, rutaClub+'/config/suspensions'), snap => {
+    // Si el club cambió mientras venía la respuesta, este dato ya no sirve
+    if(rutaClub !== CLUB_PATH) return;
+    _suspensions = snap.val() || {};
+    if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
+  }, ()=>{}));
+  _unsubSusp.push(onValue(ref(db, rutaClub+'/config/suspensionesEnt'), snap => {
+    if(rutaClub !== CLUB_PATH) return;
+    _suspensionesEnt = snap.val() || {};
+  }, ()=>{}));
+}
+window.suscribirSuspensiones = suscribirSuspensiones;
 
 // ── LOGIN ──
 window.doLogin = async function(){
@@ -1492,6 +1670,8 @@ function _launchByRole(profile){
     CLUB_PATH = 'clubs/' + profile.clubId;
   }
   resetContextoTemporada();
+  // Recién acá se sabe de qué club son las suspensiones
+  suscribirSuspensiones();
   const { role, cat } = profile;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('resetPasswordScreen').style.display='none';
@@ -4739,14 +4919,9 @@ let _ppEditKey=null, _ppEditStats={};
 // quedó en el banco" no existe. Los casos posibles son: jugó todo, entró desde
 // el banco, salió antes del final, o faltó — lo citaron y no se presentó, que no
 // es lo mismo que no haber sido citado y por eso tiene su propio estado.
-const JUGO_ORDEN = ['todo','entro','salio','falto'];
-const JUGO_ET = { todo:'Todo', entro:'Entró', salio:'Salió', falto:'Faltó' };
-
-function _jugoDe(st){
-  const v = st && st.jugo;
-  return JUGO_ORDEN.indexOf(v) >= 0 ? v : 'todo';
-}
-window._jugoDe = _jugoDe;
+// JUGO_ORDEN, JUGO_ET, _jugoDe y jugoEnPartido se movieron a nivel de módulo
+// (arriba, junto a las funciones de año): las usa también el coordinador, que
+// no pasa por startApp y por lo tanto no ve nada declarado acá adentro.
 
 function _ppCiclarJugo(nombre){
   if(!_ppEditStats.jugadores) _ppEditStats.jugadores = {};
@@ -4845,14 +5020,6 @@ function _detalleJugo(nombre){
   }catch(e){ return ''; }
 }
 
-// Cuánto jugó, mirando los stats de un partido. Devuelve:
-//   'todo' | 'entro' | 'salio'  ·  null si no estuvo citado
-function jugoEnPartido(cit, stats, nombre){
-  if(!cit || !(cit.citados||[]).includes(nombre)) return null;
-  const st = (stats && stats.jugadores && stats.jugadores[nombre]) || null;
-  return _jugoDe(st);
-}
-window.jugoEnPartido = jugoEnPartido;
 
 function _ppResultData(key){
   const cit=citaciones[key]; if(!cit) return null;
@@ -6915,6 +7082,8 @@ window.saEntrarComo = function(cat, clubId){
   CLUB_PATH = 'clubs/' + (clubId || 'sagrado-corazon');
   // Cambia el club/categoría: el estado de temporada del anterior no sirve más
   resetContextoTemporada();
+  // Y las suspensiones tienen que pasar a escuchar al club nuevo
+  suscribirSuspensiones();
   // Ocultar todo antes de lanzar
   document.getElementById('superadmin-app').style.display = 'none';
   document.getElementById('coord-app').style.display = 'none';
@@ -8169,41 +8338,58 @@ window._saCrearUsuario = async function(clubId){
 // ════════════════════════════════════════════════
 // TABLERO COORDINADOR
 // ════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════
+   PANEL DE COORDINACIÓN
+   Reescrito de cero (sept 2026). Cinco vistas: Hoy, Equipos, Jugadores,
+   Liga, Calendario.
+
+   Tres cosas que el panel viejo hacía mal y acá están resueltas:
+   · Leía SOLO la zona en curso, así que al cambiar de zona los contadores
+     del coordinador arrancaban de cero a mitad de año. Ahora lee el AÑO.
+   · Bajaba el nodo entero del club para sacar dos campos.
+   · Tenía las categorías escritas a mano en cuatro lugares, así que una
+     categoría nueva quedaba afuera del panel sin avisar.
+
+   Todo lo que se muestra sale de los datos: no hay años, categorías ni
+   nombres de liga escritos a mano.
+   ══════════════════════════════════════════════════════════════════════ */
 async function startCoordApp(){
-  // Leer config del club (torneoActivo, ligaNombre, nombre, cats activas)
-  let _clubNombreCoord = 'MI CLUB';
-  let _ligaNombreCoord = '';
-  let _clubCatsActivas = [];
+  // ── CONFIG DEL CLUB ──
+  // Solo los campos que hacen falta. El panel viejo hacía get(CLUB_PATH) y se
+  // bajaba todas las categorías y todas las temporadas para leer dos strings.
+  let _clubNombre = 'MI CLUB', _ligaNombre = '', _catsActivas = [];
   try {
-    const [cfgSnap, clubSnap] = await Promise.all([
+    const [cfgSnap, nomSnap, catsSnap] = await Promise.all([
       get(ref(db, CLUB_PATH+'/config')),
-      get(ref(db, CLUB_PATH))
+      get(ref(db, CLUB_PATH+'/nombre')),
+      get(ref(db, CLUB_PATH+'/cats'))
     ]);
     if(cfgSnap.exists()){
       const cfg = cfgSnap.val();
       aplicarColorDeClub(cfg);
       if(cfg.torneoActivo) TORNEO_ACTIVO = cfg.torneoActivo;
       TEMPORADAS = cfg.temporadas || {};
-      // Respeta la temporada elegida a mano en el selector; si no, la vigente
-      TORNEO_ID = window._viewTorneo || cfg.torneoActivo || TORNEO_ID;
-      if(cfg.ligaNombre) _ligaNombreCoord = cfg.ligaNombre;
-      CLUB_LIGA_NOMBRE = _ligaNombreCoord || CLUB_PATH.split('/').pop().toUpperCase().replace(/-/g,' ');
+      TORNEO_ID  = window._viewTorneo || cfg.torneoActivo || TORNEO_ID;
+      if(cfg.ligaNombre) _ligaNombre = cfg.ligaNombre;
+      CLUB_LIGA_NOMBRE = _ligaNombre || CLUB_PATH.split('/').pop().toUpperCase().replace(/-/g,' ');
       window._clubLigaNombreDe = CLUB_PATH.split('/').pop();
-      // Si tiene ligaId pero no ligaNombre, guardarlo automáticamente para que el panel de suspensiones lo use
       if(cfg.ligaId && !cfg.ligaNombre && CLUB_LIGA_NOMBRE){
-        _ligaNombreCoord = CLUB_LIGA_NOMBRE;
+        _ligaNombre = CLUB_LIGA_NOMBRE;
         update(ref(db, CLUB_PATH+'/config'), {ligaNombre: CLUB_LIGA_NOMBRE}).catch(()=>{});
       }
     }
-    if(clubSnap.exists()){
-      const club = clubSnap.val();
-      if(club.nombre) _clubNombreCoord = club.nombre;
-      if(club.cats) _clubCatsActivas = Array.isArray(club.cats) ? club.cats : Object.values(club.cats);
+    if(nomSnap.exists())  _clubNombre = nomSnap.val() || _clubNombre;
+    if(catsSnap.exists()){
+      const c = catsSnap.val();
+      _catsActivas = Array.isArray(c) ? c : Object.values(c || {});
     }
-  } catch(e){ console.warn('startCoordApp: error leyendo config', e); }
+  } catch(e){ console.warn('coord: error leyendo config', e); }
 
   window._isCoordView = true;
-  // Migración automática de temporada — una sola vez por sesión
+  // Suscribir las suspensiones a ESTE club (el listener del arranque quedó
+  // atado al club por defecto y nunca se re-suscribía)
+  if(typeof suscribirSuspensiones === 'function') suscribirSuspensiones();
+
   if(!window._migracionIntentada){
     window._migracionIntentada = true;
     if(await migrarTemporadaSiHaceFalta()){
@@ -8218,1537 +8404,927 @@ async function startCoordApp(){
       }catch(e){}
     }
   }
-  // Tablas y resultados de liga de la temporada que se está viendo
   aplicarLigaDataDeTemporada();
+  await Promise.race([ window._ligaDataReady, new Promise(r => setTimeout(r, 5000)) ]);
 
-  // Esperar que el fetch de liga_data.json termine (max 5s)
-  await Promise.race([
-    window._ligaDataReady,
-    new Promise(r => setTimeout(r, 5000))
-  ]);
+  // ── CHROME ──
   document.querySelector('.tabs-wrapper').style.display = 'none';
   document.querySelectorAll('.view').forEach(v=>{ if(!v.closest('#coord-app')) v.style.display='none'; });
   document.getElementById('coord-app').style.display = 'block';
   document.querySelector('.logo').textContent = 'MI PLANTEL';
   const subEl = document.getElementById('headerSubEl');
-  if(subEl) subEl.textContent = (_clubNombreCoord + ' — Vista global').toUpperCase();
+  if(subEl) subEl.textContent = (_clubNombre + ' — Coordinación').toUpperCase();
   let catBadge = document.getElementById('catBadge');
-  if(!catBadge){ catBadge=document.createElement('span'); catBadge.id='catBadge'; catBadge.style.cssText='background:rgba(var(--accent-rgb),0.15);color:var(--accent);font-family:Bebas Neue,sans-serif;font-size:var(--f-md);letter-spacing:1px;padding:var(--sp-1) var(--sp-4);border-radius:var(--r-sm);margin-left:var(--sp-3);'; document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn')); }
+  if(!catBadge){
+    catBadge = document.createElement('span'); catBadge.id='catBadge';
+    catBadge.style.cssText='background:rgba(var(--accent-rgb),0.15);color:var(--accent);'+
+      'font-family:Bebas Neue,sans-serif;font-size:var(--f-md);letter-spacing:1px;'+
+      'padding:var(--sp-1) var(--sp-4);border-radius:var(--r-sm);margin-left:var(--sp-3);';
+    document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn'));
+  }
   catBadge.textContent = 'COORD';
-
-  // Selector de temporada (coordinador ve las mismas temporadas que los profes)
   renderSeasonBar();
   applyReadOnlyUI();
 
-  // Construir COMP_CATS dinámicamente desde las cats activas del club
-  const _CAT_META = {
-    cat16:{label:'Cat 2016',num:16},cat13:{label:'Cat 2013',num:13},
-    cat2020:{label:'Cat 2020',num:20},cat2019:{label:'Cat 2019',num:19},
-    cat2018:{label:'Cat 2018',num:18},cat2017:{label:'Cat 2017',num:17},
-    cat2015:{label:'Cat 2015',num:15},cat2014:{label:'Cat 2014',num:14},
-  };
-  const _catOrder=['cat16','cat13','cat2020','cat2019','cat2018','cat2017','cat2015','cat2014'];
-  const _activeCatKeys = _clubCatsActivas.length > 0
-    ? _catOrder.filter(k => _clubCatsActivas.includes(k))
-    : _catOrder;
-  const COMP_CATS = _activeCatKeys.map(k=>({key:k,..._CAT_META[k],players:14}));
-  const hasEsc = _clubCatsActivas.includes('escuelita') || _clubCatsActivas.length === 0;
-  const ESC_CAT = {key:'escuelita',label:'Escuelita',players:10,escuelita:true};
-  const ALL_CATS = hasEsc ? [...COMP_CATS, ESC_CAT] : COMP_CATS;
+  // ── CATEGORÍAS ──
+  // Salen de club/cats y el nombre de nombreDeCategoria(), que deriva del key.
+  // Sin mapa escrito a mano: una categoría nueva aparece sola.
+  const CAT_COLOR = {cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',
+                     cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
+  function _numDeCat(k){
+    const m = String(k).match(/(\d{2,4})$/);
+    if(!m) return 0;
+    const n = +m[1];
+    return n > 2000 ? n - 2000 : n;      // cat2014 -> 14, cat16 -> 16
+  }
+  function _colorDeCat(k){
+    if(CAT_COLOR[k]) return CAT_COLOR[k];
+    // Categoría nueva sin color asignado: uno estable derivado del nombre
+    let h = 0; for(const ch of String(k)) h = (h*31 + ch.charCodeAt(0)) % 360;
+    return 'hsl('+h+',52%,52%)';
+  }
+  // De la categoría más grande a la más chica: 2013, 2014, … 2021
+  const _ordenCats = ks => ks.slice().sort((a,b)=> _numDeCat(a) - _numDeCat(b));
+  const _keysComp = _ordenCats((_catsActivas.length ? _catsActivas : Object.keys(CAT_COLOR))
+                      .filter(k => k !== 'escuelita'));
+  const COMP_CATS = _keysComp.map(k => ({
+    key:k, num:_numDeCat(k), label:nombreDeCategoria(k), color:_colorDeCat(k)
+  }));
+  const hasEsc = _catsActivas.includes('escuelita') || _catsActivas.length === 0;
+  const ALL_CATS = hasEsc
+    ? [...COMP_CATS, {key:'escuelita', num:0, label:'Escuelita', color:'#8fa3b8', escuelita:true}]
+    : COMP_CATS;
+  const catDe = k => ALL_CATS.find(c=>c.key===k) || {key:k,label:k,color:'var(--muted)',num:0};
 
-  // Fixture dinámico desde Firebase ligas/{ligaId}/schedule para este club
-  let _ligaIdCoord = null;
-  let FIXTURE_C = [];
-  let clubFixtureConds = {};
+  // ── FIXTURE ──
+  let _ligaId = null, FIXTURE_C = [], _condsClub = {};
   try {
-    const _cfgVal = (await get(ref(db, CLUB_PATH+'/config'))).val() || {};
-    // Mirando una temporada archivada se usa la liga de ESA temporada
-    const ligaId = (esHistorico() ? torneoMeta(TORNEO_ID).ligaId : null) || _cfgVal.ligaId;
-    _ligaIdCoord = ligaId || null;
-    clubFixtureConds = _cfgVal.fixture || {}; // {1:{cond:'V'}, 9:{cond:'-'}, ...}
-
-    // Mirando el archivo, traer la foto de resultados de esa zona antes de armar nada
+    const _cfg = (await get(ref(db, CLUB_PATH+'/config'))).val() || {};
+    const ligaId = (esHistorico() ? torneoMeta(TORNEO_ID).ligaId : null) || _cfg.ligaId;
+    _ligaId = ligaId || null;
+    _condsClub = _cfg.fixture || {};
     if(ligaId && esHistorico()) await cargarResultadosDeLiga(ligaId);
-    // En la temporada vigente, asegurarse de tener el liga_data de ESTA zona
     if(ligaId && !esHistorico() && (!window._ligaDataRaw || window._ligaDataRaw.zona !== ligaId)){
       await bajarLigaDataDeZona(ligaId);
     }
-
-    // 1) Intentar schedule detallado (partidos con local/visitante/libre)
-    if(ligaId && _ligaNombreCoord){
-      const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
-      if(schedSnap.exists()){
-        // Mismo parser que usa el profe — soporta {h,a} y {local,visitante}
-        FIXTURE_C = deriveFixtureFromSchedule(schedSnap.val(), _ligaNombreCoord);
-        // Zona nueva → la tabla del panel arranca en cero con los equipos de esta zona
-        prepararTablasDeZona(ligaId, schedSnap.val());
+    if(ligaId && _ligaNombre){
+      const sched = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
+      if(sched.exists()){
+        FIXTURE_C = deriveFixtureFromSchedule(sched.val(), _ligaNombre);
+        prepararTablasDeZona(ligaId, sched.val());
       }
     }
-
-    // 2) Fallback: leer fixture de la liga + condiciones del club desde Firebase
     if(!FIXTURE_C.length && ligaId){
-      const ligaFixSnap = await get(ref(db, 'ligas/'+ligaId+'/fixture'));
-      if(ligaFixSnap.exists()){
-        FIXTURE_C = Object.entries(ligaFixSnap.val()).map(([k,v])=>{
-          const fecha = parseInt(k);
-          if(isNaN(fecha)) return null;
+      const fx = await get(ref(db, 'ligas/'+ligaId+'/fixture'));
+      if(fx.exists()){
+        FIXTURE_C = Object.entries(fx.val()).map(([k,v])=>{
+          const fecha = parseInt(k); if(isNaN(fecha)) return null;
           const rival = (v.rival||'—').toUpperCase().trim();
-          // cond: primero desde config del club, sino inferir desde rival LIBRE
-          const condEntry = clubFixtureConds[String(fecha)] || clubFixtureConds[fecha] || {};
-          const cond = condEntry.cond || (rival==='LIBRE' ? '-' : 'L');
-          return {fecha, rival, cond};
+          const ce = _condsClub[String(fecha)] || _condsClub[fecha] || {};
+          return { fecha, rival, cond: ce.cond || (rival==='LIBRE' ? '-' : 'L') };
         }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
-        console.log('[FIXTURE_C] built from ligas/fixture:', FIXTURE_C.length, 'fechas');
       }
     }
-  } catch(e){ console.warn('startCoordApp: error leyendo fixture', e); }
+  } catch(e){ console.warn('coord: error leyendo fixture', e); }
+  // Sin fixture no se inventan 22 fechas: se dice que no hay y listo.
+  const _hayFixture = FIXTURE_C.length > 0;
 
-  // 3) Fallback al FIXTURE global del profe si ya fue derivado
-  if(!FIXTURE_C.length && window.FIXTURE && window.FIXTURE.length){
-    FIXTURE_C = [...window.FIXTURE];
-    console.log('[FIXTURE_C] fallback a window.FIXTURE:', FIXTURE_C.length);
-  }
-  // 4) Fallback final con condiciones correctas desde config del club
-  if(!FIXTURE_C.length){
-    FIXTURE_C = Array.from({length:22},(_,i)=>{
-      const fecha = i+1;
-      const condEntry = clubFixtureConds[String(fecha)] || clubFixtureConds[fecha] || {};
-      const cond = condEntry.cond || 'L';
-      return {fecha, rival:'—', cond};
-    });
-    console.log('[FIXTURE_C] fallback final Array.from');
-  }
-
-  // Tablas y resultados — dinámicos para cualquier club
-  // Para ligas no-LISFI: leer posiciones y resultados desde Firebase
-  let _coordPOS = LIGA_DATA.posiciones;
-  let _coordSCR = {};
-  const _isLisfi = !_ligaIdCoord || _ligaIdCoord.includes('lisfi');
-  const _hasPgPp = _isLisfi; // LISFI tiene pg/pe/pp/gf/gc; LAFIR etc. solo pj+pts
+  // ── POSICIONES Y RESULTADOS ──
+  let _POS = LIGA_DATA.posiciones, _SCR = {};
+  const _isLisfi = !_ligaId || _ligaId.includes('lisfi');
   if(!_isLisfi){
     try {
       const [posSnap, resSnap] = await Promise.all([
-        get(ref(db,'ligas/'+_ligaIdCoord+'/posiciones')),
-        get(ref(db,'ligas/'+_ligaIdCoord+'/resultados'))
+        get(ref(db,'ligas/'+_ligaId+'/posiciones')),
+        get(ref(db,'ligas/'+_ligaId+'/resultados'))
       ]);
       if(posSnap.exists()){
-        _coordPOS = {};
+        _POS = {};
         Object.entries(posSnap.val()).forEach(([cat,rows])=>{
-          _coordPOS[parseInt(cat)] = Array.isArray(rows)?rows:Object.values(rows);
+          _POS[parseInt(cat)] = Array.isArray(rows) ? rows : Object.values(rows);
         });
       }
-      if(resSnap.exists() && _ligaNombreCoord){
-        const myN=_ligaNombreCoord.toUpperCase().trim();
-        const m5=s=>s?s.toUpperCase().trim().substring(0,5):'';
+      if(resSnap.exists() && _ligaNombre){
+        const myN = _ligaNombre.toUpperCase().trim();
+        const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
         Object.entries(resSnap.val()).forEach(([fecha,matches])=>{
-          const f=parseInt(fecha);
-          const arr=Array.isArray(matches)?matches:Object.values(matches);
-          arr.forEach(match=>{
-            if(!match||!match.cats||match.susp) return;
-            const isL=match.local&&(match.local.toUpperCase().trim()===myN||m5(match.local)===m5(myN));
-            const isV=match.visitante&&(match.visitante.toUpperCase().trim()===myN||m5(match.visitante)===m5(myN));
-            if(!isL&&!isV) return;
+          const f = parseInt(fecha);
+          (Array.isArray(matches)?matches:Object.values(matches)).forEach(match=>{
+            if(!match || !match.cats || match.susp) return;
+            const isL = match.local && (match.local.toUpperCase().trim()===myN || m5(match.local)===m5(myN));
+            const isV = match.visitante && (match.visitante.toUpperCase().trim()===myN || m5(match.visitante)===m5(myN));
+            if(!isL && !isV) return;
             Object.entries(match.cats).forEach(([cat,g])=>{
               if(!g) return;
-              const n=parseInt(cat);
-              if(!_coordSCR[n]) _coordSCR[n]=[];
-              const gf=isL?g.l:g.v, gc=isL?g.v:g.l;
-              if(typeof gf==='number'&&typeof gc==='number') _coordSCR[n].push({f,gf,gc});
+              const n = parseInt(cat);
+              if(!_SCR[n]) _SCR[n] = [];
+              const gf = isL?g.l:g.v, gc = isL?g.v:g.l;
+              if(typeof gf==='number' && typeof gc==='number') _SCR[n].push({f,gf,gc});
             });
           });
         });
-        // Ordenar por fecha
-        Object.values(_coordSCR).forEach(arr=>arr.sort((a,b)=>a.f-b.f));
+        Object.values(_SCR).forEach(a=>a.sort((x,y)=>x.f-y.f));
       }
-    } catch(e){ console.warn('Error leyendo posiciones/resultados de liga:',e); }
+    } catch(e){ console.warn('coord: error leyendo posiciones', e); }
+  }
+  const POS = _POS;
+
+  // ¿Esta fila de la tabla es nuestro club? Los nombres varían entre la liga y
+  // el club ("Sagrado Corazón" vs "SAGR. CORAZON"), así que se comparan los
+  // primeros caracteres además del nombre completo.
+  function isSC(eq){
+    if(!eq) return false;
+    const myN = (_ligaNombre || CLUB_LIGA_NOMBRE || '').toUpperCase().trim();
+    const eqN = String(eq).toUpperCase().trim();
+    return !!myN && (eqN === myN ||
+      (myN.length >= 5 && eqN.includes(myN.substring(0,5))) ||
+      (eqN.length >= 5 && myN.includes(eqN.substring(0,5))));
   }
 
-  const POS = _coordPOS;
-  // Resultados por categoría para este club
-  const SC_RESULTS = (()=>{
-    const out={};
-    if(Object.keys(_coordSCR).length>0){
-      // Liga no-LISFI: usar resultados de Firebase
-      COMP_CATS.forEach(cat=>{ out[cat.num]=_coordSCR[cat.num]||[]; });
-    } else {
-      // LISFI: usar LIGA_DATA (scResults para sagcor, teamResults para otros)
-      COMP_CATS.forEach(cat=>{
-        // Mismo criterio para todos los clubes de la liga
-        out[cat.num] = resultadosDelClub(cat.num).map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
-      });
-    }
+  const RESULTADOS = (()=>{
+    const out = {};
+    COMP_CATS.forEach(cat => {
+      out[cat.num] = Object.keys(_SCR).length
+        ? (_SCR[cat.num] || [])
+        : resultadosDelClub(cat.num).map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
+    });
     return out;
   })();
 
-  const MES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const REASON_LABELS = {lesionado:'Lesionado',enfermedad:'Enfermedad',personal:'Personal',suspendido:'Suspendido',sinaviso:'Sin aviso'};
-  const REASON_ICONS  = {lesionado:'🩹',enfermedad:'🤒',personal:'👤',suspendido:'🚫',sinaviso:'❓'};
-  const REASON_COLORS = {lesionado:'#ff6d00',enfermedad:'#aa00ff',personal:'#00b0ff',suspendido:'var(--loss)',sinaviso:'#666'};
-  function pCol(p){ return p>=75?'var(--green)':p>=50?'var(--yellow)':'var(--red)'; }
-  function citKey(f){ return 'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase(); }
-  function hasCitados(entry){ return !!(entry && entry.citados && entry.citados.length>0); }
-  function nextUncited(cits){ return FIXTURE_C.find(f=>{ if(f.cond==='-') return false; if(_suspensions[f.fecha]) return false; return !hasCitados(cits[citKey(f)]); }); }
-  function globalActiveFecha(){
-    // Fixture completo: FIXTURE_C + FIXTURE_DEFAULT para fechas faltantes
-    const allFechas = [...FIXTURE_C];
-    console.log('[GAF2] FIXTURE_C:', JSON.stringify(FIXTURE_C.map(f=>({f:f.fecha,c:f.cond,r:(f.rival||'').substring(0,8)}))));
-    console.log('[GAF2] SC_RESULTS keys:', JSON.stringify(Object.keys(SC_RESULTS)), 'played F:', [...(()=>{const s=new Set();COMP_CATS.forEach(cat=>(SC_RESULTS[cat.num]||[]).forEach(r=>s.add(+r.f)));return s;})()].sort((a,b)=>a-b));
-    console.log('[GAF2] COMP_CATS:', COMP_CATS.map(c=>c.key+'#'+c.num).join(','));
-    COMP_CATS.forEach(cat=>console.log('[GAF2] D['+cat.key+'].cit keys:', Object.keys(D[cat.key].cit).length, Object.keys(D[cat.key].cit).join('|').substring(0,80)));
-    const knownFechas = new Set(allFechas.map(f=>+f.fecha));
-    const fallback = (typeof FIXTURE_DEFAULT!=='undefined'?FIXTURE_DEFAULT:[]).concat(window.FIXTURE||[]);
-    fallback.forEach(f=>{ if(!knownFechas.has(+f.fecha)){ allFechas.push(f); knownFechas.add(+f.fecha); } });
-    allFechas.sort((a,b)=>a.fecha-b.fecha);
-
-    // Fechas ya jugadas: tienen resultado en SC_RESULTS
-    const playedFechas = new Set();
-    COMP_CATS.forEach(cat => (SC_RESULTS[cat.num]||[]).forEach(r=>playedFechas.add(+r.f)));
-
-    // Primera fecha donde alguna cat competitiva no citó aún
-    for(const f of allFechas){
-      if(f.cond==='-') continue;
-      if(_suspensions[f.fecha]) continue;
-      if(playedFechas.has(+f.fecha)) continue;
-      const todasCitaron = COMP_CATS.every(cat=>
-        Object.values(D[cat.key].cit).some(x=> +x.fecha===+f.fecha && x.citados && x.citados.length>0)
-      );
-      if(!todasCitaron){ console.log('[GAF2] -> F'+f.fecha+' (alguna cat no citó)'); return f; }
-    }
-    console.log('[GAF2] -> null (todas citaron todo)');
-    return null;
-  }
-  function catCitedFecha(catKey,f){ return f ? Object.values(D[catKey].cit).some(x => +x.fecha === +f.fecha && x.citados && x.citados.length > 0) : false; }
-  function isSC(eq){ 
-    if(!eq) return false;
-    const myN = (_ligaNombreCoord||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
-    const eqN = eq.toUpperCase().trim();
-    return myN && (eqN===myN || (myN.length>=5 && eqN.includes(myN.substring(0,5))) || (eqN.length>=5 && myN.includes(eqN.substring(0,5))));
-  }
-
-  // ── DATA STATE ──
+  // ── ESTADO ──
+  // D[cat] = { zonas:{...}, plantel:[...], hist:{} }
+  // zonas trae TODAS las temporadas de esa categoría: los contadores del año
+  // suman las zonas del año, no solo la que está en curso.
   const D = {};
-  ALL_CATS.forEach(c=>{ D[c.key]={att:{},cit:{},hist:{},stats:{}}; });
-  let coordFirebaseLoaded=false, coordActiveTab='resumen', coordPresFilter=null, coordPresMode='month';
-  let coordJugadorSel=null; // {catKey, nombre}
-  let coordJugadorMes='todo';
-  _coordDiasEntGlobal=[];
-  _coordSuspEntGlobal={};
-  // Alias locales para compatibilidad con el resto del código
-  let _coordDiasEnt = _coordDiasEntGlobal;
-  let _coordSuspEnt = _coordSuspEntGlobal;
+  ALL_CATS.forEach(c => { D[c.key] = {zonas:{}, plantel:[], hist:{}}; });
+  let cargado = false, tabAct = 'hoy';
+  let filtroJug = '', catJug = '', jugAbierto = null, catLiga = null;
+  let AVISOS = {};       // clubs/{club}/config/avisos
+  let DIAS_ENT = [], SUSP_ENT = {};
 
-  function refresh(){ renderCoordTab(coordActiveTab); }
+  const ANIO = esHistorico() ? (_anioDeZona(TORNEO_ID) || new Date().getFullYear())
+                             : new Date().getFullYear();
+
+  function refresh(){ pintar(); }
   _onSuspensionChange = refresh;
 
-  // Toggle suspensión desde el coordinador
-  window.toggleSusp = async function(fecha){
-    try {
-      if(_suspensions[fecha]){
-        await remove(ref(db, CLUB_PATH+'/config/suspensions/'+fecha));
-      } else {
-        await set(ref(db, CLUB_PATH+'/config/suspensions/'+fecha), true);
+  /* ── DATOS DEL AÑO ──────────────────────────────────────────────
+     Una lectura por categoría trae TODAS sus temporadas. Reemplaza las tres
+     lecturas por categoría del panel viejo (attendance + citaciones + stats de
+     una sola zona) y encima alcanza para el acumulado del año.
+     Mirando una temporada archivada se corta en su último registro, igual que
+     del lado del profe: se ve el año como estaba cuando esa zona cerró. */
+  function _corteDelArchivo(){
+    if(!esHistorico()) return null;
+    let max = '';
+    ALL_CATS.forEach(c=>{
+      const z = (D[c.key].zonas || {})[TORNEO_ID];
+      if(!z) return;
+      Object.keys(z.attendance || {}).forEach(f => { if(f > max) max = f; });
+      Object.values(z.citaciones || {}).forEach(cit => {
+        const f = _fechaDeRegistro(cit); if(f && f > max) max = f;
+      });
+    });
+    return max || null;
+  }
+
+  // Sesiones y citaciones del año para una categoría, con los stats de cada partido
+  function datosDeCat(catKey){
+    const zonas = D[catKey] ? (D[catKey].zonas || {}) : {};
+    const corte = _corteDelArchivo();
+    const out = { sesiones:{}, citaciones:{}, stats:{} };
+    Object.keys(zonas).forEach(zonaId => {
+      const z = zonas[zonaId] || {};
+      Object.entries(z.attendance || {}).forEach(([fecha,val])=>{
+        if(anioDeSesion(fecha, zonaId) !== ANIO) return;
+        if(corte && fecha > corte) return;
+        out.sesiones[fecha] = val;
+      });
+      Object.entries(z.citaciones || {}).forEach(([key,val])=>{
+        if(anioDeCitacion(val, zonaId) !== ANIO) return;
+        if(corte && zonaId !== TORNEO_ID){
+          const f = _fechaDeRegistro(val);
+          if(!f || f > corte) return;
+        }
+        const k = zonaId + '::' + key;   // las claves se repiten entre zonas
+        out.citaciones[k] = val;
+        if(z.stats && z.stats[key]) out.stats[k] = z.stats[key];
+      });
+    });
+    return out;
+  }
+
+  // Citaciones de la zona EN CURSO (para saber si citó la fecha que viene)
+  function citsDeZona(catKey){
+    const z = (D[catKey] && D[catKey].zonas) ? D[catKey].zonas[TORNEO_ID] : null;
+    return (z && z.citaciones) || {};
+  }
+
+  function citKey(f){
+    return 'fecha'+String(f.fecha).padStart(2,'0')+'_'+
+           String(f.rival||'').replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+  }
+  function citoLaFecha(catKey, f){
+    if(!f) return false;
+    return Object.values(citsDeZona(catKey)).some(x =>
+      +x.fecha === +f.fecha && x.citados && x.citados.length > 0);
+  }
+
+  // La fecha que viene: la primera jugable, no suspendida y sin resultado
+  function proximaFecha(){
+    if(!_hayFixture) return null;
+    const jugadas = new Set();
+    COMP_CATS.forEach(c => (RESULTADOS[c.num]||[]).forEach(r => jugadas.add(+r.f)));
+    return FIXTURE_C.find(f => f.cond !== '-' && !_suspensions[f.fecha] && !jugadas.has(+f.fecha)) || null;
+  }
+  // La última jugada, para mostrar los resultados del fin de semana
+  function ultimaJugada(){
+    if(!_hayFixture) return null;
+    const jugadas = new Set();
+    COMP_CATS.forEach(c => (RESULTADOS[c.num]||[]).forEach(r => jugadas.add(+r.f)));
+    let out = null;
+    FIXTURE_C.forEach(f => { if(jugadas.has(+f.fecha)) out = f; });
+    return out;
+  }
+  function resultadoDe(catNum, fechaN){
+    const r = (RESULTADOS[catNum]||[]).find(x => +x.f === +fechaN);
+    if(!r) return null;
+    return { gf:r.gf, gc:r.gc, res: r.gf>r.gc ? 'V' : r.gf<r.gc ? 'L' : 'E' };
+  }
+
+  // ¿Cargó el post partido de esa fecha?
+  function cargoGoles(catKey, f){
+    if(!f) return true;
+    const z = (D[catKey] && D[catKey].zonas) ? D[catKey].zonas[TORNEO_ID] : null;
+    if(!z || !z.stats) return false;
+    const k = citKey(f);
+    const st = z.stats[k];
+    return !!(st && st.jugadores && Object.keys(st.jugadores).length);
+  }
+
+  // Entrenamientos de esta semana: cuántos se esperaban y cuántos se cargaron
+  function entrenosDeLaSemana(catKey){
+    const hoy = new Date();
+    const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay()+6)%7));
+    const iso = d => d.toISOString().slice(0,10);
+    const desde = iso(lunes), hasta = iso(hoy);
+    const dias = (DIAS_ENT||[]).length;
+    let esperados = 0;
+    for(let i=0;i<7;i++){
+      const d = new Date(lunes); d.setDate(lunes.getDate()+i);
+      if(iso(d) > hasta) break;
+      const dow = d.getDay();                         // 0 dom … 6 sáb
+      if(!(DIAS_ENT||[]).includes(dow)) continue;
+      if((SUSP_ENT||{})[iso(d)]) continue;            // suspendido: no cuenta
+      esperados++;
+    }
+    const ses = datosDeCat(catKey).sesiones;
+    const cargados = Object.keys(ses).filter(f => f >= desde && f <= hasta).length;
+    return { cargados, esperados: dias ? esperados : 0 };
+  }
+
+  // Presencia del año por categoría, sobre el plantel REAL (no un 14 fijo)
+  function presenciaDeCat(catKey){
+    const plantel = (D[catKey] && D[catKey].plantel) || [];
+    const ses = Object.values(datosDeCat(catKey).sesiones);
+    if(!plantel.length || !ses.length) return null;
+    let suma = 0;
+    plantel.forEach(n => {
+      const veces = ses.filter(s => (s.present||[]).includes(n)).length;
+      suma += veces / ses.length;
+    });
+    return Math.round(suma / plantel.length * 100);
+  }
+
+  /* ── PENDIENTES ────────────────────────────────────────────────
+     El corazón del panel: qué falta hacer y de quién. Se calcula, no se
+     escribe a mano. Cada pendiente sabe a qué categoría pertenece y qué tipo
+     es, para poder ofrecer el aviso correcto. */
+  function pendientes(){
+    const prox = proximaFecha(), ult = ultimaJugada(), out = [];
+    COMP_CATS.forEach(c => {
+      if(prox && !citoLaFecha(c.key, prox)){
+        out.push({ nivel:'alta', cat:c, tipo:'citar', fecha:prox,
+                   que:'No citó para la fecha '+prox.fecha });
       }
-    } catch(e){ alert('Error al guardar. Revisá la conexión.'); }
+      if(ult && !cargoGoles(c.key, ult)){
+        out.push({ nivel:'media', cat:c, tipo:'goles', fecha:ult,
+                   que:'Faltan los goles de la fecha '+ult.fecha });
+      }
+      const e = entrenosDeLaSemana(c.key);
+      if(e.esperados && e.cargados < e.esperados){
+        out.push({ nivel:'media', cat:c, tipo:'entreno',
+                   que:'Cargó '+e.cargados+' de '+e.esperados+' entrenamientos' });
+      }
+    });
+    const orden = {alta:0, media:1};
+    return out.sort((a,b)=> orden[a.nivel]-orden[b.nivel]);
+  }
+
+  /* ── AVISOS ────────────────────────────────────────────────────
+     El coordinador aprieta "Avisar" y queda guardado en Firebase. El profe,
+     cuando entra, ve el cartel en su categoría y marca que lo vio.
+     No se dispara por calendario porque el fixture de la liga no trae los días
+     de los partidos: el reloj lo pone el coordinador, que es el que sabe. */
+  const AVISOS_PATH = CLUB_PATH+'/config/avisos';
+  function avisoDe(catKey){ return AVISOS[catKey] || null; }
+  function _haceCuanto(ts){
+    if(!ts) return '';
+    const min = Math.round((Date.now()-ts)/60000);
+    if(min < 2)    return 'recién';
+    if(min < 60)   return 'hace '+min+' min';
+    const h = Math.round(min/60);
+    if(h < 24)     return 'hace '+h+' h';
+    const d = Math.round(h/24);
+    return d === 1 ? 'ayer' : 'hace '+d+' días';
+  }
+
+  window.coordAvisar = async function(catKeys, fechaN){
+    if(_roGuard()) return;
+    const lista = Array.isArray(catKeys) ? catKeys : [catKeys];
+    const ts = Date.now();
+    try{
+      const upd = {};
+      lista.forEach(k => { upd[k] = { fecha: fechaN || null, ts, visto: null }; });
+      await update(ref(db, AVISOS_PATH), upd);
+      lista.forEach(k => AVISOS[k] = { fecha: fechaN || null, ts, visto: null });
+      const cats = lista.map(catDe);
+      const prox = proximaFecha();
+      abrirDlgWA('Aviso enviado a '+cats.length+(cats.length===1?' profe':' profes'),
+        'Ya les aparece el cartel en su categoría. Si además querés mandarlo al grupo, este es el mensaje.',
+        ['⭐ *'+_clubNombre.toUpperCase()+' — FALTA CITAR*',
+         prox ? '🏆 Fecha '+prox.fecha+' vs '+prox.rival : '',
+         '', 'Todavía no citaron:',
+         ...cats.map(c=>'  • '+c.label),
+         '', '👉 app.miplantel.com.ar'].filter(Boolean).join('\n'));
+      pintar();
+    }catch(e){ showToast('No se pudo guardar el aviso'); }
   };
 
-  // Mostrar el coordinador de inmediato — Liga no necesita Firebase
-  document.getElementById('loadingScreen').style.display='none';
-  refresh();
+  /* ── DIÁLOGO DE WHATSAPP ──
+     El mensaje se ve ANTES de mandarse. Nada sale sin que el coordinador lo lea. */
+  let _dlg = null;
+  function abrirDlgWA(titulo, pie, texto){ _dlg = {titulo, pie, texto}; pintar(); }
+  window.coordCerrarDlg = function(){ _dlg = null; pintar(); };
+  window.coordMandarWA = function(){
+    if(_dlg) window.open('https://wa.me/?text='+encodeURIComponent(_dlg.texto), '_blank');
+    _dlg = null; pintar();
+  };
+  function dlgHtml(){
+    if(!_dlg) return '';
+    const cuerpo = esc(_dlg.texto).replace(/\*(.+?)\*/g, '<b>$1</b>');
+    return '<div class="cdlg" onclick="if(event.target===this)window.coordCerrarDlg()"><div class="caja">'+
+      '<h3>'+esc(_dlg.titulo)+'</h3><div class="pie">'+esc(_dlg.pie)+'</div>'+
+      '<div class="cwa">'+cuerpo+'</div>'+
+      '<div class="acc"><button onclick="window.coordCerrarDlg()">Cancelar</button>'+
+      '<button class="pri" onclick="window.coordMandarWA()">Abrir WhatsApp</button></div>'+
+    '</div></div>';
+  }
 
-  // Cargar TODOS los datos Firebase de una sola vez con Promise.all
-  // (una lectura por nodo, en paralelo — sin listeners persistentes)
-  window._coordUnsubs=[];
-  (async function loadCoordData(){
+  window.coordRecordar = function(catKey, tipo){
+    const c = catDe(catKey), prox = proximaFecha(), ult = ultimaJugada();
+    const cab = '👥 '+c.label;
+    let txt = '';
+    if(tipo === 'citar')
+      txt = ['⭐ *'+_clubNombre.toUpperCase()+' — FALTA CITAR*', cab,
+             prox ? '🆚 Fecha '+prox.fecha+' vs '+prox.rival+' | '+(prox.cond==='L'?'Local':'Visitante') : '',
+             '', 'Todavía no están cargados los citados.', '👉 app.miplantel.com.ar'].filter(Boolean).join('\n');
+    else if(tipo === 'goles')
+      txt = ['⚽ *'+_clubNombre.toUpperCase()+' — FALTAN LOS GOLES*', cab,
+             ult ? '🆚 Fecha '+ult.fecha+' vs '+ult.rival : '',
+             '', 'Falta cargar el post partido.', '👉 app.miplantel.com.ar'].filter(Boolean).join('\n');
+    else
+      txt = ['📋 *'+_clubNombre.toUpperCase()+' — FALTA CARGAR ASISTENCIA*', cab,
+             '', 'Quedaron entrenamientos de esta semana sin cargar.', '👉 app.miplantel.com.ar'].join('\n');
+    abrirDlgWA('Recordarle a '+c.label, 'Revisá el texto antes de mandarlo.', txt);
+  };
+
+  window.coordSuspFecha = async function(n){
+    if(_roGuard()) return;
+    const f = FIXTURE_C.find(x => +x.fecha === +n); if(!f) return;
+    const estaba = !!_suspensions[n];
+    try{
+      if(estaba) await remove(ref(db, CLUB_PATH+'/config/suspensions/'+n));
+      else       await set(ref(db, CLUB_PATH+'/config/suspensions/'+n), true);
+    }catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
+    if(!estaba){
+      abrirDlgWA('Fecha '+n+' suspendida',
+        'Ningún profe puede citar para esta fecha. Este es el mensaje para avisarles.',
+        ['⛔ *'+_clubNombre.toUpperCase()+' — FECHA SUSPENDIDA*',
+         _ligaNombre ? '🏆 '+(nombreDelTorneoActual() || _ligaNombre) : '',
+         '🆚 Fecha '+f.fecha+' vs '+f.rival+' | '+(f.cond==='L'?'Local':'Visitante'),
+         '', 'La fecha *no se juega*.', 'Avisen a los padres del grupo.'].filter(Boolean).join('\n'));
+    } else { pintar(); }
+  };
+
+  window.coordSuspEnt = async function(iso){
+    if(_roGuard()) return;
+    const estaba = !!SUSP_ENT[iso];
+    try{
+      if(estaba){ await remove(ref(db, CLUB_PATH+'/config/suspensionesEnt/'+iso)); delete SUSP_ENT[iso]; }
+      else      { await set(ref(db, CLUB_PATH+'/config/suspensionesEnt/'+iso), true); SUSP_ENT[iso] = true; }
+    }catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
+    if(!estaba){
+      const d = new Date(iso+'T12:00:00');
+      const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+      abrirDlgWA('Sin entrenamiento el '+d.getDate()+'/'+(d.getMonth()+1),
+        'Ese día deja de contar en la carga de los profes. Este es el mensaje para avisar.',
+        ['⛔ *'+_clubNombre.toUpperCase()+' — NO HAY ENTRENAMIENTO*',
+         '📅 '+DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0'),
+         '', 'Avisen a los padres del grupo.'].join('\n'));
+    } else { pintar(); }
+  };
+
+  // ── Helpers de pintado ──
+  const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const pctCls = p => p>=75 ? 'win' : p>=50 ? 'draw' : 'loss';
+  const chipCat = c => '<span class="ccat" style="border-color:'+c.color+'55;color:'+c.color+'">'+
+                       esc(c.label.replace(/^Cat /,''))+'</span>';
+  const spinner = '<div class="empty-msg"><div class="spinner" style="margin:0 auto var(--sp-5)"></div>Cargando…</div>';
+
+  /* ══════════ HOY ══════════ */
+  function vistaHoy(){
+    if(!cargado) return spinner;
+    const prox = proximaFecha(), ult = ultimaJugada(), pend = pendientes();
+    let h = '';
+
+    if(!_hayFixture){
+      h += '<div class="cvacio">Todavía no hay fixture cargado para esta temporada.<br>'+
+           'Cuando la liga publique el calendario, esta pantalla se llena sola.</div>';
+      return h;
+    }
+
+    // Próxima fecha
+    if(prox){
+      const citaron = COMP_CATS.filter(c => citoLaFecha(c.key, prox)).length;
+      h += '<div class="ccard acento">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);flex-wrap:wrap">'+
+          '<div><div class="cet">Próxima fecha</div>'+
+          '<div class="cbig">F'+prox.fecha+' &middot; vs '+esc(prox.rival)+'</div>'+
+          '<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">'+
+            (prox.cond==='L'?'Local':'Visitante')+'</div></div>'+
+          '<div class="ckpi" style="padding:0"><div class="n '+(citaron===COMP_CATS.length?'win':'draw')+'">'+
+            citaron+'/'+COMP_CATS.length+'</div><div class="l">categorías citaron</div></div>'+
+        '</div>'+
+        '<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-5)">'+
+          COMP_CATS.map(c=>{ const ok = citoLaFecha(c.key, prox);
+            return '<span class="ccat '+(ok?'ok':'falta')+'">'+
+              '<span class="punto" style="background:'+c.color+'"></span>'+
+              esc(c.label.replace(/^Cat /,''))+' '+(ok?'&#10003;':'&#8212;')+'</span>'; }).join('')+
+        '</div></div>';
+    } else {
+      h += '<div class="cvacio">No queda ninguna fecha por jugar en esta temporada.</div>';
+    }
+
+    // Pendientes
+    h += '<div class="csec">'+icono('lista')+'Pendientes<span class="cont">'+pend.length+
+         (pend.length===1?' cosa por resolver':' cosas por resolver')+'</span></div>';
+    if(!pend.length){
+      h += '<div class="cvacio">Está todo al día.<br>Ninguna categoría tiene carga pendiente.</div>';
+    } else {
+      const sinAvisar = prox
+        ? COMP_CATS.filter(c => !citoLaFecha(c.key,prox) && !avisoDe(c.key)).map(c=>c.key)
+        : [];
+      if(sinAvisar.length && !archivoBloqueado()){
+        h += '<div class="ccard" style="border-color:rgba(var(--draw-rgb),.35);background:rgba(var(--draw-rgb),.06);'+
+          'display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap">'+
+          '<div style="flex:1;min-width:180px"><div style="font-weight:600">Avisar a los que faltan citar</div>'+
+          '<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">'+
+            'Les aparece el cartel en su categoría. '+sinAvisar.length+' sin avisar.</div></div>'+
+          '<button class="cbtn on" onclick="window.coordAvisar('+JSON.stringify(sinAvisar).replace(/"/g,'&quot;')+
+            ','+(prox?prox.fecha:'null')+')">Avisar a '+sinAvisar.length+'</button></div>';
+      }
+      h += pend.map(p=>{
+        const av = p.tipo==='citar' ? avisoDe(p.cat.key) : null;
+        let est = esc(p.cat.label);
+        if(av) est += ' &middot; avisado '+_haceCuanto(av.ts)+' &middot; '+
+          (av.visto ? '<span style="color:var(--draw)">lo vio '+_haceCuanto(av.visto)+' y no citó</span>'
+                    : '<span style="color:var(--muted)">todavía no entró a la app</span>');
+        return '<div class="cpend '+p.nivel+'">'+chipCat(p.cat)+
+          '<div class="qc"><div class="qui">'+esc(p.que)+'</div><div class="que">'+est+'</div></div>'+
+          '<button class="cbtn'+(av && !av.visto ? ' on' : '')+'" onclick="window.coordRecordar(\''+
+            p.cat.key+'\',\''+p.tipo+'\')">'+(av ? 'WhatsApp' : 'Avisar')+'</button></div>';
+      }).join('');
+    }
+
+    // Último partido
+    if(ult){
+      h += '<div class="csec">'+icono('pelota')+'Fecha '+ult.fecha+' &middot; vs '+esc(ult.rival)+'</div>';
+      const rs = {V:0,E:0,L:0};
+      COMP_CATS.forEach(c=>{ const r = resultadoDe(c.num, ult.fecha); if(r) rs[r.res]++; });
+      h += '<div class="ccard"><div class="cgrid kpis">'+
+        '<div class="ckpi"><div class="n win">'+rs.V+'</div><div class="l">ganaron</div></div>'+
+        '<div class="ckpi"><div class="n draw">'+rs.E+'</div><div class="l">empataron</div></div>'+
+        '<div class="ckpi"><div class="n loss">'+rs.L+'</div><div class="l">perdieron</div></div>'+
+      '</div></div>';
+      h += '<div class="ccard">'+COMP_CATS.map(c=>{
+        const r = resultadoDe(c.num, ult.fecha);
+        return '<div class="crow">'+chipCat(c)+
+          '<div class="nom">'+(r ? '' : '<span style="color:var(--muted)">sin resultado</span>')+'</div>'+
+          (r ? '<div class="cres '+r.res+'">'+r.gf+' - '+r.gc+'</div>' : '')+
+          '<div class="det">'+(cargoGoles(c.key, ult) ? '' :
+            '<span style="color:var(--draw)">sin goles cargados</span>')+'</div></div>';
+      }).join('')+'</div>';
+    }
+    return h;
+  }
+
+  /* ══════════ EQUIPOS ══════════ */
+  function vistaEquipos(){
+    if(!cargado) return spinner;
+    const prox = proximaFecha();
+    let h = '<div class="csec">'+icono('plantel')+'Categorías<span class="cont">acumulado '+ANIO+'</span></div>';
+    h += '<div class="cgrid dos">';
+    COMP_CATS.forEach(c=>{
+      const pres = presenciaDeCat(c.key);
+      const plantel = (D[c.key].plantel||[]).length;
+      const fila = (POS[c.num]||[]).findIndex(r => isSC(r.equipo || r.eq || ''));
+      const pos = fila >= 0 ? fila+1 : null;
+      const e = entrenosDeLaSemana(c.key);
+      h += '<div class="ccard">'+
+        '<div style="display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-5)">'+
+          '<span style="width:9px;height:9px;border-radius:50%;background:'+c.color+';flex:none"></span>'+
+          '<div style="flex:1"><div style="font-weight:600;font-size:var(--f-md)">'+esc(c.label)+'</div>'+
+          '<div style="font-size:var(--f-sm);color:var(--muted)">'+plantel+' jugadores</div></div>'+
+          (pos ? '<div style="text-align:right"><div class="cnum">'+pos+'°</div>'+
+                 '<div style="font-size:var(--f-micro);color:var(--muted)">en la liga</div></div>' : '')+
+        '</div>'+
+        (pres===null
+          ? '<div style="font-size:var(--f-sm);color:var(--muted)">Sin entrenamientos cargados este año.</div>'
+          : '<div class="crow" style="border:none;padding-bottom:var(--sp-2)">'+
+            '<div class="nom" style="font-size:var(--f-sm);color:var(--muted)">Presencia del año</div>'+
+            '<div class="val" style="color:var(--'+pctCls(pres)+')">'+pres+'%</div></div>'+
+            '<div class="cbar"><i class="'+pctCls(pres)+'" style="width:'+pres+'%"></i></div>')+
+        '<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-5)">'+
+          (prox ? '<span class="ccat '+(citoLaFecha(c.key,prox)?'ok':'falta')+'">'+
+            (citoLaFecha(c.key,prox)?'citó F'+prox.fecha:'falta citar F'+prox.fecha)+'</span>' : '')+
+          (e.esperados ? '<span class="ccat '+(e.cargados>=e.esperados?'ok':'medio')+'">'+
+            e.cargados+'/'+e.esperados+' entrenos</span>' : '')+
+        '</div></div>';
+    });
+    h += '</div>';
+    h += '<div class="cnota">La presencia usa el plantel real de cada categoría y suma todas las zonas '+
+         'del año: cuando el club pasa a la zona que viene, estos números siguen, no arrancan de cero.</div>';
+    return h;
+  }
+
+  /* ══════════ JUGADORES ══════════ */
+  // Umbrales de "para mirar". Están acá arriba a propósito: son criterio del
+  // club, no del código, y se cambian en una línea.
+  const OJO_PRESENCIA = 60;   // % de presencia por debajo del cual se marca
+  const OJO_FALTAS    = 3;    // faltas a citaciones
+  const OJO_SIN_CITAR = 5;    // fechas seguidas sin ser citado
+
+  function fichaDeJugador(catKey, nombre){
+    const d = datosDeCat(catKey);
+    const ses = Object.values(d.sesiones);
+    const pres = ses.length
+      ? Math.round(ses.filter(s => (s.present||[]).includes(nombre)).length / ses.length * 100)
+      : null;
+    // Citaciones del año, ordenadas, con cuánto jugó en cada una
+    const orden = c => (c && c.fecha_str) || String(c && c.fecha || '').padStart(3,'0');
+    const cits = Object.entries(d.citaciones)
+      .filter(([,c]) => c && c.citados && c.citados.length)
+      .sort((a,b)=> String(orden(a[1])).localeCompare(String(orden(b[1]))));
+    let citado = 0, falto = 0, jugados = 0;
+    const racha = [];
+    cits.forEach(([k,c])=>{
+      if(!(c.citados||[]).includes(nombre)){ racha.push('no'); return; }
+      citado++;
+      const j = jugoEnPartido(c, d.stats[k] || null, nombre);
+      if(j === 'falto') falto++; else jugados++;
+      racha.push(j || 'no');
+    });
+    const ult = racha.slice(-5);
+    let sinCitar = 0;
+    for(let i=racha.length-1; i>=0 && racha[i]==='no'; i--) sinCitar++;
+    const motivo = sinCitar >= OJO_SIN_CITAR ? 'Hace '+sinCitar+' fechas que no es citado'
+                 : falto >= OJO_FALTAS       ? falto+' faltas a citaciones'
+                 : (pres !== null && pres < OJO_PRESENCIA) ? 'Presencia baja'
+                 : '';
+    return { nombre, catKey, pres, citado, falto, jugados, racha:ult, motivo };
+  }
+
+  function todosLosJugadores(){
+    const out = [];
+    ALL_CATS.forEach(c => (D[c.key].plantel||[]).forEach(n => out.push(fichaDeJugador(c.key, n))));
+    return out;
+  }
+
+  function rachaHtml(r){
+    return r.map(x=>{
+      const cls = x==='no' ? 'pn' : x==='falto' ? 'pf' : x==='todo' ? 'pc' : 'pm';
+      const tit = x==='no'?'no citado':x==='falto'?'faltó':x==='todo'?'jugó todo':'entró o salió';
+      return '<span class="pt '+cls+'" title="'+tit+'"></span>';
+    }).join('');
+  }
+
+  function vistaJugadores(){
+    if(!cargado) return spinner;
+    const todos = todosLosJugadores();
+    let h = '<div class="csec">'+icono('presencia')+'Jugadores<span class="cont">'+
+            todos.length+' en el club</span></div>';
+    h += '<input class="cbusca" id="coordBusca" placeholder="Buscar por nombre" value="'+
+         esc(filtroJug)+'" oninput="window.coordBuscar(this.value)">';
+    h += '<div class="cfila" style="margin-top:var(--sp-4)">'+
+      '<button class="cbtn'+(catJug===''?' on':'')+'" onclick="window.coordCatJug(\'\')">Todas</button>'+
+      ALL_CATS.map(c=>'<button class="cbtn'+(catJug===c.key?' on':'')+
+        '" onclick="window.coordCatJug(\''+c.key+'\')">'+esc(c.label.replace(/^Cat /,''))+'</button>').join('')+
+      '</div>';
+
+    const q = filtroJug.trim().toLowerCase();
+    let lista = todos.filter(j => (!q || j.nombre.toLowerCase().includes(q)) && (!catJug || j.catKey===catJug));
+    lista.sort((a,b)=>{
+      const ma = a.motivo?0:1, mb = b.motivo?0:1;
+      return ma!==mb ? ma-mb : a.nombre.localeCompare(b.nombre);
+    });
+
+    if(!lista.length){
+      h += '<div class="cvacio">'+(todos.length ? 'Ningún jugador coincide con la búsqueda.'
+                                                : 'Todavía no hay jugadores cargados.')+'</div>';
+    } else {
+      const conOjo = lista.filter(j=>j.motivo).length;
+      if(conOjo) h += '<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-4)">'+
+        conOjo+(conOjo===1?' jugador':' jugadores')+' para mirar, arriba de todo.</div>';
+      h += lista.map(j=>{
+        const c = catDe(j.catKey);
+        const id = j.catKey+'|'+j.nombre;
+        let f = '<button class="cjug'+(j.motivo?' ojo':'')+'" onclick="window.coordVerJug(\''+
+          esc(id).replace(/'/g,'')+'\')">'+
+          '<span style="width:8px;height:8px;border-radius:50%;background:'+c.color+';flex:none"></span>'+
+          '<div class="id"><div class="nm">'+esc(j.nombre)+'</div>'+
+          '<div class="mt">'+esc(c.label.replace(/^Cat /,''))+
+            (j.motivo?' &middot; <span class="avisa">'+esc(j.motivo)+'</span>':'')+'</div></div>'+
+          '<div class="racha">'+rachaHtml(j.racha)+'</div>'+
+          (j.pres===null ? '' : '<div class="pc" style="color:var(--'+pctCls(j.pres)+')">'+j.pres+'%</div>')+
+        '</button>';
+        if(jugAbierto === id){
+          f += '<div class="ccard" style="margin-top:calc(-1 * var(--sp-2));border-color:rgba(var(--accent-rgb),.35)">'+
+            '<div class="cgrid kpis">'+
+              '<div class="ckpi"><div class="n '+(j.pres===null?'':pctCls(j.pres))+'">'+
+                (j.pres===null?'—':j.pres+'%')+'</div><div class="l">presencia</div></div>'+
+              '<div class="ckpi"><div class="n acc">'+j.citado+'</div><div class="l">citaciones</div></div>'+
+              '<div class="ckpi"><div class="n '+(j.falto?'loss':'')+'">'+j.falto+'</div>'+
+                '<div class="l">'+(j.falto===1?'falta':'faltas')+'</div></div>'+
+            '</div>'+
+            '<div class="crow" style="margin-top:var(--sp-4)">'+
+              '<div class="nom" style="font-size:var(--f-sm);color:var(--muted)">Últimos partidos</div>'+
+              '<div class="racha">'+rachaHtml(j.racha)+'</div></div>'+
+            '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">'+
+              'De '+j.citado+' citaciones jugó</div><div class="val">'+j.jugados+'</div></div>'+
+          '</div>';
+        }
+        return f;
+      }).join('');
+    }
+
+    // Goleadores del año
+    const gol = {};
+    ALL_CATS.forEach(c=>{
+      const d = datosDeCat(c.key);
+      Object.values(d.stats).forEach(st=>{
+        Object.entries((st && st.jugadores) || {}).forEach(([n,x])=>{
+          if(!x || !x.goles) return;
+          const k = c.key+'|'+n;
+          gol[k] = (gol[k]||0) + x.goles;
+        });
+      });
+    });
+    const rank = Object.entries(gol).map(([k,g])=>{
+      const i = k.indexOf('|');
+      return { catKey:k.slice(0,i), nombre:k.slice(i+1), g };
+    }).sort((a,b)=>b.g-a.g).slice(0,10);
+    if(rank.length){
+      h += '<div class="csec">'+icono('pelota')+'Goleadores<span class="cont">'+ANIO+'</span></div>';
+      h += '<div class="ccard">'+rank.map((r,i)=>{
+        const c = catDe(r.catKey);
+        return '<div class="crow"><div style="width:20px;font-weight:700;color:'+
+          (i===0?'#c8800a':i===1?'#778899':i===2?'#a0622b':'var(--muted)')+'">'+(i+1)+'</div>'+
+          '<div class="nom">'+esc(r.nombre)+'</div>'+chipCat(c)+
+          '<div class="val" style="color:var(--win)">'+r.g+'</div></div>';
+      }).join('')+'</div>';
+    }
+    return h;
+  }
+
+  /* ══════════ LIGA ══════════ */
+  function vistaLiga(){
+    const hayPos = POS && Object.keys(POS).length &&
+                   COMP_CATS.some(c => (POS[c.num]||[]).length);
+    let h = '<div class="csec">'+icono('copa')+'Cómo va el club'+
+            (_ligaNombre ? '<span class="cont">'+esc(nombreDelTorneoActual() || _ligaNombre)+'</span>' : '')+
+            '</div>';
+    if(!hayPos){
+      // El panel viejo pintaba KPIs en cero y tablas vacías sin decir nada
+      return h + '<div class="cvacio">Todavía no hay tabla de posiciones para esta temporada.<br>'+
+             'Se actualiza sola cuando la liga publica los resultados.</div>';
+    }
+
+    h += '<div class="ccard"><div class="cgrid dos">'+COMP_CATS.map(c=>{
+      const tabla = POS[c.num]||[];
+      const i = tabla.findIndex(r => isSC(r.equipo || r.eq || ''));
+      if(i < 0) return '';
+      const fila = tabla[i];
+      const pts = fila.pts != null ? fila.pts : (fila.puntos != null ? fila.puntos : 0);
+      const p = i+1;
+      return '<div class="crow"><span style="width:9px;height:9px;border-radius:50%;background:'+
+        c.color+';flex:none"></span><div class="nom">'+esc(c.label)+'</div>'+
+        '<div class="det">'+pts+' pts</div>'+
+        '<div class="val" style="color:'+(p<=3?'var(--win)':p>=7?'var(--loss)':'var(--text)')+'">'+p+'°</div></div>';
+    }).join('')+'</div></div>';
+
+    // Si todavía no se eligió categoría, arrancar en la primera que tenga tabla
+    if(!catLiga){
+      const conTabla = COMP_CATS.find(c => (POS[c.num]||[]).length);
+      catLiga = (conTabla || COMP_CATS[0] || {key:''}).key;
+    }
+    h += '<div class="csec">'+icono('tabla')+'Tabla de posiciones</div>';
+    h += '<div class="cfila">'+COMP_CATS.map(c=>'<button class="cbtn'+(catLiga===c.key?' on':'')+
+      '" onclick="window.coordCatLiga(\''+c.key+'\')">'+esc(c.label.replace(/^Cat /,''))+'</button>').join('')+'</div>';
+
+    const cat = catDe(catLiga), tabla = POS[cat.num] || [];
+    if(!tabla.length){
+      h += '<div class="cvacio">Sin datos de posiciones para '+esc(cat.label)+'.</div>';
+    } else {
+      const conDetalle = tabla.some(r => r.pg != null || r.gf != null);
+      h += '<div class="ccard cscroll"><table class="ctbl"><thead><tr>'+
+        '<th>#</th><th class="izq">Equipo</th><th>PJ</th>'+
+        (conDetalle ? '<th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th>' : '')+
+        '<th>Pts</th></tr></thead><tbody>'+
+        tabla.map((r,i)=>{
+          const eq = r.equipo || r.eq || '—';
+          const nos = isSC(eq);
+          const num = (v,alt)=> v!=null ? v : (alt!=null ? alt : '—');
+          return '<tr'+(nos?' class="nos"':'')+'><td>'+(i+1)+'</td>'+
+            '<td class="izq">'+esc(eq)+'</td><td>'+num(r.pj)+'</td>'+
+            (conDetalle ? '<td>'+num(r.pg)+'</td><td>'+num(r.pe)+'</td><td>'+num(r.pp)+'</td>'+
+                          '<td>'+num(r.gf)+'</td><td>'+num(r.gc)+'</td>' : '')+
+            '<td style="font-weight:700;color:var(--accent)">'+num(r.pts, r.puntos)+'</td></tr>';
+        }).join('')+'</tbody></table></div>';
+    }
+    return h;
+  }
+
+  /* ══════════ CALENDARIO ══════════ */
+  function vistaCalendario(){
+    let h = '<div class="csec">'+icono('calendario')+'Fechas del torneo</div>';
+    if(!_hayFixture){
+      h += '<div class="cvacio">Todavía no hay fixture cargado para esta temporada.</div>';
+    } else {
+      const jugadas = new Set();
+      COMP_CATS.forEach(c => (RESULTADOS[c.num]||[]).forEach(r => jugadas.add(+r.f)));
+      const prox = proximaFecha();
+      const ro = archivoBloqueado();
+      h += '<div class="ccard">'+FIXTURE_C.map(f=>{
+        const susp = !!_suspensions[f.fecha];
+        const libre = f.cond === '-';
+        const jugada = jugadas.has(+f.fecha);
+        const esProx = prox && +prox.fecha === +f.fecha;
+        const et = susp   ? ['falta','suspendida']
+                 : libre  ? ['','fecha libre']
+                 : jugada ? ['ok','jugada']
+                 : esProx ? ['medio','la que viene']
+                          : ['','pendiente'];
+        return '<div class="crow">'+
+          '<div style="width:34px;font-family:\'Bebas Neue\',sans-serif;font-size:var(--f-lg);color:var(--muted)">F'+f.fecha+'</div>'+
+          '<div class="nom">'+(libre ? '<span style="color:var(--muted)">Libre</span>' : esc(f.rival))+
+            (libre ? '' : ' <span style="color:var(--muted);font-size:var(--f-sm)">('+
+              (f.cond==='L'?'local':'visitante')+')</span>')+'</div>'+
+          '<span class="ccat '+et[0]+'">'+et[1]+'</span>'+
+          (!libre && !jugada && !ro
+            ? '<button class="cbtn'+(susp?'':' peligro')+'" onclick="window.coordSuspFecha('+f.fecha+')">'+
+              (susp?'Reactivar':'Suspender')+'</button>' : '')+
+        '</div>'; }).join('')+'</div>';
+    }
+
+    // Días de entrenamiento del mes en curso
+    h += '<div class="csec">'+icono('cono')+'Entrenamientos<span class="cont">'+
+         _nombreMes(new Date().getMonth())+'</span></div>';
+    if(!(DIAS_ENT||[]).length){
+      h += '<div class="cvacio">Este club no tiene días de entrenamiento configurados.<br>'+
+           'Se cargan desde el panel de Super Admin.</div>';
+    } else {
+      const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
+      const ultimo = new Date(y, m+1, 0).getDate();
+      const dias = [];
+      for(let d=1; d<=ultimo; d++){
+        const fecha = new Date(y, m, d);
+        if(DIAS_ENT.includes(fecha.getDay())) dias.push(d);
+      }
+      const iso = d => y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      h += '<div class="ccard"><div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">'+
+        'Tocá un día para marcarlo como sin entrenamiento (feriado, lluvia, cancha ocupada). '+
+        'Los días marcados no cuentan en la carga de los profes.</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:var(--sp-3)">'+
+        dias.map(d=>'<button class="cbtn'+(SUSP_ENT[iso(d)]?' peligro':'')+'" style="text-align:center"'+
+          (archivoBloqueado()?' disabled':' onclick="window.coordSuspEnt(\''+iso(d)+'\')"')+'>'+d+'</button>').join('')+
+        '</div></div>';
+    }
+    h += '<div class="cnota">Cada vez que suspendés algo, la app te arma el mensaje de WhatsApp y te lo '+
+         'muestra antes de mandarlo. Nada sale sin que lo leas.</div>';
+    return h;
+  }
+  function _nombreMes(i){
+    return ['enero','febrero','marzo','abril','mayo','junio','julio','agosto',
+            'septiembre','octubre','noviembre','diciembre'][i] || '';
+  }
+
+  /* ══════════ ROUTER ══════════ */
+  const TABS = [
+    { id:'hoy',        lbl:'Hoy',        ico:'tabla',      render:vistaHoy },
+    { id:'equipos',    lbl:'Equipos',    ico:'plantel',    render:vistaEquipos },
+    { id:'jugadores',  lbl:'Jugadores',  ico:'presencia',  render:vistaJugadores },
+    { id:'liga',       lbl:'Liga',       ico:'copa',       render:vistaLiga },
+    { id:'calendario', lbl:'Calendario', ico:'calendario', render:vistaCalendario },
+  ];
+
+  function pintarTabs(){
+    const el = document.getElementById('coordTabsEl');
+    if(!el) return;
+    const nPend = cargado ? pendientes().length : 0;
+    el.innerHTML = TABS.map(t =>
+      '<button class="ctab'+(tabAct===t.id?' on':'')+'" onclick="window.coordTab(\''+t.id+'\')">'+
+      '<span class="ico" data-ico="'+t.ico+'"></span>'+t.lbl+
+      (t.id==='hoy' && nPend ? '<span class="pin">'+nPend+'</span>' : '')+'</button>').join('');
+    pintarIconos(el);
+  }
+
+  function pintar(){
+    const el = document.getElementById('coordVista');
+    if(!el) return;
+    const t = TABS.find(x => x.id === tabAct) || TABS[0];
+    let cuerpo = '';
+    try { cuerpo = t.render(); }
+    catch(e){
+      console.warn('coord: error pintando '+tabAct, e);
+      cuerpo = '<div class="cvacio">No se pudo dibujar esta pantalla.<br>'+
+               'Probá recargar la página.</div>';
+    }
+    el.innerHTML = cuerpo + dlgHtml();
+    pintarIconos(el);
+    pintarTabs();
+  }
+
+  window.coordTab = function(id){ tabAct = id; _dlg = null; pintar(); window.scrollTo(0,0); };
+  window.coordCatLiga = function(k){ catLiga = k; pintar(); };
+  window.coordCatJug  = function(k){ catJug = k; jugAbierto = null; pintar(); };
+  window.coordVerJug  = function(id){ jugAbierto = (jugAbierto === id) ? null : id; pintar(); };
+  window.coordBuscar  = function(v){
+    filtroJug = v; pintar();
+    const b = document.getElementById('coordBusca');
+    if(b){ b.focus(); b.setSelectionRange(v.length, v.length); }
+  };
+  // El panel viejo exponía toggleSusp; se mantiene por si algo externo lo llama
+  window.toggleSusp = n => window.coordSuspFecha(n);
+
+  /* ══════════ CARGA DE DATOS ══════════ */
+  document.getElementById('loadingScreen').style.display = 'none';
+  pintar();
+
+  window._coordUnsubs = [];
+  (async function cargar(){
     try {
-      const reads = ALL_CATS.flatMap(cat=>[
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/attendance')).then(s=>{ D[cat.key].att=s.val()||{}; }).catch(()=>{}),
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/goleadores_historicos')).then(s=>{ D[cat.key].hist=s.val()||{}; }).catch(()=>{}),
-        get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/stats')).then(s=>{ D[cat.key].stats=s.val()||{}; }).catch(()=>{})
+      const lecturas = ALL_CATS.flatMap(cat => [
+        // Una sola lectura por categoría: trae TODAS sus temporadas, que es lo
+        // que hace falta para acumular por año sin reiniciar al cambiar de zona.
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos'))
+          .then(s => { D[cat.key].zonas = s.val() || {}; }).catch(()=>{}),
+        get(ref(db, CLUB_PATH+'/'+cat.key+'/players'))
+          .then(s => {
+            const v = s.val();
+            D[cat.key].plantel = Array.isArray(v) ? v : Object.values(v || {});
+          }).catch(()=>{}),
       ]);
-      reads.push(get(ref(db, CLUB_PATH+'/diasEntrenamiento')).then(s=>{ if(s.exists()){ _coordDiasEnt=s.val()||[]; _coordDiasEntGlobal=_coordDiasEnt; } }).catch(()=>{}));
-      reads.push(get(ref(db, CLUB_PATH+'/config/suspensionesEnt')).then(s=>{ if(s.exists()) _coordSuspEnt=s.val()||{}; }).catch(()=>{}));
-      await Promise.all(reads);
-    } catch(e){}
-    // Citaciones: primero get() para tener datos antes del primer render, luego onValue para updates
-    const citReads = ALL_CATS.map(cat=>
-      get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/citaciones')).then(s=>{
-        D[cat.key].cit = s.val()||{};
-      }).catch(()=>{})
-    );
-    await Promise.all(citReads);
-    coordFirebaseLoaded=true;
-    refresh();
-    // onValue para reflejar actualizaciones en tiempo real (ej: whatsappShared)
-    // Ignorar el primer disparo (ya tenemos los datos del get())
+      lecturas.push(get(ref(db, CLUB_PATH+'/diasEntrenamiento'))
+        .then(s => { DIAS_ENT = s.val() || []; _coordDiasEntGlobal = DIAS_ENT; }).catch(()=>{}));
+      lecturas.push(get(ref(db, CLUB_PATH+'/config/suspensionesEnt'))
+        .then(s => { SUSP_ENT = s.val() || {}; _coordSuspEntGlobal = SUSP_ENT; }).catch(()=>{}));
+      lecturas.push(get(ref(db, AVISOS_PATH))
+        .then(s => { AVISOS = s.val() || {}; }).catch(()=>{}));
+      await Promise.all(lecturas);
+    } catch(e){ console.warn('coord: error cargando datos', e); }
+    cargado = true;
+    pintar();
+
+    // En vivo: las citaciones de la zona en curso y los avisos.
+    // Solo esos dos nodos — el resto no cambia mientras el panel está abierto.
     ALL_CATS.forEach(cat=>{
-      let firstFire = true;
+      let primera = true;
       const unsub = onValue(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/citaciones'), s=>{
-        if(firstFire){ firstFire=false; return; }
-        D[cat.key].cit = s.val()||{};
-        if(coordFirebaseLoaded) refresh();
+        if(primera){ primera = false; return; }
+        if(!D[cat.key].zonas[TORNEO_ID]) D[cat.key].zonas[TORNEO_ID] = {};
+        D[cat.key].zonas[TORNEO_ID].citaciones = s.val() || {};
+        if(cargado) pintar();
       }, ()=>{});
       window._coordUnsubs.push(unsub);
     });
+    let primeraAv = true;
+    window._coordUnsubs.push(onValue(ref(db, AVISOS_PATH), s=>{
+      if(primeraAv){ primeraAv = false; return; }
+      AVISOS = s.val() || {};
+      if(cargado) pintar();
+    }, ()=>{}));
   })();
-
-  window.coordTab=function(tab){
-    coordActiveTab=tab;
-    const tabs=['resumen','presencias','citaciones','goleadores','liga','suspensiones','fixture','horarios','profes'];
-    document.querySelectorAll('#coordTabsEl .coord-tab').forEach((t,i)=>{
-      const isActive=tabs[i]===tab;
-      t.className='coord-tab'+(isActive?' cta':'');
-      const dot=t.querySelector('.ctdot'); if(dot) dot.style.background=isActive?'var(--accent)':'transparent';
-    });
-    document.querySelectorAll('#coord-app .coord-view').forEach(v=>v.classList.remove('active'));
-    const vEl=document.getElementById('cv-'+tab); if(vEl) vEl.classList.add('active');
-    renderCoordTab(tab);
-  };
-  window.coordPF=function(f){ coordPresFilter=f; renderCoordTab('presencias'); };
-  window.coordPM=function(m){ coordPresMode=m; renderCoordTab('presencias'); };
-  window._coordNavMes=function(mes){
-    const now=new Date(); const mesActual=now.toISOString().substring(0,7);
-    _coordMesCarga=(mes>=mesActual)?null:mes; renderResumen();
-  };
-  window.coordAbrirSuspEnt=function(){
-    const now=new Date(); const mesActual=now.toISOString().substring(0,7);
-    const [Y,M]=mesActual.split('-').map(Number);
-    const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
-    const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const DIA_L=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    const grupos={};
-    const ultimoDia=new Date(Y,M,0).getDate();
-    for(let d=1;d<=ultimoDia;d++){
-      const dt=new Date(Y,M-1,d); const dow=String(dt.getDay());
-      if(_coordDiasEnt.includes(dow)){ if(!grupos[dow]) grupos[dow]=[]; grupos[dow].push(d); }
-    }
-    const overlay=document.createElement('div');
-    overlay.id='suspEntOverlay';
-    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:var(--sp-6);overflow-y:auto';
-    let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-7);width:100%;max-width:420px;margin:auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3)">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);letter-spacing:2px;color:var(--accent)">SUSPENSIONES — ${MES_L[M-1].toUpperCase()}</div>
-        <button onclick="document.getElementById('suspEntOverlay').remove()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-4);font-size:var(--f-sm);cursor:pointer">✕</button>
-      </div>
-      <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-6)">Tildá los días que no se entrenó. Se descuentan del total estimado del mes.</div>`;
-    _coordDiasEnt.slice().sort((a,b)=>parseInt(a)-parseInt(b)).forEach(dow=>{
-      const dias=grupos[dow]||[];
-      html+=`<div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:var(--sp-3)">${DIA_L[parseInt(dow)]}</div><div style="display:flex;flex-wrap:wrap;gap:var(--sp-3);margin-bottom:var(--sp-5)">`;
-      dias.forEach(d=>{
-        const dd=String(d).padStart(2,'0'); const susp=!!suspEnt[dd];
-        html+=`<button onclick="window.coordToggleSuspEnt('${mesActual}','${dd}',this)" style="background:${susp?'rgba(255,23,68,0.15)':'rgba(77,115,245,0.1)'};border:1px solid ${susp?'rgba(255,23,68,0.4)':'var(--border)'};color:${susp?'#ff4d6d':'var(--muted)'};border-radius:var(--r-md);padding:var(--sp-3) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">${susp?'✓ ':''} ${DIA_L[parseInt(dow)]} ${d}</button>`;
-      });
-      html+=`</div>`;
-    });
-    html+=`<button onclick="document.getElementById('suspEntOverlay').remove()" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer;margin-top:var(--sp-2)">Listo</button></div>`;
-    overlay.innerHTML=html; document.body.appendChild(overlay);
-    overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
-  };
-  window.coordToggleSuspEnt=async function(mesActual,dd,btn){
-    const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesActual])||{};
-    const path=CLUB_PATH+'/config/suspensionesEnt/'+mesActual+'/'+dd;
-    try{
-      if(suspEnt[dd]){
-        await remove(ref(db,path));
-        if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={}; delete _coordSuspEnt[mesActual][dd];
-        btn.style.background='rgba(77,115,245,0.1)'; btn.style.borderColor='var(--border)'; btn.style.color='var(--muted)';
-        btn.textContent=btn.textContent.replace('✓','').trim();
-      } else {
-        await set(ref(db,path),true);
-        if(!_coordSuspEnt[mesActual]) _coordSuspEnt[mesActual]={}; _coordSuspEnt[mesActual][dd]=true;
-        btn.style.background='rgba(255,23,68,0.15)'; btn.style.borderColor='rgba(255,23,68,0.4)'; btn.style.color='#ff4d6d';
-        if(!btn.textContent.includes('✓')) btn.textContent='✓  '+btn.textContent.trim();
-      }
-      if(coordActiveTab==='suspensiones') renderCoordTab('suspensiones');
-      else if(coordActiveTab==='presencias') renderCoordTab('presencias');
-    }catch(e){ showToast('Error al guardar'); }
-  };
-  window.coordJugadorSelect=function(val){
-    if(!val){ coordJugadorSel=null; }
-    else{ const [catKey,...rest]=val.split('|'); coordJugadorSel={catKey,nombre:rest.join('|')}; }
-    coordJugadorMes='todo';
-    renderCoordTab('presencias');
-  };
-  window.coordJugadorMesChange=function(val){ coordJugadorMes=val; renderCoordTab('presencias'); };
-
-  function renderCoordTab(tab){
-    if(tab==='resumen')    renderResumen();
-    if(tab==='presencias') renderPresencias();
-    if(tab==='citaciones') renderCitaciones();
-    if(tab==='goleadores') renderGoleadores();
-    if(tab==='liga')       renderLiga();
-    if(tab==='suspensiones') renderCoordSuspensiones();
-    if(tab==='fixture')    renderCoordFixture();
-    if(tab==='horarios')   renderCoordHorarios();
-    if(tab==='profes')     renderCoordProfes();
-  }
-
-  // ── TAB RESUMEN ──
-  let _coordMesCarga=null;
-  function renderResumen(){
-    const el=document.getElementById('cv-resumen');
-    if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto var(--sp-5)"></div>Cargando datos del club…</div>'; return; }
-    const CAT_COL_R={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-    const MES_S=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const MES_L=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-    let h=``;
-
-    // ── CITACIONES — última citación por categoría ──
-    {
-      // Para cada cat: encontrar su última citación (mayor fecha con citados)
-      const catCitStatus = COMP_CATS.map(cat => {
-        const entries = Object.values(D[cat.key].cit)
-          .filter(x => x && x.citados && x.citados.length > 0 && x.fecha)
-          .sort((a,b) => (+b.fecha) - (+a.fecha));
-        const last = entries[0] || null;
-        const sd = last && last.savedAt ? last.savedAt : null;
-        const sdFmt = sd ? sd.substring(8,10)+'/'+sd.substring(5,7) : null; // DD/MM
-        return { cat, last, fecha: last ? +last.fecha : 0, rival: last ? (last.rival||'—') : null, n: last ? last.citados.length : 0, wa: last && last.whatsappShared, savedAt: sdFmt };
-      });
-
-      // Ordenar: primero las que tienen menor fecha (más atrasadas), luego las sin citar
-      const conCita = catCitStatus.filter(x=>x.last).sort((a,b)=>a.fecha-b.fecha);
-      const sinCita = catCitStatus.filter(x=>!x.last);
-
-      // Fecha máxima citada entre todas las cats (para detectar atraso)
-      const maxFecha = conCita.length ? conCita[conCita.length-1].fecha : 0;
-
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-5)">
-        <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-5)">Última citación por categoría</div>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-3)">`;
-
-      COMP_CATS.forEach(cat => {
-        const s = catCitStatus.find(x=>x.cat.key===cat.key);
-        const atrasada = s.last && s.fecha < maxFecha;
-        const color = CAT_COL_R[cat.key]||'var(--accent)';
-        const borderCol = !s.last ? 'rgba(var(--loss-rgb),0.3)' : atrasada ? 'rgba(var(--draw-rgb),0.35)' : 'rgba(var(--accent-rgb),0.3)';
-        const bgCol = !s.last ? 'rgba(var(--loss-rgb),0.06)' : atrasada ? 'rgba(var(--draw-rgb),0.06)' : 'rgba(var(--accent-rgb),0.06)';
-        h+=`<div style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5);border-radius:var(--r-sm);background:${bgCol};border:1px solid ${borderCol}">
-          <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
-          <span style="font-size:var(--f-sm);font-weight:600;color:var(--text);min-width:72px">${cat.label}</span>
-          ${s.last
-            ? `<span style="font-size:var(--f-sm);color:${atrasada?'var(--draw)':'var(--accent)'};font-weight:700">F${s.fecha}</span>
-               <span style="font-size:var(--f-sm);color:var(--muted);flex:1">${s.rival}</span>
-               ${s.savedAt?`<span style="font-size:var(--f-micro);color:var(--muted);opacity:0.7">${s.savedAt}</span>`:''}
-               <span style="font-size:var(--f-sm);color:var(--muted)">${s.n} cit${s.wa?' 📱':''}</span>`
-            : `<span style="font-size:var(--f-sm);color:var(--loss);font-weight:600;flex:1">Sin citaciones</span>`
-          }
-        </div>`;
-      });
-
-      h+=`</div></div>`;
-    }
-
-    // ── EVOLUCIÓN PRESENCIA POR MES ──
-    const monthData={};
-    ALL_CATS.forEach(cat=>{
-      Object.entries(D[cat.key].att).forEach(([d,s])=>{
-        const ym=d.substring(0,7);
-        if(!monthData[ym]) monthData[ym]={pres:0,slots:0};
-        monthData[ym].pres+=(s.present||[]).length;
-        monthData[ym].slots+=cat.players;
-      });
-    });
-    const allMonths=Object.keys(monthData).sort();
-    if(allMonths.length){
-      const lastMonth=allMonths[allMonths.length-1];
-      const prevMonths=allMonths.slice(-4,-1).reverse();
-      const pctOf=ym=>{ const d=monthData[ym]; return d&&d.slots?Math.round(d.pres/d.slots*100):0; };
-      const curPct=pctOf(lastMonth);
-      const prevPct=prevMonths.length?pctOf(prevMonths[0]):null;
-      const diff=prevPct!==null?curPct-prevPct:null;
-      const [,curM]=lastMonth.split('-');
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-5)">
-        <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-5)">Evolución de presencia — por mes</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6);padding-bottom:var(--sp-5);border-bottom:1px solid rgba(255,255,255,0.07)">
-          <div>
-            <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-1)">${MES_L[parseInt(curM)-1]} — actual</div>
-            <div style="font-size:var(--f-3xl);font-weight:800;color:${pCol(curPct)};line-height:1">${curPct}%</div>
-          </div>
-          ${diff!==null?`<div style="text-align:right">
-            <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">vs ${MES_S[parseInt(prevMonths[0].split('-')[1])-1]}</div>
-            <div style="font-size:var(--f-sm);font-weight:700;color:${diff>=0?'var(--win)':'#ff4444'};background:${diff>=0?'rgba(var(--win-rgb),0.12)':'rgba(255,68,68,0.12)'};border:1px solid ${diff>=0?'rgba(34,205,120,0.25)':'rgba(255,68,68,0.25)'};border-radius:var(--r-full);padding:var(--sp-2) var(--sp-5)">${diff>=0?'▲':'▼'} ${Math.abs(diff)}%</div>
-          </div>`:''}
-        </div>
-        <div style="display:flex;gap:var(--sp-4)">`;
-      prevMonths.forEach(ym=>{
-        const [,m]=ym.split('-');
-        const pct=pctOf(ym);
-        const col=pCol(pct);
-        h+=`<div style="flex:1">
-          <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">${MES_S[parseInt(m)-1]}</div>
-          <div style="background:rgba(0,0,0,0.25);border-radius:var(--r-sm);height:10px;margin-bottom:var(--sp-2)">
-            <div style="width:${pct}%;height:100%;background:${col};border-radius:var(--r-sm)"></div>
-          </div>
-          <div style="font-size:var(--f-micro);color:${col};font-weight:700">${pct}%</div>
-        </div>`;
-      });
-      h+=`</div></div>`;
-    }
-
-    // ── CARGA DE ENTRENAMIENTOS DEL MES ──
-    {
-      const now=new Date();
-      const mesActualISO=now.toISOString().substring(0,7);
-      const mesSel=_coordMesCarga||mesActualISO;
-      const [msY,msM]=mesSel.split('-').map(Number);
-      const esMesActual=mesSel===mesActualISO;
-      const dtPrev=new Date(msY,msM-2,1); const mesPrev=dtPrev.getFullYear()+'-'+String(dtPrev.getMonth()+1).padStart(2,'0');
-      const dtNext=new Date(msY,msM,1);   const mesSig=dtNext.getFullYear()+'-'+String(dtNext.getMonth()+1).padStart(2,'0');
-      const hayMesSig=mesSig<=mesActualISO;
-      const suspEnt=(_coordSuspEnt&&_coordSuspEnt[mesSel])||{};
-      const suspCount=Object.keys(suspEnt).length;
-      let totalMes=0,diasRef=0;
-      if(_coordDiasEnt.length){
-        const ultimoDia=new Date(msY,msM,0).getDate();
-        const limDia=esMesActual?now.getDate():ultimoDia;
-        for(let d=1;d<=ultimoDia;d++){
-          const dt2=new Date(msY,msM-1,d);
-          const dd=String(d).padStart(2,'0');
-          if(_coordDiasEnt.includes(String(dt2.getDay()))&&!suspEnt[dd]){
-            totalMes++;
-            if(d<=limDia) diasRef++;
-          }
-        }
-      }
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-5)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5)">
-          <div style="display:flex;align-items:center;gap:var(--sp-4)">
-            <button onclick="window._coordNavMes('${mesPrev}')" style="background:rgba(77,115,245,0.12);border:1px solid rgba(77,115,245,0.3);color:var(--accent);border-radius:var(--r-sm);padding:var(--sp-1) var(--sp-4);font-size:var(--f-sm);font-weight:700;cursor:pointer">←</button>
-            <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">Carga — ${MES_L[msM-1]}${esMesActual?' (actual)':''}</div>
-            <button onclick="window._coordNavMes('${mesSig}')" style="background:${hayMesSig?'rgba(77,115,245,0.12)':'transparent'};border:1px solid ${hayMesSig?'rgba(77,115,245,0.3)':'rgba(77,115,245,0.1)'};color:${hayMesSig?'var(--accent)':'#2a3a5a'};border-radius:var(--r-sm);padding:var(--sp-1) var(--sp-4);font-size:var(--f-sm);font-weight:700;cursor:${hayMesSig?'pointer':'default'}">→</button>
-          </div>
-          ${totalMes>0?`<div style="font-size:var(--f-micro);color:var(--muted)">${totalMes} en el mes${suspCount?` · <span style="color:var(--draw)">${suspCount} susp.</span>`:''}${esMesActual&&diasRef?` · ${diasRef} a hoy`:''}</div>`:''}
-        </div>`;
-      ALL_CATS.forEach(cat=>{
-        const att=D[cat.key].att;
-        const cargados=Object.keys(att).filter(d=>d.startsWith(mesSel)).length;
-        let colBar,semaforo,labelDer,barCargado,barRef;
-        if(totalMes>0){
-          colBar=cargados>=diasRef?'var(--win)':cargados>=diasRef*0.6?'var(--draw)':'#ff4444';
-          semaforo=cargados>=diasRef?'🟢':cargados>=diasRef*0.6?'🟡':'🔴';
-          labelDer=`<span style="font-size:var(--f-sm);color:${colBar};font-weight:700">${cargados}/${totalMes}</span>`;
-          barCargado=Math.round(cargados/totalMes*100);
-          barRef=esMesActual?Math.round(diasRef/totalMes*100):0;
-        } else {
-          colBar='var(--accent)'; semaforo='';
-          labelDer=`<span style="font-size:var(--f-sm);color:var(--muted)">${cargados} cargado${cargados!==1?'s':''}</span>`;
-          barCargado=cargados>0?100:0; barRef=0;
-        }
-        h+=`<div style="margin-bottom:var(--sp-4)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-2)">
-            <div style="display:flex;align-items:center;gap:var(--sp-3)">
-              <div style="width:8px;height:8px;border-radius:50%;background:${CAT_COL_R[cat.key]||'var(--accent)'};flex-shrink:0"></div>
-              <span style="font-size:var(--f-sm);font-weight:500">${cat.label}</span>
-              ${semaforo?`<span style="font-size:var(--f-sm)">${semaforo}</span>`:''}
-            </div>
-            ${labelDer}
-          </div>
-          <div style="background:rgba(0,0,0,0.25);border-radius:var(--r-sm);height:7px;position:relative;overflow:hidden">
-            <div style="position:absolute;top:0;left:0;height:100%;width:${barCargado}%;background:${colBar};border-radius:var(--r-sm)"></div>
-            ${barRef&&barRef!==barCargado?`<div style="position:absolute;top:0;left:${barRef}%;width:1px;height:100%;background:rgba(255,255,255,0.4)"></div>`:''}
-          </div>
-        </div>`;
-      });
-      if(!_coordDiasEntGlobal.length){
-        h+=`<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-3);padding:var(--sp-4);background:rgba(77,115,245,0.07);border-radius:var(--r-md);border:1px solid rgba(77,115,245,0.15)">
-          💡 Configurá los días de entrenamiento en el panel SA para ver el progreso esperado del mes
-        </div>`;
-      }
-      h+=`</div>`;
-    }
-
-    el.innerHTML=h;
-  }
-
-
-  // ── TAB PRESENCIAS ──
-  function renderPresencias(){
-    const el=document.getElementById('cv-presencias');
-    if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto var(--sp-5)"></div>Cargando presencias…</div>'; return; }
-    var _suspEntHtml='';
-
-    // ── SELECTOR DE JUGADOR ──
-    let jugSel=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-5)">
-      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-4)">Comparativa de jugador</div>
-      <select onchange="window.coordJugadorSelect(this.value)" style="width:100%;font-size:var(--f-md);padding:var(--sp-4) var(--sp-5);border-radius:var(--r-md);border:1px solid var(--border);background:var(--bg);color:var(--text)">
-        <option value="">— elegir jugador —</option>`;
-    COMP_CATS.forEach(cat=>{
-      const players=Object.keys(D[cat.key].att).flatMap(d=>[...(D[cat.key].att[d].present||[]),...(D[cat.key].att[d].absent||[])]);
-      const uniq=[...new Set(players)].sort();
-      if(!uniq.length) return;
-      jugSel+=`<optgroup label="${cat.label}">`;
-      uniq.forEach(p=>{
-        const val=cat.key+'|'+p;
-        const sel=(coordJugadorSel&&coordJugadorSel.catKey===cat.key&&coordJugadorSel.nombre===p)?'selected':'';
-        jugSel+=`<option value="${val}" ${sel}>${p}</option>`;
-      });
-      jugSel+=`</optgroup>`;
-    });
-    jugSel+=`</select></div>`;
-
-    if(coordJugadorSel){
-      el.innerHTML=jugSel;
-      renderCoordJugador(el);
-      return;
-    }
-    let h=jugSel+`<div class="cfilter-row"><button class="cfilter${!coordPresFilter?' on':''}" onclick="window.coordPF(null)">Todas</button>`;
-    ALL_CATS.forEach(cat=>{ h+=`<button class="cfilter${coordPresFilter===cat.key?' on':''}" onclick="window.coordPF('${cat.key}')">${cat.label.replace('Cat ','')}</button>`; });
-    h+=`</div><div class="cfilter-row">
-      <button class="cfilter${coordPresMode==='day'?' on':''}" onclick="window.coordPM('day')">Por Día</button>
-      <button class="cfilter${coordPresMode==='week'?' on':''}" onclick="window.coordPM('week')">Por Semana</button>
-      <button class="cfilter${coordPresMode==='month'?' on':''}" onclick="window.coordPM('month')">Por Mes</button>
-    </div>`;
-    const catsToShow=coordPresFilter?ALL_CATS.filter(c=>c.key===coordPresFilter):ALL_CATS;
-    function gKey(d){ if(coordPresMode==='month') return d.slice(0,7); if(coordPresMode==='week'){const dt=new Date(d+'T12:00:00'),thu=new Date(dt);thu.setDate(dt.getDate()-(dt.getDay()+6)%7+3);const wk=Math.ceil(((thu-new Date(thu.getFullYear(),0,1))/864e5+1)/7);return thu.getFullYear()+'-W'+String(wk).padStart(2,'0');}return d;}
-    function gLbl(k){ if(coordPresMode==='month'){const[y,mo]=k.split('-');return MES[parseInt(mo)-1]+' '+y;} if(coordPresMode==='week'){const[y,wn]=k.split('-W');const jan4=new Date(parseInt(y),0,4),mon=new Date(jan4);mon.setDate(jan4.getDate()-(jan4.getDay()||7)+1+(parseInt(wn)-1)*7);return 'Sem '+mon.getDate()+'/'+(mon.getMonth()+1)+' ('+y+')';} const[y,mo,dd]=k.split('-');return dd+'/'+mo+'/'+y.slice(2);}
-    const allDates=[...new Set(catsToShow.flatMap(c=>Object.keys(D[c.key].att)))].sort().reverse();
-    if(!allDates.length){ el.innerHTML=h+'<div class="empty-msg">Sin datos de entrenamientos aún</div>'; return; }
-    const groups={};
-    allDates.forEach(d=>{ const k=gKey(d); if(!groups[k]) groups[k]=[]; if(!groups[k].includes(d)) groups[k].push(d); });
-    Object.keys(groups).sort().reverse().forEach(gk=>{
-      h+=`<div class="csec">${gLbl(gk)}</div>`;
-      catsToShow.forEach(cat=>{
-        const att=D[cat.key].att;
-        const dates=groups[gk].filter(d=>att[d]).sort();
-        if(!dates.length) return;
-        const avgP=Math.round(dates.reduce((a,d)=>a+(att[d].present||[]).length,0)/dates.length/cat.players*100);
-        const dots=dates.map(d=>{ const p=Math.round((att[d].present||[]).length/cat.players*100); return `<span style="display:inline-flex;align-items:center;gap:var(--sp-2);background:var(--bg);border-radius:var(--r-sm);padding:var(--sp-1) var(--sp-4);font-size:var(--f-sm)"><span style="width:7px;height:7px;border-radius:50%;background:${pCol(p)};flex-shrink:0"></span><span style="color:${pCol(p)};font-weight:600">${p}%</span></span>`; }).join('');
-        h+=`<div class="crd-row"><div class="crd-top"><div class="crd-name">${cat.label}</div><span style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);color:${pCol(avgP)}">${avgP}%</span></div><div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-3)">${dates.length} sesión${dates.length!==1?'es':''} · Promedio ${avgP}%</div><div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">${dots}</div><div class="mini-bar" style="margin-top:var(--sp-3)"><div class="mini-fill" style="width:${avgP}%;background:${pCol(avgP)}"></div></div></div>`;
-      });
-    });
-    // Motivos de ausencia
-    h+=`<div class="csec" style="margin-top:var(--sp-8)">Motivos de Ausencia</div>`;
-    const rc={lesionado:0,enfermedad:0,personal:0,suspendido:0,sinaviso:0};
-    let totAbs=0;
-    catsToShow.forEach(cat=>{ Object.values(D[cat.key].att).forEach(s=>{ (s.absent||[]).forEach(p=>{ const r=(s.reasons&&s.reasons[p])||'sinaviso'; if(rc[r]!==undefined)rc[r]++;else rc['sinaviso']++; totAbs++; }); }); });
-    if(totAbs){
-      Object.entries(rc).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).forEach(([r,cnt])=>{
-        const pct=Math.round(cnt/totAbs*100),col=REASON_COLORS[r];
-        h+=`<div class="crd-row"><div class="crd-top"><div style="display:flex;align-items:center;gap:var(--sp-3)"><span style="font-size:var(--f-md)">${REASON_ICONS[r]}</span><span style="font-weight:600">${REASON_LABELS[r]}</span></div><span style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);color:${col}">${pct}%</span></div><div class="mini-bar"><div class="mini-fill" style="width:${pct}%;background:${col}"></div></div><div style="font-size:var(--f-micro);color:var(--muted);margin-top:var(--sp-2)">${cnt} ausencia${cnt!==1?'s':''} de ${totAbs} totales</div></div>`;
-      });
-    } else { h+=`<div class="empty-msg">Sin datos de ausencias</div>`; }
-    el.innerHTML=h;
-  }
-
-  // ── COMPARATIVA DE JUGADOR ──
-  function renderCoordJugador(el){
-    if(!coordJugadorSel) return;
-    const {catKey,nombre}=coordJugadorSel;
-    const cat=ALL_CATS.find(c=>c.key===catKey); if(!cat) return;
-    const att=D[catKey].att||{};
-    const cit=D[catKey].cit||{};
-    const DIAS_S=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    const MES_S2=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const REASON_LABELS2={lesionado:'Lesión',enfermedad:'Enfermedad',personal:'Personal',suspendido:'Suspendido',sinaviso:'Sin aviso'};
-    const REASON_COLORS2={lesionado:'#ff6d00',enfermedad:'#aa00ff',personal:'#00b0ff',suspendido:'var(--loss)',sinaviso:'#888'};
-
-    // Obtener todos los meses disponibles
-    const allDates=Object.keys(att).sort();
-    const mesesDisp=[...new Set(allDates.map(d=>d.slice(0,7)))].sort();
-
-    // Filtrar por mes
-    const filterDates=coordJugadorMes==='todo'?allDates:allDates.filter(d=>d.startsWith(coordJugadorMes));
-
-    // Selector de mes
-    let h=`<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-bottom:var(--sp-5);overflow-x:auto">`;
-    h+=`<button onclick="window.coordJugadorMesChange('todo')" style="padding:var(--sp-2) var(--sp-5);border-radius:var(--r-full);border:1px solid ${coordJugadorMes==='todo'?'rgba(106,189,230,0.5)':'var(--border)'};background:${coordJugadorMes==='todo'?'rgba(var(--accent-rgb),0.15)':'transparent'};color:${coordJugadorMes==='todo'?'var(--accent)':'var(--muted)'};font-size:var(--f-sm);cursor:pointer;white-space:nowrap">Todo</button>`;
-    mesesDisp.forEach(ym=>{
-      const [y,m]=ym.split('-');
-      const lbl=MES_S2[parseInt(m)-1]+' '+y;
-      const act=coordJugadorMes===ym;
-      h+=`<button onclick="window.coordJugadorMesChange('${ym}')" style="padding:var(--sp-2) var(--sp-5);border-radius:var(--r-full);border:1px solid ${act?'rgba(106,189,230,0.5)':'var(--border)'};background:${act?'rgba(var(--accent-rgb),0.15)':'transparent'};color:${act?'var(--accent)':'var(--muted)'};font-size:var(--f-sm);cursor:pointer;white-space:nowrap">${lbl}</button>`;
-    });
-    h+=`</div>`;
-
-    // ── Header jugador ──
-    const totalSess=filterDates.filter(d=>att[d]).length;
-    const jugPresente=filterDates.filter(d=>att[d]&&(att[d].present||[]).includes(nombre)).length;
-    const jugPct=totalSess?Math.round(jugPresente/totalSess*100):0;
-    const catPlayers=[...new Set(allDates.flatMap(d=>att[d]?[...(att[d].present||[]),...(att[d].absent||[])]:[])) ];
-    const catPcts=catPlayers.map(p=>{ const pr=filterDates.filter(d=>att[d]&&(att[d].present||[]).includes(p)).length; return totalSess?Math.round(pr/totalSess*100):0; });
-    const catAvg=catPcts.length?Math.round(catPcts.reduce((a,b)=>a+b,0)/catPcts.length):0;
-    const pCol2=p=>p>=75?'var(--win)':p>=50?'var(--draw)':'var(--loss)';
-
-    // Citaciones del jugador
-    // Todas las citaciones (regulares + extras), con _key y _sortKey para ordenar cronológicamente
-    const citEntries=Object.entries(cit)
-      .filter(([k,x])=>x&&x.citados&&(x.fecha||x.fecha_str||x.ts))
-      .map(([k,x])=>({...x,_key:k,_isExtra:k.startsWith('extra_'),
-        _sortKey: k.startsWith('extra_') ? (x.fecha_str||String(x.ts||0)) : String(+x.fecha).padStart(3,'0')
-      }));
-    const citDondeEsta=citEntries.filter(x=>(x.citados||[]).includes(nombre))
-      .sort((a,b)=>a._sortKey.localeCompare(b._sortKey));
-    const totalCitF=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]).length;
-    const jugCitado=citDondeEsta.length;
-    const jugCitPct=totalCitF?Math.round(jugCitado/totalCitF*100):0;
-    const catCitPcts=catPlayers.map(p=>{ return totalCitF?Math.round(citEntries.filter(x=>(x.citados||[]).includes(p)).length/totalCitF*100):0; });
-    const catCitAvg=catCitPcts.length?Math.round(catCitPcts.reduce((a,b)=>a+b,0)/catCitPcts.length):0;
-
-    // Ausencias
-    const ausencias=[];
-    filterDates.forEach(d=>{ if(att[d]&&(att[d].absent||[]).includes(nombre)){ const motivo=(att[d].reasons&&att[d].reasons[nombre])||'sinaviso'; ausencias.push({d,motivo}); } });
-
-    // Header
-    const inicial=nombre.trim()[0]||'?';
-    h+=`<div style="display:flex;align-items:center;gap:var(--sp-5);margin-bottom:var(--sp-5);padding:var(--sp-5) var(--sp-5);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);">
-      <div style="width:36px;height:36px;border-radius:50%;background:rgba(var(--accent-rgb),0.15);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:var(--f-md);color:var(--accent);flex-shrink:0;">${inicial}</div>
-      <div>
-        <div style="font-size:var(--f-md);font-weight:600;color:var(--text);">${nombre}</div>
-        <div style="font-size:var(--f-micro);color:var(--muted);">${cat.label}</div>
-      </div>
-      <div style="margin-left:auto;text-align:right;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);color:${pCol2(jugPct)};line-height:1;">${jugPct}%</div>
-        <div style="font-size:var(--f-micro);color:var(--muted);">presencia</div>
-      </div>
-    </div>`;
-
-    // Grid 2 columnas
-    h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-5);">`;
-
-    // ── COL IZQUIERDA: Citaciones ──
-    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5);">
-      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-5);">⭐ Citaciones</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-5);">
-        <div style="background:var(--bg);border-radius:var(--r-sm);padding:var(--sp-4);text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);color:var(--draw);line-height:1;">${jugCitado}/${totalCitF}</div>
-          <div style="font-size:var(--f-micro);color:var(--muted);margin-top:var(--sp-1);">partidos</div>
-        </div>
-        <div style="background:var(--bg);border-radius:var(--r-sm);padding:var(--sp-4);text-align:center;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);color:var(--draw);line-height:1;">${jugCitPct}%</div>
-          <div style="font-size:var(--f-micro);color:var(--muted);margin-top:var(--sp-1);">del jugador</div>
-        </div>
-      </div>
-      <div style="margin-bottom:var(--sp-5);">
-        <div style="display:flex;justify-content:space-between;font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2);"><span>Jugador</span><span style="color:var(--draw);">${jugCitPct}%</span></div>
-        <div style="background:var(--bg);border-radius:var(--r-sm);height:5px;overflow:hidden;"><div style="width:${jugCitPct}%;height:100%;background:var(--draw);border-radius:var(--r-sm);"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:var(--f-micro);color:var(--muted);margin:var(--sp-3) 0 var(--sp-2);"><span>${cat.label}</span><span>${catCitAvg}%</span></div>
-        <div style="background:var(--bg);border-radius:var(--r-sm);height:5px;overflow:hidden;"><div style="width:${catCitAvg}%;height:100%;background:var(--accent);border-radius:var(--r-sm);opacity:0.6;"></div></div>
-      </div>
-      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-3);">Fechas citado</div>
-      <div style="display:flex;flex-direction:column;gap:var(--sp-2);">`;
-    if(!citDondeEsta.length){
-      h+=`<div style="font-size:var(--f-sm);color:var(--muted);">Sin citaciones en el período</div>`;
-    } else {
-      [...citDondeEsta].reverse().forEach(x=>{
-        const lbl = x._isExtra
-          ? (x.fecha_str ? x.fecha_str.substring(8,10)+'/'+x.fecha_str.substring(5,7) : '🏆')
-          : `F${x.fecha}`;
-        const lblCol = x._isExtra ? 'var(--draw)' : 'var(--accent)';
-        const border = x._isExtra ? 'var(--draw)' : 'var(--accent)';
-        const rivalLbl = x._isExtra ? `${x.rival||'—'} ${x.torneo_nombre?'('+x.torneo_nombre+')':''}` : (x.rival||'—');
-        h+=`<div style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-4);background:rgba(106,189,230,0.07);border-radius:var(--r-sm);border-left:2px solid ${border};">
-          <span style="font-size:var(--f-sm);font-weight:700;color:${lblCol};flex-shrink:0;">${lbl}</span>
-          <span style="font-size:var(--f-sm);color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${rivalLbl}</span>
-          <span style="font-size:var(--f-micro);color:var(--muted);">✓</span>
-        </div>`;
-      });
-    }
-    h+=`</div></div>`;
-
-    // ── COL DERECHA: Presencias por semana ──
-    h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5);overflow-y:auto;max-height:480px;">
-      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-5);">${icono('calendario')} Entrenamientos</div>`;
-
-    // Agrupar sesiones por semana ISO
-    const getWeek=d=>{ const dt=new Date(d+'T12:00:00'); const tmp=new Date(dt); tmp.setHours(0,0,0,0); tmp.setDate(tmp.getDate()+4-(tmp.getDay()||7)); const y=tmp.getFullYear(); const w=Math.ceil(((tmp-new Date(y,0,1))/864e5+1)/7); return `${y}-W${String(w).padStart(2,'0')}`; };
-    const byWeek={};
-    [...filterDates].sort((a,b)=>b.localeCompare(a)).forEach(d=>{ if(!att[d]) return; const wk=getWeek(d); if(!byWeek[wk]) byWeek[wk]=[]; byWeek[wk].push(d); });
-    const weekKeys=Object.keys(byWeek).sort((a,b)=>b.localeCompare(a));
-
-    if(!weekKeys.length){
-      h+=`<div style="font-size:var(--f-sm);color:var(--muted);">Sin sesiones en el período</div>`;
-    } else {
-      weekKeys.forEach(wk=>{
-        const dates=byWeek[wk].sort((a,b)=>a.localeCompare(b));
-        const presW=dates.filter(d=>(att[d].present||[]).includes(nombre)).length;
-        h+=`<div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-3);display:flex;align-items:center;gap:var(--sp-3);">
-          <span>${wk.replace('-',' ')}</span>
-          <div style="flex:1;height:1px;background:var(--border);"></div>
-          <span style="color:${presW===dates.length?'var(--win)':presW===0?'var(--loss)':'var(--draw)'}">${presW}/${dates.length}</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:var(--sp-2);margin-bottom:var(--sp-5);">`;
-        dates.forEach(d=>{
-          const dt=new Date(d+'T12:00:00');
-          const dia=DIAS_S[dt.getDay()];
-          const pres=(att[d].present||[]).includes(nombre);
-          const motivo=!pres&&att[d].reasons&&att[d].reasons[nombre]?att[d].reasons[nombre]:null;
-          const REASON_SHORT={lesionado:'🩹',enfermedad:'🤒',personal:'👤',suspendido:'🚫',sinaviso:'❓'};
-          h+=`<div style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-sm);${pres?'background:rgba(106,189,230,0.07);':''}">
-            <div style="width:6px;height:6px;border-radius:50%;background:${pres?'var(--accent)':'var(--loss)'};flex-shrink:0;opacity:${pres?1:0.6};"></div>
-            <span style="font-size:var(--f-sm);color:var(--muted);min-width:28px;">${dia}</span>
-            <span style="font-size:var(--f-sm);color:${pres?'var(--text)':'var(--muted)'};flex:1;">${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}</span>
-            <span style="font-size:var(--f-micro);color:${pres?'var(--accent)':'var(--loss)'};font-weight:600;">${pres?'✓':motivo?REASON_SHORT[motivo]||'✗':'✗'}</span>
-          </div>`;
-        });
-        h+=`</div>`;
-      });
-    }
-    h+=`</div>`;
-
-    // Cierre grid
-    h+=`</div>`;
-    el.innerHTML+=h;
-  }
-
-  // ── TAB CITACIONES ──
-  function renderCitaciones(){
-    const el=document.getElementById('cv-citaciones');
-    if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto var(--sp-5)"></div>Cargando citaciones…</div>'; return; }
-    const actF=globalActiveFecha();
-    const CAT_COL_C={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-    let h='';
-    const allF=[...new Set(COMP_CATS.flatMap(c=>Object.values(D[c.key].cit).map(x=>x.fecha)))].filter(Boolean).sort((a,b)=>b-a);
-    if(allF.length){
-      h+=`<div class="csec" style="margin-top:var(--sp-8)">Historial por fecha</div>`;
-      allF.forEach(f=>{
-        const fx=FIXTURE_C.find(x=>x.fecha===f),rival=fx?fx.rival:'F'+f;
-        h+=`<div class="fecha-bar"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4)"><span style="font-weight:600;font-size:var(--f-md)">Fecha ${f} — ${rival}</span><span style="font-size:var(--f-sm);color:var(--muted)">${COMP_CATS.filter(c=>Object.values(D[c.key].cit).some(x=>x.fecha===f && x.citados && x.citados.length>0)).length}/${COMP_CATS.length} cats</span></div><div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">`;
-        COMP_CATS.forEach(cat=>{
-          const ce=Object.values(D[cat.key].cit).find(x=>x.fecha===f);
-          const cited=hasCitados(ce),wa=ce&&ce.whatsappShared;
-          const bg=cited?'rgba(34,85,238,0.1)':'rgba(255,23,68,0.07)',bdr=cited?'rgba(34,85,238,0.3)':'rgba(255,23,68,0.15)',col=cited?'var(--green)':'rgba(200,80,80,0.6)';
-          h+=`<span style="font-size:var(--f-sm);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-sm);background:${bg};border:1px solid ${bdr};color:${col}">${cat.label.replace('Cat ','')} ${cited?'✓':'—'}${wa?' 📱':''}</span>`;
-        });
-        h+=`</div></div>`;
-      });
-    }
-    // ── ESCUELITA — Encuentros (solo si el club tiene escuelita activa) ──
-    if(hasEsc && D['escuelita']){
-      const escEncs=Object.entries(D['escuelita'].cit).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
-      h+=`<div class="csec" style="margin-top:var(--sp-8)">⚽ Escuelita — Encuentros${escEncs.length?` <span style="font-size:var(--f-sm);color:var(--muted);font-family:'DM Sans',sans-serif;letter-spacing:0">${escEncs.length} registrado${escEncs.length!==1?'s':''}</span>`:''}
-      </div>`;
-      if(!escEncs.length){
-        h+=`<div class="empty-msg" style="padding:var(--sp-6) 0">Sin encuentros registrados aún</div>`;
-      } else {
-        escEncs.forEach(([,enc])=>{
-          const citados=enc.citados||[];
-          const bg=citados.length?'rgba(34,85,238,0.06)':'var(--surface2)';
-          const bdr=citados.length?'rgba(34,85,238,0.25)':'var(--border)';
-          h+=`<div style="background:${bg};border:1px solid ${bdr};border-radius:var(--r-md);padding:var(--sp-5) var(--sp-5);margin-bottom:var(--sp-3)">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${citados.length?'6px':'0'}">
-              <div>
-                <span style="font-weight:700;font-size:var(--f-md)">vs ${enc.rival||'—'}</span>
-                ${citados.length?`<span style="font-size:var(--f-micro);color:var(--green);margin-left:var(--sp-4)">${citados.length} citados</span>`:'<span style="font-size:var(--f-micro);color:var(--muted);margin-left:var(--sp-4)">Sin citados</span>'}
-              </div>
-            </div>
-            ${citados.length?`<div style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">${citados.map(p=>`<span style="font-size:var(--f-micro);padding:var(--sp-1) var(--sp-4);border-radius:var(--r-md);background:rgba(34,85,238,0.1);border:1px solid rgba(34,85,238,0.2);color:var(--green)">${p}</span>`).join('')}</div>`:''}
-          </div>`;
-        });
-      }
-    }
-
-    el.innerHTML=h;
-  }
-  // Cats que suman para la tabla general (2013-2018 inclusive; 2019 y 2020 no cuentan)
-  // Cats que suman para tabla general: LISFI = [13-18], otras ligas = todas las cats disponibles
-  const GEN_CAT_NUMS = _isLisfi ? [13,14,15,16,17,18] : Object.keys(_coordPOS||{}).map(Number);
-
-  // POS_GENERAL — soporta ligas con y sin pg/pe/pp/gf/gc
-  const POS_GENERAL = (() => {
-    const totals = {};
-    GEN_CAT_NUMS.forEach(num => {
-      ((_coordPOS||{})[num] || []).forEach(row => {
-        if (!totals[row.eq]) totals[row.eq] = {eq:row.eq,pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0};
-        const t = totals[row.eq];
-        t.pj += (row.pj||0); t.pts += (row.pts||0);
-        if(_hasPgPp){ t.pg+=(row.pg||0); t.pe+=(row.pe||0); t.pp+=(row.pp||0); t.gf+=(row.gf||0); t.gc+=(row.gc||0); }
-      });
-    });
-    return Object.values(totals)
-      .map(t => ({...t, pts: _hasPgPp ? t.pg*2+t.pe : t.pts}))
-      .sort((a,b) => b.pts-a.pts || (_hasPgPp?(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf:0));
-  })();
-
-  // ── TAB GOLEADORES ──
-  function renderGoleadores(){
-    const el=document.getElementById('cv-goleadores');
-    if(!coordFirebaseLoaded){ el.innerHTML='<div class="empty-msg"><div class="spinner" style="margin:0 auto var(--sp-5)"></div>Cargando…</div>'; return; }
-    const CAT_COL={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-    const golAnio=window._coordGolYear||'total';
-    const golCat=window._coordGolCat2||'all';
-    // Año en curso, calculado: antes decía '2026' escrito a mano, así que en
-    // 2027 el botón iba a seguir diciendo 2026 y no había forma de ver el año nuevo.
-    const ANIO_ACT=String(new Date().getFullYear());
-    const g26={};
-    COMP_CATS.forEach(cat=>{
-      const g={};
-      Object.values(D[cat.key].stats||{}).forEach(st=>{ Object.entries(st.jugadores||{}).forEach(([n,d])=>{ g[n]=(g[n]||0)+(d.goles||0); }); });
-      g26[cat.key]=g;
-    });
-
-    // ── ESTADO DE CARGA DE GOLES POR PARTIDO ──
-    // Fuentes para saber qué fechas se jugaron (por prioridad):
-    // 1. SC_RESULTS (scraper LISFI o resultados Firebase LAFIR)
-    // 2. Stats cargadas en Firebase (si existe el key → el partido se jugó)
-    // 3. Citaciones con citados (fallback)
-    const _playedNums = new Set();
-    // Fuente 1: SC_RESULTS
-    COMP_CATS.forEach(cat=>(SC_RESULTS[cat.num]||[]).forEach(r=>_playedNums.add(+r.f)));
-    // Fuente 2: stats existentes en Firebase (clave fecha##_rival → fecha numérica)
-    COMP_CATS.forEach(cat=>{
-      Object.keys(D[cat.key].stats||{}).forEach(k=>{
-        const m=k.match(/^fecha(\d+)_/);
-        if(m) _playedNums.add(parseInt(m[1]));
-      });
-    });
-    // Fuente 3: citaciones con citados guardados
-    if(!_playedNums.size){
-      COMP_CATS.forEach(cat=>{
-        Object.values(D[cat.key].cit).forEach(x=>{ if(x&&x.fecha&&x.citados&&x.citados.length>0) _playedNums.add(+x.fecha); });
-      });
-    }
-    // Si FIXTURE_C no tiene los partidos (keys vacíos), construir desde stats
-    let fechasJugadasGlobal=FIXTURE_C.filter(f=>f.cond!=='-'&&!_suspensions[f.fecha]&&_playedNums.has(+f.fecha));
-    if(!fechasJugadasGlobal.length && _playedNums.size){
-      // FIXTURE_C incompleto: generar fechas desde los números conocidos
-      // Intentar recuperar el rival desde el key de stats
-      fechasJugadasGlobal=[..._playedNums].sort((a,b)=>a-b).map(fn=>{
-        const fc=FIXTURE_C.find(f=>f.fecha===fn);
-        if(fc) return fc;
-        // Buscar rival en stats keys de cualquier cat
-        const pat=new RegExp('^fecha'+String(fn).padStart(2,'0')+'_(.+)$');
-        let rival='—';
-        for(const cat of COMP_CATS){
-          const k=Object.keys(D[cat.key].stats||{}).find(k=>pat.test(k));
-          if(k){ rival=k.replace(pat,'$1').replace(/_/g,' ').toUpperCase(); break; }
-        }
-        return {fecha:fn, rival, cond:'?'};
-      });
-    }
-
-    const _statKey=f=>'fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-    // Buscar stats por número de fecha (independiente del rival en el key)
-    const _getStatByFecha=(cat,fn)=>{ const pat=new RegExp('^fecha'+String(fn).padStart(2,'0')+'_'); const k=Object.keys(D[cat.key].stats||{}).find(k=>pat.test(k)); return k?(D[cat.key].stats||{})[k]:null; };
-    const _hasGoles=(cat,f)=>{ const res=_getRes(cat,f.fecha); if(res&&res.gf===0) return true; // 0 goles a favor → no hay nada que cargar
-      const st=_getStatByFecha(cat,f.fecha); return !!(st&&st.jugadores&&Object.keys(st.jugadores).length>0); };
-    const _getRes=(cat,fn)=>{ const r=(SC_RESULTS[cat.num]||[]).find(x=>+x.f===+fn); return r?{gf:r.gf,gc:r.gc}:null; };
-
-    let hEstado=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-5)">
-      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-5)">Carga de goles — ${fechasJugadasGlobal.length} partidos jugados</div>`;
-
-    if(!fechasJugadasGlobal.length){
-      hEstado+=`<div style="font-size:var(--f-sm);color:var(--muted);">Sin partidos jugados registrados aún.</div>`;
-    } else {
-      // Una fila por partido, columnas = cats ordenadas de mayor a menor (2013→2020)
-      const CATS_SORTED=[...COMP_CATS].sort((a,b)=>a.num-b.num);
-      hEstado+=`<div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:var(--f-sm);">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:var(--sp-2) var(--sp-4) var(--sp-4) 0;color:var(--muted);font-weight:600;white-space:nowrap;min-width:110px;">Partido</th>`;
-      CATS_SORTED.forEach(cat=>{
-        hEstado+=`<th style="text-align:center;padding:var(--sp-2) var(--sp-3) var(--sp-4);color:${CAT_COL[cat.key]||'var(--accent)'};font-weight:700;white-space:nowrap;">${cat.label.replace('Cat ','')}</th>`;
-      });
-      hEstado+=`</tr></thead><tbody>`;
-
-      [...fechasJugadasGlobal].reverse().forEach(f=>{
-        hEstado+=`<tr style="border-top:1px solid var(--border);">
-          <td style="padding:var(--sp-3) var(--sp-4) var(--sp-3) 0;white-space:nowrap;">
-            <span style="font-weight:700;color:var(--muted);font-size:var(--f-micro);">F${f.fecha}</span>
-            <span style="color:var(--text);margin-left:var(--sp-2);">${f.rival}</span>
-            <span style="font-size:var(--f-micro);color:var(--muted);margin-left:var(--sp-2);">${f.cond==='L'?'L':'V'}</span>
-          </td>`;
-        CATS_SORTED.forEach(cat=>{
-          const res=_getRes(cat,f.fecha);
-          const tieneGoles=_hasGoles(cat,f);
-          // Si el equipo no metió goles (gf=0), no hay nada que declarar → verde por defecto
-          const sinGolesQueDec=res && res.gf===0;
-          const ok=tieneGoles||sinGolesQueDec;
-          const resStr=res?`${res.gf}-${res.gc}`:'—';
-          const bg=ok?'rgba(var(--win-rgb),0.12)':'rgba(255,80,104,0.08)';
-          const col=ok?'var(--win)':'var(--loss)';
-          const border=ok?'rgba(var(--win-rgb),0.3)':'rgba(255,80,104,0.2)';
-          hEstado+=`<td style="text-align:center;padding:var(--sp-3) var(--sp-3);">
-            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:var(--sp-1);background:${bg};border:1px solid ${border};border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-4);min-width:36px;">
-              <span style="font-weight:700;color:${col};font-size:var(--f-sm);">${resStr}</span>
-              <span style="font-size:var(--f-micro);color:${col};opacity:0.8;">${tieneGoles?'✓':sinGolesQueDec?'–':'✗'}</span>
-            </div>
-          </td>`;
-        });
-        hEstado+=`</tr>`;
-      });
-      hEstado+=`</tbody></table></div>`;
-    }
-    hEstado+=`</div>`;
-    let h=hEstado;
-    const gHist={};
-    COMP_CATS.forEach(cat=>{
-      const byY={};
-      Object.values(D[cat.key].hist||{}).forEach(entry=>{
-        if(!entry.nombre||!entry.anios) return;
-        Object.entries(entry.anios).forEach(([anio,g])=>{ if(!byY[anio]) byY[anio]={}; byY[anio][entry.nombre]=(byY[anio][entry.nombre]||0)+g; });
-      });
-      gHist[cat.key]=byY;
-    });
-    function buildRanking(anio,catFilter){
-      const out={};
-      COMP_CATS.forEach(cat=>{
-        if(catFilter&&cat.key!==catFilter) return;
-        let jugs={};
-        if(anio==='total'){ jugs={...(g26[cat.key]||{})}; Object.values(gHist[cat.key]||{}).forEach(yD=>{ Object.entries(yD).forEach(([n,g])=>{ jugs[n]=(jugs[n]||0)+g; }); }); }
-        else if(anio===ANIO_ACT){ jugs=g26[cat.key]||{}; }
-        else { jugs=(gHist[cat.key]||{})[anio]||{}; }
-        Object.entries(jugs).forEach(([nombre,g])=>{
-          if(g<=0) return;
-          const key=cat.key+'|'+nombre;
-          if(!out[key]) out[key]={nombre,cat:cat.key,g:0};
-          out[key].g+=g;
-        });
-      });
-      return Object.values(out).sort((a,b)=>b.g-a.g).slice(0,20);
-    }
-    const ranking=buildRanking(golAnio,golCat==='all'?null:golCat);
-    const maxG=ranking.length?ranking[0].g:1;
-    const top=buildRanking('total',null)[0];
-    if(top){
-      const col=CAT_COL[top.cat]||'var(--accent)';
-      const catLbl=COMP_CATS.find(c=>c.key===top.cat)?.label||top.cat;
-      h+=`<div style="background:${col}22;border:1px solid ${col}55;border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-6);display:flex;align-items:center;gap:var(--sp-5)"><div style="font-size:var(--f-2xl)">&#11088;</div><div><div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-1)">Goleador histórico del club</div><div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);letter-spacing:2px;color:var(--text)">${top.nombre}</div><div style="font-size:var(--f-sm);color:${col};font-weight:700">${catLbl} &middot; ${top.g} goles totales</div></div></div>`;
-    }
-    h+=`<div style="margin-bottom:var(--sp-5)"><select onchange="window._coordGolCat2=this.value;window.coordTab('goleadores')" style="font-size:var(--f-sm);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface2);color:var(--text);width:100%"><option value="all" ${golCat==='all'?'selected':''}>Todas las categorías</option>${COMP_CATS.map(c=>`<option value="${c.key}" ${golCat===c.key?'selected':''}>${c.label}</option>`).join('')}</select></div>`;
-    h+=`<div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-6);flex-wrap:wrap">`;
-    // Los años salen de los datos, no de una lista fija: el año en curso siempre,
-    // más los años del histórico que tengan goles cargados, del más nuevo al más viejo.
-    const _aniosHist=[...new Set(COMP_CATS.flatMap(c=>Object.keys(gHist[c.key]||{})))]
-      .filter(y=>y!==ANIO_ACT && COMP_CATS.some(c=>Object.values((gHist[c.key]||{})[y]||{}).some(g=>g>0)))
-      .sort((a,b)=>+b-+a);
-    [['total','Total'],[ANIO_ACT,ANIO_ACT],..._aniosHist.map(y=>[y,y])].forEach(([val,lbl])=>{
-      const active=val===golAnio;
-      h+=`<button onclick="window._coordGolYear='${val}';window.coordTab('goleadores')" style="font-size:var(--f-sm);padding:var(--sp-2) var(--sp-5);border-radius:var(--r-full);border:1px solid ${active?'rgba(77,115,245,0.5)':'var(--border)'};background:${active?'rgba(77,115,245,0.15)':'transparent'};color:${active?'var(--green)':'var(--muted)'};font-weight:${active?'700':'400'};cursor:pointer">${lbl}</button>`;
-    });
-    h+=`</div>`;
-    if(!ranking.length){
-      h+=`<div class="empty-msg">Sin datos para este filtro</div>`;
-    } else {
-      ranking.forEach((p,i)=>{
-        const pct=maxG>0?Math.round(p.g/maxG*100):0;
-        const col=CAT_COL[p.cat]||'var(--accent)';
-        const isTop=i===0;
-        const catLbl=COMP_CATS.find(c=>c.key===p.cat)?.label||p.cat;
-        h+=`<div style="display:grid;grid-template-columns:90px 1fr 28px;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-3)"><div style="text-align:right"><div style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div><div style="font-size:var(--f-micro);color:${col};font-weight:600">${catLbl}</div></div><div style="position:relative;height:${isTop?'26px':'20px'};background:var(--surface2);border-radius:var(--r-sm);overflow:hidden"><div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${col};border-radius:var(--r-sm);opacity:${isTop?'1':'0.75'}"></div></div><span style="font-size:${isTop?'0.82rem':'0.75rem'};font-weight:${isTop?'700':'400'};color:var(--text);text-align:right">${p.g}</span></div>`;
-      });
-    }
-    el.innerHTML=h;
-  }
-
-  function renderLiga(){
-    const el=document.getElementById('cv-liga');
-    let tW=0,tD=0,tL=0,tGF=0,tGC=0,tPJ=0;
-    GEN_CAT_NUMS.forEach(num=>{ (SC_RESULTS[num]||[]).forEach(r=>{ if(r.gf>r.gc)tW++;else if(r.gf===r.gc)tD++;else tL++; tGF+=r.gf;tGC+=r.gc;tPJ++; }); });
-    const tPts=tW*2+tD;
-    let h=`<div style="font-size:var(--f-micro);color:var(--muted);text-align:right;margin-bottom:var(--sp-5)">${LIGA_DATA.updatedAt?`${_updLabel()} · Fuente: LISFI`:(_ligaIdCoord||'LIGA').toUpperCase().replace(/-/g,' ')}</div>`;
-
-    // ── TABLA GENERAL ACUMULADA ──
-    const scGen=POS_GENERAL.find(p=>isSC(p.eq));
-    const scGenPos=POS_GENERAL.findIndex(p=>isSC(p.eq))+1;
-    h+=`<div class="csec" style="margin-top:0">${icono('copa')} Posiciones General${_isLisfi?' — Zona Campeonato':''}</div>`;
-    // Destacado SC
-    if(scGen){
-      h+=`<div style="background:rgba(34,85,238,0.1);border:1px solid rgba(34,85,238,0.35);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-5);display:flex;align-items:center;gap:var(--sp-6)">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-3xl);line-height:1;color:var(--yellow)">${scGenPos}°</div>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:var(--f-lg);color:var(--green)">⚽ ${_clubNombreCoord}</div>
-          <div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">${scGen.pj} PJ${_hasPgPp?` · GF:${scGen.gf} GC:${scGen.gc}`:''}</div>
-          ${_hasPgPp?`<div style="display:flex;gap:var(--sp-5);margin-top:var(--sp-3)">
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);color:var(--green)">${scGen.pg}G</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);color:var(--yellow)">${scGen.pe}E</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);color:var(--red)">${scGen.pp}P</span>
-          </div>`:''}
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-3xl);line-height:1;color:var(--yellow)">${scGen.pts}</div>
-          <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">puntos</div>
-        </div>
-      </div>`;
-    }
-    // Tabla completa
-    h+=`<div class="card" style="padding:var(--sp-5) var(--sp-4);overflow-x:auto;margin-bottom:var(--sp-7)">
-      <table class="stbl">
-        <thead><tr><th>#</th><th style="text-align:left">Club</th><th>PJ</th>${_hasPgPp?'<th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th>':''}<th>PTS</th></tr></thead>
-        <tbody>`;
-    POS_GENERAL.forEach((p,i)=>{
-      const cls=isSC(p.eq)?' class="sc-row"':'';
-      h+=`<tr${cls}><td>${i+1}</td><td>${p.eq}${isSC(p.eq)?' ⚽':''}</td><td>${p.pj}</td>${_hasPgPp?`<td>${p.pg}</td><td>${p.pe}</td><td>${p.pp}</td><td>${p.gf}</td><td>${p.gc}</td>`:''}<td><strong>${p.pts}</strong></td></tr>`;
-    });
-    h+=`</tbody></table></div>`;
-    h+=`<div class="csec">${_clubNombreCoord} — Rendimiento por categoría</div>`;
-    h+=`<div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-num" style="color:var(--yellow)">${tPts}</div><div class="kpi-lbl">Puntos (suma cats)</div></div>
-      <div class="kpi-card"><div class="kpi-num">${tPJ}</div><div class="kpi-lbl">Partidos jugados</div></div>
-      <div class="kpi-card"><div class="kpi-num" style="color:var(--green)">${tW}</div><div class="kpi-lbl">Victorias</div></div>
-      <div class="kpi-card"><div class="kpi-num" style="color:var(--red)">${tL}</div><div class="kpi-lbl">Derrotas</div></div>
-    </div>`;
-    // WDL mini bar
-    if(tPJ){
-      const wp=Math.round(tW/tPJ*100),dp=Math.round(tD/tPJ*100),lp=100-wp-dp;
-      h+=`<div style="display:flex;gap:var(--sp-2);border-radius:var(--r-sm);overflow:hidden;height:8px;margin-bottom:var(--sp-2)">
-        <div style="flex:${wp};background:var(--green)"></div>
-        <div style="flex:${dp};background:var(--yellow)"></div>
-        <div style="flex:${lp};background:var(--red)"></div>
-      </div><div style="display:flex;gap:var(--sp-5);font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-6)">
-        <span><span style="color:var(--green)">■</span> ${tW}G</span>
-        <span><span style="color:var(--yellow)">■</span> ${tD}E</span>
-        <span><span style="color:var(--red)">■</span> ${tL}P</span>
-        <span>GF:${tGF} GC:${tGC}</span>
-      </div>`;
-    }
-    // Evolución de puntos por categoría — barras individuales
-    h+=`<div class="csec">Evolución de puntos por categoría</div>`;
-    const catRanks = COMP_CATS.map(cat=>{
-      const pos=POS[cat.num]||[];
-      const scIdx=pos.findIndex(p=>isSC(p.eq));
-      const scRow=pos[scIdx];
-      const res=SC_RESULTS[cat.num]||[];
-      const w=res.filter(r=>r.gf>r.gc).length,d=res.filter(r=>r.gf===r.gc).length,l=res.filter(r=>r.gf<r.gc).length;
-      return {cat,pos:scIdx+1,total:pos.length,pts:scRow?scRow.pts:0,w,d,l,pj:res.length,res,gf:res.reduce((a,r)=>a+r.gf,0),gc:res.reduce((a,r)=>a+r.gc,0)};
-    }).sort((a,b)=>a.pos-b.pos);
-    const CAT_COL_L={cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-    catRanks.forEach(({cat,pos,total,pts,w,d,l,pj,res})=>{
-      const posCol=pos===1?'var(--yellow)':pos<=3?'var(--green)':pos>total-3?'var(--red)':'var(--muted)';
-      const col=CAT_COL_L[cat.key]||'var(--accent)';
-      // Calcular puntos acumulados por fecha
-      const resSorted=[...res].sort((a,b)=>(a.f||0)-(b.f||0));
-      const ptsByF=[];
-      let cumPts=0;
-      resSorted.forEach(r=>{ if(r.gf>r.gc) cumPts+=2; else if(r.gf===r.gc) cumPts+=1; ptsByF.push({f:r.f,pts:cumPts,gf:r.gf,gc:r.gc}); });
-      const maxPts=ptsByF.length?Math.max(...ptsByF.map(x=>x.pts),1):1;
-      const barWidth=ptsByF.length?Math.floor(100/ptsByF.length):10;
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-6);margin-bottom:var(--sp-4)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4)">
-          <div style="display:flex;align-items:center;gap:var(--sp-3)">
-            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col}"></span>
-            <span style="font-size:var(--f-md);font-weight:600">${cat.label}</span>
-          </div>
-          <span style="font-size:var(--f-sm);color:${posCol};font-weight:600">${pos}° de ${total} · ${pts} pts</span>
-        </div>
-        <div style="display:flex;align-items:flex-end;gap:var(--sp-1);height:48px;margin-bottom:var(--sp-2)">`;
-      ptsByF.forEach((x,i)=>{
-        const resCol=x.gf>x.gc?'var(--win)':x.gf<x.gc?'var(--loss)':'var(--draw)';
-        const pct=Math.round(x.pts/maxPts*100);
-        h+=`<div title="F${x.f}: ${x.pts} pts" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:var(--sp-1)">
-          <div style="width:100%;height:${Math.max(pct,4)}%;background:${col};border-radius:var(--r-xs) var(--r-xs) 0 0;opacity:0.85;min-height:3px"></div>
-          <div style="width:6px;height:6px;border-radius:50%;background:${resCol};flex-shrink:0"></div>
-        </div>`;
-      });
-      h+=`</div>
-        <div style="display:flex;gap:var(--sp-4);font-size:var(--f-micro);color:var(--muted)">
-          <span><span style="color:var(--green)">●</span> ${w}V</span>
-          <span><span style="color:var(--yellow)">●</span> ${d}E</span>
-          <span><span style="color:var(--red)">●</span> ${l}L</span>
-        </div>
-      </div>`;
-    });
-
-    // Full tables per cat
-    h+=`<div class="csec" style="margin-top:var(--sp-8)">Tablas de posiciones completas</div>`;
-    COMP_CATS.forEach(cat=>{
-      const pos=POS[cat.num]||[];
-      if(!pos.length) return;
-      h+=`<div style="margin-bottom:var(--sp-7)"><div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);letter-spacing:2px;color:var(--green);margin-bottom:var(--sp-3)">${cat.label}</div>`;
-      h+=`<div class="card" style="padding:var(--sp-5) var(--sp-4);overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th>${_hasPgPp?'<th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th>':''}<th>PTS</th></tr></thead><tbody>`;
-      pos.forEach((p,i)=>{
-        const cls=isSC(p.eq)?' class="sc-row"':'';
-        h+=`<tr${cls}><td>${i+1}</td><td>${p.eq}${isSC(p.eq)?' ⚽':''}</td><td>${p.pj}</td>${_hasPgPp?`<td>${p.pg}</td><td>${p.pe}</td><td>${p.pp}</td><td>${p.gf}</td><td>${p.gc}</td>`:''}<td><strong>${p.pts}</strong></td></tr>`;
-      });
-      h+=`</tbody></table></div></div>`;
-    });
-    el.innerHTML=h;
-  }
-  // ── TAB FIXTURE ──
-  async function renderCoordFixture(){
-    const el=document.getElementById('cv-fixture');
-    el.innerHTML='<div style="color:var(--muted);text-align:center;padding:var(--sp-9)">Cargando...</div>';
-    try{
-      const snap=await get(ref(db,CLUB_PATH+'/config/fixture'));
-      const data=snap.exists()?snap.val():{};
-      // Convertir a array ordenado
-      const rows=Object.entries(data).map(([k,v])=>({fecha:parseInt(k),...v})).sort((a,b)=>a.fecha-b.fecha);
-      let h='<div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-5)">Fixture del club</div>';
-
-      // Botón cargar desde texto
-      h+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5);margin-bottom:var(--sp-6)">
-        <div style="font-size:var(--f-sm);font-weight:700;margin-bottom:var(--sp-4)">${icono('lista')} Cargar desde texto</div>
-        <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-3)">Pegá el fixture en formato "1,LA PLATA V,V" (fecha,rival,L/V/-) — una por línea</div>
-        <textarea id="fixtureTextInput" style="width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);padding:var(--sp-4);font-size:var(--f-sm);font-family:monospace;resize:vertical" placeholder="1,LA PLATA V,V&#10;2,DEF.SAN LORENZO,L&#10;3,CATELLA,V..."></textarea>
-        <button onclick="window.coordParseFix()" style="margin-top:var(--sp-4);background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-6);font-size:var(--f-sm);font-weight:700;cursor:pointer;width:100%">Parsear e importar</button>
-      </div>`;
-
-      // Tabla editable
-      h+='<div id="fixtureRows">';
-      rows.forEach(r=>{
-        const condOpts=['L','V','-'].map(c=>`<option value="${c}"${r.cond===c?' selected':''}>${c==='L'?'Local':c==='V'?'Visitante':'Libre'}</option>`).join('');
-        h+=`<div style="display:grid;grid-template-columns:40px 1fr 100px 40px;gap:var(--sp-3);align-items:center;margin-bottom:var(--sp-3)">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);color:var(--muted);text-align:center">F${r.fecha}</div>
-          <input type="text" value="${r.rival}" id="fix-rival-${r.fecha}" style="padding:var(--sp-3) var(--sp-5);font-size:var(--f-sm)">
-          <select id="fix-cond-${r.fecha}" style="padding:var(--sp-3);font-size:var(--f-sm)">${condOpts}</select>
-          <button onclick="window.coordDelFecha(${r.fecha})" style="background:transparent;border:1px solid var(--border);color:var(--red);border-radius:var(--r-sm);padding:var(--sp-2);cursor:pointer;font-size:var(--f-sm)">✕</button>
-        </div>`;
-      });
-      h+='</div>';
-
-      // Agregar fecha
-      h+=`<div style="margin-top:var(--sp-5);border-top:1px solid var(--border);padding-top:var(--sp-5)">
-        <div style="font-size:var(--f-micro);color:var(--muted);font-weight:700;margin-bottom:var(--sp-4)">+ AGREGAR FECHA</div>
-        <div style="display:grid;grid-template-columns:60px 1fr 100px;gap:var(--sp-3)">
-          <input type="number" id="newFechaNum" placeholder="N°" style="padding:var(--sp-3) var(--sp-4);font-size:var(--f-sm)" min="1" max="30">
-          <input type="text" id="newFechaRival" placeholder="Rival" style="padding:var(--sp-3) var(--sp-5);font-size:var(--f-sm)">
-          <select id="newFechaCond" style="padding:var(--sp-3);font-size:var(--f-sm)">
-            <option value="L">Local</option><option value="V">Visitante</option><option value="-">Libre</option>
-          </select>
-        </div>
-        <button onclick="window.coordAddFecha()" style="margin-top:var(--sp-4);background:rgba(77,115,245,0.15);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-6);font-size:var(--f-sm);font-weight:700;cursor:pointer;width:100%">+ Agregar</button>
-      </div>`;
-      h+=`<button onclick="window.coordSaveFix()" style="margin-top:var(--sp-6);background:var(--green);color:#000;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer;width:100%">Guardar fixture</button>`;
-      el.innerHTML=h;
-    }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
-  }
-
-  window.coordSaveFix=async function(){
-    const snap=await get(ref(db,CLUB_PATH+'/config/fixture'));
-    const data=snap.exists()?snap.val():{};
-    const obj={};
-    Object.keys(data).forEach(k=>{
-      const rv=document.getElementById('fix-rival-'+k);
-      const cd=document.getElementById('fix-cond-'+k);
-      if(rv&&cd) obj[k]={rival:rv.value.trim().toUpperCase(),cond:cd.value};
-    });
-    await set(ref(db,CLUB_PATH+'/config/fixture'),obj);
-    // Actualizar FIXTURE en memoria
-    FIXTURE=Object.entries(obj).map(([k,v])=>({fecha:parseInt(k),rival:v.rival,cond:v.cond})).sort((a,b)=>a.fecha-b.fecha);
-    showCoordToast('✓ Fixture guardado');
-    renderCoordFixture();
-  };
-
-  window.coordAddFecha=async function(){
-    const n=parseInt(document.getElementById('newFechaNum').value);
-    const r=document.getElementById('newFechaRival').value.trim().toUpperCase();
-    const c=document.getElementById('newFechaCond').value;
-    if(!n||!r){ showCoordToast('Completá todos los campos'); return; }
-    await set(ref(db,CLUB_PATH+'/config/fixture/'+n),{rival:r,cond:c});
-    FIXTURE=FIXTURE.filter(f=>f.fecha!==n);
-    FIXTURE.push({fecha:n,rival:r,cond:c});
-    FIXTURE.sort((a,b)=>a.fecha-b.fecha);
-    showCoordToast('✓ Fecha agregada');
-    renderCoordFixture();
-  };
-
-  window.coordDelFecha=async function(n){
-    if(!confirm('¿Borrar F'+n+' del fixture?')) return;
-    await remove(ref(db,CLUB_PATH+'/config/fixture/'+n));
-    FIXTURE=FIXTURE.filter(f=>f.fecha!==n);
-    showCoordToast('✓ Fecha eliminada');
-    renderCoordFixture();
-  };
-
-  window.coordParseFix=async function(){
-    const txt=document.getElementById('fixtureTextInput').value;
-    if(!txt.trim()){ showCoordToast('Pegá el fixture primero'); return; }
-    const obj={};
-    txt.trim().split('\n').forEach(line=>{
-      const parts=line.split(',').map(s=>s.trim());
-      if(parts.length>=3){
-        const n=parseInt(parts[0]);
-        const r=parts[1].toUpperCase();
-        const c=parts[2].toUpperCase();
-        if(n&&r&&['L','V','-'].includes(c)) obj[n]={rival:r,cond:c};
-      }
-    });
-    if(!Object.keys(obj).length){ showCoordToast('Formato inválido. Usá: 1,LA PLATA V,V'); return; }
-    if(!confirm('Se va a reemplazar el fixture completo con '+Object.keys(obj).length+' fechas. ¿Continuar?')) return;
-    await set(ref(db,CLUB_PATH+'/config/fixture'),obj);
-    FIXTURE=Object.entries(obj).map(([k,v])=>({fecha:parseInt(k),rival:v.rival,cond:v.cond})).sort((a,b)=>a.fecha-b.fecha);
-    showCoordToast('✓ Fixture importado ('+FIXTURE.length+' fechas)');
-    renderCoordFixture();
-  };
-
-  // ── TAB SUSPENSIONES ──
-  window.renderCoordSuspensiones = async function renderCoordSuspensiones(forceReload){
-    const el = document.getElementById('cv-suspensiones');
-    if(!el) return;
-
-    if(!_suspTabLoaded || forceReload){
-      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:var(--sp-9)"><div class="spinner" style="margin:0 auto var(--sp-5)"></div>Cargando…</div>';
-
-      let _fix = [];
-      try {
-        // Leer config directo de Firebase — no depende de variables de startCoordApp
-        const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
-        const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
-        const ligaId = cfg.ligaId || null;
-        // ligaNombre: desde config, o desde variable global, o desde nombre del club mapeado
-        const clubId = CLUB_PATH.split('/').pop();
-        const ligaNombre = ligaNombreDeClub(cfg, clubId);
-        const clubFixConds = cfg.fixture || {};
-
-        if(ligaId && ligaNombre){
-          const schedSnap = await get(ref(db, 'ligas/'+ligaId+'/schedule'));
-          if(schedSnap.exists()){
-            const myN = ligaNombre.toUpperCase().trim();
-            const m5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
-            _fix = Object.entries(schedSnap.val()).map(([k,matches])=>{
-              const fecha = parseInt(k); if(isNaN(fecha)) return null;
-              const arr = Array.isArray(matches) ? matches : Object.values(matches);
-              const libre = arr.find(m => m.libre && m5(m.libre)===m5(myN));
-              if(libre) return {fecha, rival:'LIBRE', cond:'-'};
-              const asLocal = arr.find(m => m.local && (m.local.toUpperCase().trim()===myN || m5(m.local)===m5(myN)));
-              if(asLocal) return {fecha, rival:asLocal.visitante||'', cond:'L'};
-              const asVisit = arr.find(m => m.visitante && (m.visitante.toUpperCase().trim()===myN || m5(m.visitante)===m5(myN)));
-              if(asVisit) return {fecha, rival:asVisit.local||'', cond:'V'};
-              return null;
-            }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
-          }
-          if(!_fix.length){
-            const ligaFixSnap = await get(ref(db, 'ligas/'+ligaId+'/fixture'));
-            if(ligaFixSnap.exists()){
-              _fix = Object.entries(ligaFixSnap.val()).map(([k,v])=>{
-                const fecha = parseInt(k); if(isNaN(fecha)) return null;
-                const rival = (v.rival||'—').toUpperCase().trim();
-                const condEntry = clubFixConds[String(fecha)] || clubFixConds[fecha] || {};
-                const cond = condEntry.cond || (rival==='LIBRE'?'-':'L');
-                return {fecha, rival, cond};
-              }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
-            }
-          }
-        }
-        // Fallback: FIXTURE_C si está disponible
-        if(!_fix.length && typeof FIXTURE_C !== 'undefined' && FIXTURE_C && FIXTURE_C.length) _fix = [...FIXTURE_C];
-        // Fallback: fixture guardado en config del club
-        if(!_fix.length){
-          const cfixSnap = await get(ref(db, CLUB_PATH+'/config/fixture'));
-          if(cfixSnap.exists()){
-            _fix = Object.entries(cfixSnap.val()).map(([k,v])=>{
-              const fecha = parseInt(k); if(isNaN(fecha)) return null;
-              return {fecha, rival:(v.rival||'F'+k).toUpperCase(), cond:v.cond||'L'};
-            }).filter(Boolean).sort((a,b)=>a.fecha-b.fecha);
-          }
-        }
-      } catch(e){ console.warn('renderCoordSuspensiones: error fixture', e); }
-
-      _suspTabFixture = _fix;
-
-      try {
-        const sEnt = await get(ref(db, CLUB_PATH+'/config/suspensionesEnt'));
-        if(sEnt.exists()) _coordSuspEntGlobal = sEnt.val() || {};
-      } catch(e){}
-
-      // Leer días de entrenamiento si no están cargados
-      if(!_coordDiasEntGlobal.length){
-        try {
-          const dEnt = await get(ref(db, CLUB_PATH+'/diasEntrenamiento'));
-          if(dEnt.exists()) _coordDiasEntGlobal = dEnt.val() || [];
-        } catch(e){}
-      }
-
-      // Siempre marcar como cargado para que la navegación de mes no vuelva a Firebase
-      _suspTabLoaded = true;
-    }
-
-    // ── A partir de acá: solo renderiza HTML, sin Firebase ──
-    _renderSuspTab(el);
-  }
-
-  function _renderSuspTab(el){
-    const fixture = _suspTabFixture || [];
-    const jugables = fixture.filter(f => f.cond !== '-');
-
-    const MES_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const DIA_L = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    const now = new Date();
-    const mesActual = now.toISOString().substring(0,7);
-    const [Y, M] = mesActual.split('-').map(Number);
-
-    let h = '';
-
-    // Banner informativo
-    h += `<div style="background:rgba(255,171,64,0.08);border:1px solid rgba(255,171,64,0.2);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-6);font-size:var(--f-sm);color:var(--draw);display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4)">
-      <span>⚠️ Las suspensiones se aplican en tiempo real a todos los profes del club.</span>
-      <button onclick="_suspTabLoaded=false;renderCoordSuspensiones(true)" style="background:transparent;border:1px solid rgba(255,171,64,0.3);color:var(--draw);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-4);font-size:var(--f-micro);font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">↺ Actualizar</button>
-    </div>`;
-
-    // ── SECCIÓN FECHAS DE PARTIDO ──
-    h += `<div class="csec">${icono('calendario')} Fechas de partido</div>`;
-    h += `<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">Las fechas suspendidas bloquean la citación en todos los equipos.</div>`;
-
-    if(!jugables.length){
-      h += `<div class="empty-msg">No hay fixture cargado para este club.</div>`;
-    } else {
-      jugables.forEach(f => {
-        const susp = !!_suspensions[f.fecha];
-        h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-4) var(--sp-5);background:var(--surface2);border:1px solid ${susp?'rgba(255,23,68,0.35)':'var(--border)'};border-radius:var(--r-md);margin-bottom:var(--sp-3)">
-          <div style="display:flex;align-items:center;gap:var(--sp-4)">
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-md);letter-spacing:1px;color:var(--muted);width:22px">F${f.fecha}</span>
-            <span style="font-weight:600;font-size:var(--f-md)">${f.rival}</span>
-            <span style="font-size:var(--f-micro);color:var(--muted)">${f.cond==='L'?'Local':'Visita'}</span>
-            ${susp?'<span style="font-size:var(--f-micro);color:var(--red);font-weight:700;letter-spacing:0.5px">⛔ SUSPENDIDA</span>':''}
-          </div>
-          <button onclick="window.toggleSusp(${f.fecha})" style="background:${susp?'rgba(255,23,68,0.15)':'transparent'};border:1px solid ${susp?'rgba(255,23,68,0.4)':'var(--border)'};color:${susp?'var(--red)':'var(--muted)'};border-radius:var(--r-sm);padding:var(--sp-3) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
-            ${susp?'✓ Suspendida':'Suspender'}
-          </button>
-        </div>`;
-      });
-    }
-
-    // ── SECCIÓN ENTRENAMIENTOS ──
-    h += `<div class="csec" style="margin-top:var(--sp-8)">${icono('cono')} Entrenamientos</div>`;
-    h += `<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">Los días suspendidos bloquean la toma de lista y se descuentan del estimado mensual.</div>`;
-
-    if(!_coordDiasEntGlobal.length){
-      h += `<div style="font-size:var(--f-sm);color:var(--muted);padding:var(--sp-5);background:rgba(77,115,245,0.07);border:1px solid rgba(77,115,245,0.15);border-radius:var(--r-md)">
-        💡 Configurá los días de entrenamiento en el panel SA para habilitar esta sección.
-      </div>`;
-    } else {
-      // Navegación de mes
-      const prevMes = new Date(Y, M-2, 1); const nextMes = new Date(Y, M, 1);
-      const fmtMes = d => MES_L[d.getMonth()]+' '+d.getFullYear();
-      const mesKey = d => d.toISOString().substring(0,7);
-      if(!window._coordSuspMesSel) window._coordSuspMesSel = mesActual;
-      const mesSel = window._coordSuspMesSel;
-      const [sY, sM] = mesSel.split('-').map(Number);
-      const suspEntMes = (_coordSuspEntGlobal && _coordSuspEntGlobal[mesSel]) || {};
-
-      h += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5)">
-        <span style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700">${MES_L[sM-1]} ${sY}</span>
-        <div style="display:flex;gap:var(--sp-3)">
-          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM-2,1))}';_renderSuspTab(document.getElementById('cv-suspensiones'))" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:var(--accent);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer">‹ ${MES_L[new Date(sY,sM-2,1).getMonth()].substring(0,3)}</button>
-          <button onclick="window._coordSuspMesSel='${mesKey(new Date(sY,sM,1))}';_renderSuspTab(document.getElementById('cv-suspensiones'))" style="background:rgba(77,115,245,0.1);border:1px solid rgba(77,115,245,0.25);color:var(--accent);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer">${MES_L[new Date(sY,sM,1).getMonth()].substring(0,3)} ›</button>
-        </div>
-      </div>`;
-
-      const ultimoDia = new Date(sY, sM, 0).getDate();
-      const grupos = {};
-      for(let d=1; d<=ultimoDia; d++){
-        const dt = new Date(sY, sM-1, d);
-        const dow = String(dt.getDay());
-        if(_coordDiasEntGlobal.includes(dow)){ if(!grupos[dow]) grupos[dow]=[]; grupos[dow].push(d); }
-      }
-
-      _coordDiasEntGlobal.slice().sort((a,b)=>parseInt(a)-parseInt(b)).forEach(dow => {
-        const dias = grupos[dow] || [];
-        if(!dias.length) return;
-        h += `<div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:var(--sp-3);margin-top:var(--sp-5)">${DIA_L[parseInt(dow)]}</div>`;
-        h += `<div style="display:flex;flex-wrap:wrap;gap:var(--sp-3);margin-bottom:var(--sp-2)">`;
-        dias.forEach(d => {
-          const dd = String(d).padStart(2,'0');
-          const susp = !!suspEntMes[dd];
-          h += `<button onclick="window.coordToggleSuspEnt('${mesSel}','${dd}',this)" style="background:${susp?'rgba(255,23,68,0.15)':'rgba(77,115,245,0.1)'};border:1px solid ${susp?'rgba(255,23,68,0.4)':'var(--border)'};color:${susp?'#ff4d6d':'var(--muted)'};border-radius:var(--r-md);padding:var(--sp-3) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
-            ${susp?'✓ ':''}${DIA_L[parseInt(dow)]} ${d}
-          </button>`;
-        });
-        h += `</div>`;
-      });
-    }
-
-    el.innerHTML = h;
-  }
-  window._renderSuspTab = _renderSuspTab;
-
-  // ── TAB HORARIOS ──
-  async function renderCoordHorarios(){
-    const el=document.getElementById('cv-horarios');
-    el.innerHTML='<div style="color:var(--muted);text-align:center;padding:var(--sp-9)">Cargando...</div>';
-    try{
-      const snap=await get(ref(db,CLUB_PATH+'/config'));
-      const cfg=snap.exists()?snap.val():{};
-      const horarios=cfg.horarios||{};
-      const address=cfg.address||'';
-      const cats=['cat2017','cat2018','cat2019','cat2020','cat13','cat2014','cat2015','cat16'];
-      const catLabels={cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
-                       cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020'};
-      let h='<div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-5)">Horarios por categoría</div>';
-      cats.forEach(c=>{
-        const t=horarios[c]||'';
-        h+=`<div style="display:grid;grid-template-columns:1fr 100px;gap:var(--sp-4);align-items:center;margin-bottom:var(--sp-4)">
-          <div style="font-size:var(--f-md);font-weight:600">${catLabels[c]||c}</div>
-          <input type="text" id="hora-${c}" value="${t}" placeholder="15:50" style="padding:var(--sp-3) var(--sp-5);font-size:var(--f-md);text-align:center">
-        </div>`;
-      });
-      h+=`<div style="margin-top:var(--sp-6);border-top:1px solid var(--border);padding-top:var(--sp-6)">
-        <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-4)">Dirección de la cancha (local)</div>
-        <input type="text" id="clubAddress" value="${address}" placeholder="Av. 13 y 610 Villa Elvira" style="padding:var(--sp-4) var(--sp-5);font-size:var(--f-md);width:100%;box-sizing:border-box">
-      </div>`;
-      h+=`<button onclick="window.coordSaveHorarios()" style="margin-top:var(--sp-6);background:var(--green);color:#000;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer;width:100%">Guardar</button>`;
-      el.innerHTML=h;
-    }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
-  }
-
-  window.coordSaveHorarios=async function(){
-    const cats=['cat2017','cat2018','cat2019','cat2020','cat13','cat2014','cat2015','cat16'];
-    const horarios={};
-    cats.forEach(c=>{ const v=document.getElementById('hora-'+c); if(v&&v.value.trim()) horarios[c]=v.value.trim(); });
-    const address=document.getElementById('clubAddress').value.trim();
-    await set(ref(db,CLUB_PATH+'/config/horarios'),horarios);
-    if(address) await set(ref(db,CLUB_PATH+'/config/address'),address);
-    // Actualizar CFG en memoria
-    const catKey=CFG.dbPath;
-    if(horarios[catKey]) CFG.matchTime=horarios[catKey];
-    if(address) CFG.address=address;
-    showCoordToast('✓ Horarios guardados');
-  };
-
-  // ── TAB PROFES ──
-  async function renderCoordProfes(){
-    const el=document.getElementById('cv-profes');
-    el.innerHTML='<div style="color:var(--muted);text-align:center;padding:var(--sp-9)">Cargando...</div>';
-    try{
-      const snap=await get(ref(db,'users'));
-      const users=snap.exists()?snap.val():{};
-      const clubId=CLUB_PATH.split('/').pop();
-      const profes=Object.entries(users).filter(([,u])=>(u.clubId===clubId||u.club===clubId)&&(u.role==='profe'||u.role==='coordinator'));
-      const cats={cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
-                  cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
-      let h='<div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-5)">'+profes.length+' usuario'+(profes.length!==1?'s':'')+' del club</div>';
-      if(!profes.length){
-        h+='<div class="coord-ok-box" style="text-align:center;padding:var(--sp-7);color:var(--muted)">No hay profes registrados aún</div>';
-      } else {
-        profes.forEach(([uid,u])=>{
-          const catList=u.cats?Object.values(u.cats).map(c=>cats[c]||c).join(', '):(u.cat?cats[u.cat]||u.cat:'—');
-          h+=`<div class="prow" style="flex-direction:column;align-items:flex-start;gap:var(--sp-2);margin-bottom:var(--sp-4)">
-            <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-              <div style="font-weight:700;font-size:var(--f-md)">${u.email||uid}</div>
-              <span style="font-size:var(--f-micro);padding:var(--sp-1) var(--sp-4);border-radius:var(--r-md);background:rgba(77,115,245,0.15);color:var(--accent)">${u.role==='coordinator'?'Coordinador':'Profe'}</span>
-            </div>
-            <div style="font-size:var(--f-sm);color:var(--muted)">${catList}</div>
-          </div>`;
-        });
-      }
-      // Alta de nuevo profe
-      h+=`<div style="margin-top:var(--sp-6);border-top:1px solid var(--border);padding-top:var(--sp-6)">
-        <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-5)">+ AGREGAR PROFE</div>
-        <input type="email" id="newProfeEmail" placeholder="email@ejemplo.com" style="padding:var(--sp-4) var(--sp-5);font-size:var(--f-md);margin-bottom:var(--sp-4);width:100%;box-sizing:border-box">
-        <input type="password" id="newProfePass" placeholder="Contraseña inicial" style="padding:var(--sp-4) var(--sp-5);font-size:var(--f-md);margin-bottom:var(--sp-4);width:100%;box-sizing:border-box">
-        <select id="newProfeCat" style="padding:var(--sp-4) var(--sp-5);font-size:var(--f-md);margin-bottom:var(--sp-4);width:100%;box-sizing:border-box">
-          ${Object.entries(cats).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
-        </select>
-        <button onclick="window.coordAddProfe()" style="background:var(--win);color:#000;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer;width:100%">+ Crear profe</button>
-      </div>`;
-      el.innerHTML=h;
-    }catch(e){ el.innerHTML='<div class="coord-alert-box">Error: '+e.message+'</div>'; }
-  }
-
-  window.coordAddProfe=async function(){
-    const email=document.getElementById('newProfeEmail').value.trim();
-    const pass=document.getElementById('newProfePass').value.trim();
-    const cat=document.getElementById('newProfeCat').value;
-    if(!email||!pass){ showCoordToast('Completá email y contraseña'); return; }
-    const clubId=CLUB_PATH.split('/').pop();
-    try{
-      // Crear usuario en Auth
-      const cred=await createUserWithEmailAndPassword(auth,email,pass);
-      // Guardar en DB
-      await set(ref(db,'users/'+cred.user.uid),{email,role:'profe',clubId,cat});
-      showCoordToast('✓ Profe creado: '+email);
-      renderCoordProfes();
-    }catch(e){ showCoordToast('Error: '+e.message); }
-  };
-
-  function showCoordToast(msg){
-    const t=document.getElementById('toast'); if(!t)return;
-    t.textContent=msg; t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),2500);
-  }
-
-
 }
 
 // ── PWA ──────────────────────────────────────────────────────────────
