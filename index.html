@@ -2840,7 +2840,71 @@ function fmtWeek(w){
 let histMode='day';
 let histFilter=null;
 
+
+// ── Vistas del año, para las pantallas ─────────────────────────
+// Estas dos devuelven lo del AÑO elegido (todas las zonas), con lo que está en
+// vivo de la zona actual pisando al lote. Las pantallas las usan sombreando la
+// variable global: `const attendance = ASIS();`. Así el cuerpo de cada render
+// no cambia y no hay riesgo de tocar de más.
+//
+// OJO: escribir sigue yendo a la zona actual. Estas vistas son SOLO de lectura.
+function ASIS(){
+  const anio = anioVista();
+  const out = {};
+  if(_todasLasZonas) Object.assign(out, datosDelAnio(anio).sesiones);
+  // La zona en curso está en vivo (listener de Firebase), así que manda ella
+  Object.keys(attendance || {}).forEach(f => {
+    if(anioDeSesion(f, TORNEO_ID) !== anio) return;
+    out[f] = Object.assign({}, attendance[f], {_zona: TORNEO_ID});
+  });
+  return out;
+}
+
+function CITS(){
+  const anio = anioVista();
+  const out = {};
+  if(_todasLasZonas){
+    // Se quita el prefijo de zona: las pantallas esperan la clave pelada
+    Object.entries(datosDelAnio(anio).citaciones).forEach(([k,v]) => {
+      out[(v && v._key) || k] = v;
+    });
+  }
+  Object.keys(citaciones || {}).forEach(k => {
+    if(anioDeCitacion(citaciones[k], TORNEO_ID) !== anio) return;
+    out[k] = Object.assign({}, citaciones[k], {_zona: TORNEO_ID, _key: k});
+  });
+  return out;
+}
+
+// Barra de años. Solo aparece si hay más de un año con datos.
+function barraDeAnios(alCambiar){
+  const anios = aniosConDatos();
+  if(anios.length < 2) return '';
+  const btn = a => '<button class="chip'+(anioVista()===a?' cg':'')+'" '+
+        'onclick="window.cambiarAnio('+a+',\''+alCambiar+'\')">'+a+'</button>';
+  return anios.map(btn).join('') +
+         '<span style="color:var(--border);padding:0 var(--sp-1)">|</span>';
+}
+
+window.cambiarAnio = function(a, quien){
+  setAnioVista(a);
+  try{
+    if(quien==='hist'){ if(typeof renderHistory==='function') renderHistory(); }
+    else if(quien==='stats'){ if(typeof renderStats==='function') renderStats(null); }
+    else if(quien==='cit'){ if(typeof renderCitStats==='function') renderCitStats(); }
+  }catch(e){ console.warn('cambiarAnio:', e); }
+};
+
+// Se llama al abrir cualquiera de esas pantallas: si todavía no bajaron todas
+// las zonas, las baja y vuelve a dibujar.
+function asegurarZonas(quien){
+  if(_todasLasZonas) return;
+  cargarTodasLasZonas().then(()=>{ window.cambiarAnio(anioVista(), quien); });
+}
+
 function renderHistory(filter,mode){
+  const attendance = ASIS();          // año completo, no solo la zona
+  asegurarZonas('hist');
   if(mode!==undefined) histMode=mode;
   if(filter!==undefined) histFilter=filter;
   selHistMonth=histFilter;
@@ -2848,7 +2912,7 @@ function renderHistory(filter,mode){
   const allDates=Object.keys(attendance).sort().reverse();
 
   const modeBtn=(m,lbl)=>'<button class="chip '+(histMode===m?'cg':'')+'" onclick="window.setHM(`'+m+'`)">'+lbl+'</button>';
-  let html=modeBtn('day','Dia')+modeBtn('week','Semana')+modeBtn('month','Mes');
+  let html=barraDeAnios('hist')+modeBtn('day','Dia')+modeBtn('week','Semana')+modeBtn('month','Mes');
   html+='<span style="color:var(--border);padding:0 var(--sp-1)">|</span>';
 
   if(histMode==='month'){
@@ -2870,6 +2934,25 @@ function renderHistory(filter,mode){
 
   lEl.innerHTML='';
 
+  // Separador cuando el año tiene sesiones de más de una zona, para que se
+  // entienda de dónde sale cada bloque.
+  const _zonasDelAnio = [...new Set(dates.map(d=>(attendance[d]||{})._zona).filter(Boolean))];
+  let _zonaAnterior = null;
+  const _sepZona = (cont, d) => {
+    if(_zonasDelAnio.length < 2) return;
+    const z = (attendance[d]||{})._zona;
+    if(!z || z === _zonaAnterior) return;
+    _zonaAnterior = z;
+    let nombre = z;
+    try{ nombre = (torneoMeta(z)||{}).nombre || z; }catch(e){}
+    const sep = document.createElement('div');
+    sep.style.cssText = 'font-size:var(--f-micro);text-transform:uppercase;letter-spacing:1.2px;'+
+      'color:var(--muted);font-weight:700;margin:var(--sp-6) 0 var(--sp-4);'+
+      'padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)';
+    sep.textContent = nombre;
+    cont.appendChild(sep);
+  };
+
   if((histMode==='week'||histMode==='month')&&!histFilter){
     const keyFn = histMode==='week'?getWeek:d=>d.slice(0,7);
     const groups={};
@@ -2883,11 +2966,12 @@ function renderHistory(filter,mode){
       groups[k].forEach(d=>appendSessCard(lEl,d));
     });
   } else {
-    dates.forEach(d=>appendSessCard(lEl,d));
+    dates.forEach(d=>{ _sepZona(lEl,d); appendSessCard(lEl,d); });
   }
 }
 
 function appendSessCard(container,d){
+  const attendance = ASIS();          // la sesión puede ser de otra zona del año
   const s=attendance[d],pct=Math.round((s.present||[]).length/PLAYERS.length*100);
   const c=document.createElement('div'); c.className='card';
   const presHtml=(s.present||[]).map(p=>`<span class="pill pill-g">${p}</span>`).join('');
@@ -2904,10 +2988,25 @@ function appendSessCard(container,d){
 }
 window.setHM=function(m){ histFilter=null; renderHistory(null,m); };
 window.fH=function(f){ renderHistory(f,histMode); };
-window.delSess=async function(date){ if(_roGuard()) return; if(!confirm('Borrar esta sesion?'))return; try{await remove(ref(db,DB_PREFIX+'/attendance/'+date));showToast('Eliminado');}catch(e){showToast('Error');} };
+// Al mostrar el año entero, una sesión puede pertenecer a otra zona. Hay que
+// borrarla de SU zona, no de la actual, o el borrado no hace nada.
+window.delSess=async function(date){
+  if(_roGuard()) return;
+  if(!confirm('Borrar esta sesion?'))return;
+  try{
+    const ses = ASIS()[date];
+    const zona = (ses && ses._zona) || TORNEO_ID;
+    await remove(ref(db, CAT_PREFIX()+'/torneos/'+zona+'/attendance/'+date));
+    if(_todasLasZonas && _todasLasZonas[zona] && _todasLasZonas[zona].attendance)
+      delete _todasLasZonas[zona].attendance[date];
+    showToast('Eliminado');
+    if(typeof renderHistory==='function') renderHistory();
+  }catch(e){ console.warn('delSess:', e); showToast('Error'); }
+};
 
 // ── GRÁFICO DE TENDENCIA ──
 function renderTrendChart(mf){
+  const attendance = ASIS();          // año completo, no solo la zona
   const wrap=document.getElementById('trendChart'); if(!wrap)return;
   const allDates=Object.keys(attendance).sort();
   const dates=mf?allDates.filter(d=>d.startsWith(mf)):allDates;
@@ -2963,6 +3062,8 @@ function renderTrendChart(mf){
 
 // ── STATS PRESENTES ──
 function renderStats(mf){
+  const attendance = ASIS();          // año completo, no solo la zona
+  asegurarZonas('stats');
   selStatsMonth=mf;
   renderTrendChart(mf);
   const grid=document.getElementById('statsGrid'),list=document.getElementById('statsList'),lbl=document.getElementById('statsPeriodLbl');
@@ -3591,15 +3692,24 @@ window.shareCit = async function(key){
 
 // ── STATS CITACIONES ──
 function renderCitStats(){
+  asegurarZonas('cit');
   const timelineEl=document.getElementById('citTimeline');
   const statsList=document.getElementById('citStatsList');
+  // OJO con qué es de la zona y qué es del año:
+  //  · Las burbujas del progreso y la lista de partidos son de LA ZONA. Cada
+  //    zona tiene su propio fixture; mezclarlas daría "F19 actual" en una zona
+  //    de 15 fechas.
+  //  · El acumulado por jugador (cuántas veces lo citaste) es del AÑO.
   const allE=Object.entries(citaciones).sort((a,b)=>(a[1].fecha||0)-(b[1].fecha||0));
   const tot=allE.filter(([,m])=>m.citados&&m.citados.length>0).length;
 
+  const allAnio=Object.entries(CITS()).sort((a,b)=>(a[1].fecha||0)-(b[1].fecha||0));
+  const totAnio=allAnio.filter(([,m])=>m.citados&&m.citados.length>0).length;
+
   if(window._isEscuelita){
     if(timelineEl) timelineEl.innerHTML='';
-    if(!tot){ statsList.innerHTML='<div class="empty-msg">Sin encuentros registrados aún</div>'; return; }
-    const ps=PLAYERS.map(name=>{const count=allE.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:Math.round(count/tot*100)};}).sort((a,b)=>b.pct-a.pct);
+    if(!totAnio){ statsList.innerHTML='<div class="empty-msg">Sin encuentros registrados aún</div>'; return; }
+    const ps=PLAYERS.map(name=>{const count=allAnio.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:totAnio?Math.round(count/totAnio*100):0};}).sort((a,b)=>b.pct-a.pct);
     statsList.innerHTML='';
     ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+tot+' encuentros</div>';statsList.appendChild(c);});
     return;
@@ -3726,8 +3836,8 @@ function renderCitStats(){
     });
   }
 
-  if(!tot){ statsList.innerHTML=''; return; }
-  const ps=PLAYERS.map(name=>{const count=allE.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:Math.round(count/tot*100)};}).sort((a,b)=>b.pct-a.pct);
+  if(!totAnio){ statsList.innerHTML=''; return; }
+  const ps=PLAYERS.map(name=>{const count=allAnio.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:totAnio?Math.round(count/totAnio*100):0};}).sort((a,b)=>b.pct-a.pct);
   statsList.innerHTML='';
   ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+tot+' partidos</div>';statsList.appendChild(c);});
 }
