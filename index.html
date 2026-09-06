@@ -105,6 +105,10 @@
   .jchip.j-todo  { border-color:rgba(var(--win-rgb),.5);    color:var(--win); }
   .jchip.j-entro { border-color:rgba(var(--accent-rgb),.5); color:var(--accent); }
   .jchip.j-salio { border-color:rgba(var(--draw-rgb),.5);   color:var(--draw); }
+  /* Faltó: relleno tenue además del borde, para que no se lea como un estado más
+     de cuánto jugó — no jugó nada. */
+  .jchip.j-falto { border-color:rgba(var(--loss-rgb),.6);   color:var(--loss);
+                   background:rgba(var(--loss-rgb),.10); }
 
   /* ── RACHA DE CITACIONES ──
      Los últimos 5 partidos del equipo al lado de cada nombre, mientras se arma
@@ -119,6 +123,9 @@
            border:1px solid var(--accent); }                  /* entró o salió */
   /* No citado: borde más grueso y más claro, si no el círculo vacío se perdía. */
   .pt.pn { background:transparent; border:1.5px solid var(--punto-vacio); }
+  /* Faltó: además del color, cambia la FORMA (cuadradito). Así se distingue de
+     "jugó todo" aunque el profe no distinga bien el rojo del azul. */
+  .pt.pf { background:var(--loss); border-radius:2px; }
   .cit-tot { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--muted);
              line-height:1; flex:none; margin-left:var(--sp-4); }
   .prow.sin-ir { border-color:rgba(var(--draw-rgb),.45); background:rgba(var(--draw-rgb),.06); }
@@ -3478,6 +3485,7 @@ function renderCitList(){
           'del más reciente al más viejo:</span>'+
         '<span><span class="pt pc"></span> jugó todo</span>'+
         '<span><span class="pt pm"></span> entró o salió</span>'+
+        '<span><span class="pt pf"></span> faltó</span>'+
         '<span><span class="pt pn"></span> no citado</span>'+
         '<span style="color:var(--muted)">·</span>'+
         '<span>el número es el <b>total de citaciones del año</b></span>';
@@ -3494,11 +3502,13 @@ function renderCitList(){
     let puntos='', sinCitar=0;
     ultimos.forEach((p, i)=>{
       const j = jugoEnPartido(p.cit, p.stats, name);   // null si no fue citado
-      const cls = j === null   ? 'pn'    // no citado
-                : j === 'todo' ? 'pc'    // jugó todo
-                                : 'pm';  // entró o salió: jugó una parte
-      const est = j === null ? 'no citado'
-                : j === 'todo' ? 'jugó todo'
+      const cls = j === null    ? 'pn'    // no citado
+                : j === 'falto' ? 'pf'    // citado pero faltó
+                : j === 'todo'  ? 'pc'    // jugó todo
+                                : 'pm';   // entró o salió: jugó una parte
+      const est = j === null    ? 'no citado'
+                : j === 'falto' ? 'faltó'
+                : j === 'todo'  ? 'jugó todo'
                 : (j === 'entro' ? 'entró desde el banco' : 'salió antes del final');
       // Cuántos partidos para atrás está este punto, para el tooltip
       const atras = ultimos.length - 1 - i;
@@ -4620,7 +4630,11 @@ async function _ppGetStats(key){
 }
 async function _ppSaveStats(key,stats){
   if(_roGuard()) return; // temporada archivada: solo lectura
-  await set(ref(db,DB_PREFIX+'/stats/'+key),stats);
+  // _golesPrev es memoria de la edición en curso (para poder deshacer un "Faltó"
+  // marcado por error), no un dato del partido: no va a Firebase.
+  const limpio = JSON.parse(JSON.stringify(stats||{}));
+  Object.values(limpio.jugadores||{}).forEach(j=>{ delete j._golesPrev; });
+  await set(ref(db,DB_PREFIX+'/stats/'+key),limpio);
 }
 
 const _ppCache={};
@@ -4635,11 +4649,12 @@ let _ppEditKey=null, _ppEditStats={};
    profe no toca nada. La contrapartida es honesta y conviene tenerla clara:
    si se olvida de marcar a alguien que no jugó, ese queda como que jugó todo.
    ──────────────────────────────────────────────────────────────── */
-// En LISFI a un jugador citado hay que ponerlo sí o sí, así que "citado pero no
-// entró" no existe: los únicos casos posibles son que haya jugado todo, que haya
-// entrado desde el banco, o que haya salido antes del final.
-const JUGO_ORDEN = ['todo','entro','salio'];
-const JUGO_ET = { todo:'Todo', entro:'Entró', salio:'Salió' };
+// En LISFI a un jugador citado hay que ponerlo sí o sí, así que "citado pero se
+// quedó en el banco" no existe. Los casos posibles son: jugó todo, entró desde
+// el banco, salió antes del final, o faltó — lo citaron y no se presentó, que no
+// es lo mismo que no haber sido citado y por eso tiene su propio estado.
+const JUGO_ORDEN = ['todo','entro','salio','falto'];
+const JUGO_ET = { todo:'Todo', entro:'Entró', salio:'Salió', falto:'Faltó' };
 
 function _jugoDe(st){
   const v = st && st.jugo;
@@ -4654,31 +4669,61 @@ function _ppCiclarJugo(nombre){
   const siguiente = JUGO_ORDEN[(i + 1) % JUGO_ORDEN.length];
   if(siguiente === 'todo') delete st.jugo;   // el valor por defecto no se guarda
   else st.jugo = siguiente;
+  // El que faltó no pudo hacer goles. Si tenía cargados se guardan aparte, así
+  // que si el profe se equivocó y vuelve a sacarle el "Faltó", los recupera.
+  if(siguiente === 'falto'){
+    if(st.goles){ st._golesPrev = st.goles; }
+    st.goles = 0;
+  }else if(st._golesPrev != null){
+    st.goles = st._golesPrev;
+    delete st._golesPrev;
+  }
   renderPosPartido();
 }
 
+// Cómo se nombra un partido en el registro de faltas: "F5" si tiene número de
+// fecha, si no la fecha corta, y último recurso el rival.
+function _etiquetaDePartido(cit){
+  if(cit && cit.fecha) return 'F'+cit.fecha;
+  if(cit && cit.fecha_str){
+    const p = String(cit.fecha_str).split('-');   // aaaa-mm-dd
+    if(p.length === 3) return p[2]+'/'+p[1];
+  }
+  if(cit && cit.rival) return String(cit.rival);
+  return '?';
+}
+
 // Participación de cada jugador en un año: citaciones, cuántas jugó y cómo.
-// Devuelve { nombre: {citado, jugoTodo, entroOSalio, jugados, pct} }
+// Devuelve { nombre: {citado, jugoTodo, entroOSalio, falto, faltasEn, jugados, pct} }
+// faltasEn guarda A QUÉ fechas faltó, no solo cuántas: el profe necesita poder
+// decir "faltó a la 3 y a la 7", no solo que jugó menos.
 function participacionDelAnio(anio){
   const a = anio || anioVista();
   const d = _todasLasZonas ? datosDelAnio(a) : {citaciones:{}, stats:{}};
   const out = {};
-  Object.entries(d.citaciones).forEach(([k, cit]) => {
+  const orden = c => (c && c.fecha_str) || '';
+  Object.entries(d.citaciones)
+    .sort((x,y) => String(orden(x[1])).localeCompare(String(orden(y[1]))))
+    .forEach(([k, cit]) => {
     if(!cit || !cit.citados || !cit.citados.length) return;
     const st = d.stats[k] || null;
     cit.citados.forEach(nombre => {
-      const r = out[nombre] || (out[nombre] = {citado:0, jugoTodo:0, entroOSalio:0});
+      const r = out[nombre] || (out[nombre] = {citado:0, jugoTodo:0, entroOSalio:0, falto:0, faltasEn:[]});
       r.citado++;
       const j = _jugoDe((st && st.jugadores && st.jugadores[nombre]) || null);
-      if(j === 'todo') r.jugoTodo++;
-      else r.entroOSalio++;
+      if(j === 'falto'){                       // lo citaron y no se presentó
+        r.falto++;
+        r.faltasEn.push(_etiquetaDePartido(cit));
+      }
+      else if(j === 'todo')  r.jugoTodo++;
+      else                   r.entroOSalio++;
     });
   });
   Object.values(out).forEach(r => {
-    // Todo citado juega, así que jugados === citado. Se deja igual por claridad.
+    // Las faltas NO son partidos jugados: fue citado pero no estuvo.
     r.jugados = r.jugoTodo + r.entroOSalio;
-    // Completos cuentan 1, parciales medio. Es una aproximación declarada:
-    // no tenemos minutos, así que no se puede ser más preciso que esto.
+    // Completos cuentan 1, parciales medio, faltas cero. Es una aproximación
+    // declarada: no tenemos minutos, así que no se puede ser más preciso.
     r.pct = r.citado ? Math.round((r.jugoTodo + r.entroOSalio*0.5) / r.citado * 100) : 0;
   });
   return out;
@@ -4691,11 +4736,26 @@ function _detalleJugo(nombre){
   try{
     const r = participacionDelAnio()[nombre];
     if(!r || !r.citado) return '';
-    if(r.entroOSalio === 0) return '';   // nada marcado aún
+    if(r.entroOSalio === 0 && r.falto === 0) return '';   // nada marcado aún
     const partes = [];
     if(r.jugoTodo)    partes.push(r.jugoTodo+' completo'+(r.jugoTodo>1?'s':''));
     if(r.entroOSalio) partes.push(r.entroOSalio+' con cambio');
-    return ' · <span style="color:var(--muted)">'+partes.join(' · ')+'</span>';
+    let out = partes.length ? ' · <span style="color:var(--muted)">'+partes.join(' · ')+'</span>' : '';
+    // El registro de la falta va en su propio renglón y en rojo: el porcentaje
+    // de arriba es de CITACIONES y no baja por faltar, así que sin esto no
+    // habría forma de ver que jugó menos porque faltó y no porque no lo citaron.
+    if(r.falto){
+      // Primero el dato que se busca (jugó menos y por qué) y recién después a
+      // qué fechas: si el renglón se parte, lo que cae abajo son las fechas.
+      const cuales = r.faltasEn && r.faltasEn.length
+        ? ' &middot; faltó a '+(r.faltasEn.length > 4
+                ? r.faltasEn.slice(0,4).join(', ')+' +'+(r.faltasEn.length-4)
+                : r.faltasEn.join(', '))
+        : '';
+      out += '<div style="color:var(--loss);margin-top:var(--sp-1);">Jugó '+r.jugados+
+             ' de '+r.citado+' citaciones'+cuales+'</div>';
+    }
+    return out;
   }catch(e){ return ''; }
 }
 
@@ -4875,9 +4935,13 @@ async function renderPosPartido(){
         const st2=(_ppEditStats.jugadores||{})[nombre]||{};
         const g=st2.goles||0;
         const enc=nombre.replace(/&/g,'&amp;');
+        // Si faltó no jugó, así que el contador de goles se apaga: no tiene
+        // sentido cargarle un gol a alguien que no estuvo.
+        const falto=_jugoDe(st2)==='falto';
+        const golOff=falto?'opacity:.3;pointer-events:none;':'';
         h+=`<div class="prow" style="margin-bottom:var(--sp-3);">
           <div style="font-weight:500;font-size:var(--f-md);flex:1;">${nombre}</div>
-          <div style="display:flex;align-items:center;gap:var(--sp-3);">
+          <div style="display:flex;align-items:center;gap:var(--sp-3);${golOff}">
             <button data-pp-menos="${enc}" style="width:26px;height:26px;border-radius:50%;border:1px solid ${g>0?'var(--red)':'var(--border)'};background:transparent;color:${g>0?'var(--red)':'var(--text)'};font-size:var(--f-lg);cursor:pointer;line-height:1;">&#8722;</button>
             <span style="width:16px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);">${g}</span>
             <button data-pp-mas="${enc}" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green);color:#000;font-size:var(--f-lg);cursor:pointer;font-weight:700;line-height:1;">+</button>
