@@ -1160,6 +1160,11 @@ function resetContextoTemporada(){
   window._viewTorneo        = null;
   if(typeof limpiarCacheDeZonas === 'function') limpiarCacheDeZonas();
   window._clubLigaNombreDe  = null;   // el nombre de liga del club anterior no vale acá
+  // Lo mismo con el nombre del club y su liga: al saltar de club se vuelven a
+  // leer, pero hasta que llegue esa lectura no pueden quedar los del anterior
+  // (salen en el header y en el mensaje de WhatsApp).
+  window._clubNombreHeader  = null;
+  window._clubLigaHeader    = null;
   window._migracionIntentada = false;
   window._tablaEnCero       = false;
   window._isCoordView       = false;
@@ -3423,18 +3428,24 @@ function renderCamSelector(){
   el.appendChild(none);
 
   // De menos a más veces: el primero de la lista es a quien le toca.
-  // Con la misma cantidad, primero el que hace más que no lleva.
+  // Con la misma cantidad, primero el que hace más que no la lleva.
+  //
+  // La fecha de la última vez se usa para ordenar pero NO se muestra: solo
+  // existe en las citaciones que tienen cargada la fecha del partido, así que
+  // aparecía en la mitad de los chips y ensuciaba la lista sin aportar nada.
+  // El orden ya dice lo mismo: el de más a la izquierda es a quien le toca.
   [...PLAYERS].sort((a,b)=>
     (camCounts[a]-camCounts[b]) || String(ultimaVez[a]||'').localeCompare(String(ultimaVez[b]||''))
   ).forEach(name=>{
     const btn=document.createElement('button');
     btn.className='cam-btn'+(selectedCamisetero===name?' selected':'');
     const veces=camCounts[name];
-    const u=ultimaVez[name];
-    const uTxt = u ? ' · '+u.slice(8,10)+'/'+u.slice(5,7) : '';
     btn.innerHTML = name + (veces>0
-      ? ' <span style="font-size:var(--f-micro);opacity:0.7;font-weight:400">'+veces+'x'+uTxt+'</span>'
+      ? ' <span style="font-size:var(--f-micro);opacity:0.7;font-weight:400">'+veces+'x</span>'
       : '');
+    btn.title = veces>0
+      ? (veces+' vez'+(veces>1?'es':'')+' en '+anioVista()+(ultimaVez[name]?' · última: '+ultimaVez[name]:''))
+      : 'Todavía no las llevó en '+anioVista();
     btn.onclick=()=>{selectedCamisetero=selectedCamisetero===name?null:name;renderCamSelector();};
     el.appendChild(btn);
   });
