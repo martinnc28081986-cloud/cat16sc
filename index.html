@@ -1923,6 +1923,30 @@ async function subirZonaAFirebase(zonaDef, forzar){
 }
 
 // 'LISFI' -> 'lisfi'.  Sirve de clave en ligas/_vigente/{liga}
+// Nombre lindo de una categoría a partir de su clave, sin mapa fijo:
+//   cat2017 -> 'Cat 2017'   ·   cat16 -> 'Cat 2016'   ·   escuelita -> 'Escuelita'
+// Las categorías son el año de nacimiento y cada año entra una nueva, así que
+// un mapa escrito a mano obligaría a editar el código todos los años.
+function nombreDeCategoria(cat){
+  const k = String(cat || '');
+  if(k === 'escuelita') return 'Escuelita';
+  const m = k.match(/^cat(\d{2,4})$/);
+  if(!m) return k;
+  const n = m[1];
+  return 'Cat ' + (n.length === 4 ? n : (+n <= 30 ? '20' : '19') + n);
+}
+window.nombreDeCategoria = nombreDeCategoria;
+
+// Liga y zona que se está mirando, para poner en el mensaje de WhatsApp.
+// Sale de lo mismo que el subtítulo del header, así los dos dicen igual.
+function nombreDelTorneoActual(){
+  const liga = window._clubLigaHeader || '';
+  let zona = '';
+  try{ zona = (torneoMeta(TORNEO_ID) || {}).nombre || ''; }catch(e){}
+  return [liga, zona].filter(Boolean).join(' · ');
+}
+window.nombreDelTorneoActual = nombreDelTorneoActual;
+
 // Subtítulo del header: CLUB · LIGA ZONA. La zona sale de la temporada que se
 // está mirando (no de una constante), así que al abrir un archivo dice el nombre
 // de esa temporada y no el de la actual.
@@ -3658,11 +3682,9 @@ window.shareCit = async function(key){
     }
   }
 
-  // Categoría
-  const catKey = CFG.dbPath;
-  const catNames = {cat16:'Cat 2016',cat13:'Cat 2013',cat2014:'Cat 2014',cat2015:'Cat 2015',
-                    cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020'};
-  const catLabel = catNames[catKey] || catKey;
+  // Categoría. Se deriva de la clave en vez de un mapa fijo: todos los años
+  // entra una categoría nueva y con un mapa habría que editar el código.
+  const catLabel = nombreDeCategoria(CFG.dbPath);
 
   const clubNombreWA = (CFG.club || 'MI PLANTEL').toUpperCase();
   let lines = [];
@@ -3672,6 +3694,10 @@ window.shareCit = async function(key){
     lines.push('🏆 '+tipoLabel);
   } else {
     lines.push('⚽ *'+clubNombreWA+' — '+catLabel+' — Fecha '+cit.fecha+'*');
+    // Sin esto, "Fecha 3" no dice nada: un club juega dos zonas en el mismo año
+    // y los padres reciben el mensaje sin saber de qué torneo se trata.
+    const torneoWA = nombreDelTorneoActual();
+    if(torneoWA) lines.push('🏆 '+torneoWA);
   }
   lines.push('🆚 vs '+cit.rival+' | '+condLabel);
   if(fechaStr) lines.push('📅 '+fechaStr);
