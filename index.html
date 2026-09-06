@@ -8423,6 +8423,10 @@ async function startCoordApp(){
     document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn'));
   }
   catBadge.textContent = 'COORD';
+  // La barra de abajo es del profe (Entreno / Partido / Plantel): acá no navega
+  // a ningún lado y tapaba la última fila de cada pantalla.
+  const _bnav = document.getElementById('bottomNavProfe');
+  if(_bnav) _bnav.style.display = 'none';
   renderSeasonBar();
   applyReadOnlyUI();
 
@@ -8455,6 +8459,22 @@ async function startCoordApp(){
     ? [...COMP_CATS, {key:'escuelita', num:0, label:'Escuelita', color:'#8fa3b8', escuelita:true}]
     : COMP_CATS;
   const catDe = k => ALL_CATS.find(c=>c.key===k) || {key:k,label:k,color:'var(--muted)',num:0};
+
+  /* El plantel NO es una lista de nombres: en Firebase es un objeto de objetos
+     {clave: {nombre, activo}}, y la escuelita usa {clave: {name, cat}}.
+     Tomarlo como lista de strings hacía que la presencia diera siempre 0% (los
+     nombres nunca coincidían con los de la asistencia) y que la pantalla de
+     Jugadores se cayera. Los dados de baja no cuentan. */
+  function _nombresDePlantel(val, cat){
+    if(!val) return [];
+    const filas = Array.isArray(val) ? val : Object.values(val);
+    return filas.map(p => {
+      if(typeof p === 'string') return p;                  // formato viejo
+      if(!p) return null;
+      if(p.activo === false) return null;                  // dado de baja
+      return p.nombre || p.name || null;                   // escuelita usa name
+    }).filter(Boolean);
+  }
 
   // ── FIXTURE ──
   let _ligaId = null, FIXTURE_C = [], _condsClub = {};
@@ -9290,10 +9310,7 @@ async function startCoordApp(){
         get(ref(db, CLUB_PATH+'/'+cat.key+'/torneos'))
           .then(s => { D[cat.key].zonas = s.val() || {}; }).catch(()=>{}),
         get(ref(db, CLUB_PATH+'/'+cat.key+'/players'))
-          .then(s => {
-            const v = s.val();
-            D[cat.key].plantel = Array.isArray(v) ? v : Object.values(v || {});
-          }).catch(()=>{}),
+          .then(s => { D[cat.key].plantel = _nombresDePlantel(s.val(), cat); }).catch(()=>{}),
       ]);
       lecturas.push(get(ref(db, CLUB_PATH+'/diasEntrenamiento'))
         .then(s => { DIAS_ENT = s.val() || []; _coordDiasEntGlobal = DIAS_ENT; }).catch(()=>{}));
