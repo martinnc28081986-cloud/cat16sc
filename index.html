@@ -89,6 +89,29 @@
              stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
   .ico svg .solid { fill:currentColor; stroke:none; }
 
+  /* ── RACHA DE CITACIONES ──
+     Los últimos 5 partidos del equipo al lado de cada nombre, mientras se arma
+     la citación. Fijo en 5 y no toda la temporada: 22 fechas de tira miden
+     282px y en un celular de 390px no queda lugar para el nombre. ── */
+  .racha { display:flex; gap:var(--sp-2); flex:none; margin-left:var(--sp-4); }
+  /* Los colores del punto van sueltos, no dentro de .racha: los usa también
+     la leyenda de arriba, si no ahí salían invisibles. */
+  .pt { width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; }
+  .pt.pc { background:var(--accent); }
+  .pt.pn { background:transparent; border:1px solid var(--border); }
+  .pt.pl { background:var(--border); }
+  .cit-tot { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--muted);
+             line-height:1; flex:none; margin-left:var(--sp-4); }
+  .prow.sin-ir { border-color:rgba(var(--draw-rgb),.45); background:rgba(var(--draw-rgb),.06); }
+  .cit-aviso { font-size:var(--f-micro); font-weight:700; color:var(--draw); margin-top:2px; }
+  .racha-leyenda { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap;
+                   font-size:var(--f-micro); color:var(--muted); background:var(--surface2);
+                   border:1px solid var(--border); border-radius:var(--r-md);
+                   padding:var(--sp-4) var(--sp-5); margin-bottom:var(--sp-5); line-height:1.5; }
+  .racha-leyenda b { color:var(--text); font-weight:700; }
+  .racha-leyenda .pt { vertical-align:middle; margin-right:3px; }
+  .racha-leyenda span { white-space:nowrap; }
+
   /* ── BOTTOM NAV ── */
   .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--surface); border-top:1px solid var(--border); display:flex; padding:var(--sp-3) var(--sp-4) var(--sp-5); gap:var(--sp-3); max-width:720px; margin:0 auto; }
   .bnav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:var(--sp-2); cursor:pointer; border-radius:var(--r-md); padding:var(--sp-4) var(--sp-2) var(--sp-3); border:1px solid transparent; transition:all 0.2s; }
@@ -628,6 +651,7 @@
     <button class="btn btn-oly" onclick="markAll('cit',false)">Ninguno</button>
   </div>
 
+  <div class="racha-leyenda" id="rachaLeyenda"></div>
   <div class="pgrid" id="citPlayerList"></div>
 
   <div class="cam-section">
@@ -2922,6 +2946,7 @@ window.cambiarAnio = function(a, quien){
     if(quien==='hist'){ if(typeof renderHistory==='function') renderHistory(); }
     else if(quien==='stats'){ if(typeof renderStats==='function') renderStats(null); }
     else if(quien==='cit'){ if(typeof renderCitStats==='function') renderCitStats(); }
+    else if(quien==='citlist'){ if(typeof renderCitList==='function') renderCitList(); }
   }catch(e){ console.warn('cambiarAnio:', e); }
 };
 
@@ -3383,13 +3408,80 @@ window.loadFecha=function(val){
   renderCamSelector();
 };
 
+// Cuántos partidos hacia atrás se muestran al lado de cada nombre.
+// Fijo, no toda la temporada: 22 fechas serían 282px de tira y en un celular
+// de 390px no quedaría lugar para el nombre. Cinco partidos son, con fechas
+// semanales, el último mes y pico.
+const RACHA_N = 5;
+// A partir de cuántas fechas seguidas afuera se muestra el aviso naranja.
+const RACHA_AVISO = 3;
+
+// Los últimos N partidos DEL EQUIPO en el año, del más viejo al más nuevo.
+// Cruza zonas a propósito: en la fecha 1 de una zona nueva, si mirara solo esa
+// zona, la racha estaría vacía para todos justo cuando más sirve.
+function ultimosPartidosDelAnio(n){
+  const orden = c => {
+    if(c.fecha_str) return c.fecha_str;
+    if(c.ts) return new Date(c.ts).toISOString().slice(0,10);
+    // Sin fecha: se ordena por zona y número de fecha, que al menos es estable
+    return String(c._zona||'') + '#' + String(c.fecha||0).padStart(3,'0');
+  };
+  return Object.values(CITS())
+    .filter(c => c && c.citados && c.citados.length > 0)
+    .sort((a,b) => String(orden(a)).localeCompare(String(orden(b))))
+    .slice(-(n || RACHA_N));
+}
+
 function renderCitList(){
   const el=document.getElementById('citPlayerList'); el.innerHTML='';
+
+  // Historial del año: si todavía no bajaron las otras zonas, se pide y se
+  // vuelve a dibujar cuando llegan.
+  asegurarZonas('citlist');
+  const ultimos = ultimosPartidosDelAnio(RACHA_N);
+  const totales = {};
+  Object.values(CITS()).forEach(c => {
+    (c && c.citados || []).forEach(p => { totales[p] = (totales[p]||0) + 1; });
+  });
+
+  // Leyenda: sin esto los puntitos no se entienden solos
+  const leyenda = document.getElementById('rachaLeyenda');
+  if(leyenda){
+    if(ultimos.length === 0){ leyenda.style.display='none'; }
+    else {
+      leyenda.style.display='flex';
+      leyenda.innerHTML =
+        '<span><b>Últimos '+ultimos.length+' partidos</b> de '+anioVista()+':</span>'+
+        '<span><span class="pt pc"></span> citado</span>'+
+        '<span><span class="pt pn"></span> quedó afuera</span>'+
+        '<span style="color:var(--muted)">·</span>'+
+        '<span>el número es el <b>total del año</b></span>';
+    }
+  }
+
   PLAYERS.forEach(name=>{
     const citado=markedCit[name]===true;
-    const row=document.createElement('div'); row.className='prow'+(citado?' citado':'');
+
+    // Racha: un punto por partido, del más viejo al más nuevo
+    let puntos='', seguidasAfuera=0;
+    ultimos.forEach(c=>{
+      const fue = (c.citados||[]).includes(name);
+      puntos += '<span class="pt '+(fue?'pc':'pn')+'"></span>';
+      seguidasAfuera = fue ? 0 : seguidasAfuera + 1;
+    });
+    const avisa = seguidasAfuera >= RACHA_AVISO && ultimos.length >= RACHA_AVISO;
+
+    const row=document.createElement('div');
+    row.className='prow'+(citado?' citado':'')+(avisa && !citado?' sin-ir':'');
     row.onclick=()=>{markedCit[name]=!citado;renderCitList();};
-    row.innerHTML='<div class="tbtn">'+(citado?'&#9733;':'&middot;')+'</div><div class="pname">'+name+(CFG.playerCats?'<div class="psub">Cat '+CFG.playerCats[name]+'</div>':'')+'</div>';
+    row.innerHTML='<div class="tbtn">'+(citado?'&#9733;':'&middot;')+'</div>'+
+      '<div class="pname">'+name+
+        (CFG.playerCats?'<div class="psub">Cat '+CFG.playerCats[name]+'</div>':'')+
+        (avisa?'<div class="cit-aviso">hace '+seguidasAfuera+' fechas que no es citado</div>':'')+
+      '</div>'+
+      (ultimos.length
+        ? '<span class="cit-tot">'+(totales[name]||0)+'</span><span class="racha">'+puntos+'</span>'
+        : '');
     el.appendChild(row);
   });
   const n=Object.values(markedCit).filter(v=>v===true).length;
@@ -3440,9 +3532,12 @@ function renderCamSelector(){
     const btn=document.createElement('button');
     btn.className='cam-btn'+(selectedCamisetero===name?' selected':'');
     const veces=camCounts[name];
-    btn.innerHTML = name + (veces>0
-      ? ' <span style="font-size:var(--f-micro);opacity:0.7;font-weight:400">'+veces+'x</span>'
-      : '');
+    // El contador va SIEMPRE, incluso en 0. Antes el que no la había llevado
+    // nunca salía sin badge, y entonces no se veía que la lista está ordenada
+    // de menos a más — parecía que a ese le faltaba el dato.
+    btn.innerHTML = name +
+      ' <span style="font-size:var(--f-micro);opacity:'+(veces>0?'0.7':'0.45')+
+      ';font-weight:400">'+veces+'x</span>';
     btn.title = veces>0
       ? (veces+' vez'+(veces>1?'es':'')+' en '+anioVista()+(ultimaVez[name]?' · última: '+ultimaVez[name]:''))
       : 'Todavía no las llevó en '+anioVista();
