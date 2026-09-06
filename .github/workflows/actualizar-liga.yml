@@ -2,13 +2,17 @@ name: Actualizar liga_data.json
 
 on:
   schedule:
+    # Sábado, domingo, lunes y martes a las 22:00 de Argentina.
+    # GitHub Actions usa UTC y Argentina es UTC-3 (sin horario de verano),
+    # así que las 22:00 de acá son la 01:00 UTC del DÍA SIGUIENTE.
+    # Por eso los días van corridos uno: dom(0), lun(1), mar(2), mié(3).
     - cron: '0 1 * * 0,1,2,3'
-  workflow_dispatch:
+  workflow_dispatch:   # además, botón para correrlo a mano desde la pestaña Actions
 
 permissions:
-  contents: write
+  contents: write      # necesario para poder commitear los liga_data
 
-concurrency:
+concurrency:           # si una corrida se solapa con otra, no se pisan
   group: liga-data
   cancel-in-progress: false
 
@@ -28,13 +32,16 @@ jobs:
         run: pip install --quiet requests beautifulsoup4 lxml
 
       - name: Scrapear las zonas activas
-        # ── MODO RECUPERACIÓN — TEMPORAL ──
-        # Baja SOLO la Zona II B 2026. No toca liga_data.json.
-        # DESPUÉS DE LA CORRIDA hay que sacar este bloque env.
-        env:
-          LISFI_ZONA_URL: https://www.lisfi.com.ar/index.php/liga-2b-2026
-          LIGA_ID: lisfi-ii-zona-b-2026
+        # Lee ligas/_activa de Firebase y baja TODAS las zonas que juega algún
+        # club, no una sola. Genera un liga_data_{zona}.json por zona, más
+        # liga_data.json (la del club principal) y liga_data_index.json.
+        #
+        # Para recuperar una zona vieja a mano, agregar acá un bloque env con
+        # LISFI_ZONA_URL y LIGA_ID, correr, y SACARLO después. En modo override
+        # no se toca liga_data.json, así la temporada en curso queda intacta.
         run: python scrape_lisfi.py
+        # Una zona que no pasa la verificación no se escribe: su archivo queda
+        # como estaba. El job solo se corta si fallaron TODAS las zonas.
 
       - name: Commitear si cambió
         run: |
@@ -44,9 +51,9 @@ jobs:
             git add liga_data*.json
             echo "Archivos que cambiaron:"
             git diff --cached --name-only | sed 's/^/  /'
-            git commit -m "Recuperar Zona II B 2026"
+            git commit -m "Actualizar datos de liga ($(TZ=America/Argentina/Buenos_Aires date +'%d/%m/%Y %H:%M'))"
             git push
-            echo "✅ Listo"
+            echo "✅ Datos de liga actualizados y commiteados"
           else
-            echo "Sin cambios"
+            echo "Sin cambios en los liga_data — no se commitea"
           fi
