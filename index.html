@@ -4970,28 +4970,47 @@ window.aplicarLigaDataDeTemporada = aplicarLigaDataDeTemporada;
 // El scraper que genera liga_data.json es externo a este archivo y puede seguir
 // apuntando a la zona anterior. Si los datos que llegan no son de la zona vigente
 // se ignoran, así la tabla de la zona nueva no se mezcla con equipos que ya no juegan.
-function _ligaDataEsDeZonaActual(d){
-  // 1) Si el JSON declara su zona, se compara con la zona vigente
-  const zonaVigente = window._ligaIdActivo || LIGA_DATA_ACTUAL.zona;
+// Normaliza un nombre de equipo para comparar zonas
+function _normEq(s){ return String(s||'').toUpperCase().replace(/[.\s]/g,'').substring(0,5); }
+
+// Equipos que aparecen en un dataset de liga (para saber a qué zona pertenece)
+function _equiposDeDataset(ds){
+  const eq = new Set();
+  Object.values((ds && ds.posiciones) || {}).forEach(arr => (arr||[]).forEach(r => eq.add(_normEq(r.eq))));
+  Object.values((ds && ds.teamResults) || {}).forEach(o => Object.keys(o||{}).forEach(e => eq.add(_normEq(e))));
+  return [...eq];
+}
+
+// Equipos que trae el JSON entrante
+function _equiposDelJson(d){
+  const eq = new Set();
+  Object.values(d.posiciones||{}).forEach(arr => (arr||[]).forEach(r => eq.add(_normEq(r.eq))));
+  Object.values(d.teamResults || d.rivalResults || {}).forEach(o => Object.keys(o||{}).forEach(e => eq.add(_normEq(e))));
+  Object.values(d.scResults||{}).forEach(arr => (arr||[]).forEach(r => { if(r && r.rival) eq.add(_normEq(r.rival)); }));
+  return [...eq];
+}
+
+// ¿El JSON corresponde a esta zona? Por el campo declarado, o por equipos en común.
+function _coincideZona(d, zonaId, equiposRef){
   const z = d.zona || d.ligaId || d.liga_id;
-  if(z && zonaVigente) return String(z).trim() === String(zonaVigente).trim();
-  // 2) Si no la declara, se compara por equipos contra los de la zona vigente
-  const norm = s => String(s||'').toUpperCase().replace(/[.\s]/g,'').substring(0,5);
-  const actuales = new Set();
-  if(window._equiposZonaActiva && window._equiposZonaActiva.length){
-    window._equiposZonaActiva.forEach(e => actuales.add(norm(e)));
-  } else {
-    Object.values(LIGA_DATA_ACTUAL.posiciones||{}).forEach(arr => (arr||[]).forEach(r => actuales.add(norm(r.eq))));
-  }
-  const entrantes = new Set();
-  Object.values(d.posiciones||{}).forEach(arr => (arr||[]).forEach(r => entrantes.add(norm(r.eq))));
-  // el scraper actual manda 'rivalResults'; se acepta como alias de 'teamResults'
-  Object.values(d.teamResults||d.rivalResults||{}).forEach(o => Object.keys(o||{}).forEach(e => entrantes.add(norm(e))));
-  Object.values(d.scResults||{}).forEach(arr => (arr||[]).forEach(r => { if(r && r.rival) entrantes.add(norm(r.rival)); }));
-  if(!actuales.size || !entrantes.size) return true; // sin con qué comparar, se acepta
-  let comunes = 0;
-  entrantes.forEach(e => { if(actuales.has(e)) comunes++; });
-  return (comunes / entrantes.size) >= 0.7; // 70% de equipos en común = misma zona
+  if(z && zonaId) return String(z).trim() === String(zonaId).trim();
+  const ref = new Set((equiposRef||[]).map(_normEq));
+  const entrantes = _equiposDelJson(d);
+  if(!ref.size || !entrantes.length) return false;
+  const comunes = entrantes.filter(e => ref.has(e)).length;
+  return (comunes / entrantes.length) >= 0.7; // 70% en común = misma zona
+}
+
+// ── GUARDA DE ZONA ──
+// El scraper es externo y puede seguir apuntando a otra zona. El JSON se aplica a la
+// temporada a la que realmente pertenece: la vigente, o una archivada si coincide con
+// alguna. Solo se descarta si no es de ninguna.
+function _ligaDataEsDeZonaActual(d){
+  const zonaVigente = window._ligaIdActivo || LIGA_DATA_ACTUAL.zona;
+  const equipos = (window._equiposZonaActiva && window._equiposZonaActiva.length)
+    ? window._equiposZonaActiva
+    : _equiposDeDataset(LIGA_DATA_ACTUAL);
+  return _coincideZona(d, zonaVigente, equipos);
 }
 
 // Etiqueta "Actualizado" del encabezado de tablas
@@ -5005,43 +5024,62 @@ function _updLabel(){
 }
 window._updLabel = _updLabel;
 
-// Vuelca el liga_data.json guardado si corresponde a la zona vigente.
-// Se llama al recibir el JSON y otra vez cuando ya se sabe cuál es la zona activa
+// Vuelca el JSON sobre un dataset (la temporada vigente o una archivada)
+function _volcarLigaData(destino, d, equiposRef){
+  const num = o => Object.fromEntries(Object.entries(o).map(([k,v]) => [Number(k), v]));
+  if(d.posiciones && Object.keys(d.posiciones).length > 0){
+    destino.posiciones = num(d.posiciones);
+  }
+  if(d.scResults && Object.values(d.scResults).some(arr => arr && arr.length > 0)){
+    destino.scResults = num(d.scResults);
+  }
+  // 'rivalResults' es como lo llama el scraper actual; los renderers leen 'teamResults'
+  const tr = d.teamResults || d.rivalResults;
+  if(tr && Object.keys(tr).length > 0){
+    destino.teamResults = num(tr);
+    // Si trae resultados pero no tabla, la tabla se calcula sola
+    if(!d.posiciones || Object.keys(d.posiciones).length === 0){
+      const eq = equiposRef || [];
+      destino.posiciones = Object.fromEntries(
+        Object.entries(destino.teamResults).map(([c,t]) => [Number(c), calcularPosicionesDesdeResultados(t, eq)])
+      );
+    }
+  }
+  if(d.updatedAt) destino.updatedAt = d.updatedAt;
+}
+
+// Vuelca el liga_data.json guardado en la temporada que corresponda.
+// Se llama al recibir el JSON y otra vez cuando ya se sabe cuál es la zona vigente
 // (el fetch puede llegar antes que la config del club).
 function aplicarLigaDataJson(){
   const d = window._ligaDataRaw;
   if(!d) return false;
-  if(!_ligaDataEsDeZonaActual(d)){
-    window._ligaDataDesactualizada = true;
-    return false;
-  }
-  window._ligaDataDesactualizada = false;
-  const num = o => Object.fromEntries(Object.entries(o).map(([k,v]) => [Number(k), v]));
 
-  if(d.posiciones && Object.keys(d.posiciones).length > 0){
-    LIGA_DATA_ACTUAL.posiciones = num(d.posiciones);
+  // 1) ¿Es de la temporada vigente?
+  if(_ligaDataEsDeZonaActual(d)){
+    window._ligaDataDesactualizada = false;
+    _volcarLigaData(LIGA_DATA_ACTUAL, d, window._equiposZonaActiva);
+    if(window._ligaIdActivo) LIGA_DATA_ACTUAL.zona = window._ligaIdActivo;
+    window._tablaEnCero = false;
+    aplicarLigaDataDeTemporada();
+    return true;
   }
-  if(d.scResults && Object.values(d.scResults).some(arr => arr && arr.length > 0)){
-    LIGA_DATA_ACTUAL.scResults = num(d.scResults);
-  }
-  // 'rivalResults' es como lo llama el scraper actual; los renderers leen 'teamResults'
-  const _tr = d.teamResults || d.rivalResults;
-  if(_tr && Object.keys(_tr).length > 0){
-    LIGA_DATA_ACTUAL.teamResults = num(_tr);
-    // Si el scraper manda resultados pero no tabla, la tabla se calcula sola
-    if(!d.posiciones || Object.keys(d.posiciones).length === 0){
-      const eq = window._equiposZonaActiva || [];
-      LIGA_DATA_ACTUAL.posiciones = Object.fromEntries(
-        Object.entries(LIGA_DATA_ACTUAL.teamResults).map(([c,tr]) => [Number(c), calcularPosicionesDesdeResultados(tr, eq)])
-      );
-    }
-  }
-  if(d.updatedAt) LIGA_DATA_ACTUAL.updatedAt = d.updatedAt;
-  if(window._ligaIdActivo) LIGA_DATA_ACTUAL.zona = window._ligaIdActivo;
 
-  window._tablaEnCero = false;
-  aplicarLigaDataDeTemporada(); // volcar al dataset activo (respeta la temporada que se esté viendo)
-  return true;
+  // 2) Si no, quizá sea de una temporada archivada — ahí también sirve.
+  //    Es el caso típico justo después de cambiar de zona: el scraper todavía baja
+  //    la zona anterior, y esos datos son exactamente los que le faltan al archivo.
+  const idArchivo = Object.keys(LIGA_DATA_ARCHIVO).find(id =>
+    _coincideZona(d, LIGA_DATA_ARCHIVO[id].zona, _equiposDeDataset(LIGA_DATA_ARCHIVO[id])));
+  if(idArchivo){
+    _volcarLigaData(LIGA_DATA_ARCHIVO[idArchivo], d, _equiposDeDataset(LIGA_DATA_ARCHIVO[idArchivo]));
+    window._ligaDataDesactualizada = true; // la vigente sigue sin actualizarse sola
+    console.log('liga_data.json es de la temporada archivada', idArchivo, '— se aplica al archivo');
+    aplicarLigaDataDeTemporada();
+    return false; // false = la temporada vigente no se actualizó
+  }
+
+  window._ligaDataDesactualizada = true;
+  return false;
 }
 window.aplicarLigaDataJson = aplicarLigaDataJson;
 
