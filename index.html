@@ -1577,55 +1577,55 @@ const MIGRACION = {
   fuente:      'https://www.lisfi.com.ar/index.php/zona-camp-2026',
 };
 
-async function migrarTemporadaSiHaceFalta(){
-  try{
-    const prof = window._userProfile || {};
-    const puedeEscribir = window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
-    if(!puedeEscribir) return false;
-
-    const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
-    const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
-    if(cfg.torneoActivo === MIGRACION.torneoNuevo) return false; // ya está migrado
-
-    // ¿Este club juega la zona nueva? Se chequea contra los equipos del schedule
-    const myName = String(cfg.ligaNombre || CLUB_LIGA_NOMBRE || '').toUpperCase().trim();
-    if(!myName) return false;
-    const equipos = new Set();
-    Object.values(SCHEDULE_ZONA_CAMPEONATO_2026).forEach(matches=>{
-      (Array.isArray(matches) ? matches : Object.values(matches)).forEach(m=>{
-        if(m.h) equipos.add(m.h.toUpperCase().trim());
-        if(m.a) equipos.add(m.a.toUpperCase().trim());
-        if(m.libre) equipos.add(m.libre.toUpperCase().trim());
-      });
-    });
-    const m5 = s => String(s).substring(0,5);
-    if(![...equipos].some(e => e === myName || m5(e) === m5(myName))) return false;
-
-    // 1) Schedule compartido de la liga (si otro club ya lo subió, no se repite)
-    const schedSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'));
-    if(!schedSnap.exists()){
-      await set(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'), SCHEDULE_ZONA_CAMPEONATO_2026);
-    }
-
-    // 1b) Meta de la zona — es lo que lee el scraper para saber qué zona scrapear.
-    //     Con esto, al cambiar de zona el scraper se reapunta solo: no hay URLs fijas.
+// Sube el schedule y la meta de la zona (compartidos por todos los clubes).
+// Idempotente: si ya están, no escribe de nuevo.
+async function subirZonaAFirebase(){
+  const schedSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'));
+  if(!schedSnap.exists()){
+    await set(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'), SCHEDULE_ZONA_CAMPEONATO_2026);
+  }
+  // La meta es lo que lee el scraper para saber qué zona bajar — sin URLs fijas
+  const metaSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta/fuente'));
+  if(!metaSnap.exists()){
     await update(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta'), {
-      ligaId:   MIGRACION.ligaId,
-      nombre:   MIGRACION.nombre,
-      liga:     MIGRACION.liga,
-      zona:     MIGRACION.zona,
-      fechas:   MIGRACION.fechas,
-      fuente:   MIGRACION.fuente,
-      equipos:  equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026),
+      ligaId:  MIGRACION.ligaId,
+      nombre:  MIGRACION.nombre,
+      liga:    MIGRACION.liga,
+      zona:    MIGRACION.zona,
+      fechas:  MIGRACION.fechas,
+      fuente:  MIGRACION.fuente,
+      equipos: equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026),
       vigenteDesde: new Date().toISOString().slice(0,10)
     });
+  }
+}
 
-    // 2) Registro de temporadas: la anterior queda como archivo consultable
+// Migra UN club a la zona nueva: mueve el torneo activo y deja la temporada anterior
+// registrada como archivo consultable. Nunca toca los datos de la temporada anterior.
+// Devuelve 'migrado' | 'ya-migrado' | 'no-juega' | 'error'.
+async function migrarClubAZona(clubId){
+  try{
+    const cfgSnap = await get(ref(db, 'clubs/'+clubId+'/config'));
+    const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
+    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return 'ya-migrado';
+
+    // ¿Este club juega la zona nueva? Se compara contra los equipos del schedule
+    const nombreLiga = String(cfg.ligaNombre || clubId.replace(/-/g,' ')).toUpperCase().trim();
+    const m5 = s => String(s).toUpperCase().trim().substring(0,5);
+    const equipo = equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026)
+      .find(e => e.toUpperCase().trim() === nombreLiga || m5(e) === m5(nombreLiga));
+    if(!equipo) return 'no-juega';
+
+    // Registro de temporadas: la anterior queda consultable desde el selector.
+    // Se registra aunque el club no tuviera torneoActivo (sus datos viven en 'default').
     const temporadas = Object.assign({}, cfg.temporadas || {});
-    if(cfg.torneoActivo && cfg.torneoActivo !== MIGRACION.torneoNuevo){
-      const metaAnt = TORNEO_META_DEF[cfg.torneoActivo] || {};
-      temporadas[cfg.torneoActivo] = {
-        nombre: metaAnt.nombre || String(cfg.torneoActivo).toUpperCase().replace(/-/g,' '),
+    const anterior = cfg.torneoActivo || 'default';
+    if(anterior !== MIGRACION.torneoNuevo){
+      const metaAnt = TORNEO_META_DEF[anterior] || {};
+      temporadas[anterior] = {
+        nombre: metaAnt.nombre || (anterior === 'default'
+                  ? 'Temporada anterior'
+                  : String(anterior).toUpperCase().replace(/-/g,' ')),
         fechas: metaAnt.fechas || null,
         ligaId: cfg.ligaId || metaAnt.ligaId || null,
         orden:  1
@@ -1635,18 +1635,54 @@ async function migrarTemporadaSiHaceFalta(){
       nombre: MIGRACION.nombre, fechas: MIGRACION.fechas, ligaId: MIGRACION.ligaId, orden: 2
     };
 
-    // 3) Mover el torneo activo — los datos viejos siguen en su propio nodo
-    await update(ref(db, CLUB_PATH+'/config'), {
+    await update(ref(db, 'clubs/'+clubId+'/config'), {
       torneoActivo: MIGRACION.torneoNuevo,
       ligaId:       MIGRACION.ligaId,
-      ligaNombre:   cfg.ligaNombre || myName,
+      ligaNombre:   cfg.ligaNombre || equipo.toUpperCase(),
       liga:         MIGRACION.liga,
       zona:         MIGRACION.zona,
       temporadas
     });
-    console.log('[MI PLANTEL] Temporada migrada a', MIGRACION.torneoNuevo);
-    showToast('✓ Temporada actualizada: ' + MIGRACION.nombre);
-    return true;
+    return 'migrado';
+  }catch(e){ console.warn('migrarClubAZona('+clubId+'):', e); return 'error'; }
+}
+window.migrarClubAZona = migrarClubAZona;
+
+// Migra todos los clubes que juegan la zona. Requiere permisos de super admin.
+async function migrarTodosLosClubes(log){
+  const out = [];
+  const snap = await get(ref(db, 'clubs'));
+  if(!snap.exists()) return out;
+  const ids = Object.keys(snap.val());
+  for(const clubId of ids){
+    const r = await migrarClubAZona(clubId);
+    out.push({clubId, estado: r});
+    if(log) log(clubId, r);
+  }
+  return out;
+}
+window.migrarTodosLosClubes = migrarTodosLosClubes;
+
+// Migración automática al abrir la app: migra el club del usuario logueado.
+async function migrarTemporadaSiHaceFalta(){
+  try{
+    const prof = window._userProfile || {};
+    const puedeEscribir = window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
+    if(!puedeEscribir) return false;
+
+    const clubId = CLUB_PATH.split('/').pop();
+    const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
+    const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
+    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return false; // ya está
+
+    await subirZonaAFirebase();
+    const r = await migrarClubAZona(clubId);
+    if(r === 'migrado'){
+      console.log('[MI PLANTEL] Temporada migrada a', MIGRACION.torneoNuevo, '—', clubId);
+      showToast('✓ Temporada actualizada: ' + MIGRACION.nombre);
+      return true;
+    }
+    return false;
   }catch(e){ console.warn('migrarTemporadaSiHaceFalta:', e); return false; }
 }
 
@@ -5700,9 +5736,9 @@ function renderSADatos(){
         <div style="font-weight:700;margin-bottom:4px">📅 Schedule completo LISFI Zona Campeonato 2026 <span style="font-size:0.65rem;color:#22cd78;font-weight:700">· TEMPORADA ACTUAL</span></div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
           15 fechas · 15 equipos → <code style="background:#050f3d;padding:1px 5px;border-radius:4px;font-size:0.75rem;color:#6ABDE6">ligas/lisfi-zona-campeonato-2026/schedule</code><br>
-          Actualiza ligaId/ligaNombre/torneoActivo de Sagrado Corazón y Hernandez. Cada club con <b>ligaNombre</b> configurado deriva su fixture automáticamente.
+          Migra <b>todos los clubes</b> que juegan esta zona: mueve el torneo activo y deja la temporada anterior como archivo consultable. No toca los datos viejos.
         </div>
-        <button onclick="window.saSubirScheduleZonaCampeonato2026(this)" class="btn btn-g" style="width:100%">🚀 Subir schedule Zona Campeonato</button>
+        <button onclick="window.saSubirScheduleZonaCampeonato2026(this)" class="btn btn-g" style="width:100%">🚀 Subir zona y migrar clubes</button>
         <div id="scheduleCampeonatoLog" style="margin-top:10px;font-size:0.8rem;line-height:1.8;display:none"></div>
       </div>
 
@@ -5769,10 +5805,24 @@ window.saSubirScheduleZonaCampeonato2026 = async function(btn){
       vigenteDesde: new Date().toISOString().slice(0,10)
     });
     log('✓ Meta de la zona guardada (la lee el scraper)', 'var(--green)');
-    await update(ref(db, 'clubs/sagrado-corazon/config'), { ligaNombre: 'SAGR. CORAZON', ligaId: LIGA_ID, torneoActivo: LIGA_ID });
-    await update(ref(db, 'clubs/hernandez/config'), { ligaNombre: 'HERNANDEZ', ligaId: LIGA_ID, torneoActivo: LIGA_ID });
-    log('✓ ligaNombre/ligaId/torneoActivo actualizados para Sagrado Corazón y Hernandez', 'var(--green)');
-    log('✅ Listo. Las citaciones nuevas se guardan aparte, bajo la temporada Zona Campeonato — el historial de Zona II B queda intacto.', '#22cd78');
+
+    // Migrar TODOS los clubes que juegan esta zona (no solo el que está logueado).
+    // Cada uno queda con la temporada anterior registrada como archivo consultable.
+    log('📤 Migrando clubes...');
+    const etiquetas = {
+      'migrado':    ['✓ migrado',              'var(--green)'],
+      'ya-migrado': ['· ya estaba migrado',    'var(--muted)'],
+      'no-juega':   ['· no juega esta zona',   'var(--muted)'],
+      'error':      ['✗ error (¿permisos?)',   'var(--red)']
+    };
+    const resultados = await migrarTodosLosClubes((clubId, estado)=>{
+      const [txt, color] = etiquetas[estado] || [estado, 'var(--muted)'];
+      log('&nbsp;&nbsp;' + clubId + ' — ' + txt, color);
+    });
+    const migrados = resultados.filter(r=>r.estado === 'migrado').length;
+    const enZona   = resultados.filter(r=>r.estado === 'migrado' || r.estado === 'ya-migrado').length;
+    log('✓ ' + migrados + ' club/es migrado/s · ' + enZona + ' en la zona', 'var(--green)');
+    log('✅ Listo. Las citaciones nuevas se guardan aparte, bajo la temporada Zona Campeonato — el historial anterior queda intacto y consultable desde el selector de temporada.', '#22cd78');
     btn.textContent = '✓ Subido';
   } catch(e) {
     log('❌ Error: ' + e.message, 'var(--red)');
