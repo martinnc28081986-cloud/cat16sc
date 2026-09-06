@@ -1554,13 +1554,28 @@ async function migrarClubAZona(clubId, zonaDef){
   try{
     const cfgSnap = await get(ref(db, 'clubs/'+clubId+'/config'));
     const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
-    if(cfg.torneoActivo === Z.torneoNuevo && cfg.temporadas) return 'ya-migrado';
 
     // ¿Este club juega la zona nueva? Se compara contra los equipos del schedule
     const nombreLiga = String(cfg.ligaNombre || clubId.replace(/-/g,' ')).toUpperCase().trim();
     const equipo = equiposDeSchedule(SCHED)
       .find(e => _claveEquipo(e) === _claveEquipo(nombreLiga) || _m5(e) === _m5(nombreLiga));
     if(!equipo) return 'no-juega';
+
+    // Puntero público de la zona vigente de este club. Es lo único que necesita leer
+    // el scraper (que corre sin login) para saber qué zona bajar: solo el id de la zona
+    // y la URL del fixture, que ya es pública en lisfi.com.ar.
+    // Se escribe SIEMPRE que el club juegue la zona — también si ya estaba migrado,
+    // porque si no, en un club ya migrado el puntero nunca llegaría a crearse.
+    try {
+      await update(ref(db, 'ligas/_activa/'+clubId), {
+        ligaId:        Z.ligaId,
+        nombre:        Z.nombre,
+        fuente:        Z.fuente || '',
+        actualizadoEl: new Date().toISOString().slice(0,10)
+      });
+    } catch(e){ console.warn('No se pudo escribir el puntero público de zona:', e); }
+
+    if(cfg.torneoActivo === Z.torneoNuevo && cfg.temporadas) return 'ya-migrado';
 
     // Registro de temporadas: la anterior queda consultable desde el selector.
     // Se registra aunque el club no tuviera torneoActivo (sus datos viven en 'default').
@@ -1590,19 +1605,6 @@ async function migrarClubAZona(clubId, zonaDef){
       zona:         Z.zona || Z.nombre,
       temporadas
     });
-
-    // Puntero público de la zona vigente de este club. Es lo único que necesita leer
-    // el scraper (que corre sin login) para saber qué zona bajar. Contiene solo el id
-    // de la zona y la URL del fixture, que ya es pública en lisfi.com.ar — ningún dato
-    // de jugadores, citaciones ni configuración del club.
-    try {
-      await update(ref(db, 'ligas/_activa/'+clubId), {
-        ligaId:       Z.ligaId,
-        nombre:       Z.nombre,
-        fuente:       Z.fuente || '',
-        actualizadoEl: new Date().toISOString().slice(0,10)
-      });
-    } catch(e){ console.warn('No se pudo escribir el puntero público de zona:', e); }
 
     return 'migrado';
   }catch(e){ console.warn('migrarClubAZona('+clubId+'):', e); return 'error'; }
