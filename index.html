@@ -999,6 +999,7 @@ function esHistorico(){
 // Limpia el estado de temporada al cambiar de club o de categoría.
 function resetContextoTemporada(){
   window._viewTorneo        = null;
+  window._clubLigaNombreDe  = null;   // el nombre de liga del club anterior no vale acá
   window._migracionIntentada = false;
   window._tablaEnCero       = false;
   window._isCoordView       = false;
@@ -1028,6 +1029,40 @@ window.esHistorico = esHistorico;
 // ── PRESENCIA EN TIEMPO REAL ──
 let _connectedUsers = 0;
 let _connectedCats = [];
+
+// ── CARTEL DE CONEXIÓN ──
+// Vive a nivel de módulo a propósito: lo necesitan los tres puntos de entrada
+// (profe, coordinador y super admin). Cuando estaba adentro de startApp(), en el
+// panel Super Admin y en el del coordinador el cartel se quedaba en
+// "conectando..." para siempre, aunque la conexión estuviera perfecta.
+const _CAT_LABELS = {cat16:'2016',cat13:'2013',cat2020:'2020',cat2019:'2019',cat2018:'2018',cat2017:'2017',cat2015:'2015',cat2014:'2014',escuelita:'ESC'};
+
+function setSS(s) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  const ban = document.getElementById('offlineBanner');
+  if(dot) dot.className = 'sync-dot '+s;
+  let label = s==='error'?'sin conexion':s==='live'?'en vivo':'conectando...';
+  const isSA = window._isSuperAdmin || (window._userProfile && window._userProfile.role==='super-admin');
+  // Los no-SA ven presencia filtrada (sin el super-admin)
+  const visibleCats = isSA ? _connectedCats : _connectedCats.filter(c=>c!=='super-admin');
+  const visibleCount = isSA ? _connectedUsers : _connectedUsers - (
+    (() => { try { const d=Object.values((window._lastPresenceData)||{}); return d.filter(x=>x.cat==='super-admin').length; } catch(e){return 0;} })()
+  );
+  if(s==='live' && visibleCats.length>0){
+    const catNames = visibleCats.map(c=>_CAT_LABELS[c]||c).join(' · ');
+    label = 'en vivo · '+catNames;
+  } else if(s==='live' && visibleCount>0){
+    label = 'en vivo · '+visibleCount+(visibleCount===1?' usuario':' usuarios');
+  }
+  if(lbl) lbl.textContent = label;
+  if(ban) ban.classList.toggle('show', s==='error');
+}
+window.setSS = setSS;
+
+// Si Firebase confirmó la conexión antes de que el DOM estuviera listo, ponerse al día.
+setTimeout(()=>{ if(window._fbConnected===true) setSS('live'); else if(window._fbConnected===false) setSS('error'); }, 100);
+
 let _myPresRef = null;
 
 let _currentCat = '';
@@ -1436,7 +1471,18 @@ window._claveEquipo = _claveEquipo;
 function resultadosDelClub(catNum){
   try{
     const cat = catNum || _CAT_NUM[(typeof CFG !== 'undefined' && CFG.dbPath) || ''] || 16;
-    const myName = String((typeof CFG !== 'undefined' && CFG.ligaNombre) || CLUB_LIGA_NOMBRE || '').toUpperCase().trim();
+    // CLUB_LIGA_NOMBRE es una global: al saltar de club desde el panel SA se queda
+    // con el nombre del club anterior hasta que termina de cargar la config nueva,
+    // y en ese hueco un club leía los resultados de otro. Por eso solo se usa si
+    // fue escrita PARA ESTE club (window._clubLigaNombreDe lo registra).
+    const clubId = String(CLUB_PATH||'').split('/').pop();
+    const globalValida = (window._clubLigaNombreDe === clubId) ? CLUB_LIGA_NOMBRE : '';
+    const myName = String(
+      (typeof CFG !== 'undefined' && CFG.ligaNombre) ||
+      globalValida ||
+      ligaNombreDeClub(null, clubId) ||
+      ''
+    ).toUpperCase().trim();
     // 1) teamResults — funciona para cualquier club
     const tr = (LIGA_DATA.teamResults && LIGA_DATA.teamResults[cat]) || {};
     if(myName){
@@ -1650,6 +1696,7 @@ window.switchTorneo = async function(id){
     // loadClubConfig y refresh viven dentro de startApp (dependen de CFG/FIXTURE),
     // así que startApp las expone en window para poder llamarlas desde acá.
     if(typeof window._loadClubConfig === 'function') await window._loadClubConfig();
+    renderHeaderSub();
     renderSeasonBar();
     applyReadOnlyUI();
     if(typeof window._refreshProfe === 'function') window._refreshProfe();
@@ -1698,7 +1745,62 @@ async function subirZonaAFirebase(zonaDef, forzar){
       vigenteDesde: new Date().toISOString().slice(0,10)
     });
   }
+
+  // Marca cuál es la zona vigente de esta liga. Es lo que lee la migración
+  // automática para saber a dónde mover a un club, en vez de tenerlo escrito
+  // en el código. Se guarda por liga (lisfi, lafir, ...) porque no todos los
+  // clubes juegan el mismo torneo.
+  try {
+    await update(ref(db, 'ligas/_vigente/'+_slugLiga(Z.liga)), {
+      ligaId: Z.ligaId,
+      nombre: Z.nombre,
+      fechas: Z.fechas || Object.keys(sched).length,
+      fuente: Z.fuente || '',
+      liga:   Z.liga || 'LISFI',
+      desde:  new Date().toISOString().slice(0,10)
+    });
+  } catch(e){ console.warn('No se pudo marcar la zona vigente (hace falta super admin):', e && e.message); }
 }
+
+// 'LISFI' -> 'lisfi'.  Sirve de clave en ligas/_vigente/{liga}
+// Subtítulo del header: CLUB · LIGA ZONA. La zona sale de la temporada que se
+// está mirando (no de una constante), así que al abrir un archivo dice el nombre
+// de esa temporada y no el de la actual.
+function renderHeaderSub(){
+  const el = document.getElementById('headerSubEl');
+  if(!el) return;
+  const club = window._clubNombreHeader || '';
+  const liga = window._clubLigaHeader || '';
+  let zona = '';
+  try{ zona = (torneoMeta(TORNEO_ID) || {}).nombre || ''; }catch(e){}
+  const partes = [club, [liga, zona].filter(Boolean).join(' ')].filter(Boolean);
+  el.textContent = partes.join(' · ').toUpperCase();
+}
+window.renderHeaderSub = renderHeaderSub;
+
+function _slugLiga(x){
+  return String(x || 'LISFI').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+           .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'lisfi';
+}
+window._slugLiga = _slugLiga;
+
+// Arma la definición de zona leyendo Firebase, sin nada escrito en el código.
+// Devuelve null si esa liga no tiene zona vigente marcada todavía.
+async function zonaVigenteDeLiga(liga){
+  try{
+    const v = (await get(ref(db, 'ligas/_vigente/'+_slugLiga(liga)))).val();
+    if(!v || !v.ligaId) return null;
+    const sched = (await get(ref(db, 'ligas/'+v.ligaId+'/schedule'))).val();
+    if(!sched) return null;   // sin schedule no se puede saber qué clubes la juegan
+    return {
+      torneoNuevo: v.ligaId, ligaId: v.ligaId, nombre: v.nombre || nombreDeZona(v.ligaId),
+      fechas: v.fechas || Object.keys(sched).length, liga: v.liga || liga || 'LISFI',
+      zona: v.nombre || '', fuente: v.fuente || '', schedule: sched,
+      orden: Math.floor(Date.parse(v.desde || Date.now())/86400000) || 2
+    };
+  }catch(e){ console.warn('zonaVigenteDeLiga:', e && e.message); return null; }
+}
+window.zonaVigenteDeLiga = zonaVigenteDeLiga;
 
 // Migra UN club a la zona nueva: mueve el torneo activo y deja la temporada anterior
 // registrada como archivo consultable. Nunca toca los datos de la temporada anterior.
@@ -1799,13 +1901,25 @@ async function migrarTemporadaSiHaceFalta(){
     const clubId = CLUB_PATH.split('/').pop();
     const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
     const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
-    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return false; // ya está
 
-    await subirZonaAFirebase();
-    const r = await migrarClubAZona(clubId);
+    // ¿Cuál es la zona vigente de LA LIGA DE ESTE CLUB? Sale de Firebase, no del
+    // código: la deja marcada el panel "Cargar zona" al guardar una zona nueva.
+    // Así el año que viene no hay que editar nada acá.
+    let Z = await zonaVigenteDeLiga(cfg.liga);
+
+    // Respaldo para clubes viejos, de antes de que existiera ligas/_vigente
+    if(!Z){
+      if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return false;
+      await subirZonaAFirebase();
+      Z = MIGRACION;
+    }
+
+    if(cfg.torneoActivo === Z.torneoNuevo && cfg.temporadas) return false; // ya está
+
+    const r = await migrarClubAZona(clubId, Z);
     if(r === 'migrado'){
-      console.log('[MI PLANTEL] Temporada migrada a', MIGRACION.torneoNuevo, '—', clubId);
-      showToast('✓ Temporada actualizada: ' + MIGRACION.nombre);
+      console.log('[MI PLANTEL] Temporada migrada a', Z.torneoNuevo, '—', clubId);
+      showToast('✓ Temporada actualizada: ' + Z.nombre);
       return true;
     }
     return false;
@@ -1817,63 +1931,54 @@ function startApp(cat){
 const CAT_CONFIG = {
   cat16: {
     label: 'MI PLANTEL',
-    sub: 'LISFI Zona Campeonato 2026',
     dbPath: 'cat16',
     matchTime: '15:50',
     address: ''
   },
   cat13: {
     label: 'MI PLANTEL',
-    sub: 'LISFI II Zona B 2026',
     dbPath: 'cat13',
     matchTime: '13:20',
     address: ''
   },
   cat2020: {
     label: 'MI PLANTEL',
-    sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2020',
     matchTime: '12:30',
     address: ''
   },
   cat2019: {
     label: 'MI PLANTEL',
-    sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2019',
     matchTime: '11:40',
     address: ''
   },
   cat2018: {
     label: 'MI PLANTEL',
-    sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2018',
     matchTime: '10:50',
     address: ''
   },
   cat2017: {
     label: 'MI PLANTEL',
-    sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2017',
     matchTime: '10:00',
     address: ''
   },
   cat2015: {
     label: 'MI PLANTEL',
-    sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2015',
     matchTime: '15:00',
     address: ''
   },
   cat2014: {
     label: 'MI PLANTEL',
-    sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2014',
     matchTime: '14:10',
     address: ''
   },
   escuelita: {
     label: 'MI PLANTEL',
-    sub: 'Escuela de Fútbol',
     playerCats: {"Benjamin Rasedo":2015,"Pedro Ezeiza":2014,"Juan Valenciano":2016,"Santino Castillo":2016,"Bastian Basegio":2016,"Fermin Montañes":2018,"Juan Martin Cacheri":2018,"Francisco Conocioto":2015,"Ciro Cerecedo":2020,"Thiago Torres":2014},
     dbPath: 'escuelita',
     escuelita: true
@@ -1893,8 +1998,11 @@ const CFG = CAT_CONFIG[cat] || CAT_CONFIG['cat16'];
 
 // Update header — siempre MI PLANTEL arriba, club abajo
 document.querySelector('.logo').textContent = 'MI PLANTEL';
-const subtitleEl = document.querySelector('header div div div[style*="0.62rem"]');
-if(subtitleEl) subtitleEl.textContent = (CFG.club || '') + (CFG.sub ? ' · ' + CFG.sub : '');
+// El nombre de la zona NO sale de CAT_CONFIG (quedaba viejo con cada temporada).
+// Acá va solo el club como texto provisorio; renderHeaderSub() lo completa
+// con la liga y la temporada apenas llega la config de Firebase.
+const subtitleEl = document.getElementById('headerSubEl');
+if(subtitleEl && CFG.club) subtitleEl.textContent = String(CFG.club).toUpperCase();
 // Show category badge (read-only, no switching)
 const logoutBtn = document.getElementById('logoutBtn');
 let catBadge = document.getElementById('catBadge');
@@ -1916,10 +2024,9 @@ catBadge.textContent = _catLabels[cat] || cat.toUpperCase();
     const clubSnap = await get(ref(db,'clubs/'+clubId));
     const clubData = clubSnap.exists()?clubSnap.val():{};
     const nombreClub = clubData.nombre || (clubId.charAt(0).toUpperCase()+clubId.slice(1).replace(/-/g,' '));
-    const liga = cfg.liga || (cfg.ligaId ? cfg.ligaId.toUpperCase().replace(/-/g,' ') : '');
-    const zona = cfg.zona||'';
-    const subEl = document.getElementById('headerSubEl');
-    if(subEl) subEl.textContent = (nombreClub + (liga?' · '+liga+(zona?' '+zona:''):'')).toUpperCase();
+    window._clubNombreHeader = nombreClub;
+    window._clubLigaHeader = cfg.liga || (cfg.ligaId ? cfg.ligaId.toUpperCase().replace(/-/g,' ') : '');
+    renderHeaderSub();
   }catch(e){}
 })();
 
@@ -2083,9 +2190,11 @@ async function loadClubConfig(){
     // Opción 1: schedule completo de liga + ligaNombre del club → derivación automática
     if(cfg.ligaNombre){
       CLUB_LIGA_NOMBRE = cfg.ligaNombre;
+      window._clubLigaNombreDe = CLUB_PATH.split('/').pop();
     } else {
       // Derivar del path del club como fallback
       CLUB_LIGA_NOMBRE = ligaNombreDeClub(null, CLUB_PATH.split('/').pop());
+      window._clubLigaNombreDe = CLUB_PATH.split('/').pop();
     }
     if(ligaData && ligaData.schedule && cfg.ligaNombre){
       FIXTURE = deriveFixtureFromSchedule(ligaData.schedule, cfg.ligaNombre);
@@ -2253,28 +2362,7 @@ function renderFechaSelector(){
 renderFechaSelector();
 
 // ── SYNC ──
-const _CAT_LABELS = {cat16:'2016',cat13:'2013',cat2020:'2020',cat2019:'2019',cat2018:'2018',cat2017:'2017',cat2015:'2015',cat2014:'2014',escuelita:'ESC'};
-
-function setSS(s) {
-  document.getElementById('syncDot').className='sync-dot '+s;
-  let label = s==='error'?'sin conexion':s==='live'?'en vivo':'conectando...';
-  const isSA = window._isSuperAdmin || (window._userProfile && window._userProfile.role==='super-admin');
-  // Los no-SA ven presencia filtrada (sin el super-admin)
-  const visibleCats = isSA ? _connectedCats : _connectedCats.filter(c=>c!=='super-admin');
-  const visibleCount = isSA ? _connectedUsers : _connectedUsers - (
-    (() => { try { const d=Object.values((window._lastPresenceData)||{}); return d.filter(x=>x.cat==='super-admin').length; } catch(e){return 0;} })()
-  );
-  if(s==='live' && visibleCats.length>0){
-    const catNames = visibleCats.map(c=>_CAT_LABELS[c]||c).join(' · ');
-    label = 'en vivo · '+catNames;
-  } else if(s==='live' && visibleCount>0){
-    label = 'en vivo · '+visibleCount+(visibleCount===1?' usuario':' usuarios');
-  }
-  document.getElementById('syncLabel').textContent = label;
-  document.getElementById('offlineBanner').classList.toggle('show', s==='error');
-}
-// Si Firebase ya confirmó conexión antes de que setSS estuviera lista, actualizar ahora
-setTimeout(()=>{ if(window._fbConnected===true) setSS('live'); else if(window._fbConnected===false) setSS('error'); }, 100);
+// setSS y _CAT_LABELS se movieron a nivel de módulo (los usan los tres roles).
 
 // ── FECHA ACTIVA GLOBAL ──
 // La fecha activa es la primera donde al menos UNA categoría competitiva no citó
@@ -5808,8 +5896,8 @@ async function startSuperAdminApp(){
   // Header
   const logo = document.querySelector('.logo');
   if(logo) logo.textContent = 'MI PLANTEL';
-  const subEl = document.querySelector('header div div div[style*="0.62rem"]');
-  if(subEl) subEl.textContent = 'Panel Super Admin';
+  const subEl = document.getElementById('headerSubEl');
+  if(subEl) subEl.textContent = 'PANEL SUPER ADMIN';
   const nextMatchEl = document.getElementById('nextMatchEl');
   if(nextMatchEl) nextMatchEl.textContent = '';
   const headerSubEl = document.getElementById('headerSubEl');
@@ -7308,6 +7396,7 @@ async function startCoordApp(){
       TORNEO_ID = window._viewTorneo || cfg.torneoActivo || TORNEO_ID;
       if(cfg.ligaNombre) _ligaNombreCoord = cfg.ligaNombre;
       CLUB_LIGA_NOMBRE = _ligaNombreCoord || CLUB_PATH.split('/').pop().toUpperCase().replace(/-/g,' ');
+      window._clubLigaNombreDe = CLUB_PATH.split('/').pop();
       // Si tiene ligaId pero no ligaNombre, guardarlo automáticamente para que el panel de suspensiones lo use
       if(cfg.ligaId && !cfg.ligaNombre && CLUB_LIGA_NOMBRE){
         _ligaNombreCoord = CLUB_LIGA_NOMBRE;
@@ -7349,8 +7438,8 @@ async function startCoordApp(){
   document.querySelectorAll('.view').forEach(v=>{ if(!v.closest('#coord-app')) v.style.display='none'; });
   document.getElementById('coord-app').style.display = 'block';
   document.querySelector('.logo').textContent = 'MI PLANTEL';
-  const subEl = document.querySelector('header div div div[style*="0.62rem"]');
-  if(subEl) subEl.textContent = _clubNombreCoord + ' — Vista Global';
+  const subEl = document.getElementById('headerSubEl');
+  if(subEl) subEl.textContent = (_clubNombreCoord + ' — Vista global').toUpperCase();
   let catBadge = document.getElementById('catBadge');
   if(!catBadge){ catBadge=document.createElement('span'); catBadge.id='catBadge'; catBadge.style.cssText='background:rgba(var(--accent-rgb),0.15);color:var(--accent);font-family:Bebas Neue,sans-serif;font-size:var(--f-md);letter-spacing:1px;padding:var(--sp-1) var(--sp-4);border-radius:var(--r-sm);margin-left:var(--sp-3);'; document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn')); }
   catBadge.textContent = 'COORD';
