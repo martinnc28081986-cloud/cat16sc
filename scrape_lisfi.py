@@ -115,8 +115,11 @@ def resolver_zonas():
     if env_url:
         liga_id = env_id or FALLBACK_LIGA_ID
         print(f"🔧 Zona por variable de entorno: {env_url}")
+        print("   (no se toca liga_data.json: el override sirve para recuperar")
+        print("    una zona vieja sin pisar la de la temporada en curso)")
         return [{"liga_id": liga_id, "url": env_url.rstrip("/"),
-                 "equipos": _equipos_de_zona(liga_id), "clubes": ["(env)"]}]
+                 "equipos": _equipos_de_zona(liga_id), "clubes": ["(env)"],
+                 "es_override": True}]
 
     # 2) Todas las zonas activas. ligas/_activa es el único nodo que la app deja
     #    abierto sin login, justamente para que este script lo pueda leer.
@@ -414,7 +417,9 @@ def main():
             escribir(f"liga_data_{zona['liga_id']}.json", data)
             # La primera zona de la lista es la del club principal: se copia a
             # liga_data.json, que es lo que bajan las versiones viejas de la app.
-            if zona is zonas[0]:
+            # Con un override manual NO se copia: se estaría pisando la zona
+            # vigente con una vieja que se está recuperando.
+            if zona is zonas[0] and not zona.get("es_override"):
                 escribir("liga_data.json", data)
             ok_zonas.append((zona, data))
         else:
