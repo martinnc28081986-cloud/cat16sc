@@ -1519,22 +1519,27 @@ const MIGRACION = {
 
 // Sube el schedule y la meta de la zona (compartidos por todos los clubes).
 // Idempotente: si ya están, no escribe de nuevo.
-async function subirZonaAFirebase(){
-  const schedSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'));
-  if(!schedSnap.exists()){
-    await set(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'), SCHEDULE_ZONA_CAMPEONATO_2026);
+// Sube el schedule y la meta de una zona. Si no se le pasa ninguna usa la que está
+// definida en el código (MIGRACION); el panel "Cargar zona" le pasa la que cargaste vos.
+// forzar = true reescribe aunque ya exista (para actualizar un fixture corregido).
+async function subirZonaAFirebase(zonaDef, forzar){
+  const Z = zonaDef || MIGRACION;
+  const sched = Z.schedule || SCHEDULE_ZONA_CAMPEONATO_2026;
+  const schedSnap = await get(ref(db, 'ligas/'+Z.ligaId+'/schedule'));
+  if(forzar || !schedSnap.exists()){
+    await set(ref(db, 'ligas/'+Z.ligaId+'/schedule'), sched);
   }
   // La meta es lo que lee el scraper para saber qué zona bajar — sin URLs fijas
-  const metaSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta/fuente'));
-  if(!metaSnap.exists()){
-    await update(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta'), {
-      ligaId:  MIGRACION.ligaId,
-      nombre:  MIGRACION.nombre,
-      liga:    MIGRACION.liga,
-      zona:    MIGRACION.zona,
-      fechas:  MIGRACION.fechas,
-      fuente:  MIGRACION.fuente,
-      equipos: equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026),
+  const metaSnap = await get(ref(db, 'ligas/'+Z.ligaId+'/meta/fuente'));
+  if(forzar || !metaSnap.exists()){
+    await update(ref(db, 'ligas/'+Z.ligaId+'/meta'), {
+      ligaId:  Z.ligaId,
+      nombre:  Z.nombre,
+      liga:    Z.liga || 'LISFI',
+      zona:    Z.zona || Z.nombre,
+      fechas:  Z.fechas || Object.keys(sched).length,
+      fuente:  Z.fuente || '',
+      equipos: equiposDeSchedule(sched),
       vigenteDesde: new Date().toISOString().slice(0,10)
     });
   }
@@ -1543,15 +1548,17 @@ async function subirZonaAFirebase(){
 // Migra UN club a la zona nueva: mueve el torneo activo y deja la temporada anterior
 // registrada como archivo consultable. Nunca toca los datos de la temporada anterior.
 // Devuelve 'migrado' | 'ya-migrado' | 'no-juega' | 'error'.
-async function migrarClubAZona(clubId){
+async function migrarClubAZona(clubId, zonaDef){
+  const Z = zonaDef || MIGRACION;
+  const SCHED = Z.schedule || SCHEDULE_ZONA_CAMPEONATO_2026;
   try{
     const cfgSnap = await get(ref(db, 'clubs/'+clubId+'/config'));
     const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
-    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return 'ya-migrado';
+    if(cfg.torneoActivo === Z.torneoNuevo && cfg.temporadas) return 'ya-migrado';
 
     // ¿Este club juega la zona nueva? Se compara contra los equipos del schedule
     const nombreLiga = String(cfg.ligaNombre || clubId.replace(/-/g,' ')).toUpperCase().trim();
-    const equipo = equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026)
+    const equipo = equiposDeSchedule(SCHED)
       .find(e => _claveEquipo(e) === _claveEquipo(nombreLiga) || _m5(e) === _m5(nombreLiga));
     if(!equipo) return 'no-juega';
 
@@ -1559,7 +1566,7 @@ async function migrarClubAZona(clubId){
     // Se registra aunque el club no tuviera torneoActivo (sus datos viven en 'default').
     const temporadas = Object.assign({}, cfg.temporadas || {});
     const anterior = cfg.torneoActivo || 'default';
-    if(anterior !== MIGRACION.torneoNuevo){
+    if(anterior !== Z.torneoNuevo){
       const metaAnt = TORNEO_META_DEF[anterior] || {};
       temporadas[anterior] = {
         nombre: metaAnt.nombre
@@ -1571,16 +1578,16 @@ async function migrarClubAZona(clubId){
         orden:  1
       };
     }
-    temporadas[MIGRACION.torneoNuevo] = {
-      nombre: MIGRACION.nombre, fechas: MIGRACION.fechas, ligaId: MIGRACION.ligaId, orden: 2
+    temporadas[Z.torneoNuevo] = {
+      nombre: Z.nombre, fechas: Z.fechas || Object.keys(SCHED).length, ligaId: Z.ligaId, orden: (Z.orden || 2)
     };
 
     await update(ref(db, 'clubs/'+clubId+'/config'), {
-      torneoActivo: MIGRACION.torneoNuevo,
-      ligaId:       MIGRACION.ligaId,
+      torneoActivo: Z.torneoNuevo,
+      ligaId:       Z.ligaId,
       ligaNombre:   cfg.ligaNombre || equipo.toUpperCase(),
-      liga:         MIGRACION.liga,
-      zona:         MIGRACION.zona,
+      liga:         Z.liga || 'LISFI',
+      zona:         Z.zona || Z.nombre,
       temporadas
     });
     return 'migrado';
@@ -1589,13 +1596,13 @@ async function migrarClubAZona(clubId){
 window.migrarClubAZona = migrarClubAZona;
 
 // Migra todos los clubes que juegan la zona. Requiere permisos de super admin.
-async function migrarTodosLosClubes(log){
+async function migrarTodosLosClubes(log, zonaDef){
   const out = [];
   const snap = await get(ref(db, 'clubs'));
   if(!snap.exists()) return out;
   const ids = Object.keys(snap.val());
   for(const clubId of ids){
-    const r = await migrarClubAZona(clubId);
+    const r = await migrarClubAZona(clubId, zonaDef);
     out.push({clubId, estado: r});
     if(log) log(clubId, r);
   }
@@ -5176,6 +5183,230 @@ window._ligaDataReady = (async () => {
 })();
 
 
+// ══════════════════════════════════════════════════════════════════════════
+//  CARGA DE ZONAS DESDE LISFI — parser del fixture
+//  Trabaja sobre TEXTO, no sobre la estructura HTML: así funciona igual si se
+//  pega la página, si se copia el texto a mano o si cambia el maquetado del sitio.
+// ══════════════════════════════════════════════════════════════════════════
+
+function _limpiarNombreEquipo(s){
+  return String(s||'')
+    .replace(/<[^>]+>/g,' ')
+    .replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&')
+    .replace(/[|*_]+/g,' ')
+    .replace(/\s+/g,' ')
+    .replace(/^[\s.,;:-]+|[\s.,;:-]+$/g,'')
+    .trim();
+}
+
+// Devuelve { schedule, equipos, fechas, problemas, avisos }
+function parsearFixtureTexto(texto){
+  const lineas = String(texto||'')
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/(tr|p|div|h[1-6]|li|td)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&ntilde;/gi,'ñ')
+    .split(/\r?\n/).map(l => l.replace(/[|*]+/g,' ').trim()).filter(Boolean);
+
+  const reFecha = /^fecha\s*(?:n\s*[°ºo]?\.?\s*)?(\d{1,2})\b/i;
+  const reVs    = /^(.{1,60}?)\s+vs\.?\s+(.{1,60}?)$/i;
+  const reLibre = /^(.{1,60}?)\s*(?:queda\s+)?(?:fecha\s+)?libre\b/i;
+
+  const schedule = {};
+  const problemas = [], avisos = [];
+  let fechaActual = null;
+
+  for(const linea of lineas){
+    const mf = linea.match(reFecha);
+    if(mf){
+      fechaActual = String(parseInt(mf[1], 10));
+      if(!schedule[fechaActual]) schedule[fechaActual] = [];
+      continue;
+    }
+    if(!fechaActual) continue;
+
+    if(!/\bvs\.?\b/i.test(linea)){
+      const ml = linea.match(reLibre);
+      if(ml){
+        const eq = _limpiarNombreEquipo(ml[1]);
+        if(eq) schedule[fechaActual].push({ libre: eq });
+        continue;
+      }
+    }
+    const mv = linea.match(reVs);
+    if(mv){
+      const h = _limpiarNombreEquipo(mv[1]), a = _limpiarNombreEquipo(mv[2]);
+      if(h && a) schedule[fechaActual].push({ h, a });
+    }
+  }
+
+  // ── Equipos y validaciones ──
+  const equipos = new Set();
+  Object.keys(schedule).forEach(f => schedule[f].forEach(m => {
+    [m.h, m.a, m.libre].forEach(e => { if(e) equipos.add(e); });
+  }));
+  const listaEquipos = [...equipos].sort((a,b)=>a.localeCompare(b));
+  const fechas = Object.keys(schedule).map(Number).sort((a,b)=>a-b);
+
+  if(!fechas.length) problemas.push('No se encontró ninguna fecha. ¿Pegaste el fixture completo?');
+  if(listaEquipos.length < 3) problemas.push('Se encontraron solo ' + listaEquipos.length + ' equipos.');
+
+  // Fechas faltantes en la secuencia
+  if(fechas.length){
+    const faltan = [];
+    for(let f = 1; f <= fechas[fechas.length-1]; f++) if(!schedule[String(f)]) faltan.push(f);
+    if(faltan.length) avisos.push('Faltan las fechas: ' + faltan.join(', '));
+  }
+
+  // Consistencia por fecha
+  const porFecha = {};
+  fechas.forEach(f => {
+    const arr = schedule[String(f)] || [];
+    const vistos = new Set(); let repetido = null;
+    arr.forEach(m => [m.h, m.a, m.libre].forEach(e => {
+      if(!e) return;
+      if(vistos.has(e)) repetido = e;
+      vistos.add(e);
+    }));
+    if(repetido) problemas.push('Fecha ' + f + ': "' + repetido + '" aparece dos veces');
+    porFecha[f] = { partidos: arr.filter(m=>m.h&&m.a).length, libres: arr.filter(m=>m.libre).length, equipos: vistos.size };
+  });
+
+  // Todas las fechas deberían mover la misma cantidad de equipos
+  const tamanos = [...new Set(fechas.map(f => porFecha[f].equipos))];
+  if(tamanos.length > 1){
+    const raras = fechas.filter(f => porFecha[f].equipos !== listaEquipos.length);
+    if(raras.length) avisos.push('Estas fechas no incluyen a todos los equipos: ' + raras.join(', '));
+  }
+
+  return { schedule, equipos: listaEquipos, fechas, porFecha, problemas, avisos };
+}
+
+
+// ── Estado de la pantalla "Cargar zona" ──
+window._zonaCargada = null; // {ligaId, nombre, fuente, schedule, equipos, fechas}
+
+function _slugZona(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+}
+
+// Baja la página de LISFI. El navegador bloquea los pedidos a otro dominio (CORS),
+// así que si falla se avisa y se ofrece pegar el texto a mano.
+async function _bajarPaginaLisfi(url){
+  const res = await fetch(url, { mode:'cors' });
+  if(!res.ok) throw new Error('El sitio respondió ' + res.status);
+  return await res.text();
+}
+
+window.saAnalizarZona = async function(){
+  const url    = (document.getElementById('zonaUrl').value||'').trim();
+  const pegado = (document.getElementById('zonaTexto').value||'').trim();
+  const log    = document.getElementById('zonaLog');
+  const prev   = document.getElementById('zonaPreview');
+  log.style.display = 'block';
+  prev.style.display = 'none';
+  window._zonaCargada = null;
+
+  let texto = pegado;
+  if(!texto && url){
+    log.innerHTML = '<div style="color:var(--muted)">⏳ Intentando bajar la página...</div>';
+    try {
+      texto = await _bajarPaginaLisfi(url);
+      log.innerHTML = '<div style="color:var(--green)">✓ Página descargada</div>';
+    } catch(e){
+      log.innerHTML = '<div style="color:var(--yellow)">⚠️ El navegador no deja bajar páginas de otro sitio (CORS).</div>'
+        + '<div style="color:var(--muted);font-size:0.75rem;margin-top:6px">Abrí la página del fixture, seleccioná todo (Ctrl+A), copiá (Ctrl+C) y pegalo en el cuadro de abajo. El resultado es el mismo.</div>';
+      document.getElementById('zonaTextoWrap').style.display = 'block';
+      return;
+    }
+  }
+  if(!texto){
+    log.innerHTML = '<div style="color:var(--red)">Pegá la URL o el texto del fixture.</div>';
+    return;
+  }
+
+  const r = parsearFixtureTexto(texto);
+  if(r.problemas.length){
+    log.innerHTML = '<div style="color:var(--red)">❌ No se pudo leer el fixture:</div>'
+      + r.problemas.map(p=>'<div style="color:var(--red);font-size:0.78rem">• '+p+'</div>').join('');
+    document.getElementById('zonaTextoWrap').style.display = 'block';
+    return;
+  }
+
+  // Nombre e id sugeridos, a partir de la URL o del texto
+  const slugUrl = url ? _slugZona(url.split('/').filter(Boolean).slice(-2).join('-')) : '';
+  const nombreSug = (document.getElementById('zonaNombre').value||'').trim()
+    || (slugUrl ? slugUrl.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()) : 'Zona nueva');
+  document.getElementById('zonaNombre').value = nombreSug;
+  document.getElementById('zonaId').value = (document.getElementById('zonaId').value||'').trim() || _slugZona(nombreSug);
+
+  window._zonaCargada = { schedule: r.schedule, equipos: r.equipos, fechas: r.fechas, fuente: url };
+
+  prev.style.display = 'block';
+  prev.innerHTML = '<div style="font-weight:700;margin-bottom:6px;color:var(--green)">✓ Fixture leído</div>'
+    + '<div style="font-size:0.8rem;margin-bottom:8px">'
+    +   '<b>' + r.fechas.length + '</b> fechas · <b>' + r.equipos.length + '</b> equipos'
+    + '</div>'
+    + (r.avisos.length ? r.avisos.map(a=>'<div style="color:var(--yellow);font-size:0.75rem">⚠️ '+a+'</div>').join('') + '<div style="height:6px"></div>' : '')
+    + '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:6px">' + r.equipos.join(' · ') + '</div>'
+    + '<div style="font-size:0.72rem;color:var(--muted);max-height:120px;overflow:auto;background:#050f3d;border-radius:6px;padding:8px">'
+    +   r.fechas.map(f=>{
+          const arr = r.schedule[String(f)]||[];
+          const ps = arr.filter(m=>m.h&&m.a).map(m=>m.h+' vs '+m.a);
+          const lb = arr.filter(m=>m.libre).map(m=>m.libre+' libre');
+          return '<div><b style="color:var(--green)">F'+f+'</b> ' + ps.concat(lb).join(' · ') + '</div>';
+        }).join('')
+    + '</div>';
+};
+
+window.saGuardarZona = async function(btn){
+  const Z = window._zonaCargada;
+  const log = document.getElementById('zonaLog');
+  if(!Z){ log.innerHTML = '<div style="color:var(--red)">Primero analizá el fixture.</div>'; return; }
+  const nombre = (document.getElementById('zonaNombre').value||'').trim();
+  const ligaId = _slugZona((document.getElementById('zonaId').value||'').trim() || nombre);
+  if(!nombre || !ligaId){ log.innerHTML = '<div style="color:var(--red)">Falta el nombre de la zona.</div>'; return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  log.style.display = 'block';
+  const linea = (m,c) => { log.innerHTML += '<div style="color:'+(c||'var(--muted)')+'">'+m+'</div>'; };
+  log.innerHTML = '';
+
+  const zonaDef = {
+    torneoNuevo: ligaId,
+    ligaId:      ligaId,
+    nombre:      nombre,
+    fechas:      Z.fechas.length,
+    liga:        'LISFI',
+    zona:        nombre,
+    fuente:      Z.fuente || '',
+    schedule:    Z.schedule,
+    orden:       Math.floor(Date.now()/86400000) // más nueva = más arriba en el selector
+  };
+
+  try {
+    linea('📤 Guardando la zona (' + Z.fechas.length + ' fechas · ' + Z.equipos.length + ' equipos)...');
+    await subirZonaAFirebase(zonaDef, true);
+    linea('✓ Zona guardada en ligas/' + ligaId, 'var(--green)');
+
+    linea('📤 Migrando clubes...');
+    const etiquetas = { 'migrado':['✓ migrado','var(--green)'], 'ya-migrado':['· ya estaba','var(--muted)'],
+                        'no-juega':['· no juega esta zona','var(--muted)'], 'error':['✗ error (¿permisos?)','var(--red)'] };
+    const res = await migrarTodosLosClubes((clubId, estado)=>{
+      const [txt,col] = etiquetas[estado] || [estado,'var(--muted)'];
+      linea('&nbsp;&nbsp;' + clubId + ' — ' + txt, col);
+    }, zonaDef);
+    const migrados = res.filter(r=>r.estado==='migrado').length;
+    linea('✓ ' + migrados + ' club/es migrado/s', 'var(--green)');
+    linea('✅ Listo. La temporada anterior de cada club queda archivada y consultable.', '#22cd78');
+    btn.textContent = '✓ Zona cargada';
+  } catch(e){
+    linea('❌ Error: ' + e.message, 'var(--red)');
+    btn.disabled = false; btn.textContent = '💾 Guardar zona y migrar clubes';
+  }
+};
+
 // ════════════════════════════════════════════════
 // PANEL SUPER ADMIN
 // ════════════════════════════════════════════════
@@ -5923,6 +6154,49 @@ function renderSADatos(){
   el.innerHTML = `
     <div style="padding:14px">
       <div style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:14px">📤 Carga de datos a Firebase</div>
+
+      <div class="coord-ok-box" style="margin-bottom:16px;border:1px solid rgba(34,205,120,.45)">
+        <div style="font-weight:700;margin-bottom:4px">🆕 Cargar una zona nueva desde LISFI</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px">
+          Pegá la URL del fixture de la zona en lisfi.com.ar. La app lo lee, te muestra lo que entendió
+          y recién ahí guarda la zona y migra a todos los clubes que la juegan.
+          <b>No hay que tocar el código.</b>
+        </div>
+
+        <label style="font-size:0.62rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">URL del fixture</label>
+        <input id="zonaUrl" placeholder="https://www.lisfi.com.ar/index.php/zona-camp-2026/fixture2026"
+          style="width:100%;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#e8f4ff;font-size:.8rem;font-family:DM Sans,sans-serif;outline:none;margin-bottom:10px">
+
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div style="flex:2">
+            <label style="font-size:0.62rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">Nombre de la zona</label>
+            <input id="zonaNombre" placeholder="Zona Campeonato 2026"
+              style="width:100%;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#e8f4ff;font-size:.8rem;font-family:DM Sans,sans-serif;outline:none">
+          </div>
+          <div style="flex:2">
+            <label style="font-size:0.62rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">ID (se genera solo)</label>
+            <input id="zonaId" placeholder="zona-campeonato-2026"
+              style="width:100%;background:#091729;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#6ABDE6;font-size:.78rem;font-family:DM Sans,sans-serif;outline:none">
+          </div>
+        </div>
+
+        <div id="zonaTextoWrap" style="display:none;margin-bottom:10px">
+          <label style="font-size:0.62rem;font-weight:600;color:var(--yellow);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:4px">Pegá acá el texto de la página del fixture</label>
+          <textarea id="zonaTexto" rows="6" placeholder="FECHA 1&#10;Equipo A vs. Equipo B&#10;..."
+            style="width:100%;background:#0d1e35;border:1px solid #0e3050;border-radius:8px;padding:9px 12px;color:#e8f4ff;font-size:.75rem;font-family:DM Sans,sans-serif;outline:none;resize:vertical"></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button onclick="window.saAnalizarZona()" class="btn btn-oly" style="flex:1">🔎 Analizar fixture</button>
+          <button onclick="window.saGuardarZona(this)" class="btn btn-g" style="flex:1">💾 Guardar zona y migrar clubes</button>
+        </div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:8px">
+          ¿No aparece el cuadro para pegar? Se muestra solo si el navegador no puede bajar la página.
+          También podés abrirlo con <a href="#" onclick="document.getElementById('zonaTextoWrap').style.display='block';return false" style="color:var(--green)">pegar el texto a mano</a>.
+        </div>
+        <div id="zonaLog" style="margin-top:10px;font-size:0.8rem;line-height:1.7;display:none"></div>
+        <div id="zonaPreview" style="margin-top:10px;display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px"></div>
+      </div>
 
       <div class="coord-ok-box" style="margin-bottom:12px;border:1px solid rgba(34,205,120,.4)">
         <div style="font-weight:700;margin-bottom:4px">📅 Schedule completo LISFI Zona Campeonato 2026 <span style="font-size:0.65rem;color:#22cd78;font-weight:700">· TEMPORADA ACTUAL</span></div>
