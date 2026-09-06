@@ -820,7 +820,24 @@ function torneoMeta(id){
   return TEMPORADAS[id] || TORNEO_META_DEF[id] || { nombre:String(id||'').toUpperCase().replace(/-/g,' '), orden:0 };
 }
 // true cuando se está mirando una temporada que no es la vigente
-function esHistorico(){ return !!TORNEO_ACTIVO && TORNEO_ID !== TORNEO_ACTIVO; }
+// Solo hay modo histórico si el usuario eligió a mano una temporada archivada en el
+// selector. Antes se deducía comparando TORNEO_ID con TORNEO_ACTIVO, pero al saltar
+// entre clubes y categorías desde el panel Super Admin esos globales quedaban
+// desfasados y la app entraba en solo lectura sin que nadie lo hubiera pedido.
+function esHistorico(){
+  return !!window._viewTorneo && !!TORNEO_ACTIVO && window._viewTorneo !== TORNEO_ACTIVO;
+}
+
+// Limpia el estado de temporada al cambiar de club o de categoría.
+function resetContextoTemporada(){
+  window._viewTorneo        = null;
+  window._migracionIntentada = false;
+  window._tablaEnCero       = false;
+  window._isCoordView       = false;
+  if(document.body) document.body.classList.remove('ro-mode');
+  ['histBanner','seasonDD'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
+}
+window.resetContextoTemporada = resetContextoTemporada;
 // Guarda para toda función que escribe: corta la escritura en temporadas archivadas
 function _roGuard(){
   if(esHistorico()){ showToast('🔒 Temporada archivada · solo lectura'); return true; }
@@ -1004,6 +1021,7 @@ function _launchByRole(profile){
   if(profile.role !== 'super-admin' && profile.clubId){
     CLUB_PATH = 'clubs/' + profile.clubId;
   }
+  resetContextoTemporada();
   const { role, cat } = profile;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('resetPasswordScreen').style.display='none';
@@ -5255,6 +5273,8 @@ async function renderSAUsuarios(){
 window.saEntrarComo = function(cat, clubId){
   // Actualizar CLUB_PATH al club seleccionado
   CLUB_PATH = 'clubs/' + (clubId || 'sagrado-corazon');
+  // Cambia el club/categoría: el estado de temporada del anterior no sirve más
+  resetContextoTemporada();
   // Ocultar todo antes de lanzar
   document.getElementById('superadmin-app').style.display = 'none';
   document.getElementById('coord-app').style.display = 'none';
