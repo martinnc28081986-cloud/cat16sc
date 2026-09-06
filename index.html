@@ -838,9 +838,20 @@ function resetContextoTemporada(){
   ['histBanner','seasonDD'].forEach(id=>{ const e=document.getElementById(id); if(e) e.style.display='none'; });
 }
 window.resetContextoTemporada = resetContextoTemporada;
-// Guarda para toda función que escribe: corta la escritura en temporadas archivadas
+// Coordinadores y super admin pueden corregir temporadas archivadas; los profes no.
+function puedeEditarArchivo(){
+  const prof = window._userProfile || {};
+  return !!window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
+}
+window.puedeEditarArchivo = puedeEditarArchivo;
+
+// true cuando hay que bloquear la escritura: temporada archivada y sin permisos de admin
+function archivoBloqueado(){ return esHistorico() && !puedeEditarArchivo(); }
+window.archivoBloqueado = archivoBloqueado;
+
+// Guarda para toda función que escribe
 function _roGuard(){
-  if(esHistorico()){ showToast('🔒 Temporada archivada · solo lectura'); return true; }
+  if(archivoBloqueado()){ showToast('🔒 Temporada archivada · solo lectura'); return true; }
   return false;
 }
 window._roGuard = _roGuard;
@@ -1312,7 +1323,22 @@ function renderSeasonBar(){
   document.getElementById('seasonPill').className = 'season-pill' + (hist ? ' hist' : '');
   document.getElementById('seasonNm').textContent = meta.nombre;
   document.getElementById('seasonCv').textContent = (meta.fechas ? meta.fechas+' fechas · ' : '') + (hist ? 'archivo' : 'en curso');
+
+  // El cartel cambia según quién mira: los profes ven solo consulta; el admin puede
+  // editar, pero tiene que quedarle claro que lo que toque se guarda en ESA temporada.
   ban.style.display = hist ? 'flex' : 'none';
+  if(hist){
+    const ic = ban.querySelector('.ic'), tx = ban.querySelector('.tx');
+    if(puedeEditarArchivo()){
+      if(ic) ic.textContent = '✏️';
+      if(tx) tx.innerHTML = 'Estás en <b>' + meta.nombre + '</b> (temporada archivada). Como administrador podés editarla — '
+                          + 'lo que cargues o borres se guarda en esa temporada, no en la actual.';
+    } else {
+      if(ic) ic.textContent = '🔒';
+      if(tx) tx.innerHTML = 'Estás viendo una <b>temporada archivada</b>. Los datos son solo de consulta — '
+                          + 'para cargar, volvé a la temporada actual.';
+    }
+  }
 
   dd.innerHTML = lista.map(t => {
     const sel    = t.id === TORNEO_ID;
@@ -1338,13 +1364,13 @@ window.toggleSeasonDD = function(){
 
 // Deshabilita lo que escribe cuando se mira una temporada archivada
 function applyReadOnlyUI(){
-  const hist = esHistorico();
-  document.body.classList.toggle('ro-mode', hist);
+  const bloqueado = archivoBloqueado();
+  document.body.classList.toggle('ro-mode', bloqueado);
   const sb = document.getElementById('saveBtn');
   if(sb){
-    sb.disabled = hist;
-    sb.textContent = hist ? '🔒 Solo lectura' : '💾 Guardar';
-    sb.style.opacity = hist ? '0.45' : '';
+    sb.disabled = bloqueado;
+    sb.textContent = bloqueado ? '🔒 Solo lectura' : '💾 Guardar';
+    sb.style.opacity = bloqueado ? '0.45' : '';
   }
 }
 window.applyReadOnlyUI = applyReadOnlyUI;
@@ -2971,7 +2997,7 @@ window.shareCit = async function(key){
   // Abrir WhatsApp ANTES del await para no romper la cadena de gesto en Safari/iOS
   window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
   // Marcar como compartido — solo actualiza ese campo, sin tocar el resto
-  if(!esHistorico()) try{ await update(ref(db,DB_PREFIX+'/citaciones/'+key),{whatsappShared:true}); }catch(e){ console.warn('shareCit: error al marcar whatsappShared',e); }
+  if(!archivoBloqueado()) try{ await update(ref(db,DB_PREFIX+'/citaciones/'+key),{whatsappShared:true}); }catch(e){ console.warn('shareCit: error al marcar whatsappShared',e); }
 };
 
 // ── STATS CITACIONES ──
@@ -3659,7 +3685,7 @@ function setupPitchClick(){
 }
 
 async function autoSaveFormacion(){
-  if(esHistorico()) return; // temporada archivada: autoguardado en silencio
+  if(archivoBloqueado()) return; // temporada archivada sin permisos: en silencio
   const key = _formacionCurrentKey;
   if(!key || !citaciones[key]) return;
   const existing={...(citaciones[key]||{})};
