@@ -1147,6 +1147,342 @@ function launchCat(cat){
   if(!window._appStarted){ window._appStarted=true; startApp(cat); }
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ZONA / TEMPORADAS — a nivel de módulo a propósito.
+//  startApp() solo corre para profes; el coordinador usa startCoordApp() y el
+//  super admin startSuperAdminApp(). Todo lo que los tres necesitan tiene que
+//  vivir acá afuera, si no para ellos no existe.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Schedule completo de la zona nueva — lo usan la migración automática y el panel Super Admin
+// Fuente: https://www.lisfi.com.ar/index.php/zona-camp-2026/fixture2026
+const SCHEDULE_ZONA_CAMPEONATO_2026 = {
+  "1":[{"h":"V.S CARLOS BCO.","a":"DEFENSA"},{"h":"UNIVERSITARIO","a":"ADAFI"},{"h":"SAGR. CORAZON","a":"CAMBACERES"},{"h":"LA CURVA","a":"CAP.CHICA"},{"h":"HERNANDEZ","a":"ESTUD. LH"},{"h":"FIE 25","a":"EVERTON"},{"h":"EL CARMEN","a":"S.J.BAUTISTA"},{"libre":"TALLERES B."}],
+  "2":[{"h":"TALLERES B.","a":"HERNANDEZ"},{"h":"EVERTON","a":"UNIVERSITARIO"},{"h":"ESTUD. LH","a":"V.S CARLOS BCO."},{"h":"DEFENSA","a":"LA CURVA"},{"h":"CAP.CHICA","a":"SAGR. CORAZON"},{"h":"CAMBACERES","a":"FIE 25"},{"h":"ADAFI","a":"EL CARMEN"},{"libre":"S.J.BAUTISTA"}],
+  "3":[{"h":"V.S CARLOS BCO.","a":"TALLERES B."},{"h":"UNIVERSITARIO","a":"CAMBACERES"},{"h":"SAGR. CORAZON","a":"DEFENSA"},{"h":"S.J.BAUTISTA","a":"ADAFI"},{"h":"LA CURVA","a":"ESTUD. LH"},{"h":"FIE 25","a":"CAP.CHICA"},{"h":"EL CARMEN","a":"EVERTON"},{"libre":"HERNANDEZ"}],
+  "4":[{"h":"TALLERES B.","a":"LA CURVA"},{"h":"HERNANDEZ","a":"V.S CARLOS BCO."},{"h":"EVERTON","a":"S.J.BAUTISTA"},{"h":"ESTUD. LH","a":"SAGR. CORAZON"},{"h":"DEFENSA","a":"FIE 25"},{"h":"CAP.CHICA","a":"UNIVERSITARIO"},{"h":"CAMBACERES","a":"EL CARMEN"},{"libre":"ADAFI"}],
+  "5":[{"h":"UNIVERSITARIO","a":"DEFENSA"},{"h":"SAGR. CORAZON","a":"TALLERES B."},{"h":"S.J.BAUTISTA","a":"CAMBACERES"},{"h":"LA CURVA","a":"HERNANDEZ"},{"h":"FIE 25","a":"ESTUD. LH"},{"h":"EL CARMEN","a":"CAP.CHICA"},{"h":"ADAFI","a":"EVERTON"},{"libre":"V.S CARLOS BCO."}],
+  "6":[{"h":"V.S CARLOS BCO.","a":"LA CURVA"},{"h":"TALLERES B.","a":"FIE 25"},{"h":"HERNANDEZ","a":"SAGR. CORAZON"},{"h":"ESTUD. LH","a":"UNIVERSITARIO"},{"h":"DEFENSA","a":"EL CARMEN"},{"h":"CAP.CHICA","a":"S.J.BAUTISTA"},{"h":"CAMBACERES","a":"ADAFI"},{"libre":"EVERTON"}],
+  "7":[{"h":"UNIVERSITARIO","a":"TALLERES B."},{"h":"SAGR. CORAZON","a":"V.S CARLOS BCO."},{"h":"S.J.BAUTISTA","a":"DEFENSA"},{"h":"FIE 25","a":"HERNANDEZ"},{"h":"EVERTON","a":"CAMBACERES"},{"h":"EL CARMEN","a":"ESTUD. LH"},{"h":"ADAFI","a":"CAP.CHICA"},{"libre":"LA CURVA"}],
+  "8":[{"h":"V.S CARLOS BCO.","a":"FIE 25"},{"h":"TALLERES B.","a":"EL CARMEN"},{"h":"LA CURVA","a":"SAGR. CORAZON"},{"h":"HERNANDEZ","a":"UNIVERSITARIO"},{"h":"ESTUD. LH","a":"S.J.BAUTISTA"},{"h":"DEFENSA","a":"ADAFI"},{"h":"CAP.CHICA","a":"EVERTON"},{"libre":"CAMBACERES"}],
+  "9":[{"h":"UNIVERSITARIO","a":"V.S CARLOS BCO."},{"h":"S.J.BAUTISTA","a":"TALLERES B."},{"h":"FIE 25","a":"LA CURVA"},{"h":"EVERTON","a":"DEFENSA"},{"h":"EL CARMEN","a":"HERNANDEZ"},{"h":"CAMBACERES","a":"CAP.CHICA"},{"h":"ADAFI","a":"ESTUD. LH"},{"libre":"SAGR. CORAZON"}],
+  "10":[{"h":"V.S CARLOS BCO.","a":"EL CARMEN"},{"h":"TALLERES B.","a":"ADAFI"},{"h":"SAGR. CORAZON","a":"FIE 25"},{"h":"LA CURVA","a":"UNIVERSITARIO"},{"h":"HERNANDEZ","a":"S.J.BAUTISTA"},{"h":"ESTUD. LH","a":"EVERTON"},{"h":"DEFENSA","a":"CAMBACERES"},{"libre":"CAP.CHICA"}],
+  "11":[{"h":"UNIVERSITARIO","a":"SAGR. CORAZON"},{"h":"S.J.BAUTISTA","a":"V.S CARLOS BCO."},{"h":"EVERTON","a":"TALLERES B."},{"h":"EL CARMEN","a":"LA CURVA"},{"h":"CAP.CHICA","a":"DEFENSA"},{"h":"CAMBACERES","a":"ESTUD. LH"},{"h":"ADAFI","a":"HERNANDEZ"},{"libre":"FIE 25"}],
+  "12":[{"h":"V.S CARLOS BCO.","a":"ADAFI"},{"h":"TALLERES B.","a":"CAMBACERES"},{"h":"SAGR. CORAZON","a":"EL CARMEN"},{"h":"LA CURVA","a":"S.J.BAUTISTA"},{"h":"HERNANDEZ","a":"EVERTON"},{"h":"FIE 25","a":"UNIVERSITARIO"},{"h":"ESTUD. LH","a":"CAP.CHICA"},{"libre":"DEFENSA"}],
+  "13":[{"h":"S.J.BAUTISTA","a":"SAGR. CORAZON"},{"h":"EVERTON","a":"V.S CARLOS BCO."},{"h":"EL CARMEN","a":"FIE 25"},{"h":"DEFENSA","a":"ESTUD. LH"},{"h":"CAP.CHICA","a":"TALLERES B."},{"h":"CAMBACERES","a":"HERNANDEZ"},{"h":"ADAFI","a":"LA CURVA"},{"libre":"UNIVERSITARIO"}],
+  "14":[{"h":"V.S CARLOS BCO.","a":"CAMBACERES"},{"h":"UNIVERSITARIO","a":"EL CARMEN"},{"h":"TALLERES B.","a":"DEFENSA"},{"h":"SAGR. CORAZON","a":"ADAFI"},{"h":"LA CURVA","a":"EVERTON"},{"h":"HERNANDEZ","a":"CAP.CHICA"},{"h":"FIE 25","a":"S.J.BAUTISTA"},{"libre":"ESTUD. LH"}],
+  "15":[{"h":"S.J.BAUTISTA","a":"UNIVERSITARIO"},{"h":"EVERTON","a":"SAGR. CORAZON"},{"h":"ESTUD. LH","a":"TALLERES B."},{"h":"DEFENSA","a":"HERNANDEZ"},{"h":"CAP.CHICA","a":"V.S CARLOS BCO."},{"h":"CAMBACERES","a":"LA CURVA"},{"h":"ADAFI","a":"FIE 25"},{"libre":"EL CARMEN"}]
+};
+
+// Deriva el fixture de un club a partir del schedule completo de la liga
+function deriveFixtureFromSchedule(schedule, ligaNombre){
+  const myName = String(ligaNombre||'').toUpperCase().trim();
+  const match5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
+  return Object.entries(schedule).map(([k,matches])=>{
+    const fecha = parseInt(k);
+    const arr = Array.isArray(matches) ? matches : Object.values(matches);
+    // Buscar partido libre
+    const libreMatch = arr.find(m => m.libre && m.libre.toUpperCase().trim() === myName);
+    if(libreMatch) return {fecha, rival:'LIBRE', cond:'-'};
+    // Buscar partido donde aparece el club — soporta {h,a} y {local,visitante}
+    const _loc = m => m.h || m.local || '';
+    const _vis = m => m.a || m.visitante || '';
+    const game = arr.find(m => {
+      if(!_loc(m) || !_vis(m)) return false;
+      const mh = _loc(m).toUpperCase().trim(), ma = _vis(m).toUpperCase().trim();
+      return mh === myName || ma === myName ||
+             match5(mh) === match5(myName) || match5(ma) === match5(myName);
+    });
+    if(!game) return {fecha, rival:'LIBRE', cond:'-'};
+    const isHome = _loc(game).toUpperCase().trim() === myName || match5(_loc(game)) === match5(myName);
+    return {fecha, rival: (isHome ? _vis(game) : _loc(game)).toUpperCase(), cond: isHome ? 'L' : 'V'};
+  }).filter(f => !isNaN(f.fecha)).sort((a,b)=>a.fecha-b.fecha);
+}
+
+// Todos los equipos que aparecen en un schedule de liga
+function equiposDeSchedule(schedule){
+  const eq = new Set();
+  Object.values(schedule||{}).forEach(matches=>{
+    (Array.isArray(matches) ? matches : Object.values(matches||{})).forEach(m=>{
+      [m.h, m.a, m.local, m.visitante, m.libre].forEach(n=>{ if(n) eq.add(String(n).trim()); });
+    });
+  });
+  return [...eq].sort((a,b)=>a.localeCompare(b));
+}
+
+// Arma la tabla desde los resultados cargados (2 puntos por victoria, 1 por empate).
+// Los equipos sin partidos quedan igual en la tabla, en cero.
+function calcularPosicionesDesdeResultados(teamResultsCat, equipos){
+  const filas = {};
+  (equipos||[]).forEach(eq=>{ filas[eq] = {eq, pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0}; });
+  Object.entries(teamResultsCat||{}).forEach(([eq, partidos])=>{
+    const f = filas[eq] || (filas[eq] = {eq, pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0});
+    (partidos||[]).forEach(p=>{
+      const gf = Number(p.gf)||0, gc = Number(p.gc)||0;
+      f.pj++; f.gf += gf; f.gc += gc;
+      if(gf > gc){ f.pg++; f.pts += 2; }
+      else if(gf === gc){ f.pe++; f.pts += 1; }
+      else f.pp++;
+    });
+  });
+  return Object.values(filas).sort((a,b)=>
+    (b.pts-a.pts) || ((b.gf-b.gc)-(a.gf-a.gc)) || (b.gf-a.gf) || a.eq.localeCompare(b.eq));
+}
+
+// Deja LIGA_DATA en cero para una zona nueva. Se llama en cada carga: si los datos
+// que hay no son de la zona activa, se descartan y la tabla arranca de cero con los
+// equipos del schedule. Así al cambiar de zona no hay que tocar nada a mano.
+function prepararTablasDeZona(ligaIdActivo, schedule){
+  try{
+    if(!ligaIdActivo) return false;
+    const equipos = equiposDeSchedule(schedule);
+    const mirandoArchivo = (typeof esHistorico === 'function') && esHistorico();
+
+    // Contexto de la zona vigente — lo usa la guarda del liga_data.json
+    if(equipos.length && !mirandoArchivo){
+      window._ligaIdActivo = ligaIdActivo;
+      window._equiposZonaActiva = equipos;
+    }
+
+    let reiniciada = false;
+    const datosSonDeEstaZona = LIGA_DATA.zona && LIGA_DATA.zona === ligaIdActivo;
+    if(!datosSonDeEstaZona && equipos.length){
+      const cats = Object.keys(LIGA_DATA.posiciones||{}).map(Number).filter(n=>!isNaN(n));
+      const catsFinal = cats.length ? cats : [13,14,15,16,17,18,19,20];
+      const posiciones = {}, teamResults = {}, scResults = {};
+      catsFinal.forEach(c=>{
+        teamResults[c] = {};
+        scResults[c]   = [];
+        posiciones[c]  = calcularPosicionesDesdeResultados({}, equipos);
+      });
+      Object.keys(LIGA_DATA).forEach(k=>{ delete LIGA_DATA[k]; });
+      Object.assign(LIGA_DATA, { updatedAt:'', zona: ligaIdActivo, posiciones, teamResults, scResults });
+      window._tablaEnCero = true;
+      reiniciada = true;
+      console.log('[MI PLANTEL] Zona nueva ('+ligaIdActivo+'): tabla iniciada en cero con', equipos.length, 'equipos');
+    }
+
+    // Ya sabiendo cuál es la zona, reintentar el liga_data.json que haya llegado antes
+    if(typeof aplicarLigaDataJson === 'function') aplicarLigaDataJson();
+    return reiniciada;
+  }catch(e){ console.warn('prepararTablasDeZona:', e); return false; }
+}
+window.prepararTablasDeZona = prepararTablasDeZona;
+
+function temporadasDisponibles(){
+  const ids = new Set(Object.keys(TEMPORADAS||{}));
+  if(TORNEO_ACTIVO && TORNEO_ACTIVO !== 'default') ids.add(TORNEO_ACTIVO);
+  if(TORNEO_ID && TORNEO_ID !== 'default') ids.add(TORNEO_ID);
+  return [...ids]
+    .map(id => Object.assign({id}, torneoMeta(id)))
+    .sort((a,b) => (b.orden||0)-(a.orden||0) || String(a.nombre).localeCompare(String(b.nombre)));
+}
+
+function renderSeasonBar(){
+  const bar = document.getElementById('seasonBar');
+  const dd  = document.getElementById('seasonDD');
+  const ban = document.getElementById('histBanner');
+  if(!bar || !dd || !ban) return;
+  const lista = temporadasDisponibles();
+  const hist  = esHistorico();
+  // Con una sola temporada el selector no aporta nada
+  if(lista.length < 2 && !hist){ bar.style.display='none'; dd.style.display='none'; ban.style.display='none'; return; }
+
+  const meta = torneoMeta(TORNEO_ID);
+  bar.style.display = 'flex';
+  document.getElementById('seasonPill').className = 'season-pill' + (hist ? ' hist' : '');
+  document.getElementById('seasonNm').textContent = meta.nombre;
+  document.getElementById('seasonCv').textContent = (meta.fechas ? meta.fechas+' fechas · ' : '') + (hist ? 'archivo' : 'en curso');
+  ban.style.display = hist ? 'flex' : 'none';
+
+  dd.innerHTML = lista.map(t => {
+    const sel    = t.id === TORNEO_ID;
+    const activa = t.id === TORNEO_ACTIVO;
+    return '<div class="sitem'+(sel?' sel':'')+'" onclick="window.switchTorneo(\''+t.id+'\')">'
+         +   '<div style="flex:1">'
+         +     '<div class="snm"'+(sel?' style="color:var(--green)"':'')+'>'+t.nombre+'</div>'
+         +     '<div class="smeta">'+(t.fechas ? t.fechas+' fechas' : '')+'</div>'
+         +   '</div>'
+         +   '<span class="stag '+(activa?'now':'old')+'">'+(activa?'Actual':'Archivo')+'</span>'
+         + '</div>';
+  }).join('');
+}
+window.renderSeasonBar = renderSeasonBar;
+
+window.toggleSeasonDD = function(){
+  const dd = document.getElementById('seasonDD');
+  const abierto = dd.style.display !== 'none';
+  dd.style.display = abierto ? 'none' : 'block';
+  const arw = document.getElementById('seasonArw');
+  if(arw) arw.innerHTML = abierto ? '&#9660;' : '&#9650;';
+};
+
+// Deshabilita lo que escribe cuando se mira una temporada archivada
+function applyReadOnlyUI(){
+  const hist = esHistorico();
+  document.body.classList.toggle('ro-mode', hist);
+  const sb = document.getElementById('saveBtn');
+  if(sb){
+    sb.disabled = hist;
+    sb.textContent = hist ? '🔒 Solo lectura' : '💾 Guardar';
+    sb.style.opacity = hist ? '0.45' : '';
+  }
+}
+window.applyReadOnlyUI = applyReadOnlyUI;
+
+// Cambia la temporada que se está viendo — no escribe nada en Firebase
+window.switchTorneo = async function(id){
+  const dd = document.getElementById('seasonDD');
+  if(dd) dd.style.display = 'none';
+  const arw = document.getElementById('seasonArw'); if(arw) arw.innerHTML = '&#9660;';
+  if(!id || id === TORNEO_ID) return;
+
+  window._viewTorneo = (id === TORNEO_ACTIVO) ? null : id;
+  showToast('Cargando ' + torneoMeta(id).nombre + '…');
+
+  const role = (window._userProfile && window._userProfile.role) || '';
+  if(role === 'coordinator' || window._isCoordView){
+    // Coordinador: soltar listeners y rearmar el panel con la temporada elegida
+    if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{ try{u();}catch(e){} }); window._coordUnsubs=[]; }
+    await startCoordApp();
+    renderSeasonBar();
+  } else {
+    // Profe: reapuntar el prefijo, traer el fixture de esa temporada y resuscribir.
+    // loadClubConfig y refresh viven dentro de startApp (dependen de CFG/FIXTURE),
+    // así que startApp las expone en window para poder llamarlas desde acá.
+    if(typeof window._loadClubConfig === 'function') await window._loadClubConfig();
+    renderSeasonBar();
+    applyReadOnlyUI();
+    if(typeof window._refreshProfe === 'function') window._refreshProfe();
+  }
+};
+
+// ── MIGRACIÓN AUTOMÁTICA DE TEMPORADA ──
+// Corre sola cuando entra un coordinador o super admin del club. Sube el schedule
+// de la zona nueva si falta, registra la temporada anterior como archivo consultable
+// y mueve el torneo activo. Nunca toca los datos de la temporada anterior.
+const MIGRACION = {
+  torneoNuevo: 'lisfi-zona-campeonato-2026',
+  ligaId:      'lisfi-zona-campeonato-2026',
+  nombre:      'Zona Campeonato 2026',
+  fechas:      15,
+  liga:        'LISFI',
+  zona:        'Campeonato',
+  // URL de la zona en lisfi.com.ar — queda guardada en ligas/{ligaId}/meta para que
+  // el scraper lea de ahí a qué zona apuntar, en vez de tenerla hardcodeada.
+  fuente:      'https://www.lisfi.com.ar/index.php/zona-camp-2026',
+};
+
+// Sube el schedule y la meta de la zona (compartidos por todos los clubes).
+// Idempotente: si ya están, no escribe de nuevo.
+async function subirZonaAFirebase(){
+  const schedSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'));
+  if(!schedSnap.exists()){
+    await set(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'), SCHEDULE_ZONA_CAMPEONATO_2026);
+  }
+  // La meta es lo que lee el scraper para saber qué zona bajar — sin URLs fijas
+  const metaSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta/fuente'));
+  if(!metaSnap.exists()){
+    await update(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta'), {
+      ligaId:  MIGRACION.ligaId,
+      nombre:  MIGRACION.nombre,
+      liga:    MIGRACION.liga,
+      zona:    MIGRACION.zona,
+      fechas:  MIGRACION.fechas,
+      fuente:  MIGRACION.fuente,
+      equipos: equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026),
+      vigenteDesde: new Date().toISOString().slice(0,10)
+    });
+  }
+}
+
+// Migra UN club a la zona nueva: mueve el torneo activo y deja la temporada anterior
+// registrada como archivo consultable. Nunca toca los datos de la temporada anterior.
+// Devuelve 'migrado' | 'ya-migrado' | 'no-juega' | 'error'.
+async function migrarClubAZona(clubId){
+  try{
+    const cfgSnap = await get(ref(db, 'clubs/'+clubId+'/config'));
+    const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
+    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return 'ya-migrado';
+
+    // ¿Este club juega la zona nueva? Se compara contra los equipos del schedule
+    const nombreLiga = String(cfg.ligaNombre || clubId.replace(/-/g,' ')).toUpperCase().trim();
+    const m5 = s => String(s).toUpperCase().trim().substring(0,5);
+    const equipo = equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026)
+      .find(e => e.toUpperCase().trim() === nombreLiga || m5(e) === m5(nombreLiga));
+    if(!equipo) return 'no-juega';
+
+    // Registro de temporadas: la anterior queda consultable desde el selector.
+    // Se registra aunque el club no tuviera torneoActivo (sus datos viven en 'default').
+    const temporadas = Object.assign({}, cfg.temporadas || {});
+    const anterior = cfg.torneoActivo || 'default';
+    if(anterior !== MIGRACION.torneoNuevo){
+      const metaAnt = TORNEO_META_DEF[anterior] || {};
+      temporadas[anterior] = {
+        nombre: metaAnt.nombre || (anterior === 'default'
+                  ? 'Temporada anterior'
+                  : String(anterior).toUpperCase().replace(/-/g,' ')),
+        fechas: metaAnt.fechas || null,
+        ligaId: cfg.ligaId || metaAnt.ligaId || null,
+        orden:  1
+      };
+    }
+    temporadas[MIGRACION.torneoNuevo] = {
+      nombre: MIGRACION.nombre, fechas: MIGRACION.fechas, ligaId: MIGRACION.ligaId, orden: 2
+    };
+
+    await update(ref(db, 'clubs/'+clubId+'/config'), {
+      torneoActivo: MIGRACION.torneoNuevo,
+      ligaId:       MIGRACION.ligaId,
+      ligaNombre:   cfg.ligaNombre || equipo.toUpperCase(),
+      liga:         MIGRACION.liga,
+      zona:         MIGRACION.zona,
+      temporadas
+    });
+    return 'migrado';
+  }catch(e){ console.warn('migrarClubAZona('+clubId+'):', e); return 'error'; }
+}
+window.migrarClubAZona = migrarClubAZona;
+
+// Migra todos los clubes que juegan la zona. Requiere permisos de super admin.
+async function migrarTodosLosClubes(log){
+  const out = [];
+  const snap = await get(ref(db, 'clubs'));
+  if(!snap.exists()) return out;
+  const ids = Object.keys(snap.val());
+  for(const clubId of ids){
+    const r = await migrarClubAZona(clubId);
+    out.push({clubId, estado: r});
+    if(log) log(clubId, r);
+  }
+  return out;
+}
+window.migrarTodosLosClubes = migrarTodosLosClubes;
+
+// Migración automática al abrir la app: migra el club del usuario logueado.
+async function migrarTemporadaSiHaceFalta(){
+  try{
+    const prof = window._userProfile || {};
+    const puedeEscribir = window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
+    if(!puedeEscribir) return false;
+
+    const clubId = CLUB_PATH.split('/').pop();
+    const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
+    const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
+    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return false; // ya está
+
+    await subirZonaAFirebase();
+    const r = await migrarClubAZona(clubId);
+    if(r === 'migrado'){
+      console.log('[MI PLANTEL] Temporada migrada a', MIGRACION.torneoNuevo, '—', clubId);
+      showToast('✓ Temporada actualizada: ' + MIGRACION.nombre);
+      return true;
+    }
+    return false;
+  }catch(e){ console.warn('migrarTemporadaSiHaceFalta:', e); return false; }
+}
+
 function startApp(cat){
 
 const CAT_CONFIG = {
@@ -1337,25 +1673,6 @@ let FIXTURE = [
   { fecha:15, rival:"EVERTON",         cond:"V" },
 ];
 
-// Schedule completo de la zona nueva — lo usan la migración automática y el panel Super Admin
-// Fuente: https://www.lisfi.com.ar/index.php/zona-camp-2026/fixture2026
-const SCHEDULE_ZONA_CAMPEONATO_2026 = {
-  "1":[{"h":"V.S CARLOS BCO.","a":"DEFENSA"},{"h":"UNIVERSITARIO","a":"ADAFI"},{"h":"SAGR. CORAZON","a":"CAMBACERES"},{"h":"LA CURVA","a":"CAP.CHICA"},{"h":"HERNANDEZ","a":"ESTUD. LH"},{"h":"FIE 25","a":"EVERTON"},{"h":"EL CARMEN","a":"S.J.BAUTISTA"},{"libre":"TALLERES B."}],
-  "2":[{"h":"TALLERES B.","a":"HERNANDEZ"},{"h":"EVERTON","a":"UNIVERSITARIO"},{"h":"ESTUD. LH","a":"V.S CARLOS BCO."},{"h":"DEFENSA","a":"LA CURVA"},{"h":"CAP.CHICA","a":"SAGR. CORAZON"},{"h":"CAMBACERES","a":"FIE 25"},{"h":"ADAFI","a":"EL CARMEN"},{"libre":"S.J.BAUTISTA"}],
-  "3":[{"h":"V.S CARLOS BCO.","a":"TALLERES B."},{"h":"UNIVERSITARIO","a":"CAMBACERES"},{"h":"SAGR. CORAZON","a":"DEFENSA"},{"h":"S.J.BAUTISTA","a":"ADAFI"},{"h":"LA CURVA","a":"ESTUD. LH"},{"h":"FIE 25","a":"CAP.CHICA"},{"h":"EL CARMEN","a":"EVERTON"},{"libre":"HERNANDEZ"}],
-  "4":[{"h":"TALLERES B.","a":"LA CURVA"},{"h":"HERNANDEZ","a":"V.S CARLOS BCO."},{"h":"EVERTON","a":"S.J.BAUTISTA"},{"h":"ESTUD. LH","a":"SAGR. CORAZON"},{"h":"DEFENSA","a":"FIE 25"},{"h":"CAP.CHICA","a":"UNIVERSITARIO"},{"h":"CAMBACERES","a":"EL CARMEN"},{"libre":"ADAFI"}],
-  "5":[{"h":"UNIVERSITARIO","a":"DEFENSA"},{"h":"SAGR. CORAZON","a":"TALLERES B."},{"h":"S.J.BAUTISTA","a":"CAMBACERES"},{"h":"LA CURVA","a":"HERNANDEZ"},{"h":"FIE 25","a":"ESTUD. LH"},{"h":"EL CARMEN","a":"CAP.CHICA"},{"h":"ADAFI","a":"EVERTON"},{"libre":"V.S CARLOS BCO."}],
-  "6":[{"h":"V.S CARLOS BCO.","a":"LA CURVA"},{"h":"TALLERES B.","a":"FIE 25"},{"h":"HERNANDEZ","a":"SAGR. CORAZON"},{"h":"ESTUD. LH","a":"UNIVERSITARIO"},{"h":"DEFENSA","a":"EL CARMEN"},{"h":"CAP.CHICA","a":"S.J.BAUTISTA"},{"h":"CAMBACERES","a":"ADAFI"},{"libre":"EVERTON"}],
-  "7":[{"h":"UNIVERSITARIO","a":"TALLERES B."},{"h":"SAGR. CORAZON","a":"V.S CARLOS BCO."},{"h":"S.J.BAUTISTA","a":"DEFENSA"},{"h":"FIE 25","a":"HERNANDEZ"},{"h":"EVERTON","a":"CAMBACERES"},{"h":"EL CARMEN","a":"ESTUD. LH"},{"h":"ADAFI","a":"CAP.CHICA"},{"libre":"LA CURVA"}],
-  "8":[{"h":"V.S CARLOS BCO.","a":"FIE 25"},{"h":"TALLERES B.","a":"EL CARMEN"},{"h":"LA CURVA","a":"SAGR. CORAZON"},{"h":"HERNANDEZ","a":"UNIVERSITARIO"},{"h":"ESTUD. LH","a":"S.J.BAUTISTA"},{"h":"DEFENSA","a":"ADAFI"},{"h":"CAP.CHICA","a":"EVERTON"},{"libre":"CAMBACERES"}],
-  "9":[{"h":"UNIVERSITARIO","a":"V.S CARLOS BCO."},{"h":"S.J.BAUTISTA","a":"TALLERES B."},{"h":"FIE 25","a":"LA CURVA"},{"h":"EVERTON","a":"DEFENSA"},{"h":"EL CARMEN","a":"HERNANDEZ"},{"h":"CAMBACERES","a":"CAP.CHICA"},{"h":"ADAFI","a":"ESTUD. LH"},{"libre":"SAGR. CORAZON"}],
-  "10":[{"h":"V.S CARLOS BCO.","a":"EL CARMEN"},{"h":"TALLERES B.","a":"ADAFI"},{"h":"SAGR. CORAZON","a":"FIE 25"},{"h":"LA CURVA","a":"UNIVERSITARIO"},{"h":"HERNANDEZ","a":"S.J.BAUTISTA"},{"h":"ESTUD. LH","a":"EVERTON"},{"h":"DEFENSA","a":"CAMBACERES"},{"libre":"CAP.CHICA"}],
-  "11":[{"h":"UNIVERSITARIO","a":"SAGR. CORAZON"},{"h":"S.J.BAUTISTA","a":"V.S CARLOS BCO."},{"h":"EVERTON","a":"TALLERES B."},{"h":"EL CARMEN","a":"LA CURVA"},{"h":"CAP.CHICA","a":"DEFENSA"},{"h":"CAMBACERES","a":"ESTUD. LH"},{"h":"ADAFI","a":"HERNANDEZ"},{"libre":"FIE 25"}],
-  "12":[{"h":"V.S CARLOS BCO.","a":"ADAFI"},{"h":"TALLERES B.","a":"CAMBACERES"},{"h":"SAGR. CORAZON","a":"EL CARMEN"},{"h":"LA CURVA","a":"S.J.BAUTISTA"},{"h":"HERNANDEZ","a":"EVERTON"},{"h":"FIE 25","a":"UNIVERSITARIO"},{"h":"ESTUD. LH","a":"CAP.CHICA"},{"libre":"DEFENSA"}],
-  "13":[{"h":"S.J.BAUTISTA","a":"SAGR. CORAZON"},{"h":"EVERTON","a":"V.S CARLOS BCO."},{"h":"EL CARMEN","a":"FIE 25"},{"h":"DEFENSA","a":"ESTUD. LH"},{"h":"CAP.CHICA","a":"TALLERES B."},{"h":"CAMBACERES","a":"HERNANDEZ"},{"h":"ADAFI","a":"LA CURVA"},{"libre":"UNIVERSITARIO"}],
-  "14":[{"h":"V.S CARLOS BCO.","a":"CAMBACERES"},{"h":"UNIVERSITARIO","a":"EL CARMEN"},{"h":"TALLERES B.","a":"DEFENSA"},{"h":"SAGR. CORAZON","a":"ADAFI"},{"h":"LA CURVA","a":"EVERTON"},{"h":"HERNANDEZ","a":"CAP.CHICA"},{"h":"FIE 25","a":"S.J.BAUTISTA"},{"libre":"ESTUD. LH"}],
-  "15":[{"h":"S.J.BAUTISTA","a":"UNIVERSITARIO"},{"h":"EVERTON","a":"SAGR. CORAZON"},{"h":"ESTUD. LH","a":"TALLERES B."},{"h":"DEFENSA","a":"HERNANDEZ"},{"h":"CAP.CHICA","a":"V.S CARLOS BCO."},{"h":"CAMBACERES","a":"LA CURVA"},{"h":"ADAFI","a":"FIE 25"},{"libre":"EL CARMEN"}]
-};
 
 let PLAYERS = [];
 let PLAYERS_INACTIVE = []; // jugadores dados de baja
@@ -1366,30 +1683,6 @@ let PLAYERS_INACTIVE = []; // jugadores dados de baja
 // Se lee de /clubs/{clubId}/config y sobreescribe los hardcodeados
 const FIXTURE_DEFAULT = [...FIXTURE]; // backup del hardcodeado
 
-// Deriva el fixture de un club a partir del schedule completo de la liga
-function deriveFixtureFromSchedule(schedule, ligaNombre){
-  const myName = String(ligaNombre||'').toUpperCase().trim();
-  const match5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
-  return Object.entries(schedule).map(([k,matches])=>{
-    const fecha = parseInt(k);
-    const arr = Array.isArray(matches) ? matches : Object.values(matches);
-    // Buscar partido libre
-    const libreMatch = arr.find(m => m.libre && m.libre.toUpperCase().trim() === myName);
-    if(libreMatch) return {fecha, rival:'LIBRE', cond:'-'};
-    // Buscar partido donde aparece el club — soporta {h,a} y {local,visitante}
-    const _loc = m => m.h || m.local || '';
-    const _vis = m => m.a || m.visitante || '';
-    const game = arr.find(m => {
-      if(!_loc(m) || !_vis(m)) return false;
-      const mh = _loc(m).toUpperCase().trim(), ma = _vis(m).toUpperCase().trim();
-      return mh === myName || ma === myName ||
-             match5(mh) === match5(myName) || match5(ma) === match5(myName);
-    });
-    if(!game) return {fecha, rival:'LIBRE', cond:'-'};
-    const isHome = _loc(game).toUpperCase().trim() === myName || match5(_loc(game)) === match5(myName);
-    return {fecha, rival: (isHome ? _vis(game) : _loc(game)).toUpperCase(), cond: isHome ? 'L' : 'V'};
-  }).filter(f => !isNaN(f.fecha)).sort((a,b)=>a.fecha-b.fecha);
-}
 
 // ══════════════════════════════════════════════════════════════
 //  TABLAS POR ZONA — arrancan en cero al cambiar de zona
@@ -1398,75 +1691,8 @@ function deriveFixtureFromSchedule(schedule, ligaNombre){
 //  se va llenando con los resultados de ESA zona.
 // ══════════════════════════════════════════════════════════════
 
-// Todos los equipos que aparecen en un schedule de liga
-function equiposDeSchedule(schedule){
-  const eq = new Set();
-  Object.values(schedule||{}).forEach(matches=>{
-    (Array.isArray(matches) ? matches : Object.values(matches||{})).forEach(m=>{
-      [m.h, m.a, m.local, m.visitante, m.libre].forEach(n=>{ if(n) eq.add(String(n).trim()); });
-    });
-  });
-  return [...eq].sort((a,b)=>a.localeCompare(b));
-}
 
-// Arma la tabla desde los resultados cargados (2 puntos por victoria, 1 por empate).
-// Los equipos sin partidos quedan igual en la tabla, en cero.
-function calcularPosicionesDesdeResultados(teamResultsCat, equipos){
-  const filas = {};
-  (equipos||[]).forEach(eq=>{ filas[eq] = {eq, pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0}; });
-  Object.entries(teamResultsCat||{}).forEach(([eq, partidos])=>{
-    const f = filas[eq] || (filas[eq] = {eq, pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0});
-    (partidos||[]).forEach(p=>{
-      const gf = Number(p.gf)||0, gc = Number(p.gc)||0;
-      f.pj++; f.gf += gf; f.gc += gc;
-      if(gf > gc){ f.pg++; f.pts += 2; }
-      else if(gf === gc){ f.pe++; f.pts += 1; }
-      else f.pp++;
-    });
-  });
-  return Object.values(filas).sort((a,b)=>
-    (b.pts-a.pts) || ((b.gf-b.gc)-(a.gf-a.gc)) || (b.gf-a.gf) || a.eq.localeCompare(b.eq));
-}
 
-// Deja LIGA_DATA en cero para una zona nueva. Se llama en cada carga: si los datos
-// que hay no son de la zona activa, se descartan y la tabla arranca de cero con los
-// equipos del schedule. Así al cambiar de zona no hay que tocar nada a mano.
-function prepararTablasDeZona(ligaIdActivo, schedule){
-  try{
-    if(!ligaIdActivo) return false;
-    const equipos = equiposDeSchedule(schedule);
-    const mirandoArchivo = (typeof esHistorico === 'function') && esHistorico();
-
-    // Contexto de la zona vigente — lo usa la guarda del liga_data.json
-    if(equipos.length && !mirandoArchivo){
-      window._ligaIdActivo = ligaIdActivo;
-      window._equiposZonaActiva = equipos;
-    }
-
-    let reiniciada = false;
-    const datosSonDeEstaZona = LIGA_DATA.zona && LIGA_DATA.zona === ligaIdActivo;
-    if(!datosSonDeEstaZona && equipos.length){
-      const cats = Object.keys(LIGA_DATA.posiciones||{}).map(Number).filter(n=>!isNaN(n));
-      const catsFinal = cats.length ? cats : [13,14,15,16,17,18,19,20];
-      const posiciones = {}, teamResults = {}, scResults = {};
-      catsFinal.forEach(c=>{
-        teamResults[c] = {};
-        scResults[c]   = [];
-        posiciones[c]  = calcularPosicionesDesdeResultados({}, equipos);
-      });
-      Object.keys(LIGA_DATA).forEach(k=>{ delete LIGA_DATA[k]; });
-      Object.assign(LIGA_DATA, { updatedAt:'', zona: ligaIdActivo, posiciones, teamResults, scResults });
-      window._tablaEnCero = true;
-      reiniciada = true;
-      console.log('[MI PLANTEL] Zona nueva ('+ligaIdActivo+'): tabla iniciada en cero con', equipos.length, 'equipos');
-    }
-
-    // Ya sabiendo cuál es la zona, reintentar el liga_data.json que haya llegado antes
-    if(typeof aplicarLigaDataJson === 'function') aplicarLigaDataJson();
-    return reiniciada;
-  }catch(e){ console.warn('prepararTablasDeZona:', e); return false; }
-}
-window.prepararTablasDeZona = prepararTablasDeZona;
 
 // ══════════════════════════════════════════════════════════════
 //  SELECTOR DE TEMPORADA — profe y coordinador
@@ -1475,216 +1701,15 @@ window.prepararTablasDeZona = prepararTablasDeZona;
 //  nodo clubs/{club}/{cat}/torneos/{torneo}/
 // ══════════════════════════════════════════════════════════════
 
-function temporadasDisponibles(){
-  const ids = new Set(Object.keys(TEMPORADAS||{}));
-  if(TORNEO_ACTIVO && TORNEO_ACTIVO !== 'default') ids.add(TORNEO_ACTIVO);
-  if(TORNEO_ID && TORNEO_ID !== 'default') ids.add(TORNEO_ID);
-  return [...ids]
-    .map(id => Object.assign({id}, torneoMeta(id)))
-    .sort((a,b) => (b.orden||0)-(a.orden||0) || String(a.nombre).localeCompare(String(b.nombre)));
-}
 
-function renderSeasonBar(){
-  const bar = document.getElementById('seasonBar');
-  const dd  = document.getElementById('seasonDD');
-  const ban = document.getElementById('histBanner');
-  if(!bar || !dd || !ban) return;
-  const lista = temporadasDisponibles();
-  const hist  = esHistorico();
-  // Con una sola temporada el selector no aporta nada
-  if(lista.length < 2 && !hist){ bar.style.display='none'; dd.style.display='none'; ban.style.display='none'; return; }
 
-  const meta = torneoMeta(TORNEO_ID);
-  bar.style.display = 'flex';
-  document.getElementById('seasonPill').className = 'season-pill' + (hist ? ' hist' : '');
-  document.getElementById('seasonNm').textContent = meta.nombre;
-  document.getElementById('seasonCv').textContent = (meta.fechas ? meta.fechas+' fechas · ' : '') + (hist ? 'archivo' : 'en curso');
-  ban.style.display = hist ? 'flex' : 'none';
 
-  dd.innerHTML = lista.map(t => {
-    const sel    = t.id === TORNEO_ID;
-    const activa = t.id === TORNEO_ACTIVO;
-    return '<div class="sitem'+(sel?' sel':'')+'" onclick="window.switchTorneo(\''+t.id+'\')">'
-         +   '<div style="flex:1">'
-         +     '<div class="snm"'+(sel?' style="color:var(--green)"':'')+'>'+t.nombre+'</div>'
-         +     '<div class="smeta">'+(t.fechas ? t.fechas+' fechas' : '')+'</div>'
-         +   '</div>'
-         +   '<span class="stag '+(activa?'now':'old')+'">'+(activa?'Actual':'Archivo')+'</span>'
-         + '</div>';
-  }).join('');
-}
-window.renderSeasonBar = renderSeasonBar;
 
-window.toggleSeasonDD = function(){
-  const dd = document.getElementById('seasonDD');
-  const abierto = dd.style.display !== 'none';
-  dd.style.display = abierto ? 'none' : 'block';
-  const arw = document.getElementById('seasonArw');
-  if(arw) arw.innerHTML = abierto ? '&#9660;' : '&#9650;';
-};
 
-// Deshabilita lo que escribe cuando se mira una temporada archivada
-function applyReadOnlyUI(){
-  const hist = esHistorico();
-  document.body.classList.toggle('ro-mode', hist);
-  const sb = document.getElementById('saveBtn');
-  if(sb){
-    sb.disabled = hist;
-    sb.textContent = hist ? '🔒 Solo lectura' : '💾 Guardar';
-    sb.style.opacity = hist ? '0.45' : '';
-  }
-}
-window.applyReadOnlyUI = applyReadOnlyUI;
 
-// Cambia la temporada que se está viendo — no escribe nada en Firebase
-window.switchTorneo = async function(id){
-  const dd = document.getElementById('seasonDD');
-  if(dd) dd.style.display = 'none';
-  const arw = document.getElementById('seasonArw'); if(arw) arw.innerHTML = '&#9660;';
-  if(!id || id === TORNEO_ID) return;
 
-  window._viewTorneo = (id === TORNEO_ACTIVO) ? null : id;
-  showToast('Cargando ' + torneoMeta(id).nombre + '…');
 
-  const role = (window._userProfile && window._userProfile.role) || '';
-  if(role === 'coordinator' || window._isCoordView){
-    // Coordinador: soltar listeners y rearmar el panel con la temporada elegida
-    if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{ try{u();}catch(e){} }); window._coordUnsubs=[]; }
-    await startCoordApp();
-    renderSeasonBar();
-  } else {
-    // Profe: reapuntar el prefijo, traer el fixture de esa temporada y resuscribir
-    await loadClubConfig();
-    renderSeasonBar();
-    applyReadOnlyUI();
-    if(typeof refresh === 'function') refresh();
-  }
-};
 
-// ── MIGRACIÓN AUTOMÁTICA DE TEMPORADA ──
-// Corre sola cuando entra un coordinador o super admin del club. Sube el schedule
-// de la zona nueva si falta, registra la temporada anterior como archivo consultable
-// y mueve el torneo activo. Nunca toca los datos de la temporada anterior.
-const MIGRACION = {
-  torneoNuevo: 'lisfi-zona-campeonato-2026',
-  ligaId:      'lisfi-zona-campeonato-2026',
-  nombre:      'Zona Campeonato 2026',
-  fechas:      15,
-  liga:        'LISFI',
-  zona:        'Campeonato',
-  // URL de la zona en lisfi.com.ar — queda guardada en ligas/{ligaId}/meta para que
-  // el scraper lea de ahí a qué zona apuntar, en vez de tenerla hardcodeada.
-  fuente:      'https://www.lisfi.com.ar/index.php/zona-camp-2026',
-};
-
-// Sube el schedule y la meta de la zona (compartidos por todos los clubes).
-// Idempotente: si ya están, no escribe de nuevo.
-async function subirZonaAFirebase(){
-  const schedSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'));
-  if(!schedSnap.exists()){
-    await set(ref(db, 'ligas/'+MIGRACION.ligaId+'/schedule'), SCHEDULE_ZONA_CAMPEONATO_2026);
-  }
-  // La meta es lo que lee el scraper para saber qué zona bajar — sin URLs fijas
-  const metaSnap = await get(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta/fuente'));
-  if(!metaSnap.exists()){
-    await update(ref(db, 'ligas/'+MIGRACION.ligaId+'/meta'), {
-      ligaId:  MIGRACION.ligaId,
-      nombre:  MIGRACION.nombre,
-      liga:    MIGRACION.liga,
-      zona:    MIGRACION.zona,
-      fechas:  MIGRACION.fechas,
-      fuente:  MIGRACION.fuente,
-      equipos: equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026),
-      vigenteDesde: new Date().toISOString().slice(0,10)
-    });
-  }
-}
-
-// Migra UN club a la zona nueva: mueve el torneo activo y deja la temporada anterior
-// registrada como archivo consultable. Nunca toca los datos de la temporada anterior.
-// Devuelve 'migrado' | 'ya-migrado' | 'no-juega' | 'error'.
-async function migrarClubAZona(clubId){
-  try{
-    const cfgSnap = await get(ref(db, 'clubs/'+clubId+'/config'));
-    const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
-    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return 'ya-migrado';
-
-    // ¿Este club juega la zona nueva? Se compara contra los equipos del schedule
-    const nombreLiga = String(cfg.ligaNombre || clubId.replace(/-/g,' ')).toUpperCase().trim();
-    const m5 = s => String(s).toUpperCase().trim().substring(0,5);
-    const equipo = equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026)
-      .find(e => e.toUpperCase().trim() === nombreLiga || m5(e) === m5(nombreLiga));
-    if(!equipo) return 'no-juega';
-
-    // Registro de temporadas: la anterior queda consultable desde el selector.
-    // Se registra aunque el club no tuviera torneoActivo (sus datos viven en 'default').
-    const temporadas = Object.assign({}, cfg.temporadas || {});
-    const anterior = cfg.torneoActivo || 'default';
-    if(anterior !== MIGRACION.torneoNuevo){
-      const metaAnt = TORNEO_META_DEF[anterior] || {};
-      temporadas[anterior] = {
-        nombre: metaAnt.nombre || (anterior === 'default'
-                  ? 'Temporada anterior'
-                  : String(anterior).toUpperCase().replace(/-/g,' ')),
-        fechas: metaAnt.fechas || null,
-        ligaId: cfg.ligaId || metaAnt.ligaId || null,
-        orden:  1
-      };
-    }
-    temporadas[MIGRACION.torneoNuevo] = {
-      nombre: MIGRACION.nombre, fechas: MIGRACION.fechas, ligaId: MIGRACION.ligaId, orden: 2
-    };
-
-    await update(ref(db, 'clubs/'+clubId+'/config'), {
-      torneoActivo: MIGRACION.torneoNuevo,
-      ligaId:       MIGRACION.ligaId,
-      ligaNombre:   cfg.ligaNombre || equipo.toUpperCase(),
-      liga:         MIGRACION.liga,
-      zona:         MIGRACION.zona,
-      temporadas
-    });
-    return 'migrado';
-  }catch(e){ console.warn('migrarClubAZona('+clubId+'):', e); return 'error'; }
-}
-window.migrarClubAZona = migrarClubAZona;
-
-// Migra todos los clubes que juegan la zona. Requiere permisos de super admin.
-async function migrarTodosLosClubes(log){
-  const out = [];
-  const snap = await get(ref(db, 'clubs'));
-  if(!snap.exists()) return out;
-  const ids = Object.keys(snap.val());
-  for(const clubId of ids){
-    const r = await migrarClubAZona(clubId);
-    out.push({clubId, estado: r});
-    if(log) log(clubId, r);
-  }
-  return out;
-}
-window.migrarTodosLosClubes = migrarTodosLosClubes;
-
-// Migración automática al abrir la app: migra el club del usuario logueado.
-async function migrarTemporadaSiHaceFalta(){
-  try{
-    const prof = window._userProfile || {};
-    const puedeEscribir = window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
-    if(!puedeEscribir) return false;
-
-    const clubId = CLUB_PATH.split('/').pop();
-    const cfgSnap = await get(ref(db, CLUB_PATH+'/config'));
-    const cfg = cfgSnap.exists() ? cfgSnap.val() : {};
-    if(cfg.torneoActivo === MIGRACION.torneoNuevo && cfg.temporadas) return false; // ya está
-
-    await subirZonaAFirebase();
-    const r = await migrarClubAZona(clubId);
-    if(r === 'migrado'){
-      console.log('[MI PLANTEL] Temporada migrada a', MIGRACION.torneoNuevo, '—', clubId);
-      showToast('✓ Temporada actualizada: ' + MIGRACION.nombre);
-      return true;
-    }
-    return false;
-  }catch(e){ console.warn('migrarTemporadaSiHaceFalta:', e); return false; }
-}
 
 async function loadClubConfig(){
   if(window._isEscuelita) return;
@@ -2085,6 +2110,12 @@ function refresh() {
   if(activeTab==='citaciones') renderCitList();
   if(activeTab==='cit-stats') renderCitStats();
 }
+
+// startApp() define loadClubConfig y refresh (dependen de CFG/FIXTURE, que son de
+// su ámbito). El selector de temporada vive a nivel de módulo, así que se exponen
+// acá para que pueda usarlas.
+window._loadClubConfig = loadClubConfig;
+window._refreshProfe   = refresh;
 _onSuspensionChange = refresh;
 
 // ── HELPERS ──
