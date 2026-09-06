@@ -60,6 +60,12 @@
     --win-rgb:34,197,94;
     --loss-rgb:239,68,68;
 
+    /* ── Punto vacío de la racha de citaciones ──
+       --border (contraste 1.20 sobre la fila) no se veía. Este da 2.94:
+       se lee claro pero sigue por debajo del punto lleno (6.09), así que
+       el ojo distingue igual quién fue citado y quién no. ── */
+    --punto-vacio:#5a6b80;
+
     /* ── Alias históricos: el código viejo los sigue usando ── */
     --green:var(--accent);
     --red:var(--loss);
@@ -89,6 +95,17 @@
              stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
   .ico svg .solid { fill:currentColor; stroke:none; }
 
+  /* ── CUÁNTO JUGÓ ──
+     Un solo chip que va rotando. Arranca en "Todo", así que en un partido
+     normal el profe no toca nada y solo marca a los que entraron o salieron. ── */
+  .jchip { flex:none; min-width:74px; border-radius:var(--r-full); border:1px solid var(--border);
+           background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif;
+           font-size:var(--f-micro); font-weight:700; padding:4px var(--sp-4); cursor:pointer;
+           text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; }
+  .jchip.j-todo  { border-color:rgba(var(--win-rgb),.5);    color:var(--win); }
+  .jchip.j-entro { border-color:rgba(var(--accent-rgb),.5); color:var(--accent); }
+  .jchip.j-salio { border-color:rgba(var(--draw-rgb),.5);   color:var(--draw); }
+
   /* ── RACHA DE CITACIONES ──
      Los últimos 5 partidos del equipo al lado de cada nombre, mientras se arma
      la citación. Fijo en 5 y no toda la temporada: 22 fechas de tira miden
@@ -97,9 +114,11 @@
   /* Los colores del punto van sueltos, no dentro de .racha: los usa también
      la leyenda de arriba, si no ahí salían invisibles. */
   .pt { width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; }
-  .pt.pc { background:var(--accent); }
-  .pt.pn { background:transparent; border:1px solid var(--border); }
-  .pt.pl { background:var(--border); }
+  .pt.pc { background:var(--accent); }                       /* jugó todo */
+  .pt.pm { background:linear-gradient(90deg,var(--accent) 50%,transparent 50%);
+           border:1px solid var(--accent); }                  /* entró o salió */
+  /* No citado: borde más grueso y más claro, si no el círculo vacío se perdía. */
+  .pt.pn { background:transparent; border:1.5px solid var(--punto-vacio); }
   .cit-tot { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--muted);
              line-height:1; flex:none; margin-left:var(--sp-4); }
   .prow.sin-ir { border-color:rgba(var(--draw-rgb),.45); background:rgba(var(--draw-rgb),.06); }
@@ -3426,10 +3445,14 @@ function ultimosPartidosDelAnio(n){
     // Sin fecha: se ordena por zona y número de fecha, que al menos es estable
     return String(c._zona||'') + '#' + String(c.fecha||0).padStart(3,'0');
   };
-  return Object.values(CITS())
-    .filter(c => c && c.citados && c.citados.length > 0)
-    .sort((a,b) => String(orden(a)).localeCompare(String(orden(b))))
-    .slice(-(n || RACHA_N));
+  // Se devuelve la citación junto con los stats de ese partido, para poder
+  // pintar el punto según cuánto jugó y no solo si fue citado.
+  const d = _todasLasZonas ? datosDelAnio(anioVista()) : {citaciones:{}, stats:{}};
+  return Object.entries(CITS())
+    .filter(([,c]) => c && c.citados && c.citados.length > 0)
+    .sort((a,b) => String(orden(a[1])).localeCompare(String(orden(b[1]))))
+    .slice(-(n || RACHA_N))
+    .map(([k,c]) => ({ cit:c, stats: d.stats[k] || null }));
 }
 
 function renderCitList(){
@@ -3452,10 +3475,11 @@ function renderCitList(){
       leyenda.style.display='flex';
       leyenda.innerHTML =
         '<span><b>Últimos '+ultimos.length+' partidos</b> de '+anioVista()+':</span>'+
-        '<span><span class="pt pc"></span> citado</span>'+
-        '<span><span class="pt pn"></span> quedó afuera</span>'+
+        '<span><span class="pt pc"></span> jugó todo</span>'+
+        '<span><span class="pt pm"></span> entró o salió</span>'+
+        '<span><span class="pt pn"></span> no citado</span>'+
         '<span style="color:var(--muted)">·</span>'+
-        '<span>el número es el <b>total del año</b></span>';
+        '<span>el número es el <b>total de citaciones del año</b></span>';
     }
   }
 
@@ -3463,13 +3487,20 @@ function renderCitList(){
     const citado=markedCit[name]===true;
 
     // Racha: un punto por partido, del más viejo al más nuevo
-    let puntos='', seguidasAfuera=0;
-    ultimos.forEach(c=>{
-      const fue = (c.citados||[]).includes(name);
-      puntos += '<span class="pt '+(fue?'pc':'pn')+'"></span>';
-      seguidasAfuera = fue ? 0 : seguidasAfuera + 1;
+    let puntos='', sinCitar=0;
+    ultimos.forEach(p=>{
+      const j = jugoEnPartido(p.cit, p.stats, name);   // null si no fue citado
+      const cls = j === null   ? 'pn'    // no citado
+                : j === 'todo' ? 'pc'    // jugó todo
+                                : 'pm';  // entró o salió: jugó una parte
+      const tit = j === null ? 'no citado'
+                : j === 'todo' ? 'jugó todo'
+                : (j === 'entro' ? 'entró desde el banco' : 'salió antes del final');
+      puntos += '<span class="pt '+cls+'" title="'+tit+'"></span>';
+      sinCitar = (j === null) ? sinCitar + 1 : 0;
     });
-    const avisa = seguidasAfuera >= RACHA_AVISO && ultimos.length >= RACHA_AVISO;
+    const avisa = ultimos.length >= RACHA_AVISO && sinCitar >= RACHA_AVISO;
+    const textoAviso = 'hace '+sinCitar+' fechas que no es citado';
 
     const row=document.createElement('div');
     row.className='prow'+(citado?' citado':'')+(avisa && !citado?' sin-ir':'');
@@ -3477,7 +3508,7 @@ function renderCitList(){
     row.innerHTML='<div class="tbtn">'+(citado?'&#9733;':'&middot;')+'</div>'+
       '<div class="pname">'+name+
         (CFG.playerCats?'<div class="psub">Cat '+CFG.playerCats[name]+'</div>':'')+
-        (avisa?'<div class="cit-aviso">hace '+seguidasAfuera+' fechas que no es citado</div>':'')+
+        (avisa?'<div class="cit-aviso">'+textoAviso+'</div>':'')+
       '</div>'+
       (ultimos.length
         ? '<span class="cit-tot">'+(totales[name]||0)+'</span><span class="racha">'+puntos+'</span>'
@@ -3844,7 +3875,7 @@ function renderCitStats(){
     if(!totAnio){ statsList.innerHTML='<div class="empty-msg">Sin encuentros registrados aún</div>'; return; }
     const ps=PLAYERS.map(name=>{const count=allAnio.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:totAnio?Math.round(count/totAnio*100):0};}).sort((a,b)=>b.pct-a.pct);
     statsList.innerHTML='';
-    ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+totAnio+' encuentros</div>';statsList.appendChild(c);});
+    ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+totAnio+' encuentros'+_detalleJugo(name)+'</div>';statsList.appendChild(c);});
     return;
   }
 
@@ -3972,7 +4003,7 @@ function renderCitStats(){
   if(!totAnio){ statsList.innerHTML=''; return; }
   const ps=PLAYERS.map(name=>{const count=allAnio.filter(([,m])=>(m.citados||[]).includes(name)).length;return{name,count,pct:totAnio?Math.round(count/totAnio*100):0};}).sort((a,b)=>b.pct-a.pct);
   statsList.innerHTML='';
-  ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+totAnio+' partidos</div>';statsList.appendChild(c);});
+  ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+totAnio+' partidos'+_detalleJugo(name)+'</div>';statsList.appendChild(c);});
 }
 
 
@@ -4586,6 +4617,88 @@ async function _ppSaveStats(key,stats){
 const _ppCache={};
 let _ppEditKey=null, _ppEditStats={};
 
+/* ── CUÁNTO JUGÓ CADA UNO ────────────────────────────────────────
+   Solo se le pide al profe lo que efectivamente sabe: si el pibe entró
+   desde el banco, si salió antes del final, o si se quedó sin jugar.
+   No se le pide estimar minutos ni fracciones.
+
+   'todo' es el valor por defecto y NO se guarda: en un partido normal el
+   profe no toca nada. La contrapartida es honesta y conviene tenerla clara:
+   si se olvida de marcar a alguien que no jugó, ese queda como que jugó todo.
+   ──────────────────────────────────────────────────────────────── */
+// En LISFI a un jugador citado hay que ponerlo sí o sí, así que "citado pero no
+// entró" no existe: los únicos casos posibles son que haya jugado todo, que haya
+// entrado desde el banco, o que haya salido antes del final.
+const JUGO_ORDEN = ['todo','entro','salio'];
+const JUGO_ET = { todo:'Todo', entro:'Entró', salio:'Salió' };
+
+function _jugoDe(st){
+  const v = st && st.jugo;
+  return JUGO_ORDEN.indexOf(v) >= 0 ? v : 'todo';
+}
+window._jugoDe = _jugoDe;
+
+function _ppCiclarJugo(nombre){
+  if(!_ppEditStats.jugadores) _ppEditStats.jugadores = {};
+  const st = _ppEditStats.jugadores[nombre] || (_ppEditStats.jugadores[nombre] = {});
+  const i = JUGO_ORDEN.indexOf(_jugoDe(st));
+  const siguiente = JUGO_ORDEN[(i + 1) % JUGO_ORDEN.length];
+  if(siguiente === 'todo') delete st.jugo;   // el valor por defecto no se guarda
+  else st.jugo = siguiente;
+  renderPosPartido();
+}
+
+// Participación de cada jugador en un año: citaciones, cuántas jugó y cómo.
+// Devuelve { nombre: {citado, jugoTodo, entroOSalio, jugados, pct} }
+function participacionDelAnio(anio){
+  const a = anio || anioVista();
+  const d = _todasLasZonas ? datosDelAnio(a) : {citaciones:{}, stats:{}};
+  const out = {};
+  Object.entries(d.citaciones).forEach(([k, cit]) => {
+    if(!cit || !cit.citados || !cit.citados.length) return;
+    const st = d.stats[k] || null;
+    cit.citados.forEach(nombre => {
+      const r = out[nombre] || (out[nombre] = {citado:0, jugoTodo:0, entroOSalio:0});
+      r.citado++;
+      const j = _jugoDe((st && st.jugadores && st.jugadores[nombre]) || null);
+      if(j === 'todo') r.jugoTodo++;
+      else r.entroOSalio++;
+    });
+  });
+  Object.values(out).forEach(r => {
+    // Todo citado juega, así que jugados === citado. Se deja igual por claridad.
+    r.jugados = r.jugoTodo + r.entroOSalio;
+    // Completos cuentan 1, parciales medio. Es una aproximación declarada:
+    // no tenemos minutos, así que no se puede ser más preciso que esto.
+    r.pct = r.citado ? Math.round((r.jugoTodo + r.entroOSalio*0.5) / r.citado * 100) : 0;
+  });
+  return out;
+}
+window.participacionDelAnio = participacionDelAnio;
+
+// Línea chica bajo el contador de citaciones: de esas veces, cuántas jugó.
+// Solo aparece si hay algo cargado — si nadie usó el chip todavía, no ensucia.
+function _detalleJugo(nombre){
+  try{
+    const r = participacionDelAnio()[nombre];
+    if(!r || !r.citado) return '';
+    if(r.entroOSalio === 0) return '';   // nada marcado aún
+    const partes = [];
+    if(r.jugoTodo)    partes.push(r.jugoTodo+' completo'+(r.jugoTodo>1?'s':''));
+    if(r.entroOSalio) partes.push(r.entroOSalio+' con cambio');
+    return ' · <span style="color:var(--muted)">'+partes.join(' · ')+'</span>';
+  }catch(e){ return ''; }
+}
+
+// Cuánto jugó, mirando los stats de un partido. Devuelve:
+//   'todo' | 'entro' | 'salio'  ·  null si no estuvo citado
+function jugoEnPartido(cit, stats, nombre){
+  if(!cit || !(cit.citados||[]).includes(nombre)) return null;
+  const st = (stats && stats.jugadores && stats.jugadores[nombre]) || null;
+  return _jugoDe(st);
+}
+window.jugoEnPartido = jugoEnPartido;
+
 function _ppResultData(key){
   const cit=citaciones[key]; if(!cit) return null;
   const map={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
@@ -4764,6 +4877,7 @@ async function renderPosPartido(){
             <span style="width:16px;text-align:center;font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);">${g}</span>
             <button data-pp-mas="${enc}" style="width:26px;height:26px;border-radius:50%;border:none;background:var(--green);color:#000;font-size:var(--f-lg);cursor:pointer;font-weight:700;line-height:1;">+</button>
           </div>
+          <button data-pp-jugo="${enc}" class="jchip j-${_jugoDe(st2)}" style="margin-left:var(--sp-3)">${JUGO_ET[_jugoDe(st2)]}</button>
           <div style="display:flex;gap:var(--sp-2);margin-left:var(--sp-2);">
             <button data-pp-card-a="${enc}" style="width:19px;height:25px;border-radius:var(--r-sm);font-size:var(--f-sm);font-weight:700;border:1px solid ${am?'#c8980a':'var(--border)'};background:${am?'#e8b400':'transparent'};color:${am?'#3a2800':'var(--muted)'};cursor:pointer;">A</button>
             <button data-pp-card-r="${enc}" style="width:19px;height:25px;border-radius:var(--r-sm);font-size:var(--f-sm);font-weight:700;border:1px solid ${ro?'#9a1a1a':'var(--border)'};background:${ro?'#d83030':'transparent'};color:${ro?'#fff':'var(--muted)'};cursor:pointer;">R</button>
@@ -4880,6 +4994,7 @@ document.addEventListener('click',function(e){
   if(t.dataset.ppMenos){ _ppAdjust(t.dataset.ppMenos,-1); return; }
   if(t.dataset.ppCardA){ _ppToggleCard(t.dataset.ppCardA,'amarilla'); return; }
   if(t.dataset.ppCardR){ _ppToggleCard(t.dataset.ppCardR,'roja'); return; }
+  if(t.dataset.ppJugo){ _ppCiclarJugo(t.dataset.ppJugo); return; }
   if(t.dataset.ppEcMas){ _ppEditStats.enContra=(_ppEditStats.enContra||0)+1; renderPosPartido(); return; }
   if(t.dataset.ppEcMenos){ _ppEditStats.enContra=Math.max(0,(_ppEditStats.enContra||0)-1); renderPosPartido(); return; }
   if(t.dataset.ppRes){ _ppEditStats.manualResult=t.dataset.ppRes; renderPosPartido(); return; }
