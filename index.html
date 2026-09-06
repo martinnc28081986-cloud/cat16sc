@@ -816,8 +816,39 @@ const TORNEO_META_DEF = {
   'lisfi-2026-zona2b':          { nombre:'Zona II B 2026',       ligaId:'lisfi-ii-zona-b-2026',       fechas:22, orden:1 },
   'lafir-2026':                 { nombre:'LAFIR 2026',           ligaId:'lafir-torneo-general-2026',  fechas:15, orden:1 },
 };
+// Nombre legible de una zona a partir de su ligaId
+function nombreDeZona(ligaId){
+  if(!ligaId) return '';
+  const claves = Object.keys(TORNEO_META_DEF);
+  for(let i=0;i<claves.length;i++){
+    const m = TORNEO_META_DEF[claves[i]];
+    if(m && m.ligaId === ligaId) return m.nombre;
+  }
+  return String(ligaId).replace(/-/g,' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Datos de una temporada. El id de torneo lo elige cada club (Hernández tenía
+// 'default'), así que el nombre y la cantidad de fechas se toman de la ZONA cuando
+// se la conoce — si no, todos los clubes verían etiquetas distintas para lo mismo.
 function torneoMeta(id){
-  return TEMPORADAS[id] || TORNEO_META_DEF[id] || { nombre:String(id||'').toUpperCase().replace(/-/g,' '), orden:0 };
+  const base = TEMPORADAS[id] || TORNEO_META_DEF[id] || { nombre:String(id||'').toUpperCase().replace(/-/g,' '), orden:0 };
+  const ligaId = base.ligaId;
+  if(!ligaId) return base;
+  const porZona = (function(){
+    const claves = Object.keys(TORNEO_META_DEF);
+    for(let i=0;i<claves.length;i++){
+      const m = TORNEO_META_DEF[claves[i]];
+      if(m && m.ligaId === ligaId) return m;
+    }
+    return null;
+  })();
+  const nombreGenerico = !base.nombre || /^(temporada anterior|default)$/i.test(String(base.nombre).trim());
+  return {
+    nombre: nombreGenerico ? (porZona ? porZona.nombre : nombreDeZona(ligaId)) : base.nombre,
+    fechas: base.fechas || (porZona ? porZona.fechas : null),
+    ligaId: ligaId,
+    orden:  base.orden != null ? base.orden : (porZona ? porZona.orden : 0)
+  };
 }
 // true cuando se está mirando una temporada que no es la vigente
 // Solo hay modo histórico si el usuario eligió a mano una temporada archivada en el
@@ -1204,27 +1235,95 @@ const SCHEDULE_ZONA_CAMPEONATO_2026 = {
   "15":[{"h":"S.J.BAUTISTA","a":"UNIVERSITARIO"},{"h":"EVERTON","a":"SAGR. CORAZON"},{"h":"ESTUD. LH","a":"TALLERES B."},{"h":"DEFENSA","a":"HERNANDEZ"},{"h":"CAP.CHICA","a":"V.S CARLOS BCO."},{"h":"CAMBACERES","a":"LA CURVA"},{"h":"ADAFI","a":"FIE 25"},{"libre":"EL CARMEN"}]
 };
 
+// ── SEMILLAS POR CLUB ──
+// Datos iniciales de un club concreto (dirección, nombre). Antes estaban sueltos
+// como valores por defecto y se los comía cualquier club nuevo: un club recién dado
+// de alta quedaba con el nombre y la dirección de Sagrado. Ahora se aplican solo al
+// club al que pertenecen; el resto arranca vacío y carga lo suyo desde Firebase.
+const CLUB_SEED = {
+  'sagrado-corazon': { club:'Sagrado Corazón', address:'Av. 13 y 610 Villa Elvira', ligaNombre:'SAGR. CORAZON' },
+};
+// Nombre del club dentro de la liga (el que aparece en el schedule).
+// Un solo criterio para toda la app: config de Firebase → semilla → global → id.
+function ligaNombreDeClub(cfg, clubId){
+  const id = clubId || String(CLUB_PATH||'').split('/').pop();
+  if(cfg && cfg.ligaNombre) return cfg.ligaNombre;
+  if(CLUB_SEED[id] && CLUB_SEED[id].ligaNombre) return CLUB_SEED[id].ligaNombre;
+  // OJO: acá NO se usa CLUB_LIGA_NOMBRE como fallback. Es una global que se queda
+  // con el valor del club anterior al saltar de club, y haría que todos los clubes
+  // hereden el nombre del primero que se abrió.
+  return String(id||'').toUpperCase().replace(/-/g,' ');
+}
+window.ligaNombreDeClub = ligaNombreDeClub;
+
+function clubSeed(){
+  const id = String(CLUB_PATH||'').split('/').pop();
+  return CLUB_SEED[id] || {};
+}
+window.clubSeed = clubSeed;
+
+// ── RESULTADOS DEL PROPIO CLUB ──
+// Sirve para cualquier club de la liga. Busca al club por su nombre de liga dentro
+// de teamResults (que trae a TODOS los equipos). 'scResults' es un bloque heredado
+// que pertenece a un club puntual: solo se usa si ese club es el que está mirando,
+// y por eso el dataset declara de quién es en 'scClub' en vez de tenerlo hardcodeado.
+const _CAT_NUM = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+// Clave de comparación de nombres de equipo. Los nombres vienen escritos distinto
+// según la fuente ('CAP.CHICA' en el schedule, 'CAP CHICA' si se deriva del id del
+// club), así que se ignoran puntos, espacios y acentos antes de comparar.
+function _claveEquipo(s){
+  return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toUpperCase().replace(/[^A-Z0-9]/g,'');
+}
+function _m5(s){ return _claveEquipo(s).substring(0,5); }
+window._claveEquipo = _claveEquipo;
+
+function resultadosDelClub(catNum){
+  try{
+    const cat = catNum || _CAT_NUM[(typeof CFG !== 'undefined' && CFG.dbPath) || ''] || 16;
+    const myName = String((typeof CFG !== 'undefined' && CFG.ligaNombre) || CLUB_LIGA_NOMBRE || '').toUpperCase().trim();
+    // 1) teamResults — funciona para cualquier club
+    const tr = (LIGA_DATA.teamResults && LIGA_DATA.teamResults[cat]) || {};
+    if(myName){
+      const k = Object.keys(tr).find(k => _claveEquipo(k) === _claveEquipo(myName) || _m5(k) === _m5(myName));
+      if(k) return tr[k] || [];
+    }
+    // 2) scResults — solo si el dataset dice que es de este club
+    const sc = (LIGA_DATA.scResults && LIGA_DATA.scResults[cat]) || [];
+    if(sc.length && myName && LIGA_DATA.scClub && _m5(LIGA_DATA.scClub) === _m5(myName)) return sc;
+    return [];
+  }catch(e){ console.warn('resultadosDelClub:', e); return []; }
+}
+window.resultadosDelClub = resultadosDelClub;
+
+// Fechas ya jugadas por el club, según los resultados de liga
+function fechasJugadasDelClub(catNum){
+  const s = new Set();
+  resultadosDelClub(catNum).forEach(r => { if(r && r.fecha != null) s.add(r.fecha); });
+  return s;
+}
+window.fechasJugadasDelClub = fechasJugadasDelClub;
+
 // Deriva el fixture de un club a partir del schedule completo de la liga
 function deriveFixtureFromSchedule(schedule, ligaNombre){
   const myName = String(ligaNombre||'').toUpperCase().trim();
-  const match5 = s => s ? s.toUpperCase().trim().substring(0,5) : '';
+  const match5 = s => _m5(s); // misma normalización que el resto de la app
   return Object.entries(schedule).map(([k,matches])=>{
     const fecha = parseInt(k);
     const arr = Array.isArray(matches) ? matches : Object.values(matches);
     // Buscar partido libre
-    const libreMatch = arr.find(m => m.libre && m.libre.toUpperCase().trim() === myName);
+    const libreMatch = arr.find(m => m.libre && _claveEquipo(m.libre) === _claveEquipo(myName));
     if(libreMatch) return {fecha, rival:'LIBRE', cond:'-'};
     // Buscar partido donde aparece el club — soporta {h,a} y {local,visitante}
     const _loc = m => m.h || m.local || '';
     const _vis = m => m.a || m.visitante || '';
     const game = arr.find(m => {
       if(!_loc(m) || !_vis(m)) return false;
-      const mh = _loc(m).toUpperCase().trim(), ma = _vis(m).toUpperCase().trim();
-      return mh === myName || ma === myName ||
-             match5(mh) === match5(myName) || match5(ma) === match5(myName);
+      return _claveEquipo(_loc(m)) === _claveEquipo(myName) || _claveEquipo(_vis(m)) === _claveEquipo(myName) ||
+             match5(_loc(m)) === match5(myName) || match5(_vis(m)) === match5(myName);
     });
     if(!game) return {fecha, rival:'LIBRE', cond:'-'};
-    const isHome = _loc(game).toUpperCase().trim() === myName || match5(_loc(game)) === match5(myName);
+    const isHome = _claveEquipo(_loc(game)) === _claveEquipo(myName) || match5(_loc(game)) === match5(myName);
     return {fecha, rival: (isHome ? _vis(game) : _loc(game)).toUpperCase(), cond: isHome ? 'L' : 'V'};
   }).filter(f => !isNaN(f.fecha)).sort((a,b)=>a.fecha-b.fecha);
 }
@@ -1452,9 +1551,8 @@ async function migrarClubAZona(clubId){
 
     // ¿Este club juega la zona nueva? Se compara contra los equipos del schedule
     const nombreLiga = String(cfg.ligaNombre || clubId.replace(/-/g,' ')).toUpperCase().trim();
-    const m5 = s => String(s).toUpperCase().trim().substring(0,5);
     const equipo = equiposDeSchedule(SCHEDULE_ZONA_CAMPEONATO_2026)
-      .find(e => e.toUpperCase().trim() === nombreLiga || m5(e) === m5(nombreLiga));
+      .find(e => _claveEquipo(e) === _claveEquipo(nombreLiga) || _m5(e) === _m5(nombreLiga));
     if(!equipo) return 'no-juega';
 
     // Registro de temporadas: la anterior queda consultable desde el selector.
@@ -1464,9 +1562,10 @@ async function migrarClubAZona(clubId){
     if(anterior !== MIGRACION.torneoNuevo){
       const metaAnt = TORNEO_META_DEF[anterior] || {};
       temporadas[anterior] = {
-        nombre: metaAnt.nombre || (anterior === 'default'
-                  ? 'Temporada anterior'
-                  : String(anterior).toUpperCase().replace(/-/g,' ')),
+        nombre: metaAnt.nombre
+                  || nombreDeZona(cfg.ligaId)
+                  || (anterior === 'default' ? 'Temporada anterior'
+                                             : String(anterior).toUpperCase().replace(/-/g,' ')),
         fechas: metaAnt.fechas || null,
         ligaId: cfg.ligaId || metaAnt.ligaId || null,
         orden:  1
@@ -1535,66 +1634,59 @@ const CAT_CONFIG = {
     sub: 'LISFI Zona Campeonato 2026',
     dbPath: 'cat16',
     matchTime: '15:50',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   cat13: {
     label: 'MI PLANTEL',
     sub: 'LISFI II Zona B 2026',
     dbPath: 'cat13',
     matchTime: '13:20',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   cat2020: {
     label: 'MI PLANTEL',
-    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2020',
     matchTime: '12:30',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   cat2019: {
     label: 'MI PLANTEL',
-    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2019',
     matchTime: '11:40',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   cat2018: {
     label: 'MI PLANTEL',
-    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2018',
     matchTime: '10:50',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   cat2017: {
     label: 'MI PLANTEL',
-    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2017',
     matchTime: '10:00',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   cat2015: {
     label: 'MI PLANTEL',
-    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2015',
     matchTime: '15:00',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   cat2014: {
     label: 'MI PLANTEL',
-    club: 'Sagrado Corazón',
     sub: 'LISFI II Zona B 2026',
     dbPath: 'cat2014',
     matchTime: '14:10',
-    address: 'Av. 13 y 610 Villa Elvira (Sagrado Corazón)'
+    address: ''
   },
   escuelita: {
     label: 'MI PLANTEL',
-    club: 'Sagrado Corazón',
     sub: 'Escuela de Fútbol',
     playerCats: {"Benjamin Rasedo":2015,"Pedro Ezeiza":2014,"Juan Valenciano":2016,"Santino Castillo":2016,"Bastian Basegio":2016,"Fermin Montañes":2018,"Juan Martin Cacheri":2018,"Francisco Conocioto":2015,"Ciro Cerecedo":2020,"Thiago Torres":2014},
     dbPath: 'escuelita',
@@ -1603,6 +1695,13 @@ const CAT_CONFIG = {
 };
 
 const CFG = CAT_CONFIG[cat] || CAT_CONFIG['cat16'];
+// Identidad del club: la semilla del propio club (si existe) y después Firebase.
+// Nunca la de otro club.
+(function(){
+  const seed = clubSeed();
+  if(seed.club && !CFG.club) CFG.club = seed.club;
+  if(seed.address && !CFG.address) CFG.address = seed.address;
+})();
 // DB_PREFIX y TORNEO_ID se definen globalmente antes de startApp
 // (ver declaración global arriba del módulo)
 
@@ -1793,8 +1892,7 @@ async function loadClubConfig(){
       CLUB_LIGA_NOMBRE = cfg.ligaNombre;
     } else {
       // Derivar del path del club como fallback
-      const _cid = CLUB_PATH.split('/').pop();
-      CLUB_LIGA_NOMBRE = _cid === 'sagrado-corazon' ? 'SAGR. CORAZON' : _cid.toUpperCase().replace(/-/g,' ');
+      CLUB_LIGA_NOMBRE = ligaNombreDeClub(null, CLUB_PATH.split('/').pop());
     }
     if(ligaData && ligaData.schedule && cfg.ligaNombre){
       FIXTURE = deriveFixtureFromSchedule(ligaData.schedule, cfg.ligaNombre);
@@ -1872,16 +1970,23 @@ async function _saveDefaultClubConfig(){
       cat16:'15:50', cat13:'13:20', cat2014:'14:10', cat2015:'15:00',
       cat2017:'10:00', cat2018:'10:50', cat2019:'11:40', cat2020:'12:30'
     };
-    await set(ref(db, CLUB_PATH+'/config'), {
-      fixture: fixtureObj,
-      torneoActivo: 'lisfi-zona-campeonato-2026',
-      ligaId: 'lisfi-zona-campeonato-2026',
-      ligaNombre: 'SAGR. CORAZON',
-      horarios,
-      address: 'Av. 13 y 610 Villa Elvira',
-      liga: 'LISFI',
-      zona: 'Campeonato'
-    });
+    // Identidad: solo la del propio club (nunca la de otro). Si no hay semilla,
+    // el nombre de liga se deriva del id del club y se corrige desde el panel.
+    const seed = clubSeed();
+    const clubId = String(CLUB_PATH||'').split('/').pop();
+    const cfgInicial = {
+      torneoActivo: MIGRACION.torneoNuevo,
+      ligaId:       MIGRACION.ligaId,
+      ligaNombre:   seed.ligaNombre || clubId.toUpperCase().replace(/-/g,' '),
+      horarios,     // horarios de la liga por categoría, iguales para todos los clubes
+      liga:         MIGRACION.liga,
+      zona:         MIGRACION.zona
+    };
+    if(seed.address) cfgInicial.address = seed.address;
+    // El fixture hardcodeado es del club de la semilla: no se le carga a otro club,
+    // que lo deriva del schedule de la liga con su propio ligaNombre.
+    if(seed.ligaNombre) cfgInicial.fixture = fixtureObj;
+    await set(ref(db, CLUB_PATH+'/config'), cfgInicial);
     console.log('Club config initialized in Firebase');
   } catch(e){ console.warn('_saveDefaultClubConfig error:', e); }
 }
@@ -2025,16 +2130,7 @@ async function _getActiveFecha(fixture, suspensions){
     let result = active;
     if(!active || activeCats.length === 0){
       const catNum = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20}[CFG.dbPath]||16;
-      const isSagcor = CLUB_PATH.includes('sagrado-corazon');
-      let playedFechas = new Set();
-      if(isSagcor){
-        ((LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[]).forEach(r=>playedFechas.add(r.fecha));
-      } else {
-        const _tr=(LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
-        const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
-        const _entry=Object.entries(_tr).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
-        if(_entry) _entry[1].forEach(r=>playedFechas.add(r.fecha));
-      }
+      const playedFechas = fechasJugadasDelClub(catNum);
       if(playedFechas.size > 0){
         result = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && !playedFechas.has(f.fecha)) || active;
       }
@@ -2055,16 +2151,7 @@ window._invalidateActiveFecha = function(){ window._activeFechaCache = null; };
 // Helper: conjunto de fechas ya jugadas según teamResults/scResults
 function _getPlayedFechas(){
   const catNum={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20}[CFG.dbPath]||16;
-  const isSagcor=CLUB_PATH.includes('sagrado-corazon');
-  const played=new Set();
-  if(isSagcor){
-    ((LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[]).forEach(r=>played.add(r.fecha));
-  } else {
-    const _tr=(LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
-    const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
-    const _entry=Object.entries(_tr).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
-    if(_entry) _entry[1].forEach(r=>played.add(r.fecha));
-  }
+  const played = fechasJugadasDelClub(catNum);
   return played;
 }
 
@@ -3036,16 +3123,7 @@ function renderCitStats(){
   const _catNumMapTL={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const _catKeyTL=CFG.dbPath;
   const _catNumTL=_catNumMapTL[_catKeyTL]||16;
-  const _teamResTL=LIGA_DATA.teamResults?.[_catNumTL]||{};
-  const _myNameTL=(CFG.ligaNombre||CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
-  const _match5TL=s=>s?s.toUpperCase().trim().substring(0,5):'';
-  const _myResTL=Object.entries(_teamResTL).find(([k])=>{
-    const kn=k.toUpperCase().trim();
-    return _myNameTL&&(kn===_myNameTL||_match5TL(kn)===_match5TL(_myNameTL));
-  })?.[1];
-  const _scResTL = _myResTL
-    ? _myResTL
-    : (CLUB_PATH.includes('sagrado-corazon') ? (LIGA_DATA.scResults?.[_catNumTL]||[]) : []);
+  const _scResTL = resultadosDelClub(_catNumTL);
   const _resByFecha={};
   _scResTL.forEach(r=>{ _resByFecha[r.fecha]= r.gf>r.gc?'V':r.gf<r.gc?'L':'E'; });
 
@@ -3370,18 +3448,8 @@ function _getResultData(key){
   if(!cit) return null;
   const _catNumMap = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const catNum = _catNumMap[CFG.dbPath] || 16;
-  const isSagcor = CLUB_PATH.includes('sagrado-corazon');
   let gf=null, gc=null;
-  // Buscar en scResults (sagcor) o teamResults (otros)
-  let scRes=[];
-  if(isSagcor){
-    scRes=(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[];
-  } else {
-    const _teamR=(LIGA_DATA&&LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
-    const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
-    const _entry=Object.entries(_teamR).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
-    scRes=_entry?_entry[1]:[];
-  }
+  const scRes = resultadosDelClub(catNum);
   const match = scRes.find(function(r){ return Number(r.fecha) === Number(cit.fecha); });
   if(match){ gf=match.gf; gc=match.gc; }
   if(gf===null && cit.score){ const p=cit.score.split('-'); if(p.length===2){ gf=parseInt(p[0]); gc=parseInt(p[1]); } }
@@ -3766,17 +3834,7 @@ function _ppResultData(key){
   const cit=citaciones[key]; if(!cit) return null;
   const map={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
   const catNum=map[CFG.dbPath]||16;
-  const isSagcor=CLUB_PATH.includes('sagrado-corazon');
-  // Obtener array de resultados del equipo correcto
-  let scRes=[];
-  if(isSagcor){
-    scRes=(LIGA_DATA&&LIGA_DATA.scResults&&LIGA_DATA.scResults[catNum])||[];
-  } else {
-    const _teamR=(LIGA_DATA&&LIGA_DATA.teamResults&&LIGA_DATA.teamResults[catNum])||{};
-    const _myN=(CLUB_LIGA_NOMBRE||'').toUpperCase().trim();
-    const _entry=Object.entries(_teamR).find(([k])=>{ const kn=k.toUpperCase().trim(); return _myN&&(kn===_myN||kn.substring(0,5)===_myN.substring(0,5)); });
-    scRes=_entry?_entry[1]:[];
-  }
+  const scRes = resultadosDelClub(catNum);
   const m=scRes.find(r=>Number(r.fecha)===Number(cit.fecha));
   if(m){
     const res=m.gf>m.gc?'V':m.gf<m.gc?'L':'E';
@@ -4125,16 +4183,8 @@ async function renderTablas(){
   const _catKey2 = CFG.dbPath;
   const catNum = _catNumMap2[_catKey2] || 16;
   const myName = CLUB_LIGA_NOMBRE; // nombre del club en la liga
-  // Usar teamResults (nuevo scraper) — fallback a scResults para sagcor
-  const _teamRes = LIGA_DATA.teamResults?.[catNum] || {};
-  const _myRes = Object.entries(_teamRes).find(([k])=>{
-    const kn=k.toUpperCase().trim(); const mn=myName.toUpperCase().trim();
-    return kn===mn||kn.includes(mn.substring(0,5))||mn.includes(kn.substring(0,5));
-  })?.[1];
-  // Para sagcor: usar scResults como siempre. Para otros: solo teamResults (evita mostrar datos de sagcor)
-  const scRes = _myRes
-    ? _myRes
-    : (CLUB_PATH.includes('sagrado-corazon') ? (LIGA_DATA.scResults?.[catNum]||[]) : []);
+  // Resultados del propio club — mismo criterio para cualquier club de la liga
+  const scRes = resultadosDelClub(catNum);
   const pos   = LIGA_DATA.posiciones[catNum]||[];
 
   const nextF = await _getActiveFecha(FIXTURE, _suspensions);
@@ -4335,6 +4385,8 @@ async function renderTablas(){
 // Última actualización: 31/03/2026 (Fechas 1-5 jugadas — incluye Fecha 4)
 const LIGA_DATA_ACTUAL = {
   updatedAt: '05/09/2026',
+  // De qué club son los 'scResults' de abajo (bloque heredado)
+  scClub: 'SAGR. CORAZON',
   // Zona a la que pertenecen estos datos — la guarda de abajo la usa para
   // no pisar la tabla con un liga_data.json que todavía sea de la zona anterior.
   zona: 'lisfi-zona-campeonato-2026',
@@ -4640,6 +4692,7 @@ const LIGA_DATA_ACTUAL = {
 const LIGA_DATA_ARCHIVO = {
   'lisfi-2026-zona2b': {
     zona: 'lisfi-ii-zona-b-2026',
+    scClub: 'SAGR. CORAZON',
       updatedAt: '31/03/2026',
     
       // ── Resultados de Sagrado Corazón ──
@@ -4950,11 +5003,33 @@ function _normalizarLigaData(d){
   return d;
 }
 
+// Elige el dataset de liga que corresponde a la temporada que se está viendo.
+// El archivo se busca por ZONA (ligaId), no por id de torneo: distintos clubes le
+// ponen distinto nombre al torneo (Hernández tenía 'default') pero la zona es la misma.
+// Si no hay datos de esa temporada devuelve uno vacío — nunca los de la temporada
+// actual, porque mostrar los resultados de hoy sobre el fixture viejo es peor que
+// no mostrar nada.
+function _datasetDeTemporada(){
+  if(typeof esHistorico !== 'function' || !esHistorico()) return LIGA_DATA_ACTUAL;
+
+  const porTorneo = LIGA_DATA_ARCHIVO[TORNEO_ID];
+  if(porTorneo) return porTorneo;
+
+  const ligaIdArchivo = torneoMeta(TORNEO_ID).ligaId;
+  if(ligaIdArchivo){
+    const porZona = Object.keys(LIGA_DATA_ARCHIVO)
+      .map(k => LIGA_DATA_ARCHIVO[k])
+      .find(a => a && a.zona && a.zona === ligaIdArchivo);
+    if(porZona) return porZona;
+  }
+  // Sin datos de liga de esa temporada: vacío. prepararTablasDeZona lo va a llenar
+  // con los equipos de esa zona, en cero.
+  return { updatedAt:'', posiciones:{}, scResults:{}, teamResults:{} };
+}
+
 function aplicarLigaDataDeTemporada(){
   try {
-    const d = (typeof esHistorico === "function" && esHistorico() && LIGA_DATA_ARCHIVO[TORNEO_ID])
-      ? LIGA_DATA_ARCHIVO[TORNEO_ID]
-      : LIGA_DATA_ACTUAL;
+    const d = _datasetDeTemporada();
     Object.keys(LIGA_DATA).forEach(k => { delete LIGA_DATA[k]; });
     Object.assign(LIGA_DATA, _normalizarLigaData(JSON.parse(JSON.stringify(d))));
   } catch(e){ console.warn('aplicarLigaDataDeTemporada:', e); }
@@ -5016,7 +5091,9 @@ function _ligaDataEsDeZonaActual(d){
 // Etiqueta "Actualizado" del encabezado de tablas
 function _updLabel(){
   if(window._tablaEnCero && !LIGA_DATA.updatedAt)
-    return '<span style="color:var(--yellow)">Tabla nueva · sin resultados cargados</span>';
+    return esHistorico()
+      ? '<span style="color:var(--yellow)">Sin resultados guardados de esta temporada</span>'
+      : '<span style="color:var(--yellow)">Tabla nueva · sin resultados cargados</span>';
   const base = LIGA_DATA.updatedAt ? 'Actualizado: '+LIGA_DATA.updatedAt : '';
   return window._ligaDataDesactualizada
     ? base + ' · <span style="color:var(--yellow)">sin actualización automática</span>'
@@ -6700,17 +6777,9 @@ async function startCoordApp(){
       COMP_CATS.forEach(cat=>{ out[cat.num]=_coordSCR[cat.num]||[]; });
     } else {
       // LISFI: usar LIGA_DATA (scResults para sagcor, teamResults para otros)
-      const isSagcor = CLUB_PATH.includes('sagrado-corazon');
       COMP_CATS.forEach(cat=>{
-        if(isSagcor){
-          const arr = LIGA_DATA.scResults?.[cat.num] || [];
-          out[cat.num] = arr.map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
-        } else {
-          const teamAll = LIGA_DATA.teamResults?.[cat.num] || {};
-          const myN = _ligaNombreCoord.toUpperCase().trim();
-          const entry = Object.entries(teamAll).find(([k])=>{ const kn=k.toUpperCase().trim(); return myN&&(kn===myN||kn.substring(0,5)===myN.substring(0,5)); });
-          out[cat.num] = entry ? entry[1].map(r=>({f:r.fecha,gf:r.gf,gc:r.gc})) : [];
-        }
+        // Mismo criterio para todos los clubes de la liga
+        out[cat.num] = resultadosDelClub(cat.num).map(r=>({f:r.fecha, gf:r.gf, gc:r.gc}));
       });
     }
     return out;
@@ -7806,11 +7875,7 @@ async function startCoordApp(){
         const ligaId = cfg.ligaId || null;
         // ligaNombre: desde config, o desde variable global, o desde nombre del club mapeado
         const clubId = CLUB_PATH.split('/').pop();
-        const _clubNombreMap = {'sagrado-corazon':'SAGR. CORAZON','hernandez':'HERNANDEZ','el-ciclon':'EL CICLON'};
-        const ligaNombre = cfg.ligaNombre
-          || (typeof CLUB_LIGA_NOMBRE !== 'undefined' && CLUB_LIGA_NOMBRE ? CLUB_LIGA_NOMBRE : '')
-          || _clubNombreMap[clubId]
-          || clubId.toUpperCase().replace(/-/g,' ');
+        const ligaNombre = ligaNombreDeClub(cfg, clubId);
         const clubFixConds = cfg.fixture || {};
 
         if(ligaId && ligaNombre){
