@@ -2176,6 +2176,12 @@ async function loadClubConfig(){
       } catch(e){ console.warn('Error leyendo liga:', e); }
     }
 
+    // Si el liga_data.json que bajó al arrancar es de otra zona (pasa en todos los
+    // clubes que no son el principal), bajar el archivo de ESTA zona.
+    if(ligaId && !esHistorico() && (!window._ligaDataRaw || window._ligaDataRaw.zona !== ligaId)){
+      await bajarLigaDataDeZona(ligaId);
+    }
+
     // Foto de resultados de esa zona (la usa el selector de temporadas).
     // Va ANTES de prepararTablasDeZona para que la tabla no se reinicie en cero
     // teniendo datos guardados.
@@ -5643,6 +5649,32 @@ function aplicarLigaDataJson(){
 }
 window.aplicarLigaDataJson = aplicarLigaDataJson;
 
+// Baja el archivo de datos de UNA zona puntual. El scraper genera uno por zona
+// (liga_data_{ligaId}.json) porque no todos los clubes juegan el mismo torneo;
+// liga_data.json es la del club principal y sirve de arranque rápido.
+async function bajarLigaDataDeZona(ligaId){
+  if(!ligaId) return false;
+  if(window._ligaDataRaw && window._ligaDataRaw.zona === ligaId) return true; // ya la tenemos
+  if(window._zonasBajadas && window._zonasBajadas[ligaId]) return false;      // ya se intentó
+  window._zonasBajadas = window._zonasBajadas || {};
+  window._zonasBajadas[ligaId] = true;
+  try{
+    const res = await fetch('liga_data_' + ligaId + '.json?_=' + Date.now());
+    if(!res.ok){
+      console.warn('No hay liga_data para la zona', ligaId, '— HTTP', res.status);
+      return false;
+    }
+    window._ligaDataRaw = await res.json();
+    const aplicado = aplicarLigaDataJson();
+    console.log('✅ liga_data de', ligaId, aplicado ? '— aplicado' : '— no corresponde a la zona vigente');
+    return aplicado;
+  }catch(e){
+    console.warn('No se pudo bajar liga_data de', ligaId, ':', e.message);
+    return false;
+  }
+}
+window.bajarLigaDataDeZona = bajarLigaDataDeZona;
+
 window._ligaDataReady = (async () => {
   try {
     const res = await fetch('liga_data.json?_=' + Date.now());
@@ -7477,6 +7509,10 @@ async function startCoordApp(){
 
     // Mirando el archivo, traer la foto de resultados de esa zona antes de armar nada
     if(ligaId && esHistorico()) await cargarResultadosDeLiga(ligaId);
+    // En la temporada vigente, asegurarse de tener el liga_data de ESTA zona
+    if(ligaId && !esHistorico() && (!window._ligaDataRaw || window._ligaDataRaw.zona !== ligaId)){
+      await bajarLigaDataDeZona(ligaId);
+    }
 
     // 1) Intentar schedule detallado (partidos con local/visitante/libre)
     if(ligaId && _ligaNombreCoord){
