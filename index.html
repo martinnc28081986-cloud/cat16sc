@@ -2373,6 +2373,8 @@ async function loadClubConfig(){
     // Va ANTES de prepararTablasDeZona para que la tabla no se reinicie en cero
     // teniendo datos guardados.
     if(ligaData && registrarResultadosDeLiga(ligaId, ligaData)) aplicarLigaDataDeTemporada();
+    // Temporada archivada sin foto guardada: buscarla (Firebase o el archivo del scraper)
+    else if(ligaId && esHistorico()) await cargarResultadosDeLiga(ligaId);
 
     // Zona nueva → la tabla arranca en cero con los equipos de esta zona
     if(ligaData && ligaData.schedule) prepararTablasDeZona(ligaId, ligaData.schedule);
@@ -5807,13 +5809,38 @@ window.registrarResultadosDeLiga = registrarResultadosDeLiga;
 async function cargarResultadosDeLiga(ligaId){
   if(!ligaId || !String(ligaId).includes('-202')) return false;
   if(LIGA_RESULTADOS_FB[ligaId]) return true;   // ya la bajamos en esta sesión
+
+  // 1) La foto guardada en Firebase
   try{
     const snap = await get(ref(db, 'ligas/'+ligaId+'/resultados'));
-    if(!snap.exists()) return false;
-    LIGA_RESULTADOS_FB[ligaId] = _fotoDesdeFirebase(snap.val());
+    if(snap.exists()){
+      LIGA_RESULTADOS_FB[ligaId] = _fotoDesdeFirebase(snap.val());
+      aplicarLigaDataDeTemporada();
+      return true;
+    }
+  }catch(e){ console.warn('cargarResultadosDeLiga (firebase):', e && e.message); }
+
+  // 2) Si no está, el archivo que genera el scraper para esa zona.
+  //    Es el camino para recuperar una temporada vieja: se corre el scraper una
+  //    vez apuntado a esa zona y queda liga_data_{ligaId}.json en el repo.
+  try{
+    const res = await fetch('liga_data_' + ligaId + '.json?_=' + Date.now());
+    if(!res.ok) return false;
+    const d = await res.json();
+    if(!d || d.zona !== ligaId) return false;
+
+    const norm = _normalizarLigaData(JSON.parse(JSON.stringify(d)));
+    LIGA_RESULTADOS_FB[ligaId] = norm;
     aplicarLigaDataDeTemporada();
+    console.log('✅ Archivo de', ligaId, 'recuperado de liga_data_'+ligaId+'.json');
+
+    // Y se guarda en Firebase, así el resto de los clubes de esa zona lo tienen
+    // sin volver a bajar el archivo.
+    guardarSnapshotDeZona(ligaId, norm).then(r=>{
+      if(r === 'guardado') console.log('   y quedó guardado en ligas/'+ligaId+'/resultados');
+    });
     return true;
-  }catch(e){ console.warn('cargarResultadosDeLiga:', e && e.message); return false; }
+  }catch(e){ console.warn('cargarResultadosDeLiga (archivo):', e && e.message); return false; }
 }
 window.cargarResultadosDeLiga = cargarResultadosDeLiga;
 
