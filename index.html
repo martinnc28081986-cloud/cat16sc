@@ -1590,6 +1590,20 @@ async function migrarClubAZona(clubId, zonaDef){
       zona:         Z.zona || Z.nombre,
       temporadas
     });
+
+    // Puntero público de la zona vigente de este club. Es lo único que necesita leer
+    // el scraper (que corre sin login) para saber qué zona bajar. Contiene solo el id
+    // de la zona y la URL del fixture, que ya es pública en lisfi.com.ar — ningún dato
+    // de jugadores, citaciones ni configuración del club.
+    try {
+      await update(ref(db, 'ligas/_activa/'+clubId), {
+        ligaId:       Z.ligaId,
+        nombre:       Z.nombre,
+        fuente:       Z.fuente || '',
+        actualizadoEl: new Date().toISOString().slice(0,10)
+      });
+    } catch(e){ console.warn('No se pudo escribir el puntero público de zona:', e); }
+
     return 'migrado';
   }catch(e){ console.warn('migrarClubAZona('+clubId+'):', e); return 'error'; }
 }
