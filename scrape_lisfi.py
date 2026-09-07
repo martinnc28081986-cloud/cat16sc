@@ -233,40 +233,88 @@ def scrape_general(zona_url):
     cambiar. Calculándola por nuestra cuenta el número no daría igual y el
     coordinador vería una tabla que no coincide con la de la liga.
 
+    El parser es deliberadamente tolerante: no asume que el encabezado sea la
+    primera fila (suele haber una fila de título con colspan arriba), ni que la
+    columna del club sea la primera, ni cómo escriben "PTS". Si aun así no la
+    encuentra, imprime qué tablas vio para poder ajustarlo sin adivinar.
+
     Devuelve [{"eq","pj","pg","pe","pp","gf","gc","pts"}, ...] o [] si no está.
     """
+    ALIAS = {
+        "PTS": ("PTS", "PUNTOS", "PUNTS", "PT"),
+        "PJ":  ("PJ", "J", "JUGADOS", "PJUG"),
+        "PG":  ("PG", "G", "GANADOS"),
+        "PE":  ("PE", "E", "EMPATADOS", "EMP"),
+        "PP":  ("PP", "P", "PERDIDOS"),
+        "GF":  ("GF", "GOLESAFAVOR", "AF"),
+        "GC":  ("GC", "GOLESENCONTRA", "EC", "GENCONTRA"),
+    }
+    EQUIPO = ("CLUB", "EQUIPO", "EQUIPOS", "INSTITUCION", "INSTITUCIÓN")
+
+    def limpiar(t):
+        return re.sub(r"[^A-Z0-9]", "", (t or "").upper())
+
     soup = get_soup(zona_url)
-    for tabla in soup.find_all("table"):
+    tablas = soup.find_all("table")
+    vistas = []
+
+    for tabla in tablas:
         filas = tabla.find_all("tr")
         if len(filas) < 6:
             continue
-        cab = [c.get_text(strip=True).upper() for c in filas[0].find_all(["th", "td"])]
-        # La reconocemos por sus columnas, no por su posición ni por un título:
-        # si LISFI reordena la página, esto sigue funcionando.
-        if not cab or "PTS" not in cab:
+        # El encabezado puede no ser la fila 0: se busca en las primeras
+        cab_i, cab = None, None
+        for i, tr in enumerate(filas[:4]):
+            celdas = [limpiar(c.get_text()) for c in tr.find_all(["th", "td"])]
+            if len(celdas) >= 5 and any(c in ALIAS["PTS"] for c in celdas):
+                cab_i, cab = i, celdas
+                break
+        if cab is None:
+            vistas.append([limpiar(c.get_text()) for c in filas[0].find_all(["th", "td"])][:9])
             continue
-        if not any(k in cab[0] for k in ("CLUB", "EQUIPO")):
-            continue
-        idx = {n: i for i, n in enumerate(cab)}
+
+        # Índice de cada columna por sus nombres posibles
+        idx = {}
+        for clave, nombres in ALIAS.items():
+            for j, c in enumerate(cab):
+                if c in nombres:
+                    idx[clave] = j
+                    break
+        # Columna del club: la que lo diga, o la primera que no sea numérica
+        col_eq = next((j for j, c in enumerate(cab) if c in EQUIPO), None)
+        if col_eq is None:
+            col_eq = next((j for j in range(len(cab)) if j not in idx.values()), 0)
+
         out = []
-        for tr in filas[1:]:
+        for tr in filas[cab_i + 1:]:
             celdas = [c.get_text(strip=True) for c in tr.find_all(["td", "th"])]
-            if len(celdas) < len(cab):
+            if len(celdas) <= col_eq:
                 continue
-            eq = celdas[0].strip()
-            if not eq:
+            eq = celdas[col_eq].strip()
+            # Las filas de datos tienen nombre de club y al menos un número
+            if not eq or not re.search(r"[A-Za-zÁÉÍÓÚÑáéíóúñ]", eq):
                 continue
-            def num(col):
-                try:
-                    return int(celdas[idx[col]])
-                except (KeyError, ValueError, IndexError):
+            def num(clave):
+                j = idx.get(clave)
+                if j is None or j >= len(celdas):
                     return 0
-            out.append({"eq": eq, "pj": num("PJ"), "pg": num("PG"), "pe": num("PE"),
-                        "pp": num("PP"), "gf": num("GF"), "gc": num("GC"), "pts": num("PTS")})
+                try:
+                    return int(re.sub(r"[^0-9-]", "", celdas[j]) or 0)
+                except ValueError:
+                    return 0
+            fila = {"eq": eq, "pj": num("PJ"), "pg": num("PG"), "pe": num("PE"),
+                    "pp": num("PP"), "gf": num("GF"), "gc": num("GC"), "pts": num("PTS")}
+            # Una fila sin ningún número no es un club, es un subtítulo
+            if any(fila[k] for k in ("pj", "pg", "pe", "pp", "gf", "gc", "pts")):
+                out.append(fila)
         if len(out) >= 6:
             print(f"   ✓ Tabla general: {len(out)} clubes")
             return out
-    print("   ⚠️  No se encontró la tabla general en la página de la zona")
+        vistas.append(cab[:9])
+
+    print(f"   ⚠️  No se encontró la tabla general ({len(tablas)} tablas en la página)")
+    for v in vistas[:6]:
+        print(f"      encabezado visto: {v}")
     return []
 
 
