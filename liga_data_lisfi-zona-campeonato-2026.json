@@ -1,5 +1,5 @@
 {
-  "updatedAt": "06/09/2026",
+  "updatedAt": "07/09/2026",
   "zona": "lisfi-zona-campeonato-2026",
   "fuente": "https://www.lisfi.com.ar/index.php/zona-camp-2026",
   "clubes": [
@@ -5989,5 +5989,6 @@
         "pts": 0
       }
     ]
-  }
+  },
+  "general": []
 }
