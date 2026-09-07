@@ -223,6 +223,53 @@ def scrape_all(results_url):
 
 
 # ── CALCULAR POSICIONES DESDE RESULTADOS ─────────────────────────────────────
+def scrape_general(zona_url):
+    """
+    Tabla GENERAL de la zona, tal como la publica LISFI en la página de la zona
+    (no en /posiciones, que solo trae las tablas por categoría).
+
+    Importa traerla y no calcularla: LISFI la arma sumando SOLO las categorías
+    2013 a 2018 — las 2019 y 2020 no entran —, y ese criterio es de ellos y puede
+    cambiar. Calculándola por nuestra cuenta el número no daría igual y el
+    coordinador vería una tabla que no coincide con la de la liga.
+
+    Devuelve [{"eq","pj","pg","pe","pp","gf","gc","pts"}, ...] o [] si no está.
+    """
+    soup = get_soup(zona_url)
+    for tabla in soup.find_all("table"):
+        filas = tabla.find_all("tr")
+        if len(filas) < 6:
+            continue
+        cab = [c.get_text(strip=True).upper() for c in filas[0].find_all(["th", "td"])]
+        # La reconocemos por sus columnas, no por su posición ni por un título:
+        # si LISFI reordena la página, esto sigue funcionando.
+        if not cab or "PTS" not in cab:
+            continue
+        if not any(k in cab[0] for k in ("CLUB", "EQUIPO")):
+            continue
+        idx = {n: i for i, n in enumerate(cab)}
+        out = []
+        for tr in filas[1:]:
+            celdas = [c.get_text(strip=True) for c in tr.find_all(["td", "th"])]
+            if len(celdas) < len(cab):
+                continue
+            eq = celdas[0].strip()
+            if not eq:
+                continue
+            def num(col):
+                try:
+                    return int(celdas[idx[col]])
+                except (KeyError, ValueError, IndexError):
+                    return 0
+            out.append({"eq": eq, "pj": num("PJ"), "pg": num("PG"), "pe": num("PE"),
+                        "pp": num("PP"), "gf": num("GF"), "gc": num("GC"), "pts": num("PTS")})
+        if len(out) >= 6:
+            print(f"   ✓ Tabla general: {len(out)} clubes")
+            return out
+    print("   ⚠️  No se encontró la tabla general en la página de la zona")
+    return []
+
+
 def build_standings(all_matches, equipos_zona=None):
     """
     Tabla de posiciones a partir de los partidos scrapeados.
@@ -365,6 +412,15 @@ def procesar_zona(zona):
             sc_results, rival_results, team_results, all_matches = scrape_all(results_url)
             print("   📐 Calculando posiciones desde resultados...")
             posiciones = build_standings(all_matches, equipos)
+            # La general se BAJA de LISFI, no se calcula: ellos suman solo de la
+            # 2013 a la 2018 y ese criterio es suyo. Si falla, se sigue igual:
+            # es un dato de más, no vale abortar el scrapeo por él.
+            try:
+                print("   ⏳ Bajando la tabla general de la zona...")
+                general = scrape_general(zona["url"])
+            except Exception as e:
+                print(f"   ⚠️  No se pudo bajar la tabla general: {e}")
+                general = []
         except Exception as e:
             msg = f"[{liga_id}] Error: {e}"
             print(f"   ❌ {msg}")
@@ -388,6 +444,8 @@ def procesar_zona(zona):
                 "rivalResults": {str(k): v for k, v in rival_results.items()},
                 "teamResults":  {str(k): v for k, v in team_results.items()},
                 "posiciones":   {str(k): v for k, v in posiciones.items()},
+                # Tal cual la publica LISFI. Vacía si esta vez no se pudo leer.
+                "general":      general,
             }, errores
         errores.extend(f"[{liga_id}] {e}" for e in errs)
         if attempt < 3:
