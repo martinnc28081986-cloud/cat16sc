@@ -474,6 +474,7 @@
      Una clase por cosa, todo con los tokens. El panel viejo escribía
      los colores inline y con hex sueltos, así que la mitad de sus
      botones no tomaban el color del club. ══════════════════════════ */
+  body.coord-mode #bottomNavProfe { display:none !important; }
   .cwrap { max-width:1100px; margin:0 auto; padding:var(--sp-5) var(--sp-5) 90px; }
 
   .ctabs { display:flex; gap:var(--sp-2); overflow-x:auto; padding:var(--sp-4) var(--sp-5);
@@ -2400,6 +2401,9 @@ async function migrarTemporadaSiHaceFalta(){
 }
 
 function startApp(cat){
+// Puede venirse de "Entrar como" del panel de coordinación sin recargar la
+// página, así que hay que devolver el chrome del profe a su estado normal.
+document.body.classList.remove('coord-mode');
 
 // Devuelve la config de una categoría. Si no está en CAT_CONFIG, se deriva de la
 // clave: 'cat2021' -> dbPath 'cat2021'. Todos los años entra una categoría nueva
@@ -8423,10 +8427,12 @@ async function startCoordApp(){
     document.getElementById('logoutBtn').parentNode.insertBefore(catBadge, document.getElementById('logoutBtn'));
   }
   catBadge.textContent = 'COORD';
-  // La barra de abajo es del profe (Entreno / Partido / Plantel): acá no navega
-  // a ningún lado y tapaba la última fila de cada pantalla.
-  const _bnav = document.getElementById('bottomNavProfe');
-  if(_bnav) _bnav.style.display = 'none';
+  // La barra de abajo es del profe (Entreno / Partido / Plantel): en el
+  // coordinador no navega a ningún lado y tapaba la última fila de cada
+  // pantalla. Va por clase en el body y NO por estilo en el elemento: con el
+  // estilo pegado, al pasar de coordinador a profe con "Entrar como" la barra
+  // quedaba escondida y el profe se quedaba sin menú.
+  document.body.classList.add('coord-mode');
   renderSeasonBar();
   applyReadOnlyUI();
 
