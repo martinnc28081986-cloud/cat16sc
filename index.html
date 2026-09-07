@@ -8537,9 +8537,45 @@ async function startCoordApp(){
 
   // ── POSICIONES Y RESULTADOS ──
   let _POS = LIGA_DATA.posiciones, _SCR = {};
-  // Tabla general TAL CUAL la publica LISFI, que la baja el scraper.
-  // Vacía si esa zona todavía no se scrapeó con la versión que la trae.
-  const GENERAL = Array.isArray(LIGA_DATA.general) ? LIGA_DATA.general : [];
+  /* ── TABLA GENERAL ──────────────────────────────────────────────
+     LISFI la publica en la página de la zona, pero la carga con JavaScript:
+     el scraper baja el HTML crudo y ahí esa tabla no existe (lo confirma su
+     propio diagnóstico — ve 2 tablas y ninguna es esa). Así que se calcula.
+
+     El criterio se verificó contra la tabla publicada, fila por fila: suman las
+     SEIS CATEGORÍAS MÁS GRANDES y dejan afuera las dos más chicas. Hoy eso es
+     de la 2013 a la 2018; para Sagrado da 18 PJ · 8 PG · 1 PE · 9 PP · 22 GF ·
+     28 GC · 17 PTS, idéntico a lo que muestra la liga. Sumando las ocho daría
+     24 PJ y 28 PTS, que es lo que estaba mal antes.
+
+     Se toman "las 6 más grandes" y no los años 2013-2018 escritos a mano porque
+     todos los años entra una categoría y sale otra: en 2027 serían la 2014 a la
+     2019 y esto sigue dando bien solo.
+
+     Si algún día el scraper logra bajar la tabla, esa manda: es la fuente. */
+  const CATS_EN_GENERAL = 6;
+  const GENERAL = (() => {
+    const deLaLiga = Array.isArray(LIGA_DATA.general) ? LIGA_DATA.general : [];
+    if(deLaLiga.length) return deLaLiga;          // la de la liga, si se pudo leer
+
+    const conTabla = COMP_CATS.filter(c => (_POS[c.num] || []).length)
+                              .sort((a,b) => a.num - b.num)   // más grandes primero
+                              .slice(0, CATS_EN_GENERAL);
+    if(!conTabla.length) return [];
+    const acum = {};
+    conTabla.forEach(c => (_POS[c.num] || []).forEach(r => {
+      const eq = (r.equipo || r.eq || '').trim();
+      if(!eq) return;
+      const k = eq.toUpperCase();
+      if(!acum[k]) acum[k] = {eq, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, pts:0};
+      ['pj','pg','pe','pp','gf','gc'].forEach(x => { acum[k][x] += (r[x] || 0); });
+      acum[k].pts += (r.pts != null ? r.pts : (r.puntos || 0));
+    }));
+    // Mismo desempate que usa la liga: puntos, después diferencia de gol, después
+    // goles a favor. Verificado contra el orden real de su tabla.
+    return Object.values(acum).sort((a,b) =>
+      b.pts - a.pts || (b.gf-b.gc) - (a.gf-a.gc) || b.gf - a.gf);
+  })();
   const _isLisfi = !_ligaId || _ligaId.includes('lisfi');
   if(!_isLisfi){
     try {
@@ -9407,7 +9443,7 @@ async function startCoordApp(){
        cuenta el número no coincidiría con el que ven todos los clubes. */
     if(GENERAL.length){
       h += '<div class="csec">'+icono('copa')+'Posiciones general'+
-           '<span class="cont">como la publica '+esc(_ligaNombre ? 'la liga' : 'la liga')+'</span></div>';
+           '<span class="cont">las '+CATS_EN_GENERAL+' categorías más grandes</span></div>';
       h += '<div class="ccard cscroll"><table class="ctbl"><thead><tr>'+
         '<th>#</th><th class="izq">Club</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th>'+
         '<th>GF</th><th>GC</th><th>Pts</th></tr></thead><tbody>'+
@@ -9419,9 +9455,9 @@ async function startCoordApp(){
             '<td>'+n(g.pe)+'</td><td>'+n(g.pp)+'</td><td>'+n(g.gf)+'</td><td>'+n(g.gc)+'</td>'+
             '<td style="font-weight:700;color:var(--accent)">'+n(g.pts)+'</td></tr>';
         }).join('')+'</tbody></table></div>';
-      h += '<div class="cnota">Es la tabla de la liga, bajada tal cual junto con el resto de los '+
-           'resultados. Suma las categorías 2013 a 2018 &mdash; la 2019 y la 2020 no entran &mdash;, '+
-           'que es el criterio de la liga, no nuestro.</div>';
+      h += '<div class="cnota">Mismo criterio que la tabla general de la liga: suma las '+
+           CATS_EN_GENERAL+' categorías más grandes y deja afuera las dos más chicas. '+
+           'Verificado contra la tabla publicada, fila por fila.</div>';
     }
 
     h += '<div class="csec">'+icono('tabla')+'Tabla por categoría</div>';
