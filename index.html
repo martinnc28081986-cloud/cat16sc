@@ -595,7 +595,10 @@
   .cjug .nm { font-weight:500; font-size:var(--f-md); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .cjug .mt { font-size:var(--f-sm); color:var(--muted); }
   .cjug .mt .avisa { color:var(--draw); }
-  .cjug .pc { font-family:'Bebas Neue',sans-serif; font-size:var(--f-lg); flex:none; width:44px; text-align:right; }
+  /* OJO con el nombre: .pc ya existe como estado del punto de la racha
+     (.pt.pc = jugó todo). Llamar igual al porcentaje hacía que este ancho de
+     44px se aplicara a los puntos y se vieran como óvalos. */
+  .cjug .pcent { font-family:'Bebas Neue',sans-serif; font-size:var(--f-lg); flex:none; width:44px; text-align:right; }
   .cjug .racha { margin:0; }
   @media (max-width:520px){ .cjug .racha { display:none; } }
 
@@ -1116,7 +1119,12 @@ const FC = {
 const app = initializeApp(FC);
 const db  = getDatabase(app);
 const auth = getAuth(app);
-let CLUB_PATH = 'clubs/sagrado-corazon'; // Prefijo multitenant — se actualiza al login
+/* Prefijo multitenant. Arranca en un club que NO existe a propósito: antes el
+   default era un club real y cualquier cosa que leyera antes del login mostraba
+   SUS datos a otro club sin que se notara (así pasó con las suspensiones). Con
+   una ruta inexistente, un error de esos se ve enseguida en vez de disfrazarse
+   de dato ajeno. Se reasigna al login, en doLogin y en saEntrarComo. */
+let CLUB_PATH = 'clubs/_sin-club';
 window.showToast = function(msg){ const t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); };
 // Variables globales de torneo — accesibles desde profe y coordinador
 let TORNEO_ID = 'default';
@@ -7087,7 +7095,10 @@ async function renderSAUsuarios(){
 // ── ACCIONES ──
 window.saEntrarComo = function(cat, clubId){
   // Actualizar CLUB_PATH al club seleccionado
-  CLUB_PATH = 'clubs/' + (clubId || 'sagrado-corazon');
+  // Sin id no se entra a ningún lado: el fallback a un club real hacía que un
+  // error de datos terminara mostrando el club equivocado.
+  if(!clubId){ showToast('No se pudo abrir el club'); return; }
+  CLUB_PATH = 'clubs/' + clubId;
   // Cambia el club/categoría: el estado de temporada del anterior no sirve más
   resetContextoTemporada();
   // Y las suspensiones tienen que pasar a escuchar al club nuevo
@@ -8592,6 +8603,21 @@ async function startCoordApp(){
   let AVISOS = {};       // clubs/{club}/config/avisos
   let DIAS_ENT = [], SUSP_ENT = {};
 
+  /* ── DÍA DE CITACIÓN ────────────────────────────────────────────
+     De lunes a jueves es normal que ninguna categoría haya citado todavía, y
+     ver ocho en rojo toda la semana convierte el panel en ruido: cuando llega
+     el viernes ya nadie lo mira. Así que el pendiente de citar aparece recién
+     desde el día de citación, y de ahí en adelante no se va hasta que citen.
+     Días en formato ISO (lunes 0 … domingo 6) para que el fin de semana quede
+     al final y la comparación sea un simple "de acá en adelante". */
+  // Vale para TODOS los clubes por igual: no es configuración por club sino la
+  // regla de la liga, que juega los sábados. El día que entre una liga que
+  // juegue otro día, se cambia acá y cambia para todos a la vez.
+  const DIA_CITACION = 4;                      // 4 = viernes
+  const _DIAS_ISO = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+  function _hoyISO(){ return (new Date().getDay() + 6) % 7; }
+  function esDiaDeCitacion(){ return _hoyISO() >= DIA_CITACION; }
+
   const ANIO = esHistorico() ? (_anioDeZona(TORNEO_ID) || new Date().getFullYear())
                              : new Date().getFullYear();
 
@@ -8755,7 +8781,12 @@ async function startCoordApp(){
   function pendientes(){
     const prox = proximaFecha(), ult = ultimaJugada(), out = [];
     COMP_CATS.forEach(c => {
-      if(prox && !citoLaFecha(c.key, prox)){
+      /* Se reclama desde el día de citación… o desde que el coordinador avisó.
+         Si una fecha especial se juega el domingo y avisa el sábado, a partir de
+         ahí lo tiene en la lista con el estado (si lo vieron, si no entraron):
+         sin esto, avisaba y el pendiente no le aparecía hasta el viernes
+         siguiente — o sea, después del partido. */
+      if(prox && !citoLaFecha(c.key, prox) && (esDiaDeCitacion() || avisoDe(c.key))){
         out.push({ nivel:'alta', cat:c, tipo:'citar', fecha:prox,
                    que:'No citó para la fecha '+prox.fecha });
       }
@@ -8958,9 +8989,22 @@ async function startCoordApp(){
     // Pendientes
     h += '<div class="csec">'+icono('lista')+'Pendientes<span class="cont">'+pend.length+
          (pend.length===1?' cosa por resolver':' cosas por resolver')+'</span></div>';
-    if(!pend.length){
+    // Cuántas no citaron todavía — se sabe siempre, aunque el pendiente no
+    // se muestre hasta el día de citación
+    const faltanCitar = prox ? COMP_CATS.filter(c => !citoLaFecha(c.key, prox)) : [];
+
+    // Antes del día de citación no se reclama, pero hay que decir por qué: si no,
+    // parece que está todo al día cuando en realidad todavía nadie citó.
+    if(faltanCitar.length && !esDiaDeCitacion()){
+      h += '<div class="cnota" style="margin:0 0 var(--sp-4)">'+
+        faltanCitar.length+(faltanCitar.length===1?' categoría todavía no citó':' categorías todavía no citaron')+
+        ' para la fecha '+prox.fecha+'. No se reclama hasta el <b>'+_DIAS_ISO[DIA_CITACION]+'</b>, '+
+        'para que el aviso no se vuelva paisaje. Igual podés avisarles ahora.</div>';
+    }
+    if(!pend.length && !faltanCitar.length){
       h += '<div class="cvacio">Está todo al día.<br>Ninguna categoría tiene carga pendiente.</div>';
-    } else {
+    }
+    if(pend.length || faltanCitar.length){
       const sinAvisar = prox
         ? COMP_CATS.filter(c => !citoLaFecha(c.key,prox) && !avisoDe(c.key)).map(c=>c.key)
         : [];
@@ -8973,6 +9017,8 @@ async function startCoordApp(){
           '<button class="cbtn on" onclick="window.coordAvisar('+JSON.stringify(sinAvisar).replace(/"/g,'&quot;')+
             ','+(prox?prox.fecha:'null')+')">Avisar a '+sinAvisar.length+'</button></div>';
       }
+    }
+    if(pend.length){
       h += pend.map(p=>{
         const av = p.tipo==='citar' ? avisoDe(p.cat.key) : null;
         let est = esc(p.cat.label);
@@ -9013,9 +9059,20 @@ async function startCoordApp(){
   function vistaEquipos(){
     if(!cargado) return spinner;
     const prox = proximaFecha();
-    let h = '<div class="csec">'+icono('plantel')+'Categorías<span class="cont">acumulado '+ANIO+'</span></div>';
+    let h = '<div class="csec">'+icono('plantel')+'Categorías'+
+            '<span class="cont">de menor a mayor presencia &middot; '+ANIO+'</span></div>';
     h += '<div class="cgrid dos">';
-    COMP_CATS.forEach(c=>{
+    // La que peor viene, primero: es la que hay que mirar. Las que todavía no
+    // tienen entrenamientos cargados van al final — no es que anden mal, es que
+    // no hay con qué compararlas.
+    const _ordenadas = COMP_CATS.slice().sort((a,b)=>{
+      const pa = presenciaDeCat(a.key), pb = presenciaDeCat(b.key);
+      if(pa === null && pb === null) return 0;
+      if(pa === null) return 1;
+      if(pb === null) return -1;
+      return pa - pb;
+    });
+    _ordenadas.forEach(c=>{
       const pres = presenciaDeCat(c.key);
       const plantel = (D[c.key].plantel||[]).length;
       const fila = (POS[c.num]||[]).findIndex(r => isSC(r.equipo || r.eq || ''));
@@ -9114,9 +9171,14 @@ async function startCoordApp(){
 
     const q = filtroJug.trim().toLowerCase();
     let lista = todos.filter(j => (!q || j.nombre.toLowerCase().includes(q)) && (!catJug || j.catKey===catJug));
+    // Los que piden atención arriba y, dentro de cada grupo, de menor a mayor
+    // presencia: el que menos viene es el que primero hay que mirar.
     lista.sort((a,b)=>{
       const ma = a.motivo?0:1, mb = b.motivo?0:1;
-      return ma!==mb ? ma-mb : a.nombre.localeCompare(b.nombre);
+      if(ma !== mb) return ma - mb;
+      const pa = a.pres === null ? 101 : a.pres;   // sin datos, al final
+      const pb = b.pres === null ? 101 : b.pres;
+      return pa !== pb ? pa - pb : a.nombre.localeCompare(b.nombre);
     });
 
     if(!lista.length){
@@ -9136,7 +9198,7 @@ async function startCoordApp(){
           '<div class="mt">'+esc(c.label.replace(/^Cat /,''))+
             (j.motivo?' &middot; <span class="avisa">'+esc(j.motivo)+'</span>':'')+'</div></div>'+
           '<div class="racha">'+rachaHtml(j.racha)+'</div>'+
-          (j.pres===null ? '' : '<div class="pc" style="color:var(--'+pctCls(j.pres)+')">'+j.pres+'%</div>')+
+          (j.pres===null ? '' : '<div class="pcent" style="color:var(--'+pctCls(j.pres)+')">'+j.pres+'%</div>')+
         '</button>';
         if(jugAbierto === id){
           f += '<div class="ccard" style="margin-top:calc(-1 * var(--sp-2));border-color:rgba(var(--accent-rgb),.35)">'+
@@ -9218,7 +9280,44 @@ async function startCoordApp(){
       const conTabla = COMP_CATS.find(c => (POS[c.num]||[]).length);
       catLiga = (conTabla || COMP_CATS[0] || {key:''}).key;
     }
-    h += '<div class="csec">'+icono('tabla')+'Tabla de posiciones</div>';
+    /* ── TABLA GENERAL ──
+       Suma los puntos de TODAS las categorías del club por equipo. El panel
+       viejo la armaba con una lista fija [13..18], así que las categorías 2019
+       y 2020 no sumaban — y cuando entre la 2021 tampoco habría sumado.
+       Acá las categorías salen de las que el club tiene cargadas. */
+    const gen = {};
+    let _catsEnGeneral = 0;
+    COMP_CATS.forEach(c => {
+      const tabla = POS[c.num] || [];
+      if(!tabla.length) return;
+      _catsEnGeneral++;
+      tabla.forEach(r => {
+        const eq = (r.equipo || r.eq || '').trim();
+        if(!eq) return;
+        const k = eq.toUpperCase();
+        if(!gen[k]) gen[k] = { eq, pts:0, pj:0, cats:0 };
+        gen[k].pts += (r.pts != null ? r.pts : (r.puntos || 0));
+        gen[k].pj  += (r.pj || 0);
+        gen[k].cats++;
+      });
+    });
+    const general = Object.values(gen).sort((a,b)=> b.pts - a.pts || b.pj - a.pj);
+    if(general.length){
+      h += '<div class="csec">'+icono('copa')+'Tabla general'+
+           '<span class="cont">suma de las '+_catsEnGeneral+' categorías</span></div>';
+      h += '<div class="ccard cscroll"><table class="ctbl"><thead><tr>'+
+        '<th>#</th><th class="izq">Club</th><th>Cat</th><th>PJ</th><th>Pts</th>'+
+        '</tr></thead><tbody>'+general.map((g,i)=>
+          '<tr'+(isSC(g.eq)?' class="nos"':'')+'><td>'+(i+1)+'</td>'+
+          '<td class="izq">'+esc(g.eq)+'</td><td>'+g.cats+'</td><td>'+g.pj+'</td>'+
+          '<td style="font-weight:700;color:var(--accent)">'+g.pts+'</td></tr>').join('')+
+        '</tbody></table></div>';
+      h += '<div class="cnota">Suma los puntos de todas las categorías del club que tienen tabla '+
+           'cargada. La columna <b>Cat</b> dice cuántas categorías sumó cada club: si a alguno le '+
+           'falta una, el total no es comparable y conviene mirarlo con eso en cuenta.</div>';
+    }
+
+    h += '<div class="csec">'+icono('tabla')+'Tabla por categoría</div>';
     h += '<div class="cfila">'+COMP_CATS.map(c=>'<button class="cbtn'+(catLiga===c.key?' on':'')+
       '" onclick="window.coordCatLiga(\''+c.key+'\')">'+esc(c.label.replace(/^Cat /,''))+'</button>').join('')+'</div>';
 
