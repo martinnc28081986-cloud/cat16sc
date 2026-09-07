@@ -4904,6 +4904,10 @@ async function _ppSaveStats(key,stats){
   // marcado por error), no un dato del partido: no va a Firebase.
   const limpio = JSON.parse(JSON.stringify(stats||{}));
   Object.values(limpio.jugadores||{}).forEach(j=>{ delete j._golesPrev; });
+  // Marca de que el profe pasó por acá. Sin esto, un partido que terminó 0-0 y
+  // sin cambios se guardaba como un objeto vacío — y Firebase no guarda objetos
+  // vacíos, así que borraba el nodo y quedaba como si nunca se hubiera cargado.
+  limpio.cargadoEl = new Date().toISOString().slice(0,10);
   await set(ref(db,DB_PREFIX+'/stats/'+key),limpio);
 }
 
@@ -8678,14 +8682,21 @@ async function startCoordApp(){
     return { gf:r.gf, gc:r.gc, res: r.gf>r.gc ? 'V' : r.gf<r.gc ? 'L' : 'E' };
   }
 
-  // ¿Cargó el post partido de esa fecha?
-  function cargoGoles(catKey, f){
-    if(!f) return true;
+  /* ── ¿Falta cargar el post partido? ──
+     Se compara contra el resultado REAL de la liga, no contra si el profe tocó
+     algo. Si el equipo hizo 0 goles —perdió 0-2, empató 0-0— no hay nada que
+     cargar y no es un pendiente: pedírselo igual era mentirle al coordinador.
+     Devuelve cuántos goles faltan cargar, o null si está al día. */
+  function golesFaltantes(catKey, f){
+    if(!f) return null;
+    const cat = catDe(catKey);
+    const r = resultadoDe(cat.num, f.fecha);
+    if(!r) return null;                       // sin resultado: no sabemos, no se pide
     const z = (D[catKey] && D[catKey].zonas) ? D[catKey].zonas[TORNEO_ID] : null;
-    if(!z || !z.stats) return false;
-    const k = citKey(f);
-    const st = z.stats[k];
-    return !!(st && st.jugadores && Object.keys(st.jugadores).length);
+    const st = z && z.stats ? z.stats[citKey(f)] : null;
+    const cargados = Object.values((st && st.jugadores) || {})
+      .reduce((n, p) => n + ((p && p.goles) || 0), 0);
+    return cargados >= r.gf ? null : (r.gf - cargados);
   }
 
   // Entrenamientos de esta semana: cuántos se esperaban y cuántos se cargaron
@@ -8722,6 +8733,21 @@ async function startCoordApp(){
     return Math.round(suma / plantel.length * 100);
   }
 
+  /* Fechas que ya se jugaron y quedaron SIN citación cargada.
+     El panel miraba solo la fecha que viene, así que un profe que nunca citó
+     —como pasó con una categoría que se salteó las fechas 1, 2 y 3— no aparecía
+     en ningún lado. Son las que más importan: ya no se pueden citar a tiempo,
+     pero dicen que ese profe no está usando la app. */
+  function fechasSinCitar(catKey){
+    if(!_hayFixture) return [];
+    const jugadas = new Set();
+    COMP_CATS.forEach(c => (RESULTADOS[c.num]||[]).forEach(r => jugadas.add(+r.f)));
+    return FIXTURE_C
+      .filter(f => f.cond !== '-' && !_suspensions[f.fecha] &&
+                   jugadas.has(+f.fecha) && !citoLaFecha(catKey, f))
+      .map(f => f.fecha);
+  }
+
   /* ── PENDIENTES ────────────────────────────────────────────────
      El corazón del panel: qué falta hacer y de quién. Se calcula, no se
      escribe a mano. Cada pendiente sabe a qué categoría pertenece y qué tipo
@@ -8733,9 +8759,21 @@ async function startCoordApp(){
         out.push({ nivel:'alta', cat:c, tipo:'citar', fecha:prox,
                    que:'No citó para la fecha '+prox.fecha });
       }
-      if(ult && !cargoGoles(c.key, ult)){
-        out.push({ nivel:'media', cat:c, tipo:'goles', fecha:ult,
-                   que:'Faltan los goles de la fecha '+ult.fecha });
+      const viejas = fechasSinCitar(c.key);
+      if(viejas.length){
+        const lista = viejas.length > 6
+          ? viejas.slice(0,6).join(', ')+' +'+(viejas.length-6)
+          : viejas.join(', ');
+        out.push({ nivel:'alta', cat:c, tipo:'sincitar', fechas:viejas,
+                   que: viejas.length === 1
+                     ? 'Nunca citó la fecha '+lista+', que ya se jugó'
+                     : 'Nunca citó '+viejas.length+' fechas ya jugadas: '+lista });
+      }
+      const faltan = ult ? golesFaltantes(c.key, ult) : null;
+      if(faltan){
+        out.push({ nivel:'media', cat:c, tipo:'goles', fecha:ult, cuantos:faltan,
+                   que:'Falta'+(faltan===1?' cargar 1 gol':'n cargar '+faltan+' goles')+
+                       ' de la fecha '+ult.fecha });
       }
       const e = entrenosDeLaSemana(c.key);
       if(e.esperados && e.cargados < e.esperados){
@@ -8811,14 +8849,29 @@ async function startCoordApp(){
     const c = catDe(catKey), prox = proximaFecha(), ult = ultimaJugada();
     const cab = '👥 '+c.label;
     let txt = '';
+    if(tipo === 'sincitar'){
+      const v = fechasSinCitar(catKey);
+      abrirDlgWA('Fechas sin citar — '+c.label,
+        'Estas fechas ya se jugaron y no tienen citación cargada. Todavía se pueden cargar.',
+        ['📋 *'+_clubNombre.toUpperCase()+' — FECHAS SIN CITAR*', cab,
+         '', 'Quedaron sin cargar las citaciones de:',
+         ...v.map(n=>'  • Fecha '+n),
+         '', 'Se pueden cargar igual, entrando a la fecha en Citaciones.',
+         '👉 app.miplantel.com.ar'].join('\n'));
+      return;
+    }
     if(tipo === 'citar')
       txt = ['⭐ *'+_clubNombre.toUpperCase()+' — FALTA CITAR*', cab,
              prox ? '🆚 Fecha '+prox.fecha+' vs '+prox.rival+' | '+(prox.cond==='L'?'Local':'Visitante') : '',
              '', 'Todavía no están cargados los citados.', '👉 app.miplantel.com.ar'].filter(Boolean).join('\n');
-    else if(tipo === 'goles')
+    else if(tipo === 'goles'){
+      const n = ult ? golesFaltantes(catKey, ult) : null;
       txt = ['⚽ *'+_clubNombre.toUpperCase()+' — FALTAN LOS GOLES*', cab,
              ult ? '🆚 Fecha '+ult.fecha+' vs '+ult.rival : '',
-             '', 'Falta cargar el post partido.', '👉 app.miplantel.com.ar'].filter(Boolean).join('\n');
+             '', n ? 'Falta'+(n===1?' cargar 1 gol':'n cargar '+n+' goles')+' del partido.'
+                  : 'Falta cargar el post partido.',
+             '👉 app.miplantel.com.ar'].filter(Boolean).join('\n');
+    }
     else
       txt = ['📋 *'+_clubNombre.toUpperCase()+' — FALTA CARGAR ASISTENCIA*', cab,
              '', 'Quedaron entrenamientos de esta semana sin cargar.', '👉 app.miplantel.com.ar'].join('\n');
@@ -8948,8 +9001,9 @@ async function startCoordApp(){
         return '<div class="crow">'+chipCat(c)+
           '<div class="nom">'+(r ? '' : '<span style="color:var(--muted)">sin resultado</span>')+'</div>'+
           (r ? '<div class="cres '+r.res+'">'+r.gf+' - '+r.gc+'</div>' : '')+
-          '<div class="det">'+(cargoGoles(c.key, ult) ? '' :
-            '<span style="color:var(--draw)">sin goles cargados</span>')+'</div></div>';
+          '<div class="det">'+((()=>{ const n = golesFaltantes(c.key, ult);
+            return n ? '<span style="color:var(--draw)">falta'+(n===1?' 1 gol':'n '+n+' goles')+'</span>' : '';
+          })())+'</div></div>';
       }).join('')+'</div>';
     }
     return h;
