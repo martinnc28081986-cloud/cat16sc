@@ -8781,12 +8781,12 @@ async function startCoordApp(){
   function pendientes(){
     const prox = proximaFecha(), ult = ultimaJugada(), out = [];
     COMP_CATS.forEach(c => {
-      /* Se reclama desde el día de citación… o desde que el coordinador avisó.
-         Si una fecha especial se juega el domingo y avisa el sábado, a partir de
-         ahí lo tiene en la lista con el estado (si lo vieron, si no entraron):
-         sin esto, avisaba y el pendiente no le aparecía hasta el viernes
-         siguiente — o sea, después del partido. */
-      if(prox && !citoLaFecha(c.key, prox) && (esDiaDeCitacion() || avisoDe(c.key))){
+      /* Solo desde el día de citación. Haber avisado NO lo destraba: si no,
+         avisar un lunes llenaba el panel de rojo toda la semana, que es
+         justamente lo que la regla del viernes viene a evitar. El sábado y el
+         domingo ya entran por ser posteriores al viernes, así que una fecha
+         especial de fin de semana queda cubierta igual. */
+      if(prox && !citoLaFecha(c.key, prox) && esDiaDeCitacion()){
         out.push({ nivel:'alta', cat:c, tipo:'citar', fecha:prox,
                    que:'No citó para la fecha '+prox.fecha });
       }
@@ -8822,7 +8822,15 @@ async function startCoordApp(){
      No se dispara por calendario porque el fixture de la liga no trae los días
      de los partidos: el reloj lo pone el coordinador, que es el que sabe. */
   const AVISOS_PATH = CLUB_PATH+'/config/avisos';
-  function avisoDe(catKey){ return AVISOS[catKey] || null; }
+  /* El aviso vale para la fecha en la que se mandó. Sin este control, el aviso
+     de la fecha 4 se seguía mostrando en la 5 como si el profe ya estuviera
+     avisado de un partido del que nadie le dijo nada. */
+  function avisoDe(catKey, fechaN){
+    const a = AVISOS[catKey];
+    if(!a) return null;
+    if(fechaN != null && a.fecha != null && +a.fecha !== +fechaN) return null;
+    return a;
+  }
   function _haceCuanto(ts){
     if(!ts) return '';
     const min = Math.round((Date.now()-ts)/60000);
@@ -9006,7 +9014,7 @@ async function startCoordApp(){
     }
     if(pend.length || faltanCitar.length){
       const sinAvisar = prox
-        ? COMP_CATS.filter(c => !citoLaFecha(c.key,prox) && !avisoDe(c.key)).map(c=>c.key)
+        ? COMP_CATS.filter(c => !citoLaFecha(c.key,prox) && !avisoDe(c.key, prox.fecha)).map(c=>c.key)
         : [];
       if(sinAvisar.length && !archivoBloqueado()){
         h += '<div class="ccard" style="border-color:rgba(var(--draw-rgb),.35);background:rgba(var(--draw-rgb),.06);'+
@@ -9020,7 +9028,7 @@ async function startCoordApp(){
     }
     if(pend.length){
       h += pend.map(p=>{
-        const av = p.tipo==='citar' ? avisoDe(p.cat.key) : null;
+        const av = p.tipo==='citar' ? avisoDe(p.cat.key, p.fecha && p.fecha.fecha) : null;
         let est = esc(p.cat.label);
         if(av) est += ' &middot; avisado '+_haceCuanto(av.ts)+' &middot; '+
           (av.visto ? '<span style="color:var(--draw)">lo vio '+_haceCuanto(av.visto)+' y no citó</span>'
