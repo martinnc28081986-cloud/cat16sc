@@ -1245,6 +1245,11 @@ function _fechaDeRegistro(cit){
   return '';
 }
 
+// Motivos de ausencia a un entrenamiento. A nivel de módulo porque los escribe
+// el profe y los lee el coordinador, que no pasa por startApp.
+const REASON_LABELS = {lesionado:'Lesionado',enfermedad:'Enfermedad',personal:'Personal',suspendido:'Suspendido',sinaviso:'Sin aviso'};
+window.REASON_LABELS = REASON_LABELS;
+
 /* ── Cuánto jugó cada citado ────────────────────────────────────
    En LISFI a un jugador citado hay que ponerlo sí o sí, así que "citado pero se
    quedó en el banco" no existe. Los casos posibles son: jugó todo, entró desde
@@ -3086,7 +3091,7 @@ function pClass(p){ return p>=75?'hi':p>=50?'mid':'low'; }
 function getResult(n,e){ if(n===''||e==='') return ''; const ni=parseInt(n),ei=parseInt(e); if(isNaN(ni)||isNaN(ei)) return ''; return ni>ei?'V':ni<ei?'L':'E'; }
 
 const REASONS = ['lesionado','enfermedad','personal','suspendido','sinaviso'];
-const REASON_LABELS = {lesionado:'Lesionado',enfermedad:'Enfermedad',personal:'Personal',suspendido:'Suspendido',sinaviso:'Sin aviso'};
+// REASON_LABELS se movió a nivel de módulo: lo usa también el coordinador.
 const REASON_ICONS = {lesionado:'🩹',enfermedad:'🤒',personal:'👤',suspendido:'🚫',sinaviso:'❓'};
 
 window.cycleReason=function(name,e){
@@ -8532,6 +8537,9 @@ async function startCoordApp(){
 
   // ── POSICIONES Y RESULTADOS ──
   let _POS = LIGA_DATA.posiciones, _SCR = {};
+  // Tabla general TAL CUAL la publica LISFI, que la baja el scraper.
+  // Vacía si esa zona todavía no se scrapeó con la versión que la trae.
+  const GENERAL = Array.isArray(LIGA_DATA.general) ? LIGA_DATA.general : [];
   const _isLisfi = !_ligaId || _ligaId.includes('lisfi');
   if(!_isLisfi){
     try {
@@ -8610,13 +8618,16 @@ async function startCoordApp(){
      desde el día de citación, y de ahí en adelante no se va hasta que citen.
      Días en formato ISO (lunes 0 … domingo 6) para que el fin de semana quede
      al final y la comparación sea un simple "de acá en adelante". */
-  // Vale para TODOS los clubes por igual: no es configuración por club sino la
-  // regla de la liga, que juega los sábados. El día que entre una liga que
-  // juegue otro día, se cambia acá y cambia para todos a la vez.
-  const DIA_CITACION = 4;                      // 4 = viernes
+  /* Vale para TODOS los clubes por igual: no es configuración por club sino la
+     regla de la liga, que juega los sábados. El día que entre una liga que
+     juegue otro día, se cambia acá y cambia para todos a la vez.
+     El domingo queda AFUERA a propósito: el partido ya se jugó y reclamar una
+     citación que no llegó a tiempo no sirve para nada. Esa fecha reaparece
+     sola como "nunca citó una fecha ya jugada" cuando entra el resultado. */
+  const DIAS_DE_CITACION = [4, 5];             // viernes y sábado
   const _DIAS_ISO = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
   function _hoyISO(){ return (new Date().getDay() + 6) % 7; }
-  function esDiaDeCitacion(){ return _hoyISO() >= DIA_CITACION; }
+  function esDiaDeCitacion(){ return DIAS_DE_CITACION.includes(_hoyISO()); }
 
   const ANIO = esHistorico() ? (_anioDeZona(TORNEO_ID) || new Date().getFullYear())
                              : new Date().getFullYear();
@@ -9006,7 +9017,7 @@ async function startCoordApp(){
     if(faltanCitar.length && !esDiaDeCitacion()){
       h += '<div class="cnota" style="margin:0 0 var(--sp-4)">'+
         faltanCitar.length+(faltanCitar.length===1?' categoría todavía no citó':' categorías todavía no citaron')+
-        ' para la fecha '+prox.fecha+'. No se reclama hasta el <b>'+_DIAS_ISO[DIA_CITACION]+'</b>, '+
+        ' para la fecha '+prox.fecha+'. No se reclama hasta el <b>'+_DIAS_ISO[DIAS_DE_CITACION[0]]+'</b>, '+
         'para que el aviso no se vuelva paisaje. Igual podés avisarles ahora.</div>';
     }
     if(!pend.length && !faltanCitar.length){
@@ -9143,11 +9154,44 @@ async function startCoordApp(){
     const ult = racha.slice(-5);
     let sinCitar = 0;
     for(let i=racha.length-1; i>=0 && racha[i]==='no'; i--) sinCitar++;
+
+    /* Detalle de entrenamientos, que es lo que se conversa con el padre:
+       cómo viene por mes, por qué faltó, y cuántas seguidas lleva. Un 60% suelto
+       no dice nada; "faltó 4 de las últimas 6, tres sin aviso" sí. */
+    const porMes = {}, motivos = {};
+    let faltasSeguidas = 0, cortada = false, ultimaPresencia = null;
+    Object.entries(d.sesiones)
+      .sort((x,y)=> y[0].localeCompare(x[0]))          // de la más nueva a la más vieja
+      .forEach(([fecha, ses]) => {
+        const vino = (ses.present||[]).includes(nombre);
+        const citado = vino || (ses.absent||[]).includes(nombre);
+        if(!citado) return;                             // no estaba en el plantel ese día
+        const mes = fecha.slice(0,7);
+        if(!porMes[mes]) porMes[mes] = {vino:0, total:0};
+        porMes[mes].total++;
+        if(vino){
+          porMes[mes].vino++;
+          if(!ultimaPresencia) ultimaPresencia = fecha;
+          cortada = true;
+        } else {
+          if(!cortada) faltasSeguidas++;
+          const m = (ses.reasons && ses.reasons[nombre]) || 'sinaviso';
+          motivos[m] = (motivos[m]||0) + 1;
+        }
+      });
+    const meses = Object.entries(porMes).sort((x,y)=> y[0].localeCompare(x[0])).slice(0,4);
+    const totalSes = Object.values(porMes).reduce((n,m)=>n+m.total,0);
+    const totalVino = Object.values(porMes).reduce((n,m)=>n+m.vino,0);
+    // Últimos 6 entrenamientos: la foto corta, que es la que dispara la charla
+    const ultimos6 = Object.entries(d.sesiones).sort((x,y)=> y[0].localeCompare(x[0])).slice(0,6);
+    const vino6 = ultimos6.filter(([,ses]) => (ses.present||[]).includes(nombre)).length;
     const motivo = sinCitar >= OJO_SIN_CITAR ? 'Hace '+sinCitar+' fechas que no es citado'
                  : falto >= OJO_FALTAS       ? falto+' faltas a citaciones'
                  : (pres !== null && pres < OJO_PRESENCIA) ? 'Presencia baja'
                  : '';
-    return { nombre, catKey, pres, citado, falto, jugados, racha:ult, motivo };
+    return { nombre, catKey, pres, citado, falto, jugados, racha:ult, motivo,
+             meses, motivos, faltasSeguidas, ultimaPresencia,
+             totalSes, totalVino, ultimos6: ultimos6.length, vino6 };
   }
 
   function todosLosJugadores(){
@@ -9162,6 +9206,72 @@ async function startCoordApp(){
       const tit = x==='no'?'no citado':x==='falto'?'faltó':x==='todo'?'jugó todo':'entró o salió';
       return '<span class="pt '+cls+'" title="'+tit+'"></span>';
     }).join('');
+  }
+
+  /* El detalle que hace falta para hablar con el padre. Un porcentaje suelto no
+     alcanza: hay que poder decir "de los últimos 6 vino a 2, y las 4 faltas
+     fueron sin aviso". */
+  function fichaEntrenamientos(j){
+    if(!j.totalSes) return '<div class="cnota" style="margin-top:var(--sp-4)">'+
+      'Sin entrenamientos cargados este año para esta categoría.</div>';
+    let h = '<div style="border-top:1px solid var(--border);margin-top:var(--sp-5);padding-top:var(--sp-4)">'+
+      '<div class="cet" style="margin-bottom:var(--sp-4)">Entrenamientos</div>';
+
+    h += '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">En el año</div>'+
+      '<div class="det">'+j.totalVino+' de '+j.totalSes+'</div>'+
+      '<div class="val" style="color:var(--'+pctCls(j.pres)+')">'+j.pres+'%</div></div>';
+
+    if(j.ultimos6){
+      const p6 = Math.round(j.vino6 / j.ultimos6 * 100);
+      h += '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">'+
+        'Últimos '+j.ultimos6+'</div><div class="det">'+j.vino6+' de '+j.ultimos6+'</div>'+
+        '<div class="val" style="color:var(--'+pctCls(p6)+')">'+p6+'%</div></div>';
+    }
+
+    // Mes a mes: para ver si viene mejorando o cayendo
+    if(j.meses.length){
+      h += '<div style="margin-top:var(--sp-5)">'+
+        '<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-3)">Mes a mes</div>';
+      j.meses.forEach(([mes, m]) => {
+        const p = Math.round(m.vino / m.total * 100);
+        const [a2, m2] = mes.split('-');
+        h += '<div style="display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-3)">'+
+          '<div style="width:82px;font-size:var(--f-sm);color:var(--muted);flex:none">'+
+            _nombreMes(+m2 - 1)+' '+a2.slice(2)+'</div>'+
+          '<div class="cbar" style="flex:1;margin:0"><i class="'+pctCls(p)+'" style="width:'+p+'%"></i></div>'+
+          '<div style="width:74px;text-align:right;font-size:var(--f-sm);flex:none">'+
+            m.vino+'/'+m.total+' &middot; <b style="color:var(--'+pctCls(p)+')">'+p+'%</b></div>'+
+        '</div>';
+      });
+      h += '</div>';
+    }
+
+    // Por qué faltó
+    const mot = Object.entries(j.motivos).sort((x,y)=> y[1]-x[1]);
+    if(mot.length){
+      h += '<div style="margin-top:var(--sp-5)">'+
+        '<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-3)">Motivo de las faltas</div>'+
+        '<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap">'+
+        mot.map(([m,n]) => '<span class="ccat'+(m==='sinaviso'?' falta':'')+'">'+
+          esc(REASON_LABELS[m] || m)+' &middot; '+n+'</span>').join('')+
+        '</div></div>';
+    }
+
+    // Lo que dispara la charla
+    const alertas = [];
+    if(j.faltasSeguidas >= 2)
+      alertas.push('Lleva <b>'+j.faltasSeguidas+' entrenamientos seguidos</b> sin venir.');
+    if(j.motivos.sinaviso >= 2)
+      alertas.push('<b>'+j.motivos.sinaviso+' faltas sin aviso.</b>');
+    if(j.ultimaPresencia){
+      const dias = Math.round((Date.now() - new Date(j.ultimaPresencia+'T12:00:00').getTime())/86400000);
+      if(dias >= 14) alertas.push('La última vez que vino fue hace <b>'+dias+' días</b>.');
+    }
+    if(alertas.length){
+      h += '<div class="cnota" style="border-left-color:var(--draw);color:var(--text);margin-top:var(--sp-5)">'+
+        alertas.join('<br>')+'</div>';
+    }
+    return h + '</div>';
   }
 
   function vistaJugadores(){
@@ -9221,7 +9331,9 @@ async function startCoordApp(){
               '<div class="nom" style="font-size:var(--f-sm);color:var(--muted)">Últimos partidos</div>'+
               '<div class="racha">'+rachaHtml(j.racha)+'</div></div>'+
             '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">'+
-              'De '+j.citado+' citaciones jugó</div><div class="val">'+j.jugados+'</div></div>'+
+              'De '+j.citado+(j.citado===1?' citación jugó':' citaciones jugó')+
+              '</div><div class="val">'+j.jugados+'</div></div>'+
+            fichaEntrenamientos(j)+
           '</div>';
         }
         return f;
@@ -9289,40 +9401,27 @@ async function startCoordApp(){
       catLiga = (conTabla || COMP_CATS[0] || {key:''}).key;
     }
     /* ── TABLA GENERAL ──
-       Suma los puntos de TODAS las categorías del club por equipo. El panel
-       viejo la armaba con una lista fija [13..18], así que las categorías 2019
-       y 2020 no sumaban — y cuando entre la 2021 tampoco habría sumado.
-       Acá las categorías salen de las que el club tiene cargadas. */
-    const gen = {};
-    let _catsEnGeneral = 0;
-    COMP_CATS.forEach(c => {
-      const tabla = POS[c.num] || [];
-      if(!tabla.length) return;
-      _catsEnGeneral++;
-      tabla.forEach(r => {
-        const eq = (r.equipo || r.eq || '').trim();
-        if(!eq) return;
-        const k = eq.toUpperCase();
-        if(!gen[k]) gen[k] = { eq, pts:0, pj:0, cats:0 };
-        gen[k].pts += (r.pts != null ? r.pts : (r.puntos || 0));
-        gen[k].pj  += (r.pj || 0);
-        gen[k].cats++;
-      });
-    });
-    const general = Object.values(gen).sort((a,b)=> b.pts - a.pts || b.pj - a.pj);
-    if(general.length){
-      h += '<div class="csec">'+icono('copa')+'Tabla general'+
-           '<span class="cont">suma de las '+_catsEnGeneral+' categorías</span></div>';
+       Se muestra TAL CUAL la publica LISFI. No se calcula: ellos la arman
+       sumando solo las categorías 2013 a 2018 (la 2019 y la 2020 no entran), y
+       ese criterio es de la liga y puede cambiar. Calculándola por nuestra
+       cuenta el número no coincidiría con el que ven todos los clubes. */
+    if(GENERAL.length){
+      h += '<div class="csec">'+icono('copa')+'Posiciones general'+
+           '<span class="cont">como la publica '+esc(_ligaNombre ? 'la liga' : 'la liga')+'</span></div>';
       h += '<div class="ccard cscroll"><table class="ctbl"><thead><tr>'+
-        '<th>#</th><th class="izq">Club</th><th>Cat</th><th>PJ</th><th>Pts</th>'+
-        '</tr></thead><tbody>'+general.map((g,i)=>
-          '<tr'+(isSC(g.eq)?' class="nos"':'')+'><td>'+(i+1)+'</td>'+
-          '<td class="izq">'+esc(g.eq)+'</td><td>'+g.cats+'</td><td>'+g.pj+'</td>'+
-          '<td style="font-weight:700;color:var(--accent)">'+g.pts+'</td></tr>').join('')+
-        '</tbody></table></div>';
-      h += '<div class="cnota">Suma los puntos de todas las categorías del club que tienen tabla '+
-           'cargada. La columna <b>Cat</b> dice cuántas categorías sumó cada club: si a alguno le '+
-           'falta una, el total no es comparable y conviene mirarlo con eso en cuenta.</div>';
+        '<th>#</th><th class="izq">Club</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th>'+
+        '<th>GF</th><th>GC</th><th>Pts</th></tr></thead><tbody>'+
+        GENERAL.map((g,i)=>{
+          const eq = g.eq || g.equipo || '—';
+          const n = v => (v != null ? v : '—');
+          return '<tr'+(isSC(eq)?' class="nos"':'')+'><td>'+(i+1)+'</td>'+
+            '<td class="izq">'+esc(eq)+'</td><td>'+n(g.pj)+'</td><td>'+n(g.pg)+'</td>'+
+            '<td>'+n(g.pe)+'</td><td>'+n(g.pp)+'</td><td>'+n(g.gf)+'</td><td>'+n(g.gc)+'</td>'+
+            '<td style="font-weight:700;color:var(--accent)">'+n(g.pts)+'</td></tr>';
+        }).join('')+'</tbody></table></div>';
+      h += '<div class="cnota">Es la tabla de la liga, bajada tal cual junto con el resto de los '+
+           'resultados. Suma las categorías 2013 a 2018 &mdash; la 2019 y la 2020 no entran &mdash;, '+
+           'que es el criterio de la liga, no nuestro.</div>';
     }
 
     h += '<div class="csec">'+icono('tabla')+'Tabla por categoría</div>';
