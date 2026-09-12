@@ -1268,6 +1268,12 @@ function _jugoDe(st){
 }
 window._jugoDe = _jugoDe;
 
+// Clave del jugador dentro de citaciones/{key}/rsvp — Realtime Database no
+// acepta '.', '#', '$', '[', ']', '/' en una key, así que se reemplazan.
+// El mismo reemplazo lo hace confirmar.html del lado del padre.
+function rsvpKey(nombre){ return String(nombre||'').replace(/[.#$\[\]/]/g, '_'); }
+window.rsvpKey = rsvpKey;
+
 // Devuelve 'todo' | 'entro' | 'salio' | 'falto', o null si no estuvo citado.
 function jugoEnPartido(cit, stats, nombre){
   if(!cit || !(cit.citados||[]).includes(nombre)) return null;
@@ -4148,7 +4154,9 @@ window.shareCit = async function(key){
   cit.citados.forEach((p,i)=>lines.push('  '+(i+1)+'. '+p));
   if(cit.camisetero){ lines.push(''); lines.push('👕 Camisetas: *'+cit.camisetero+'*'); }
   lines.push('');
-  lines.push('✅ Confirmar asistencia respondiendo este mensaje');
+  const clubIdWA = CLUB_PATH.split('/')[1] || '';
+  const rsvpUrl = 'https://app.miplantel.com.ar/confirmar.html?c='+encodeURIComponent(clubIdWA)+'&d='+encodeURIComponent(CFG.dbPath)+'&t='+encodeURIComponent(TORNEO_ID)+'&k='+encodeURIComponent(key);
+  lines.push('✅ Confirmá si tu hijo va a estar: '+rsvpUrl);
 
   // Abrir WhatsApp ANTES del await para no romper la cadena de gesto en Safari/iOS
   window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
@@ -4295,7 +4303,13 @@ function renderCitStats(){
       const c=document.createElement('div'); c.className='card';
       c.dataset.citKey = key;
       const deleteBtn=esExtra?'<button class="btn btn-ol delete-extra-btn" style="border-color:var(--red);color:var(--red);font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5);margin-left:var(--sp-3)">🗑</button>':'';
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>'<span class="pill pill-y">'+p+'</span>').join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      // Respuestas de los padres al link de confirmación (rsvp), si las hay.
+      const rsvp=saved.rsvp||{};
+      const rsvpEstados=saved.citados.map(p=>rsvp[rsvpKey(p)]&&rsvp[rsvpKey(p)].estado);
+      const nVoy=rsvpEstados.filter(e=>e==='voy').length;
+      const nNo=rsvpEstados.filter(e=>e==='no').length;
+      const rsvpMeta=(nVoy||nNo)?(' &middot; '+(nVoy?'<span style="color:var(--win)">'+nVoy+' confirmaron</span>':'')+(nVoy&&nNo?' &middot; ':'')+(nNo?'<span style="color:var(--loss)">'+nNo+' avisaron que no</span>':'')):'';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados'+rsvpMeta+'</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>{ const est=rsvp[rsvpKey(p)]&&rsvp[rsvpKey(p)].estado; const marca=est==='voy'?' &#10003;':est==='no'?' &#10005;':''; return '<span class="pill pill-y">'+p+marca+'</span>'; }).join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
       if(esExtra){ c.querySelector('.delete-extra-btn').addEventListener('click', function(e){ e.stopPropagation(); window.deletePartidoExtra(c.dataset.citKey); }); }
       matchList.appendChild(c);

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmar asistencia — MI PLANTEL</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#0a0f18; color:#e9eef5; font-family:'DM Sans',Arial,sans-serif; min-height:100vh; }
+  .wrap { max-width:420px; margin:0 auto; padding:20px 16px 40px; }
+  .logo { font-size:14px; letter-spacing:2px; color:#8fa3b8; text-transform:uppercase; font-weight:700; margin-bottom:18px; }
+  .card { background:#121a26; border:1px solid #24303f; border-radius:12px; padding:16px; margin-bottom:16px; }
+  .label { font-size:10px; color:#8fa3b8; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:6px; }
+  .titulo { font-size:17px; font-weight:600; margin-bottom:4px; }
+  .sub { font-size:12px; color:#8fa3b8; }
+  .msg { text-align:center; color:#8fa3b8; font-size:14px; padding:40px 12px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid #18222f; }
+  .row:last-child { border-bottom:none; }
+  .nombre { font-size:14px; }
+  .estado { font-size:11px; margin-top:2px; }
+  .btns { display:flex; gap:6px; flex:none; }
+  button { font-family:inherit; font-size:12px; font-weight:700; border-radius:8px; padding:8px 12px; cursor:pointer; border:1.5px solid transparent; background:transparent; }
+  .b-voy { border-color:#22c55e; color:#22c55e; }
+  .b-voy.on { background:#22c55e22; }
+  .b-no { border-color:#ef4444; color:#ef4444; }
+  .b-no.on { background:#ef444422; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">Mi Plantel</div>
+  <div id="content" class="msg">Cargando…</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w",
+  authDomain:"presentes-20226-cat-16-sc.firebaseapp.com",
+  databaseURL:"https://presentes-20226-cat-16-sc-default-rtdb.firebaseio.com",
+  projectId:"presentes-20226-cat-16-sc",
+  storageBucket:"presentes-20226-cat-16-sc.firebasestorage.app",
+  messagingSenderId:"567718455944",
+  appId:"1:567718455944:web:96db233da5d1c8a97e8d3d"
+});
+const db = getDatabase(app);
+
+// Mismo reemplazo que rsvpKey() en index.html — tiene que dar la misma key
+// de los dos lados para que el profe encuentre la respuesta del padre.
+function rsvpKey(nombre){ return String(nombre||'').replace(/[.#$\[\]/]/g, '_'); }
+
+const params = new URLSearchParams(window.location.search);
+const c = params.get('c'), d = params.get('d'), t = params.get('t'), k = params.get('k');
+const content = document.getElementById('content');
+
+function mostrarError(msg){
+  content.className = 'msg';
+  content.textContent = msg;
+}
+
+if(!c || !d || !t || !k){
+  mostrarError('Link inválido.');
+} else {
+  const citRef = ref(db, 'clubs/'+c+'/'+d+'/torneos/'+t+'/citaciones/'+k);
+  get(citRef).then(snap => {
+    if(!snap.exists()){ mostrarError('Este partido ya no está disponible.'); return; }
+    const cit = snap.val();
+    render(cit);
+  }).catch(() => {
+    mostrarError('No se pudo cargar el partido. Probá de nuevo en un rato.');
+  });
+}
+
+function render(cit){
+  const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let fechaStr = '';
+  if(cit.fecha_str){
+    const fd = new Date(cit.fecha_str+'T12:00:00');
+    fechaStr = DIAS[fd.getDay()]+' '+fd.getDate()+'/'+String(fd.getMonth()+1).padStart(2,'0')+'/'+fd.getFullYear();
+  }
+  const condLabel = cit.condicion === 'L' ? 'Local' : cit.condicion === 'V' ? 'Visitante' : '';
+  const citados = cit.citados || [];
+  const rsvp = cit.rsvp || {};
+
+  content.className = '';
+  content.innerHTML =
+    '<div class="card">' +
+      '<div class="label">Próximo partido</div>' +
+      '<div class="titulo">vs '+esc(cit.rival||'')+(condLabel?' &middot; '+condLabel:'')+'</div>' +
+      '<div class="sub">'+[fechaStr, cit.hora ? cit.hora+' hs' : '', cit.cancha||''].filter(Boolean).join(' &middot; ')+'</div>' +
+    '</div>' +
+    '<div class="label" style="margin:0 4px 8px">Tocá el nombre de tu hijo</div>' +
+    '<div class="card" id="lista" style="padding:4px 12px"></div>';
+
+  const lista = document.getElementById('lista');
+  lista.innerHTML = citados.map(nombre => {
+    const key = rsvpKey(nombre);
+    const actual = rsvp[key] && rsvp[key].estado;
+    return '<div class="row" data-key="'+key+'" data-nombre="'+esc(nombre)+'">' +
+      '<div><div class="nombre">'+esc(nombre)+'</div><div class="estado" id="estado-'+key+'"></div></div>' +
+      '<div class="btns">' +
+        '<button class="b-voy'+(actual==='voy'?' on':'')+'" id="voy-'+key+'">Va a estar</button>' +
+        '<button class="b-no'+(actual==='no'?' on':'')+'" id="no-'+key+'">No puede</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  citados.forEach(nombre => {
+    const key = rsvpKey(nombre);
+    pintarEstado(key, rsvp[key] && rsvp[key].estado);
+    document.getElementById('voy-'+key).onclick = () => confirmar(key, nombre, 'voy');
+    document.getElementById('no-'+key).onclick = () => confirmar(key, nombre, 'no');
+  });
+}
+
+function pintarEstado(key, estado){
+  const el = document.getElementById('estado-'+key);
+  if(!el) return;
+  if(estado === 'voy'){ el.textContent = 'Confirmado'; el.style.color = '#22c55e'; }
+  else if(estado === 'no'){ el.textContent = 'Avisó que no puede'; el.style.color = '#ef4444'; }
+  else { el.textContent = ''; }
+}
+
+async function confirmar(key, nombre, estado){
+  const btnVoy = document.getElementById('voy-'+key);
+  const btnNo = document.getElementById('no-'+key);
+  btnVoy.disabled = true; btnNo.disabled = true;
+  try{
+    await update(ref(db, 'clubs/'+c+'/'+d+'/torneos/'+t+'/citaciones/'+k+'/rsvp/'+key), {
+      nombre, estado, ts: Date.now()
+    });
+    btnVoy.classList.toggle('on', estado === 'voy');
+    btnNo.classList.toggle('on', estado === 'no');
+    pintarEstado(key, estado);
+  }catch(e){
+    pintarEstado(key, null);
+    document.getElementById('estado-'+key).textContent = 'No se pudo guardar, probá de nuevo';
+    document.getElementById('estado-'+key).style.color = '#f0b429';
+  }
+  btnVoy.disabled = false; btnNo.disabled = false;
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "rules": {
+    "clubs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'super-admin'",
+      "$clubId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('clubId').val() === $clubId || root.child('users').child(auth.uid).child('role').val() === 'super-admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('clubId').val() === $clubId || root.child('users').child(auth.uid).child('role').val() === 'super-admin')",
+        "$catId": {
+          "torneos": {
+            "$torneoId": {
+              "citaciones": {
+                "$citKey": {
+                  ".read": true,
+                  "rsvp": {
+                    "$nombre": {
+                      ".write": true,
+                      ".validate": "newData.hasChildren(['nombre','estado','ts']) && newData.child('nombre').isString() && newData.child('ts').isNumber() && (newData.child('estado').val() === 'voy' || newData.child('estado').val() === 'no')"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ligas": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'super-admin'",
+      "_activa": {
+        ".read": true
+      },
+      "$ligaId": {
+        "resultados": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'super-admin' || root.child('users').child(auth.uid).child('role').val() === 'coordinator')"
+        }
+      }
+    },
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'super-admin')"
+      }
+    },
+    "presence": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
+  }
+}
