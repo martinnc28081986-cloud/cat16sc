@@ -4154,9 +4154,12 @@ window.shareCit = async function(key){
   cit.citados.forEach((p,i)=>lines.push('  '+(i+1)+'. '+p));
   if(cit.camisetero){ lines.push(''); lines.push('👕 Camisetas: *'+cit.camisetero+'*'); }
   lines.push('');
-  const clubIdWA = CLUB_PATH.split('/')[1] || '';
-  const rsvpUrl = 'https://app.miplantel.com.ar/confirmar.html?c='+encodeURIComponent(clubIdWA)+'&d='+encodeURIComponent(CFG.dbPath)+'&t='+encodeURIComponent(TORNEO_ID)+'&k='+encodeURIComponent(key);
-  lines.push('✅ Confirmá si tu hijo va a estar: '+rsvpUrl);
+  // Link de confirmación (confirmar.html) armado pero apagado por ahora — se
+  // reactiva descomentando estas 3 líneas cuando se decida usar la función.
+  // const clubIdWA = CLUB_PATH.split('/')[1] || '';
+  // const rsvpUrl = 'https://app.miplantel.com.ar/confirmar.html?c='+encodeURIComponent(clubIdWA)+'&d='+encodeURIComponent(CFG.dbPath)+'&t='+encodeURIComponent(TORNEO_ID)+'&k='+encodeURIComponent(key);
+  // lines.push('✅ Confirmá si tu hijo va a estar: '+rsvpUrl);
+  lines.push('✅ Confirmar asistencia respondiendo este mensaje');
 
   // Abrir WhatsApp ANTES del await para no romper la cadena de gesto en Safari/iOS
   window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
