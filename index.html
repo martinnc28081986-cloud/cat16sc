@@ -4099,19 +4099,35 @@ window.saveCitacion=async function(){
 };
 
 
-window.deletePartidoExtra = async function(key){
+// Antes solo se podían borrar los partidos extra (amistosos/copas) — las
+// fechas de fixture no tenían ni editar ni borrar desde esta lista.
+window.deleteCitacion = async function(key){
   if(_roGuard()) return; // temporada archivada: solo lectura
-  if(!citaciones[key]||!citaciones[key].tipo) return;
-  const rival = citaciones[key].rival||'?';
-  if(!confirm('¿Eliminar el partido extra vs '+rival+'?\nEsta acción no se puede deshacer.')) return;
+  const cit = citaciones[key];
+  if(!cit) return;
+  if(!confirm('¿Eliminar la citación vs '+(cit.rival||'?')+'?\nEsta acción no se puede deshacer.')) return;
   try{
     await remove(ref(db, DB_PREFIX+'/citaciones/'+key));
     delete citaciones[key];
     // Limpiar stats si existen
     try{ await remove(ref(db, DB_PREFIX+'/stats/'+key)); }catch(e){}
-    showToast('Partido eliminado');
+    showToast('Citación eliminada');
     renderCitStats();
   } catch(e){ showToast('Error al eliminar'); }
+};
+
+// Lleva a la pestaña Citaciones con este partido ya cargado para editar,
+// sea de fixture (por número de fecha) o extra (por su key).
+window.editCitacion = function(key){
+  const cit = citaciones[key];
+  if(!cit) return;
+  switchTab('citaciones');
+  if(cit.tipo){
+    loadPartidoExtra(key);
+  } else {
+    document.getElementById('citFechaSelect').value = cit.fecha;
+    loadFecha(cit.fecha);
+  }
 };
 
 window.shareCit = async function(key){
@@ -4373,16 +4389,18 @@ function renderCitStats(){
       const titleRival=(esExtra?'':'')+' vs '+saved.rival+'<span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
       const c=document.createElement('div'); c.className='card';
       c.dataset.citKey = key;
-      const deleteBtn=esExtra?'<button class="btn btn-ol delete-extra-btn" style="border-color:var(--red);color:var(--red);font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5);margin-left:var(--sp-3)">🗑</button>':'';
+      const editBtn='<button class="btn btn-ol edit-cit-btn" style="font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5);margin-left:var(--sp-3)">&#9999;&#65039;</button>';
+      const deleteBtn='<button class="btn btn-ol delete-cit-btn" style="border-color:var(--red);color:var(--red);font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5);margin-left:var(--sp-3)">🗑</button>';
       // Respuestas de los padres al link de confirmación (rsvp), si las hay.
       const rsvp=saved.rsvp||{};
       const rsvpEstados=saved.citados.map(p=>rsvp[rsvpKey(p)]&&rsvp[rsvpKey(p)].estado);
       const nVoy=rsvpEstados.filter(e=>e==='voy').length;
       const nNo=rsvpEstados.filter(e=>e==='no').length;
       const rsvpMeta=(nVoy||nNo)?(' &middot; '+(nVoy?'<span style="color:var(--win)">'+nVoy+' confirmaron</span>':'')+(nVoy&&nNo?' &middot; ':'')+(nNo?'<span style="color:var(--loss)">'+nNo+' avisaron que no</span>':'')):'';
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados'+rsvpMeta+'</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>{ const est=rsvp[rsvpKey(p)]&&rsvp[rsvpKey(p)].estado; const marca=est==='voy'?' &#10003;':est==='no'?' &#10005;':''; return '<span class="pill pill-y">'+p+marca+'</span>'; }).join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados'+rsvpMeta+'</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+editBtn+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>{ const est=rsvp[rsvpKey(p)]&&rsvp[rsvpKey(p)].estado; const marca=est==='voy'?' &#10003;':est==='no'?' &#10005;':''; return '<span class="pill pill-y">'+p+marca+'</span>'; }).join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
-      if(esExtra){ c.querySelector('.delete-extra-btn').addEventListener('click', function(e){ e.stopPropagation(); window.deletePartidoExtra(c.dataset.citKey); }); }
+      c.querySelector('.edit-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.editCitacion(c.dataset.citKey); });
+      c.querySelector('.delete-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.deleteCitacion(c.dataset.citKey); });
       matchList.appendChild(c);
     });
   }
