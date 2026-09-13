@@ -133,7 +133,7 @@
   .pt-chip { width:28px; height:28px; display:flex; align-items:center; justify-content:center;
              font-size:11px; font-weight:700; line-height:1; }
   .pt-chip.pc { color:var(--bg); }
-  .pt-chip.pm { background:var(--draw); border:none; color:var(--bg); }
+  .pt-chip.pm { color:var(--text); }             /* sigue el medio círculo de siempre, más grande */
   .pt-chip.pn { color:var(--punto-vacio); }
   .pt-chip.pf { border-radius:var(--r-sm); color:var(--bg); }
   .cit-tot { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--muted);
@@ -5041,7 +5041,7 @@ function participacionDelAnio(anio){
   const a = anio || anioVista();
   const d = _todasLasZonas ? datosDelAnio(a) : {citaciones:{}, stats:{}};
   const out = {};
-  const orden = c => (c && c.fecha_str) || '';
+  const orden = c => (c && c.fecha_str) || (c && c.ts && new Date(c.ts).toISOString().slice(0,10)) || '';
   Object.entries(d.citaciones)
     .sort((x,y) => String(orden(x[1])).localeCompare(String(orden(y[1]))))
     .forEach(([k, cit]) => {
@@ -9231,8 +9231,12 @@ async function startCoordApp(){
     const pres = ses.length
       ? Math.round(ses.filter(s => (s.present||[]).includes(nombre)).length / ses.length * 100)
       : null;
-    // Citaciones del año, ordenadas, con cuánto jugó en cada una
-    const orden = c => (c && c.fecha_str) || String(c && c.fecha || '').padStart(3,'0');
+    // Citaciones del año, ordenadas, con cuánto jugó en cada una.
+    // Un partido extra (amistoso/torneo) sin fecha cargada no tiene fecha_str
+    // ni fecha de fixture — sin el ts como último recurso, ordenaba como si
+    // fuera el partido más viejo del año y quedaba afuera de "los últimos 5"
+    // aunque fuera el más reciente.
+    const orden = c => (c && c.fecha_str) || (c && c.ts && new Date(c.ts).toISOString().slice(0,10)) || String(c && c.fecha || '').padStart(3,'0');
     const cits = Object.entries(d.citaciones)
       .filter(([,c]) => c && c.citados && c.citados.length)
       .sort((a,b)=> String(orden(a[1])).localeCompare(String(orden(b[1]))));
