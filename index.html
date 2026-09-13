@@ -3444,6 +3444,16 @@ function renderStats(mf){
   const grid=document.getElementById('statsGrid'),list=document.getElementById('statsList'),lbl=document.getElementById('statsPeriodLbl');
   const allM=[...new Set(Object.keys(attendance).map(d=>d.slice(0,7)))].sort().reverse();
   grid.innerHTML='';
+  // Cuadro de "Año completo" — antes había que volver a tocar el mes ya
+  // elegido para sacar el filtro; así queda un botón directo, igual que
+  // cualquier mes de la grilla.
+  const totAnioEnt=Object.keys(attendance).length;
+  const avgAnio=totAnioEnt===0?0:Math.round(Object.keys(attendance).reduce((a,d)=>a+(attendance[d].present||[]).length,0)/totAnioEnt/PLAYERS.length*100);
+  const cAnio=document.createElement('div');
+  cAnio.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-5) var(--sp-4);cursor:pointer;transition:border-color 0.2s'+(!selStatsMonth?';border-color:var(--green)':'');
+  cAnio.onclick=()=>renderStats(null);
+  cAnio.innerHTML='<div style="font-weight:600;font-size:var(--f-md);margin-bottom:var(--sp-1)">Año completo</div><div style="font-size:var(--f-micro);color:var(--muted)">'+totAnioEnt+' entrename.</div><div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-xl);color:var(--green);margin-top:var(--sp-2)">'+avgAnio+'%</div>';
+  grid.appendChild(cAnio);
   allM.forEach(m=>{
     const sess=Object.keys(attendance).filter(d=>d.startsWith(m)),tot=sess.length;
     const avg=tot===0?0:Math.round(sess.reduce((a,d)=>a+(attendance[d].present||[]).length,0)/tot/PLAYERS.length*100);
@@ -3455,10 +3465,24 @@ function renderStats(mf){
   });
   const fd=Object.keys(attendance).filter(d=>!mf||d.startsWith(mf));
   if(!fd.length){list.innerHTML='<div class="empty-msg">No hay datos</div>';lbl.textContent=mf?fmtM(mf):'Todos los entrenamientos';return;}
-  const tot=fd.length; lbl.textContent=mf?fmtM(mf)+' - '+tot+' entrename.':'Todos - '+tot+' entrenamientos';
-  const ps=PLAYERS.map(name=>{const count=fd.filter(d=>(attendance[d].present||[]).includes(name)).length;return{name,count,pct:Math.round(count/tot*100)};}).sort((a,b)=>b.pct-a.pct);
+  const tot=fd.length; lbl.textContent=mf?fmtM(mf)+' - '+tot+' entrename.':'Año completo - '+tot+' entrenamientos';
+  // sinAviso: faltas SIN motivo cargado, en el período elegido — es la señal
+  // de compromiso real (una lesión o un aviso a tiempo no cuentan en contra).
+  const ps=PLAYERS.map(name=>{
+    const count=fd.filter(d=>(attendance[d].present||[]).includes(name)).length;
+    const sinAviso=fd.filter(d=>{
+      const s=attendance[d];
+      return (s.absent||[]).includes(name) && ((s.reasons&&s.reasons[name])||'sinaviso')==='sinaviso';
+    }).length;
+    return{name,count,pct:Math.round(count/tot*100),sinAviso};
+  }).sort((a,b)=>b.pct-a.pct);
   list.innerHTML='';
-  ps.forEach(({name,count,pct})=>{const cls=pClass(pct),c=document.createElement('div');c.className='statcard';c.innerHTML='<div class="stattop"><div class="statname">'+name+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+tot+' entrenamientos</div>';list.appendChild(c);});
+  ps.forEach(({name,count,pct,sinAviso})=>{
+    const cls=pClass(pct),c=document.createElement('div');c.className='statcard';
+    const avisoBadge=sinAviso>0?' <span title="'+sinAviso+' falta'+(sinAviso!==1?'s':'')+' sin aviso" style="color:var(--red);font-size:var(--f-micro);">'+'&#9679;'.repeat(Math.min(sinAviso,3))+'</span>':'';
+    c.innerHTML='<div class="stattop"><div class="statname">'+name+avisoBadge+'</div><div class="statpct '+cls+'">'+pct+'%</div></div><div class="prog"><div class="progf '+cls+'" style="width:'+pct+'%"></div></div><div class="statdet">'+count+' / '+tot+' entrenamientos</div>';
+    list.appendChild(c);
+  });
 
   // ── CAUSAS DE AUSENCIA ──
   const REASON_COLORS={lesionado:'#ff6d00',enfermedad:'#aa00ff',personal:'#00b0ff',suspendido:'var(--loss)',sinaviso:'#666'};
@@ -4224,9 +4248,6 @@ function renderCitStats(){
   //    zona tiene su propio fixture; mezclarlas daría "F19 actual" en una zona
   //    de 15 fechas.
   //  · El acumulado por jugador (cuántas veces lo citaste) es del AÑO.
-  const allE=Object.entries(citaciones).sort((a,b)=>(a[1].fecha||0)-(b[1].fecha||0));
-  const tot=allE.filter(([,m])=>m.citados&&m.citados.length>0).length;
-
   const allAnio=Object.entries(CITS()).sort((a,b)=>(a[1].fecha||0)-(b[1].fecha||0));
   const totAnio=allAnio.filter(([,m])=>m.citados&&m.citados.length>0).length;
 
@@ -4239,11 +4260,11 @@ function renderCitStats(){
     return;
   }
 
+  const allE=Object.entries(citaciones).sort((a,b)=>(a[1].fecha||0)-(b[1].fecha||0));
+  const tot=allE.filter(([,m])=>m.citados&&m.citados.length>0).length;
+
   const totalFechas=FIXTURE.filter(f=>f.cond!=='-').length;
   const jugadas=tot;
-  const scW=allE.filter(([,r])=>r.result==='V').length;
-  const scE=allE.filter(([,r])=>r.result==='E').length;
-  const scL=allE.filter(([,r])=>r.result==='L').length;
   const pct=totalFechas?Math.round(jugadas/totalFechas*100):0;
 
   // Primera fecha sin citar y sin suspender (no libre)
