@@ -114,7 +114,7 @@
      Los últimos 5 partidos del equipo al lado de cada nombre, mientras se arma
      la citación. Fijo en 5 y no toda la temporada: 22 fechas de tira miden
      282px y en un celular de 390px no queda lugar para el nombre. ── */
-  .racha { display:flex; gap:var(--sp-2); flex:none; margin-left:var(--sp-4); }
+  .racha { display:flex; gap:5px; flex:none; margin-left:var(--sp-4); }
   /* Los colores del punto van sueltos, no dentro de .racha: los usa también
      la leyenda de arriba, si no ahí salían invisibles. */
   .pt { width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; }
@@ -126,6 +126,16 @@
   /* Faltó: además del color, cambia la FORMA (cuadradito). Así se distingue de
      "jugó todo" aunque el profe no distinga bien el rojo del azul. */
   .pt.pf { background:var(--loss); border-radius:2px; }
+  /* Chip grande con el número de fecha (o iniciales del rival) adentro — es
+     un modificador aparte de .pt, no un tamaño nuevo de .pt en general,
+     porque .pt también lo usa la leyenda y la ficha de jugador del
+     coordinador con los puntitos chicos de siempre. */
+  .pt-chip { width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+             font-size:11px; font-weight:700; line-height:1; }
+  .pt-chip.pc { color:var(--bg); }
+  .pt-chip.pm { background:var(--draw); border:none; color:var(--bg); }
+  .pt-chip.pn { color:var(--punto-vacio); }
+  .pt-chip.pf { border-radius:var(--r-sm); color:var(--bg); }
   .cit-tot { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--muted);
              line-height:1; flex:none; margin-left:var(--sp-4); }
   .prow.sin-ir { border-color:rgba(var(--draw-rgb),.45); background:rgba(var(--draw-rgb),.06); }
@@ -3729,6 +3739,33 @@ const RACHA_N = 5;
 // A partir de cuántas fechas seguidas afuera se muestra el aviso naranja.
 const RACHA_AVISO = 3;
 
+// Etiqueta corta para identificar un partido de la racha ("Fecha 8 vs
+// Hernández", "vs Def. San Lorenzo · Sáb 12/09"). No usa FIXTURE_DATES
+// (es del torneo actual) porque la racha cruza zonas de años/torneos
+// anteriores y esa fecha podría no corresponder.
+function etiquetaPartido(cit){
+  if(!cit) return '';
+  const rival = cit.rival || '?';
+  if(!cit.tipo) return 'Fecha '+cit.fecha+' vs '+rival;
+  let f = '';
+  if(cit.fecha_str){
+    const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const d = new Date(cit.fecha_str+'T12:00:00');
+    f = ' · '+DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  return 'vs '+rival+f;
+}
+
+// Texto que va ADENTRO de cada chip de la racha — tiene que ser cortito
+// (2-3 caracteres) para entrar en el círculo. Fixture: "F"+número de fecha,
+// siempre disponible sin depender del torneo activo. Amistoso/copa (sin
+// fecha de liga): las 2 primeras letras del rival.
+function etiquetaCorta(cit){
+  if(!cit) return '';
+  if(!cit.tipo) return 'F'+cit.fecha;
+  return String(cit.rival||'??').replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g,'').slice(0,2).toUpperCase();
+}
+
 // Los últimos N partidos DEL EQUIPO en el año, del más viejo al más nuevo.
 // Cruza zonas a propósito: en la fecha 1 de una zona nueva, si mirara solo esa
 // zona, la racha estaría vacía para todos justo cuando más sirve.
@@ -3804,7 +3841,11 @@ function renderCitList(){
       const cuando = atras === 0 ? 'último partido'
                    : atras === 1 ? 'partido anterior'
                    : 'hace ' + atras + ' partidos';
-      puntos = '<span class="pt '+cls+'" title="'+cuando+': '+est+'"></span>' + puntos;
+      // El texto adentro del chip identifica el partido a simple vista (sin
+      // hover, que en el celu no existe); el title de todas formas queda
+      // como detalle completo para quien sí puede pasar el mouse.
+      const info = etiquetaPartido(p.cit)+' — '+cuando+': '+est;
+      puntos = '<span class="pt pt-chip '+cls+'" title="'+info+'">'+etiquetaCorta(p.cit)+'</span>' + puntos;
       sinCitar = (j === null) ? sinCitar + 1 : 0;
     });
     const avisa = ultimos.length >= RACHA_AVISO && sinCitar >= RACHA_AVISO;
