@@ -3773,8 +3773,14 @@ function ultimosPartidosDelAnio(n){
   const orden = c => {
     if(c.fecha_str) return c.fecha_str;
     if(c.ts) return new Date(c.ts).toISOString().slice(0,10);
-    // Sin fecha: se ordena por zona y número de fecha, que al menos es estable
-    return String(c._zona||'') + '#' + String(c.fecha||0).padStart(3,'0');
+    if(c.savedAt) return c.savedAt;
+    // Sin ninguna fecha real: se ordena por zona y número de fecha, que al
+    // menos es estable entre sí. El "0#" adelante es a propósito: una fecha
+    // real arranca con "20..." (año), así que sin este prefijo un partido
+    // SIN fecha ("lisfi-zona...#004") comparaba como más nuevo que uno de
+    // HOY ("2026-09-13") solo porque las letras ordenan después que los
+    // números — y el partido de hoy quedaba afuera de "los últimos 5".
+    return '0#' + String(c._zona||'') + '#' + String(c.fecha||0).padStart(3,'0');
   };
   // Se devuelve la citación junto con los stats de ese partido, para poder
   // pintar el punto según cuánto jugó y no solo si fue citado.
