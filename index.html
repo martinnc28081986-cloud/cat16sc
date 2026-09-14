@@ -1292,6 +1292,38 @@ function jugoEnPartido(cit, stats, nombre){
 }
 window.jugoEnPartido = jugoEnPartido;
 
+// Etiqueta corta para identificar un partido de la racha ("Fecha 8 vs
+// Hernández", "vs Def. San Lorenzo · Sáb 12/09"). No usa FIXTURE_DATES
+// (es del torneo actual) porque la racha cruza zonas de años/torneos
+// anteriores y esa fecha podría no corresponder.
+// A nivel de módulo a propósito, como jugoEnPartido de arriba: la usan
+// tanto renderCitList() del profe (startApp) como rachaHtml() del
+// coordinador (startCoordApp), y esas dos funciones no se ven entre sí.
+function etiquetaPartido(cit){
+  if(!cit) return '';
+  const rival = cit.rival || '?';
+  if(!cit.tipo) return 'Fecha '+cit.fecha+' vs '+rival;
+  let f = '';
+  if(cit.fecha_str){
+    const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    const d = new Date(cit.fecha_str+'T12:00:00');
+    f = ' · '+DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  return 'vs '+rival+f;
+}
+window.etiquetaPartido = etiquetaPartido;
+
+// Texto que va ADENTRO de cada chip de la racha — tiene que ser cortito
+// (2-3 caracteres) para entrar en el círculo. Fixture: "F"+número de fecha,
+// siempre disponible sin depender del torneo activo. Amistoso/copa (sin
+// fecha de liga): las 2 primeras letras del rival.
+function etiquetaCorta(cit){
+  if(!cit) return '';
+  if(!cit.tipo) return 'F'+cit.fecha;
+  return String(cit.rival||'??').replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g,'').slice(0,2).toUpperCase();
+}
+window.etiquetaCorta = etiquetaCorta;
+
 // ── Los datos de un año, con el desglose por zona ──────────────
 // Devuelve:
 //   { anio, sesiones:{fecha:{...,_zona}}, citaciones:{key:{...,_zona}},
@@ -3763,32 +3795,8 @@ const RACHA_N = 5;
 // A partir de cuántas fechas seguidas afuera se muestra el aviso naranja.
 const RACHA_AVISO = 3;
 
-// Etiqueta corta para identificar un partido de la racha ("Fecha 8 vs
-// Hernández", "vs Def. San Lorenzo · Sáb 12/09"). No usa FIXTURE_DATES
-// (es del torneo actual) porque la racha cruza zonas de años/torneos
-// anteriores y esa fecha podría no corresponder.
-function etiquetaPartido(cit){
-  if(!cit) return '';
-  const rival = cit.rival || '?';
-  if(!cit.tipo) return 'Fecha '+cit.fecha+' vs '+rival;
-  let f = '';
-  if(cit.fecha_str){
-    const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    const d = new Date(cit.fecha_str+'T12:00:00');
-    f = ' · '+DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0');
-  }
-  return 'vs '+rival+f;
-}
-
-// Texto que va ADENTRO de cada chip de la racha — tiene que ser cortito
-// (2-3 caracteres) para entrar en el círculo. Fixture: "F"+número de fecha,
-// siempre disponible sin depender del torneo activo. Amistoso/copa (sin
-// fecha de liga): las 2 primeras letras del rival.
-function etiquetaCorta(cit){
-  if(!cit) return '';
-  if(!cit.tipo) return 'F'+cit.fecha;
-  return String(cit.rival||'??').replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g,'').slice(0,2).toUpperCase();
-}
+// etiquetaPartido()/etiquetaCorta() viven a nivel de módulo junto a
+// jugoEnPartido() — las usa también rachaHtml() del coordinador.
 
 // Los últimos N partidos DEL EQUIPO en el año, del más viejo al más nuevo.
 // Cruza zonas a propósito: en la fecha 1 de una zona nueva, si mirara solo esa
