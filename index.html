@@ -9285,11 +9285,14 @@ async function startCoordApp(){
       ? Math.round(ses.filter(s => (s.present||[]).includes(nombre)).length / ses.length * 100)
       : null;
     // Citaciones del año, ordenadas, con cuánto jugó en cada una.
-    // Un partido extra (amistoso/torneo) sin fecha cargada no tiene fecha_str
-    // ni fecha de fixture — sin el ts como último recurso, ordenaba como si
-    // fuera el partido más viejo del año y quedaba afuera de "los últimos 5"
-    // aunque fuera el más reciente.
-    const orden = c => (c && c.fecha_str) || (c && c.ts && new Date(c.ts).toISOString().slice(0,10)) || String(c && c.fecha || '').padStart(3,'0');
+    // Sin savedAt/"0#": las fechas de fixture ("001".."022") comparaban como
+    // texto contra las fechas reales de los amistosos ("2026-08-30"), y como
+    // '0' ordena antes que '2', TODO el fixture (de las dos zonas, toda la
+    // temporada) quedaba "más viejo" que cualquier amistoso con fecha
+    // cargada — así, jugadores citados hace días en el fixture actual
+    // aparecían con "hace N fechas que no es citado" con N enorme, porque
+    // los últimos 5 terminaban siendo puros amistosos.
+    const orden = c => (c && c.fecha_str) || (c && c.ts && new Date(c.ts).toISOString().slice(0,10)) || (c && c.savedAt) || ('0#' + String(c && c.fecha || '').padStart(3,'0'));
     const cits = Object.entries(d.citaciones)
       .filter(([,c]) => c && c.citados && c.citados.length)
       .sort((a,b)=> String(orden(a[1])).localeCompare(String(orden(b[1]))));
