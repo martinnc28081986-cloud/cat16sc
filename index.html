@@ -9288,15 +9288,15 @@ async function startCoordApp(){
     let citado = 0, falto = 0, jugados = 0;
     const racha = [];
     cits.forEach(([k,c])=>{
-      if(!(c.citados||[]).includes(nombre)){ racha.push('no'); return; }
+      if(!(c.citados||[]).includes(nombre)){ racha.push({estado:'no', cit:c}); return; }
       citado++;
       const j = jugoEnPartido(c, d.stats[k] || null, nombre);
       if(j === 'falto') falto++; else jugados++;
-      racha.push(j || 'no');
+      racha.push({estado:j || 'no', cit:c});
     });
     const ult = racha.slice(-5);
     let sinCitar = 0;
-    for(let i=racha.length-1; i>=0 && racha[i]==='no'; i--) sinCitar++;
+    for(let i=racha.length-1; i>=0 && racha[i].estado==='no'; i--) sinCitar++;
 
     /* Detalle de entrenamientos, que es lo que se conversa con el padre:
        cómo viene por mes, por qué faltó, y cuántas seguidas lleva. Un 60% suelto
@@ -9343,12 +9343,27 @@ async function startCoordApp(){
     return out;
   }
 
+  // Mismo criterio visual que la racha del profe (renderCitList): chip
+  // grande con el número de fecha (o iniciales del rival) adentro, y el
+  // partido más reciente pegado al nombre. r viene del más viejo al más
+  // nuevo, así que se arma al revés — cada chip nuevo va adelante.
   function rachaHtml(r){
-    return r.map(x=>{
-      const cls = x==='no' ? 'pn' : x==='falto' ? 'pf' : x==='todo' ? 'pc' : 'pm';
-      const tit = x==='no'?'no citado':x==='falto'?'faltó':x==='todo'?'jugó todo':'entró o salió';
-      return '<span class="pt '+cls+'" title="'+tit+'"></span>';
-    }).join('');
+    let html = '';
+    r.forEach((x, i) => {
+      const estado = x.estado;
+      const cls = estado==='no' ? 'pn' : estado==='falto' ? 'pf' : estado==='todo' ? 'pc' : 'pm';
+      const est = estado==='no'    ? 'no citado'
+                : estado==='falto' ? 'faltó'
+                : estado==='todo'  ? 'jugó todo'
+                : (estado==='entro' ? 'entró desde el banco' : 'salió antes del final');
+      const atras = r.length - 1 - i;
+      const cuando = atras === 0 ? 'último partido'
+                   : atras === 1 ? 'partido anterior'
+                   : 'hace ' + atras + ' partidos';
+      const info = etiquetaPartido(x.cit)+' — '+cuando+': '+est;
+      html = '<span class="pt pt-chip '+cls+'" title="'+info+'">'+etiquetaCorta(x.cit)+'</span>' + html;
+    });
+    return html;
   }
 
   /* El detalle que hace falta para hablar con el padre. Un porcentaje suelto no
