@@ -2375,7 +2375,12 @@ async function migrarClubAZona(clubId, zonaDef){
       await guardarSnapshotDeZona(_zonaVieja, LIGA_DATA_ACTUAL);
     }
 
-    if(cfg.torneoActivo === Z.torneoNuevo && cfg.temporadas) return 'ya-migrado';
+    // OJO: no alcanza con mirar torneoActivo/temporadas — un club puede tener eso
+    // seteado y aun así faltarle ligaId/ligaNombre (por una migración vieja o
+    // parcial), y entonces loadClubConfig nunca baja el schedule ni deriva el
+    // fixture. Por eso también se exige que ligaId/ligaNombre coincidan con la
+    // zona antes de dar por migrado del todo.
+    if(cfg.torneoActivo === Z.torneoNuevo && cfg.temporadas && cfg.ligaId === Z.ligaId && cfg.ligaNombre) return 'ya-migrado';
 
     // Registro de temporadas: la anterior queda consultable desde el selector.
     // Se registra aunque el club no tuviera torneoActivo (sus datos viven en 'default').
