@@ -1284,6 +1284,17 @@ window._jugoDe = _jugoDe;
 function rsvpKey(nombre){ return String(nombre||'').replace(/[.#$\[\]/]/g, '_'); }
 window.rsvpKey = rsvpKey;
 
+// A qué hora confirmó/avisó el padre (rsvp.ts) — mismo criterio que
+// confirmar.html, para que el profe vea no solo QUIÉN respondió sino CUÁNDO.
+function fmtRsvpTs(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  const hoy = new Date();
+  const hora = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  const dia = d.toDateString()===hoy.toDateString() ? 'hoy' : d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0');
+  return dia+' '+hora+' hs';
+}
+
 // Devuelve 'todo' | 'entro' | 'salio' | 'falto', o null si no estuvo citado.
 function jugoEnPartido(cit, stats, nombre){
   if(!cit || !(cit.citados||[]).includes(nombre)) return null;
@@ -4487,7 +4498,7 @@ function renderCitStats(){
       const nVoy=rsvpEstados.filter(e=>e==='voy').length;
       const nNo=rsvpEstados.filter(e=>e==='no').length;
       const rsvpMeta=(nVoy||nNo)?(' &middot; '+(nVoy?'<span style="color:var(--win)">'+nVoy+' confirmaron</span>':'')+(nVoy&&nNo?' &middot; ':'')+(nNo?'<span style="color:var(--loss)">'+nNo+' avisaron que no</span>':'')):'';
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados'+rsvpMeta+'</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+editBtn+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>{ const est=rsvp[rsvpKey(p)]&&rsvp[rsvpKey(p)].estado; const marca=est==='voy'?' &#10003;':est==='no'?' &#10005;':''; return '<span class="pill pill-y">'+p+marca+'</span>'; }).join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados'+rsvpMeta+'</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+editBtn+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>{ const r=rsvp[rsvpKey(p)]; const est=r&&r.estado; const marca=est==='voy'?' &#10003;':est==='no'?' &#10005;':''; const tip=est?(' title="'+(est==='voy'?'Confirmó':'Avisó que no puede')+(r.ts?' &middot; '+fmtRsvpTs(r.ts):'')+'"'):''; return '<span class="pill pill-y"'+tip+'>'+p+marca+'</span>'; }).join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
       c.querySelector('.edit-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.editCitacion(c.dataset.citKey); });
       c.querySelector('.delete-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.deleteCitacion(c.dataset.citKey); });

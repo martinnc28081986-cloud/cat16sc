@@ -109,17 +109,30 @@ function render(cit){
 
   citados.forEach(nombre => {
     const key = rsvpKey(nombre);
-    pintarEstado(key, rsvp[key] && rsvp[key].estado);
+    pintarEstado(key, rsvp[key] && rsvp[key].estado, rsvp[key] && rsvp[key].ts);
     document.getElementById('voy-'+key).onclick = () => confirmar(key, nombre, 'voy');
     document.getElementById('no-'+key).onclick = () => confirmar(key, nombre, 'no');
   });
 }
 
-function pintarEstado(key, estado){
+// Formatea el momento en que se tocó "Va a estar" / "No puede" — así el padre
+// (y el profe, del otro lado) ven no solo QUE confirmó sino CUÁNDO.
+function fmtHoraConfirmacion(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  const hoy = new Date();
+  const esHoy = d.toDateString() === hoy.toDateString();
+  const hora = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  if(esHoy) return 'hoy '+hora+' hs';
+  return d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+' '+hora+' hs';
+}
+
+function pintarEstado(key, estado, ts){
   const el = document.getElementById('estado-'+key);
   if(!el) return;
-  if(estado === 'voy'){ el.textContent = 'Confirmado'; el.style.color = '#22c55e'; }
-  else if(estado === 'no'){ el.textContent = 'Avisó que no puede'; el.style.color = '#ef4444'; }
+  const cuando = fmtHoraConfirmacion(ts);
+  if(estado === 'voy'){ el.textContent = 'Confirmado'+(cuando?' · '+cuando:''); el.style.color = '#22c55e'; }
+  else if(estado === 'no'){ el.textContent = 'Avisó que no puede'+(cuando?' · '+cuando:''); el.style.color = '#ef4444'; }
   else { el.textContent = ''; }
 }
 
@@ -128,12 +141,13 @@ async function confirmar(key, nombre, estado){
   const btnNo = document.getElementById('no-'+key);
   btnVoy.disabled = true; btnNo.disabled = true;
   try{
+    const ts = Date.now();
     await update(ref(db, 'clubs/'+c+'/'+d+'/torneos/'+t+'/citaciones/'+k+'/rsvp/'+key), {
-      nombre, estado, ts: Date.now()
+      nombre, estado, ts
     });
     btnVoy.classList.toggle('on', estado === 'voy');
     btnNo.classList.toggle('on', estado === 'no');
-    pintarEstado(key, estado);
+    pintarEstado(key, estado, ts);
   }catch(e){
     pintarEstado(key, null);
     document.getElementById('estado-'+key).textContent = 'No se pudo guardar, probá de nuevo';
