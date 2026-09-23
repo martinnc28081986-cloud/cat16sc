@@ -4544,7 +4544,10 @@ function renderPlantel(){
     PLAYERS_INACTIVE.forEach(nombre => {
       html += `<div class="prow" style="justify-content:space-between;margin-bottom:var(--sp-3);opacity:0.6">
         <div style="font-size:var(--f-md)">${nombre}</div>
-        <button onclick="window.reactivatePlayer('${nombre.replace(/'/g,"\'")}')" style="background:rgba(34,205,120,0.1);color:var(--win);border:1px solid rgba(var(--win-rgb),0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:600;cursor:pointer">Reactivar</button>
+        <div style="display:flex;gap:var(--sp-3)">
+          <button onclick="window.reactivatePlayer('${nombre.replace(/'/g,"\'")}')" style="background:rgba(34,205,120,0.1);color:var(--win);border:1px solid rgba(var(--win-rgb),0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:600;cursor:pointer">Reactivar</button>
+          <button onclick="window.deletePlayer('${nombre.replace(/'/g,"\'")}')" style="background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:600;cursor:pointer">Eliminar</button>
+        </div>
       </div>`;
     });
   }
@@ -4597,6 +4600,21 @@ window.reactivatePlayer = async function(nombre){
     renderPlantel();
     renderAtt();
   } catch(e){ showToast('Error al guardar'); PLAYERS_INACTIVE.push(nombre); PLAYERS=PLAYERS.filter(p=>p!==nombre); renderPlantel(); }
+};
+
+// Elimina a un jugador inactivo de la lista (activos e inactivos). No borra su
+// historial: attendance/citaciones se guardan por fecha con el nombre suelto,
+// no dependen del nodo 'players', así que sus asistencias pasadas siguen
+// intactas en Historial. Solo deja de aparecer en Plantel y en Estadísticas
+// (ahí ya no aparecía desde que se dio de baja).
+window.deletePlayer = async function(nombre){
+  if(!confirm('¿Eliminar a '+nombre+' definitivamente de la lista? Su historial de asistencia queda guardado, pero no vas a poder reactivarlo después.')) return;
+  PLAYERS_INACTIVE = PLAYERS_INACTIVE.filter(p=>p!==nombre);
+  try {
+    await _savePlayers();
+    showToast('✓ '+nombre+' eliminado');
+    renderPlantel();
+  } catch(e){ showToast('Error al guardar'); PLAYERS_INACTIVE.push(nombre); renderPlantel(); }
 };
 
 // ── FORMACIONES 7 JUGADORES ──
