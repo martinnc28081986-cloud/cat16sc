@@ -3052,7 +3052,9 @@ function renderNextMatch(){
   // En una temporada archivada no hay próximo partido. Sin esto mostraba el
   // rival de la zona vigente arriba del fixture de la zona vieja.
   if(typeof esHistorico==='function' && esHistorico()){ el.textContent=''; return; }
+  console.log('[DEBUG renderNextMatch] llamado. FIXTURE fecha3 ahora:', FIXTURE.find(f=>f.fecha===3), 'cache:', window._activeFechaCache);
   _getActiveFecha(FIXTURE, _suspensions).then(next => {
+    console.log('[DEBUG renderNextMatch] _getActiveFecha devolvi\u00f3:', next);
     if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
     const condLabel=next.cond==='L'?'Local':'Visitante';
     const condColor=next.cond==='L'?'#448aff':'var(--yellow)';
