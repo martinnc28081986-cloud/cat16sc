@@ -2849,6 +2849,14 @@ async function loadClubConfig(){
 
     renderSeasonBar();
     applyReadOnlyUI();
+    // FIXTURE ya está resuelto acá arriba. Una llamada anterior a renderNextMatch
+    // (un listener de Firebase que llega antes de tiempo, o una carga vieja que
+    // recién termina) puede haber cacheado el "próximo partido" con un FIXTURE
+    // todavía sin corregir. Se invalida esa caché y se vuelve a pintar ACÁ,
+    // como último paso, para que quede lo correcto sin importar qué se haya
+    // calculado antes.
+    if(typeof window._invalidateActiveFecha === 'function') window._invalidateActiveFecha();
+    if(typeof renderNextMatch === 'function') renderNextMatch();
     _startFirebaseListeners();
   } catch(e){ console.warn('loadClubConfig error:', e); _startFirebaseListeners(); }
 }
