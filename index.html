@@ -3075,17 +3075,37 @@ function _getPlayedFechas(){
   return played;
 }
 
+// Próximo partido REAL (según resultados ya jugados), a diferencia de
+// _getActiveFecha (primera fecha SIN CITAR). Son cosas distintas: una
+// categoría puede no haber citado fechas viejas (por ejemplo, si empezó a usar
+// la citación recién a mitad de temporada) y ahí _getActiveFecha se queda
+// pegada en esa fecha vieja para siempre, aunque ya se haya jugado hace rato.
+// El encabezado y la tabla de posiciones quieren saber "cuál es el próximo
+// partido de verdad", no "qué falta citar" — para eso está esta función.
+function _getProximoPartidoReal(fixture, suspensions){
+  const playedFechas = _getPlayedFechas();
+  if(playedFechas.size > 0){
+    const next = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && !playedFechas.has(f.fecha));
+    if(next) return Promise.resolve(next);
+    return Promise.resolve(null); // ya se jugaron todas las fechas reales
+  }
+  // Arranque de temporada, sin resultados todavía: no hay de dónde sacar el
+  // próximo partido real, así que se usa de aproximación el mismo criterio
+  // que el flujo de citaciones (primera fecha sin citar).
+  return _getActiveFecha(fixture, suspensions);
+}
+
 function renderNextMatch(){
   const el=document.getElementById('nextMatchEl'); if(!el)return;
   if(window._isEscuelita){ el.textContent=''; return; }
   // En una temporada archivada no hay próximo partido. Sin esto mostraba el
   // rival de la zona vigente arriba del fixture de la zona vieja.
   if(typeof esHistorico==='function' && esHistorico()){ el.textContent=''; return; }
-  _getActiveFecha(FIXTURE, _suspensions).then(next => {
+  _getProximoPartidoReal(FIXTURE, _suspensions).then(next => {
     // Esta llamada puede venir de un startApp() viejo que reci\u00e9n termina: si ya
     // hay uno m\u00e1s nuevo corriendo, no pisar la pantalla del club/categor\u00eda actual.
     if(window._appGen !== _myGen) return;
-    if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
+    if(!next){el.textContent='Sin partidos pendientes';return;}
     const condLabel=next.cond==='L'?'Local':'Visitante';
     const condColor=next.cond==='L'?'#448aff':'var(--yellow)';
     el.innerHTML='Pr\u00f3x: <span style="color:var(--text)">F'+next.fecha+' vs '+_fmtRival(next.rival)+'</span> <span style="color:'+condColor+';font-size:var(--f-micro)">('+condLabel+')</span>';
@@ -5585,7 +5605,7 @@ async function renderTablas(){
   const scRes = resultadosDelClub(catNum);
   const pos   = LIGA_DATA.posiciones[catNum]||[];
 
-  const nextF = await _getActiveFecha(FIXTURE, _suspensions);
+  const nextF = await _getProximoPartidoReal(FIXTURE, _suspensions);
   const rivalKey = nextF ? nextF.rival : null;
 
   const scW=scRes.filter(r=>r.gf>r.gc).length;
