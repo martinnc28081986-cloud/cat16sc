@@ -4485,17 +4485,35 @@ function renderCitStats(){
       return f && f.dateStr ? f.dateStr : null; // dateStr si existe en el fixture
     };
     // Convertir todo a timestamp numérico para ordenar correctamente.
-    // Regular F1..F22: aproximar ms desde inicio del torneo (10/03/2026) + N*7días.
-    // Extra: usar ts guardado, o parsear fecha_str.
-    const _TORNEO_T0 = Date.parse('2026-03-10'); // F1 ≈ 10 mar 2026
+    // Prioridad: savedAt (fecha real en que se guardó/citó ese partido, la
+    // pone el propio guardado) o fecha_str (fecha real del partido) — son
+    // datos reales, no una estimación. Antes las regulares SIEMPRE se
+    // aproximaban con una fecha de inicio de temporada hardcodeada
+    // (10/03/2026) + N semanas, y esa cuenta quedaba vieja cada vez que
+    // cambiaba de zona/temporada (la Zona Campeonato 2026 arranca meses
+    // después de esa fecha), así que un amistoso citado recién siempre
+    // terminaba pareciendo "más nuevo" que TODAS las fechas regulares,
+    // aunque se hubiera citado mucho después. Esa cuenta ahora es el último
+    // recurso, solo para citaciones viejas sin savedAt/fecha_str/ts.
+    const _TORNEO_T0 = Date.parse('2026-03-10'); // F1 ≈ 10 mar 2026 (solo fallback)
     const _citTs = ([k,x]) => {
+      if(x.savedAt) return Date.parse(x.savedAt);
+      if(x.fecha_str) return Date.parse(x.fecha_str);
+      if(x.ts) return x.ts;
       if(!x.tipo) return _TORNEO_T0 + (+(x.fecha||0)) * 7 * 86400000;
-      if(x.fecha_str) return Date.parse(x.fecha_str)||x.ts||0;
-      return x.ts||0;
+      return 0;
     };
     const allDesc=Object.entries(citaciones)
       .filter(([,m])=>m.citados&&m.citados.length>0)
-      .sort((a,b)=>_citTs(b)-_citTs(a));
+      .sort((a,b)=>{
+        const d = _citTs(b)-_citTs(a);
+        if(d) return d;
+        // savedAt solo tiene día (sin hora): si dos regulares se citaron el
+        // mismo día, desempata por número de fecha para no dejarlo al azar.
+        const ta = a[1].tipo ? (a[1].ts||0) : (+(a[1].fecha||0));
+        const tb = b[1].tipo ? (b[1].ts||0) : (+(b[1].fecha||0));
+        return tb - ta;
+      });
     if(!allDesc.length){ matchList.innerHTML='<div class="empty-msg">Sin citaciones guardadas aún</div>'; }
     allDesc.forEach(([key,saved])=>{
       const resCls=saved.result==='V'?'rV':saved.result==='L'?'rL':saved.result==='E'?'rE':'';
