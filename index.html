@@ -8236,7 +8236,13 @@ window.saEditarClub = async function(clubId){
   ]);
   const club = clubSnap.exists() ? clubSnap.val() : {};
   const nombre = club.nombre || clubId;
-  const ligaActual = club.ligaId || club.liga_id || '';
+  // OJO: ligaId "de verdad" vive en club.config.ligaId — es lo único que lee
+  // loadClubConfig/migrarClubAZona. Hubo un campo suelto en la raíz del club
+  // (club.ligaId) de una versión vieja de este mismo formulario: leerlo de ahí
+  // hacía que el desplegable mostrara un valor viejo, y al guardar lo volvía
+  // a escribir en config.ligaId, pisando el correcto (pasó de verdad con
+  // Hernandez — quedó apuntando a la zona anterior hasta que se detectó).
+  const ligaActual = club.config?.ligaId || club.config?.liga_id || '';
   const catsActivas = club.cats ? Object.values(club.cats) : [];
   const _KNOWN_ADDR = {'SAGRADO CORAZON':'Av. 13 y 610 Villa Elvira','SAGR. CORAZON':'Av. 13 y 610 Villa Elvira','HERNANDEZ':'Av 31 e/510 y 511 José Hernández','JOSE HERNANDEZ':'Av 31 e/510 y 511 José Hernández','NUESTRA SEÑORA DE LUJAN':'522 y 21 Ringuelet','NUEVA ALBA':'604 e/ 126 y 127 Villa Elvira','PEDRO BENOIT':'526 bis e/ 15 y 16 bis Ringuelet','REAL INFANTIL':'29 y 79 La Plata','SAN JUAN BAUTISTA':'146 y 515 Romero','SPORT CLUB':'Tapalque y Lavalle, Magdalena','TALLERES':'131 y 52 La Plata','UNIVERSITARIO':'Av. 60 y 126 Berisso','VILLA SAN CARLOS':'26 y 173 Berisso'};
   const _autoAddr = _KNOWN_ADDR[(club.config?.ligaNombre||'').toUpperCase().trim()] || club.config?.address || '';
@@ -8371,7 +8377,10 @@ window._saGuardarEdicion = async function(clubId){
   }
   // Preservar data existente del club, solo actualizar campos del SA
   const updates = {...current, nombre, cats, diasEntrenamiento};
-  if(ligaFinal && ligaFinal !== '__nueva__') updates.ligaId = ligaFinal; else delete updates.ligaId;
+  // ligaId vive solo en config (ver comentario en saEditarClub) — se borra el
+  // campo suelto en la raíz si quedó de una versión vieja de este formulario,
+  // para que no vuelva a pisar el de config la próxima vez que se edite.
+  delete updates.ligaId;
   // Preservar config existente (torneoActivo NO se toca — es independiente del ligaId)
   if(!updates.config) updates.config = {};
   if(current.config) Object.assign(updates.config, current.config);
