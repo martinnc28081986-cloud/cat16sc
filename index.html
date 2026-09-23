@@ -2792,6 +2792,14 @@ async function loadClubConfig(){
       if(clubFixture.length) FIXTURE = clubFixture;
     }
 
+    // DIAGNÓSTICO TEMPORAL — sacar después de encontrar el bug del fixture
+    window._debugLCC = {
+      CLUB_PATH, isEscuelita: window._isEscuelita, cfgLigaId: cfg.ligaId, cfgLigaNombre: cfg.ligaNombre,
+      ligaIdResuelto: ligaId, tieneLigaData: !!ligaData, tieneSchedule: !!(ligaData && ligaData.schedule),
+      CLUB_LIGA_NOMBRE, fixtureFecha3: FIXTURE.find(f=>f.fecha===3), fixtureLen: FIXTURE.length
+    };
+    console.log('[DEBUG loadClubConfig]', window._debugLCC);
+
     // ── HORARIOS ──
     // Liga tiene prioridad, club puede sobreescribir
     if(ligaData && ligaData.horarios && ligaData.horarios[catKey]){
