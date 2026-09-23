@@ -102,12 +102,28 @@ function render(cit){
   const citados = cit.citados || [];
   const rsvp = cit.rsvp || {};
 
+  // Horario de citación = 40 min antes del partido — mismo criterio que usa
+  // el profe para armar el mensaje de WhatsApp. Se muestran los dos horarios
+  // BIEN diferenciados: si solo aparecía uno sin aclarar cuál era, algunos
+  // padres lo confundían con la hora del partido y llegaban tarde a la cita.
+  let citHora = '';
+  if(cit.hora){
+    const [hh,mm] = cit.hora.split(':').map(Number);
+    if(!isNaN(hh) && !isNaN(mm)){
+      const total = hh*60+mm-40;
+      citHora = String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
+    }
+  }
+  const horarios = citHora
+    ? '<b style="color:#fff">Citación ' + citHora + ' hs</b> &middot; Partido ' + cit.hora + ' hs'
+    : (cit.hora ? cit.hora + ' hs' : '');
+
   content.className = '';
   content.innerHTML =
     '<div class="card">' +
       '<div class="label">Próximo partido</div>' +
       '<div class="titulo">vs '+esc(cit.rival||'')+(condLabel?' &middot; '+condLabel:'')+'</div>' +
-      '<div class="sub">'+[fechaStr, cit.hora ? cit.hora+' hs' : '', cit.cancha||''].filter(Boolean).join(' &middot; ')+'</div>' +
+      '<div class="sub">'+[fechaStr, horarios, cit.cancha||''].filter(Boolean).join(' &middot; ')+'</div>' +
     '</div>' +
     '<div class="label" style="margin:0 4px 8px">Tocá el nombre de tu hijo</div>' +
     '<div class="card" id="lista" style="padding:4px 12px"></div>';
