@@ -2769,8 +2769,8 @@ async function loadClubConfig(){
       CLUB_LIGA_NOMBRE = ligaNombreDeClub(null, CLUB_PATH.split('/').pop());
       window._clubLigaNombreDe = CLUB_PATH.split('/').pop();
     }
-    if(ligaData && ligaData.schedule && cfg.ligaNombre){
-      FIXTURE = deriveFixtureFromSchedule(ligaData.schedule, cfg.ligaNombre);
+    if(ligaData && ligaData.schedule && CLUB_LIGA_NOMBRE){
+      FIXTURE = deriveFixtureFromSchedule(ligaData.schedule, CLUB_LIGA_NOMBRE);
     }
     // Opción 2 (legacy): fixture por club con rivales + condiciones separadas
     else if(ligaData && ligaData.fixture && cfg.fixture){
@@ -7835,10 +7835,10 @@ function renderSADatos(){
       </div>
 
       <div class="coord-ok-box" style="margin-bottom:var(--sp-5)">
-        <div style="font-weight:700;margin-bottom:var(--sp-2)">${icono('lista')} Fixture LISFI II Zona B 2026 — Sagrado Corazón</div>
+        <div style="font-weight:700;margin-bottom:var(--sp-2)">${icono('lista')} Fixture LISFI II Zona B 2026 — todos los clubes</div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">
           22 fechas → <code style="background:var(--surface2);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">ligas/lisfi-ii-zona-b-2026/fixture</code><br>
-          Condiciones L/V → <code style="background:var(--surface2);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">clubs/sagrado-corazon/config</code>
+          Condiciones L/V (derivadas del schedule) → <code style="background:var(--surface2);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">clubs/{club}/config</code> de cada club que juega esta zona
         </div>
         <button onclick="window.saSubirFixtureLISFI(this)" class="btn btn-g" style="width:100%">Subir fixture</button>
         <div id="lisfiLog" style="margin-top:var(--sp-5);font-size:var(--f-sm);line-height:1.8;display:none"></div>
@@ -7979,21 +7979,37 @@ window.saSubirFixtureLISFI = async function(btn){
     "19":{"rival":"N.FUERZA"},      "20":{"rival":"LIBRE"},
     "21":{"rival":"ADAFI"},         "22":{"rival":"VILLA PROGRESO"},
   };
-  const SAGCOR_CONDS = {
-    "1":{"cond":"V"}, "2":{"cond":"V"}, "3":{"cond":"V"}, "4":{"cond":"L"},
-    "5":{"cond":"V"}, "6":{"cond":"L"}, "7":{"cond":"V"}, "8":{"cond":"L"},
-    "9":{"cond":"-"}, "10":{"cond":"V"},"11":{"cond":"L"},"12":{"cond":"L"},
-    "13":{"cond":"V"},"14":{"cond":"L"},"15":{"cond":"V"},"16":{"cond":"L"},
-    "17":{"cond":"V"},"18":{"cond":"L"},"19":{"cond":"V"},"20":{"cond":"-"},
-    "21":{"cond":"L"},"22":{"cond":"V"},
-  };
   try {
     log('📤 Subiendo fixture compartido...');
     await set(ref(db, `ligas/${LIGA_ID}/fixture`), LIGA_FIXTURE);
     log('✓ 22 fechas subidas a la liga', 'var(--green)');
-    log('📤 Subiendo condiciones de Sagrado Corazón...');
-    await update(ref(db, 'clubs/sagrado-corazon/config'), { ligaId: LIGA_ID, fixture: SAGCOR_CONDS });
-    log('✓ Condiciones de Sagrado Corazón guardadas', 'var(--green)');
+
+    // Condiciones L/V para TODOS los clubes que jugaron esta zona, no solo Sagrado
+    // (antes solo se guardaban las de Sagrado y el resto quedaba afuera). Se derivan
+    // del schedule h/a ya subido con "Subir schedule completo".
+    log('📤 Derivando condiciones L/V de cada club desde el schedule...');
+    const schedSnap = await get(ref(db, `ligas/${LIGA_ID}/schedule`));
+    if(!schedSnap.exists()){
+      log('⚠ No hay schedule subido — subí "Schedule completo" primero para derivar L/V de todos los clubes.', 'var(--yellow)');
+    } else {
+      const schedule = schedSnap.val();
+      const equipos = equiposDeSchedule(schedule);
+      const clubsSnap = await get(ref(db, 'clubs'));
+      const clubs = clubsSnap.exists() ? clubsSnap.val() : {};
+      let n = 0;
+      for(const [clubId, cfg] of Object.entries(clubs)){
+        const nombreLiga = String((cfg && cfg.ligaNombre) || ligaNombreDeClub(null, clubId)).toUpperCase().trim();
+        const juega = equipos.some(e => _claveEquipo(e) === _claveEquipo(nombreLiga));
+        if(!juega) continue;
+        const fx = deriveFixtureFromSchedule(schedule, nombreLiga);
+        const conds = {};
+        fx.forEach(f => { conds[f.fecha] = { cond: f.cond }; });
+        await update(ref(db, 'clubs/'+clubId+'/config'), { ligaId: LIGA_ID, fixture: conds });
+        log('&nbsp;&nbsp;✓ ' + clubId, 'var(--green)');
+        n++;
+      }
+      log('✓ Condiciones guardadas para ' + n + ' club/es', 'var(--green)');
+    }
     log('✅ Listo.', 'var(--win)');
     btn.textContent = '✓ Subido';
   } catch(e) {
