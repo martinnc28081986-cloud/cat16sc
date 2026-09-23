@@ -2987,7 +2987,11 @@ window._resetFechaElegida = function(){
 
 // ── FECHA ACTIVA GLOBAL ──
 // La fecha activa es la primera donde al menos UNA categoría competitiva no citó
-const COMP_CAT_PATHS = ['cat13','cat14','cat15','cat16','cat17','cat18','cat19','cat20'];
+// OJO: estos son los dbPath reales de Firebase (ver CAT_CONFIG / el mapeo catNum
+// unas líneas más abajo) — no 'cat14','cat15','cat17'... Con los nombres viejos
+// solo cat13 y cat16 coincidían de verdad, así que la detección de "qué
+// categorías ya citaron" quedaba ciega para cat2014/2015/2017/2018/2019/2020.
+const COMP_CAT_PATHS = ['cat13','cat16','cat2014','cat2015','cat2017','cat2018','cat2019','cat2020'];
 
 window._activeFechaCache = null;
 window._activeFechaTs = 0;
