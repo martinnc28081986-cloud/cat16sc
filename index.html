@@ -2719,14 +2719,6 @@ const FIXTURE_DEFAULT = [...FIXTURE]; // backup del hardcodeado
 
 async function loadClubConfig(){
   if(window._isEscuelita) return;
-  // El "próximo partido" se cachea 60s (_activeFechaCache) para no golpear Firebase
-  // en cada render. Pero esa caché es global y sobrevive a un cambio de club/categoría
-  // o a que FIXTURE recién se termine de derivar acá abajo — sin este reset, el primer
-  // render (que corre ANTES de que este método corrija FIXTURE) quedaba cacheado 60s,
-  // mostrando el próximo partido de la config anterior/default. Con Sagrado no se
-  // notaba porque su fixture real coincide con el default hardcodeado; con cualquier
-  // otro club (Hernandez incluido) mostraba el partido equivocado.
-  if(typeof window._invalidateActiveFecha === 'function') window._invalidateActiveFecha();
   try {
     const snap = await get(ref(db, CLUB_PATH+'/config'));
     const cfg = snap.exists() ? snap.val() : {};
@@ -2799,14 +2791,6 @@ async function loadClubConfig(){
         .sort((a,b)=>a.fecha-b.fecha);
       if(clubFixture.length) FIXTURE = clubFixture;
     }
-
-    // DIAGNÓSTICO TEMPORAL — sacar después de encontrar el bug del fixture
-    window._debugLCC = {
-      CLUB_PATH, isEscuelita: window._isEscuelita, cfgLigaId: cfg.ligaId, cfgLigaNombre: cfg.ligaNombre,
-      ligaIdResuelto: ligaId, tieneLigaData: !!ligaData, tieneSchedule: !!(ligaData && ligaData.schedule),
-      CLUB_LIGA_NOMBRE, fixtureFecha3: FIXTURE.find(f=>f.fecha===3), fixtureLen: FIXTURE.length
-    };
-    console.log('[DEBUG loadClubConfig]', window._debugLCC);
 
     // ── HORARIOS ──
     // Liga tiene prioridad, club puede sobreescribir
@@ -3069,9 +3053,7 @@ function renderNextMatch(){
   // En una temporada archivada no hay próximo partido. Sin esto mostraba el
   // rival de la zona vigente arriba del fixture de la zona vieja.
   if(typeof esHistorico==='function' && esHistorico()){ el.textContent=''; return; }
-  console.log('[DEBUG renderNextMatch] llamado. FIXTURE fecha3 ahora:', FIXTURE.find(f=>f.fecha===3), 'cache:', window._activeFechaCache);
   _getActiveFecha(FIXTURE, _suspensions).then(next => {
-    console.log('[DEBUG renderNextMatch] _getActiveFecha devolvi\u00f3:', next);
     if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
     const condLabel=next.cond==='L'?'Local':'Visitante';
     const condColor=next.cond==='L'?'#448aff':'var(--yellow)';
