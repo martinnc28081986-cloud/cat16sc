@@ -52,7 +52,8 @@ const db = getDatabase(app);
 function rsvpKey(nombre){ return String(nombre||'').replace(/[.#$\[\]/]/g, '_'); }
 
 const params = new URLSearchParams(window.location.search);
-const c = params.get('c'), d = params.get('d'), t = params.get('t'), k = params.get('k');
+let c = params.get('c'), d = params.get('d'), t = params.get('t'), k = params.get('k');
+const s = params.get('s');
 const content = document.getElementById('content');
 
 function mostrarError(msg){
@@ -60,9 +61,25 @@ function mostrarError(msg){
   content.textContent = msg;
 }
 
-if(!c || !d || !t || !k){
-  mostrarError('Link inválido.');
-} else {
+async function iniciar(){
+  // Link corto (?s=código) — resuelve a c/d/t/k desde shortlinks/{s}. Se
+  // mantiene el formato viejo (?c&d&t&k) por los links ya compartidos antes
+  // de que existiera el código corto.
+  if(s && !(c && d && t && k)){
+    try{
+      const snap = await get(ref(db, 'shortlinks/'+s));
+      if(!snap.exists()){ mostrarError('Link inválido.'); return; }
+      const v = snap.val();
+      c = v.c; d = v.d; t = v.t; k = v.k;
+    }catch(e){
+      mostrarError('No se pudo cargar el partido. Probá de nuevo en un rato.');
+      return;
+    }
+  }
+  if(!c || !d || !t || !k){
+    mostrarError('Link inválido.');
+    return;
+  }
   const citRef = ref(db, 'clubs/'+c+'/'+d+'/torneos/'+t+'/citaciones/'+k);
   get(citRef).then(snap => {
     if(!snap.exists()){ mostrarError('Este partido ya no está disponible.'); return; }
@@ -72,6 +89,7 @@ if(!c || !d || !t || !k){
     mostrarError('No se pudo cargar el partido. Probá de nuevo en un rato.');
   });
 }
+iniciar();
 
 function render(cit){
   const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];

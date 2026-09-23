@@ -1284,6 +1284,15 @@ window._jugoDe = _jugoDe;
 function rsvpKey(nombre){ return String(nombre||'').replace(/[.#$\[\]/]/g, '_'); }
 window.rsvpKey = rsvpKey;
 
+// Hash corto y determinístico (mismo texto = mismo código siempre) para el
+// link de confirmación — no hace falta que sea criptográfico, solo corto y
+// con colisiones improbables para el puñado de citaciones que existen.
+function _shortHash(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) | 0; }
+  return Math.abs(h).toString(36);
+}
+
 // A qué hora confirmó/avisó el padre (rsvp.ts) — mismo criterio que
 // confirmar.html, para que el profe vea no solo QUIÉN respondió sino CUÁNDO.
 function fmtRsvpTs(ts){
@@ -4335,8 +4344,19 @@ window.shareCit = async function(key){
   // activado en su config (CFG.rsvpHabilitado) — hoy solo Hernandez.
   if(CFG.rsvpHabilitado){
     const clubIdWA = CLUB_PATH.split('/')[1] || '';
-    const rsvpUrl = 'https://app.miplantel.com.ar/confirmar.html?c='+encodeURIComponent(clubIdWA)+'&d='+encodeURIComponent(CFG.dbPath)+'&t='+encodeURIComponent(TORNEO_ID)+'&k='+encodeURIComponent(key);
+    // Link corto: en vez de mandar club+categoría+torneo+clave en la URL (largo,
+    // ocupa varias líneas en WhatsApp), se manda solo un código de 6-7
+    // caracteres. El código sale de un hash del mismo partido, así que
+    // volver a compartir el mismo partido da siempre el mismo código (no se
+    // acumulan códigos repetidos para un mismo partido).
+    const shortId = _shortHash(clubIdWA+'|'+CFG.dbPath+'|'+TORNEO_ID+'|'+key);
+    const rsvpUrl = 'https://app.miplantel.com.ar/confirmar.html?s='+shortId;
     lines.push('✅ Confirmá si tu hijo va a estar: '+rsvpUrl);
+    // Se guarda el mapeo del link corto SIN esperarlo (no se puede meter un
+    // await antes de window.open sin romper la cadena de gesto en Safari/
+    // iOS). No hace falta esperarlo: el padre tarda mucho más que esto en
+    // tocar el link.
+    update(ref(db, 'shortlinks/'+shortId), { c: clubIdWA, d: CFG.dbPath, t: TORNEO_ID, k: key }).catch(()=>{});
   } else {
     lines.push('✅ Confirmar asistencia respondiendo este mensaje');
   }

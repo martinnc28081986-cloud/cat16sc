@@ -24,6 +24,12 @@
         }
       }
     },
+    "shortlinks": {
+      "$shortId": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
     "ligas": {
       ".read": "auth != null",
       ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'super-admin'",
