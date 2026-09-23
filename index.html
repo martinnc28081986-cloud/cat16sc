@@ -2471,6 +2471,17 @@ function startApp(cat){
 // página, así que hay que devolver el chrome del profe a su estado normal.
 document.body.classList.remove('coord-mode');
 
+// Cada club/categoría relanza startApp() entero (sin recargar la página), y
+// cada llamada tiene su PROPIO FIXTURE/loadClubConfig locales. Si la llamada
+// anterior todavía tiene trabajo async pendiente (su propio "INIT" o sus
+// listeners de Firebase) cuando ya se lanzó una nueva, esa llamada vieja puede
+// terminar de resolver y pisar la pantalla con SU FIXTURE (viejo/default),
+// aunque CLUB_PATH ya apunte al club nuevo. _appGen marca cuál es la llamada
+// vigente: cualquier callback async de una llamada anterior lo chequea antes
+// de tocar caché o pantalla, y si ya quedó vieja, no hace nada.
+window._appGen = (window._appGen||0) + 1;
+const _myGen = window._appGen;
+
 // Devuelve la config de una categoría. Si no está en CAT_CONFIG, se deriva de la
 // clave: 'cat2021' -> dbPath 'cat2021'. Todos los años entra una categoría nueva
 // (y sale la más grande), así que esto no puede depender de una lista fija.
@@ -3027,10 +3038,15 @@ async function _getActiveFecha(fixture, suspensions){
       }
     }
 
-    window._activeFechaCache = result || null;
-    window._activeFechaTs = Date.now();
-    window._activeFechaKey = _cacheKey;
-    return window._activeFechaCache;
+    // Si mientras se calculaba esto ya se lanzó un startApp() más nuevo (cambio
+    // de club/categoría), esta llamada quedó vieja: no cachear su resultado,
+    // porque pisaría el del club que se está mirando ahora.
+    if(window._appGen === _myGen){
+      window._activeFechaCache = result || null;
+      window._activeFechaTs = Date.now();
+      window._activeFechaKey = _cacheKey;
+    }
+    return result || null;
   } catch(e) {
     console.warn('_getActiveFecha error:', e);
     return null;
@@ -3054,6 +3070,9 @@ function renderNextMatch(){
   // rival de la zona vigente arriba del fixture de la zona vieja.
   if(typeof esHistorico==='function' && esHistorico()){ el.textContent=''; return; }
   _getActiveFecha(FIXTURE, _suspensions).then(next => {
+    // Esta llamada puede venir de un startApp() viejo que reci\u00e9n termina: si ya
+    // hay uno m\u00e1s nuevo corriendo, no pisar la pantalla del club/categor\u00eda actual.
+    if(window._appGen !== _myGen) return;
     if(!next){el.textContent='\u2713 Todos los partidos citados';return;}
     const condLabel=next.cond==='L'?'Local':'Visitante';
     const condColor=next.cond==='L'?'#448aff':'var(--yellow)';
