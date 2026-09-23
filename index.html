@@ -1664,7 +1664,15 @@ window.doLogin = async function(){
 
 
 // ── SELECTOR DE CATEGORÍA (profes con múltiples cats) ──
-function _showCatSelector(cats){
+// Categorías del perfil de un usuario (soporta el formato viejo `cat` y el nuevo `cats`).
+function _catsDePerfil(p){
+  p = p || {};
+  return p.cats ? Object.values(p.cats) : (p.cat ? [p.cat] : []);
+}
+
+// conCoord = el usuario es profe + coordinador: además de sus categorías se le
+// ofrece entrar al panel de coordinación.
+function _showCatSelector(cats, conCoord){
   const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('loadingScreen').style.display='none';
@@ -1677,15 +1685,21 @@ function _showCatSelector(cats){
     document.body.appendChild(sel);
   }
 
-  const btns = cats.map(c => `
-    <button onclick="window._selectCat('${c}')" style="width:100%;padding:var(--sp-6);border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:var(--f-lg);font-weight:600;cursor:pointer;margin-bottom:var(--sp-5);text-align:left;transition:background 0.15s">
+  const _btnStyle = "width:100%;padding:var(--sp-6);border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:var(--f-lg);font-weight:600;cursor:pointer;margin-bottom:var(--sp-5);text-align:left;transition:background 0.15s";
+  const _handler = conCoord ? '_selectDestino' : '_selectCat';
+  const coordBtn = conCoord ? `
+    <button onclick="window._selectDestino('coord')" style="${_btnStyle};border-color:rgba(var(--accent-rgb),0.5)">
+      📊 Panel de coordinación
+    </button>` : '';
+  const btns = coordBtn + cats.map(c => `
+    <button onclick="window.${_handler}('${c}')" style="${_btnStyle}">
       ⚽ ${catLabels[c]||c}
     </button>`).join('');
 
   sel.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-9) var(--sp-8);width:100%;max-width:340px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-xl);letter-spacing:3px;color:var(--green);text-align:center;margin-bottom:var(--sp-2);">MI PLANTEL</div>
-      <div style="font-size:var(--f-sm);color:var(--muted);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:var(--sp-8);">Seleccioná tu categoría</div>
+      <div style="font-size:var(--f-sm);color:var(--muted);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:var(--sp-8);">${conCoord ? 'Seleccioná a dónde entrar' : 'Seleccioná tu categoría'}</div>
       ${btns}
     </div>`;
 
@@ -1706,7 +1720,43 @@ window._selectCat = function(cat){
   }
 };
 
-function _showCatSwitcher(cats, currentCat){
+// Profe + Coordinador: elige entre el panel de coordinación y cualquiera de sus
+// categorías, y puede cambiar cuando quiera desde el botón ⇄ del encabezado.
+// Limpia lo que dejó la vista anterior igual que saEntrarComo (mismo mecanismo
+// ya probado para saltar entre categorías sin recargar la página).
+window._selectDestino = function(dest){
+  const sel = document.getElementById('catSelectorScreen');
+  if(sel) sel.style.display = 'none';
+  const cats = _catsDePerfil(window._userProfile);
+
+  if(window._unsub1) try{window._unsub1();}catch(e){}
+  if(window._unsub2) try{window._unsub2();}catch(e){}
+  window._unsub1 = null; window._unsub2 = null;
+  if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{try{u();}catch(e){}}); window._coordUnsubs = null; }
+  resetContextoTemporada();
+  suscribirSuspensiones();
+
+  document.getElementById('coord-app').style.display = 'none';
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.querySelector('.tabs-wrapper').style.display = '';
+  document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
+
+  // Qué vista está activa: switchTorneo lo usa para saber si rearmar el panel
+  // de coordinación o la pantalla del profe (el rol es "coordinator" en ambas).
+  window._vistaProfePropia = (dest !== 'coord');
+  window._isCoordView = (dest === 'coord');
+  window._updatePresenceCat(dest === 'coord' ? 'coord' : dest);
+  window._appStarted = false;
+  if(dest === 'coord'){
+    window._appStarted = true;
+    startCoordApp();
+  } else {
+    launchCat(dest);
+  }
+  setTimeout(()=>_showCatSwitcher(cats, dest, true), 800);
+};
+
+function _showCatSwitcher(cats, currentCat, conCoord){
   const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
   let btn = document.getElementById('catSwitchBtn');
   if(!btn){
@@ -1716,9 +1766,9 @@ function _showCatSwitcher(cats, currentCat){
     const logoutBtn = document.getElementById('logoutBtn');
     if(logoutBtn) logoutBtn.parentNode.insertBefore(btn, logoutBtn);
   }
-  btn.textContent = '⇄ ' + (catLabels[currentCat]||currentCat);
+  btn.textContent = '⇄ ' + (currentCat === 'coord' ? 'Coordinación' : (catLabels[currentCat]||currentCat));
   btn.onclick = function(){
-    _showCatSelector(cats);
+    _showCatSelector(cats, conCoord);
   };
 }
 
@@ -1766,9 +1816,16 @@ function _launchByRole(profile){
       window._appStarted=true; window._isSuperAdmin=true; startSuperAdminApp();
     } else { document.getElementById('loadingScreen').style.display='none'; }
   } else if(role==='coordinator'){
-    window._updatePresenceCat('coord');
-    if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
-    else { document.getElementById('loadingScreen').style.display='none'; }
+    // Profe + Coord: elige si entra a su categoría o al panel de coordinación.
+    const catsPropias = profile.isProfeCoord ? _catsDePerfil(profile) : [];
+    if(catsPropias.length){
+      if(!window._appStarted) _showCatSelector(catsPropias, true);
+      else { document.getElementById('loadingScreen').style.display='none'; }
+    } else {
+      window._updatePresenceCat('coord');
+      if(!window._appStarted){ window._appStarted=true; startCoordApp(); }
+      else { document.getElementById('loadingScreen').style.display='none'; }
+    }
     window.pwaCheckAfterLogin && window.pwaCheckAfterLogin();
   } else if(role==='profe'){
     const cats = profile.cats || (cat ? [cat] : []);
@@ -1880,6 +1937,10 @@ onAuthStateChanged(auth, async user => {
     document.getElementById('coord-app').style.display='none';
     document.getElementById('superadmin-app').style.display='none';
     const sabb=document.getElementById('saBackBtn'); if(sabb) sabb.remove();
+    // El botón ⇄ y el selector son del usuario que se fue: no dejarlos para el próximo
+    const _sw=document.getElementById('catSwitchBtn'); if(_sw) _sw.remove();
+    const _cs=document.getElementById('catSelectorScreen'); if(_cs) _cs.style.display='none';
+    window._vistaProfePropia = false; window._isCoordView = false;
     document.querySelector('.tabs-wrapper').style.display='';
     document.querySelectorAll('.view').forEach(v=>v.style.removeProperty('display'));
     if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{try{u();}catch(e){}});  window._coordUnsubs=null; }
@@ -2217,7 +2278,7 @@ window.switchTorneo = async function(id){
   if(_anioDeTorneo) setAnioVista(_anioDeTorneo);
 
   const role = (window._userProfile && window._userProfile.role) || '';
-  if(role === 'coordinator' || window._isCoordView){
+  if((role === 'coordinator' && !window._vistaProfePropia) || window._isCoordView){
     // Coordinador: soltar listeners y rearmar el panel con la temporada elegida
     if(window._coordUnsubs){ window._coordUnsubs.forEach(u=>{ try{u();}catch(e){} }); window._coordUnsubs=[]; }
     await startCoordApp();
@@ -8333,10 +8394,10 @@ window.saEditarClub = async function(clubId){
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-5);margin-bottom:var(--sp-3);display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:var(--f-md);font-weight:600">${u.email||u.uid}</div>
-        <div style="font-size:var(--f-micro);color:var(--muted)">${u.role||'profe'} · Cat ${catsLabel}</div>
+        <div style="font-size:var(--f-micro);color:var(--muted)">${u.role==='coordinator'&&u.isProfeCoord?'profe + coord':(u.role||'profe')} · Cat ${catsLabel}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:var(--sp-2);flex-shrink:0">
-        <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-micro);font-weight:700;cursor:pointer">✏️ Cats</button>
+        <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-micro);font-weight:700;cursor:pointer">✏️ Editar</button>
         <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-micro);font-weight:700;cursor:pointer">🗑 Elim.</button>
       </div>
     </div>`;
@@ -8492,14 +8553,31 @@ window._saEditUserCats = async function(uid, email, clubId){
   const snap = await get(ref(db, 'users/'+uid));
   const uData = snap.exists() ? snap.val() : {};
   const currentCats = uData.cats ? Object.values(uData.cats) : (uData.cat ? [uData.cat] : []);
+  // Rol actual, en los mismos tres valores que el alta de usuario. El
+  // super-admin no se toca desde acá.
+  const rolActual = uData.role === 'coordinator' ? (uData.isProfeCoord ? 'profe+coord' : 'coordinator') : 'profe';
+  const puedeCambiarRol = uData.role !== 'super-admin';
+  const _rolOpt = (v, lbl) => `
+    <label style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-3);cursor:pointer">
+      <input type="radio" name="editUserRol" value="${v}" ${rolActual===v?'checked':''} style="accent-color:var(--accent)">
+      <span style="font-size:var(--f-sm);text-align:center">${lbl}</span>
+    </label>`;
+  const rolHtml = puedeCambiarRol ? `
+      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-3)">Rol</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-3)">
+        ${_rolOpt('profe','Profe')}${_rolOpt('coordinator','Coordinador')}${_rolOpt('profe+coord','Profe + Coord')}
+      </div>
+      <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-6)">Profe + Coord: al ingresar elige entre su categoría y el panel de coordinación.</div>` : '';
 
   const ov = document.createElement('div');
   ov.id = 'saEditCatsOverlay';
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10001;display:flex;align-items:center;justify-content:center;padding:var(--sp-6)';
   ov.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-8);width:100%;max-width:360px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);letter-spacing:2px;color:var(--accent);margin-bottom:var(--sp-2)">✏️ EDITAR CATEGORÍAS</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);letter-spacing:2px;color:var(--accent);margin-bottom:var(--sp-2)">✏️ EDITAR USUARIO</div>
       <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-6)">${email}</div>
+      ${rolHtml}
+      <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-3)">Categorías</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-7)">
         ${CAT_OPTS_EC.map(c=>`
           <label style="display:flex;align-items:center;gap:var(--sp-4);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-5);cursor:pointer;font-size:var(--f-md)">
@@ -8507,7 +8585,7 @@ window._saEditUserCats = async function(uid, email, clubId){
             ${c.label}
           </label>`).join('')}
       </div>
-      <button id="saveEditCatsBtn" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer;margin-bottom:var(--sp-4)">Guardar categorías</button>
+      <button id="saveEditCatsBtn" style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer;margin-bottom:var(--sp-4)">Guardar</button>
       <button onclick="document.getElementById('saEditCatsOverlay').remove()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);cursor:pointer">Cancelar</button>
     </div>`;
   document.body.appendChild(ov);
@@ -8515,17 +8593,24 @@ window._saEditUserCats = async function(uid, email, clubId){
 
   document.getElementById('saveEditCatsBtn').onclick = async function(){
     const newCats = [...document.querySelectorAll('input[name="editCatCk"]:checked')].map(cb=>cb.value);
-    if(!newCats.length){ showToast('Seleccioná al menos una categoría'); return; }
+    const rolSel = puedeCambiarRol ? (document.querySelector('input[name="editUserRol"]:checked')||{}).value : null;
+    // Un coordinador puro no necesita categoría; en cualquier otro caso sí.
+    if(!newCats.length && rolSel !== 'coordinator'){ showToast('Seleccioná al menos una categoría'); return; }
     this.disabled = true; this.textContent = 'Guardando...';
     try{
-      await update(ref(db, 'users/'+uid), {
-        cats: newCats,
-        cat: newCats[0] // compatibilidad retroactiva
-      });
-      showToast('✓ Categorías actualizadas');
+      const cambios = {
+        cats: newCats.length ? newCats : null,
+        cat: newCats[0] || null // compatibilidad retroactiva
+      };
+      if(rolSel){
+        cambios.role = (rolSel === 'profe') ? 'profe' : 'coordinator';
+        cambios.isProfeCoord = (rolSel === 'profe+coord') ? true : null;
+      }
+      await update(ref(db, 'users/'+uid), cambios);
+      showToast('✓ Usuario actualizado');
       ov.remove();
       window.saEditarClub(clubId); // refrescar vista del club
-    } catch(e){ showToast('Error: '+e.message); this.disabled=false; this.textContent='Guardar categorías'; }
+    } catch(e){ showToast('Error: '+e.message); this.disabled=false; this.textContent='Guardar'; }
   };
 };
 
