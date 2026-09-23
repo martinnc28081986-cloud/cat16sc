@@ -2815,6 +2815,12 @@ async function loadClubConfig(){
     // ── DIRECCIÓN ──
     if(cfg.address) CFG.address = cfg.address;
 
+    // ── CONFIRMACIÓN DE ASISTENCIA POR LINK (RSVP) ──
+    // Piloto: solo para los clubes que lo tengan activado en su propia config
+    // (clubs/{clubId}/config.rsvpHabilitado), no un club hardcodeado en el
+    // código — así cualquier club puede sumarse después sin tocar nada acá.
+    CFG.rsvpHabilitado = !!cfg.rsvpHabilitado;
+
     // ── NOMBRE DEL CLUB (para cabeceras de citación) ──
     try{
       const clubSnap = await get(ref(db, CLUB_PATH));
@@ -4314,17 +4320,28 @@ window.shareCit = async function(key){
   cit.citados.forEach((p,i)=>lines.push('  '+(i+1)+'. '+p));
   if(cit.camisetero){ lines.push(''); lines.push('👕 Camisetas: *'+cit.camisetero+'*'); }
   lines.push('');
-  // Link de confirmación (confirmar.html) armado pero apagado por ahora — se
-  // reactiva descomentando estas 3 líneas cuando se decida usar la función.
-  // const clubIdWA = CLUB_PATH.split('/')[1] || '';
-  // const rsvpUrl = 'https://app.miplantel.com.ar/confirmar.html?c='+encodeURIComponent(clubIdWA)+'&d='+encodeURIComponent(CFG.dbPath)+'&t='+encodeURIComponent(TORNEO_ID)+'&k='+encodeURIComponent(key);
-  // lines.push('✅ Confirmá si tu hijo va a estar: '+rsvpUrl);
-  lines.push('✅ Confirmar asistencia respondiendo este mensaje');
+  // Piloto: el link de confirmación solo se manda si el club lo tiene
+  // activado en su config (CFG.rsvpHabilitado) — hoy solo Hernandez.
+  if(CFG.rsvpHabilitado){
+    const clubIdWA = CLUB_PATH.split('/')[1] || '';
+    const rsvpUrl = 'https://app.miplantel.com.ar/confirmar.html?c='+encodeURIComponent(clubIdWA)+'&d='+encodeURIComponent(CFG.dbPath)+'&t='+encodeURIComponent(TORNEO_ID)+'&k='+encodeURIComponent(key);
+    lines.push('✅ Confirmá si tu hijo va a estar: '+rsvpUrl);
+  } else {
+    lines.push('✅ Confirmar asistencia respondiendo este mensaje');
+  }
 
   // Abrir WhatsApp ANTES del await para no romper la cadena de gesto en Safari/iOS
   window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank');
-  // Marcar como compartido — solo actualiza ese campo, sin tocar el resto
-  if(!archivoBloqueado()) try{ await update(ref(db,DB_PREFIX+'/citaciones/'+key),{whatsappShared:true}); }catch(e){ console.warn('shareCit: error al marcar whatsappShared',e); }
+  // Marcar como compartido y, de paso, guardar fecha/hora/cancha en la citación
+  // (para partidos de fixture regular esto nunca se guardaba — los "extra" ya
+  // lo traían de su alta). Sin esto, confirmar.html no tiene de dónde sacar esos
+  // datos y el padre entraba al link sin saber cuándo ni dónde es el partido.
+  const _rsvpDatos = {
+    ...(matchTime && { hora: matchTime }),
+    ...(address && { cancha: address }),
+    ...(!esExtra && FIXTURE_DATES[cit.fecha] && { fecha_str: FIXTURE_DATES[cit.fecha] }),
+  };
+  if(!archivoBloqueado()) try{ await update(ref(db,DB_PREFIX+'/citaciones/'+key),{whatsappShared:true, ..._rsvpDatos}); }catch(e){ console.warn('shareCit: error al marcar whatsappShared',e); }
 };
 
 // ── STATS CITACIONES ──
@@ -8292,6 +8309,10 @@ window.saEditarClub = async function(clubId){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-6)">${catsHtml}</div>
       <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-4)">Días de entrenamiento</div>
       <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-6)">${diasHtml}</div>
+      <label style="display:flex;align-items:center;gap:var(--sp-4);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-6);cursor:pointer">
+        <input type="checkbox" id="editClubRsvp" ${club.config?.rsvpHabilitado?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
+        <span style="font-size:var(--f-md)">Confirmación de asistencia por WhatsApp (piloto)</span>
+      </label>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4)">
         <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Usuarios (${clubUsers.length})</div>
         <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer">+ Agregar usuario</button>
@@ -8331,6 +8352,7 @@ window._saGuardarEdicion = async function(clubId){
   const clubAddress = document.getElementById('editClubAddress')?.value.trim() || '';
   const cats = [...document.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value);
   const diasEntrenamiento = [...document.querySelectorAll('.editDiaCheck:checked')].map(cb=>cb.value);
+  const rsvpHabilitado = !!document.getElementById('editClubRsvp')?.checked;
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
   const current = snap.exists() ? snap.val() : {};
@@ -8356,6 +8378,7 @@ window._saGuardarEdicion = async function(clubId){
   if(ligaFinal && ligaFinal !== '__nueva__') updates.config.ligaId = ligaFinal;
   if(ligaNombre) updates.config.ligaNombre = ligaNombre;
   if(clubAddress) updates.config.address = clubAddress;
+  updates.config.rsvpHabilitado = rsvpHabilitado;
   // torneoActivo se preserva tal cual estaba
   await set(ref(db,'clubs/'+clubId), updates);
   document.getElementById('saEditOverlay')?.remove();
