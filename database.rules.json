@@ -45,7 +45,7 @@
     "users": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('role').val() === 'super-admin')"
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'super-admin'"
       }
     },
     "presence": {
