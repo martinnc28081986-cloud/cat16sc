@@ -4498,7 +4498,25 @@ function renderCitStats(){
       const nVoy=rsvpEstados.filter(e=>e==='voy').length;
       const nNo=rsvpEstados.filter(e=>e==='no').length;
       const rsvpMeta=(nVoy||nNo)?(' &middot; '+(nVoy?'<span style="color:var(--win)">'+nVoy+' confirmaron</span>':'')+(nVoy&&nNo?' &middot; ':'')+(nNo?'<span style="color:var(--loss)">'+nNo+' avisaron que no</span>':'')):'';
-      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados'+rsvpMeta+'</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+editBtn+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>{ const r=rsvp[rsvpKey(p)]; const est=r&&r.estado; const marca=est==='voy'?' &#10003;':est==='no'?' &#10005;':''; const tip=est?(' title="'+(est==='voy'?'Confirmó':'Avisó que no puede')+(r.ts?' &middot; '+fmtRsvpTs(r.ts):'')+'"'):''; return '<span class="pill pill-y"'+tip+'>'+p+marca+'</span>'; }).join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>';
+      // Detalle de respuestas (quién y CUÁNDO) — aparte de los pills, que son
+      // para escanear rápido el plantel citado, no para leer horarios.
+      const rsvpRespondieron = saved.citados.filter(p => rsvp[rsvpKey(p)] && rsvp[rsvpKey(p)].estado);
+      const rsvpDetalle = rsvpRespondieron.length ? (
+        '<div class="rsvp-detalle" style="margin-top:var(--sp-4);padding-top:var(--sp-4);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:var(--sp-2)">' +
+        rsvpRespondieron.map(p => {
+          const r = rsvp[rsvpKey(p)];
+          const ok = r.estado === 'voy';
+          const marca = ok ? '&#10003;' : '&#10005;';
+          const color = ok ? 'var(--win)' : 'var(--loss)';
+          const cuando = r.ts ? fmtRsvpTs(r.ts) : '';
+          return '<div style="font-size:var(--f-sm);display:flex;justify-content:space-between;gap:var(--sp-4)">' +
+            '<span style="color:'+color+'">'+marca+' '+p+'</span>' +
+            (cuando ? '<span style="color:var(--muted)">'+cuando+'</span>' : '') +
+          '</div>';
+        }).join('') +
+        '</div>'
+      ) : '';
+      c.innerHTML='<div class="ctop"><div style="flex:1;min-width:0"><div class="ctitle">'+titlePrefix+titleRival+'</div><div class="cmeta">'+saved.citados.length+' citados &middot; '+noCitados.length+' no citados'+rsvpMeta+'</div>'+camBadge+'</div><div style="flex-shrink:0;display:flex;gap:0;align-items:center"><button class="btn btn-ol share-cit-btn" style="border-color:#25D366;color:#25D366;font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#128279; WhatsApp</button>'+editBtn+deleteBtn+'</div></div><div class="pills">'+saved.citados.map(p=>{ const est=rsvp[rsvpKey(p)]&&rsvp[rsvpKey(p)].estado; const marca=est==='voy'?' &#10003;':est==='no'?' &#10005;':''; return '<span class="pill pill-y">'+p+marca+'</span>'; }).join('')+noCitados.map(p=>'<span class="pill pill-r">'+p+'</span>').join('')+'</div>'+rsvpDetalle;
       c.querySelector('.share-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.shareCit(c.dataset.citKey); });
       c.querySelector('.edit-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.editCitacion(c.dataset.citKey); });
       c.querySelector('.delete-cit-btn').addEventListener('click', function(e){ e.stopPropagation(); window.deleteCitacion(c.dataset.citKey); });
