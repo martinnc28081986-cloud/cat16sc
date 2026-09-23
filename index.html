@@ -2719,6 +2719,14 @@ const FIXTURE_DEFAULT = [...FIXTURE]; // backup del hardcodeado
 
 async function loadClubConfig(){
   if(window._isEscuelita) return;
+  // El "próximo partido" se cachea 60s (_activeFechaCache) para no golpear Firebase
+  // en cada render. Pero esa caché es global y sobrevive a un cambio de club/categoría
+  // o a que FIXTURE recién se termine de derivar acá abajo — sin este reset, el primer
+  // render (que corre ANTES de que este método corrija FIXTURE) quedaba cacheado 60s,
+  // mostrando el próximo partido de la config anterior/default. Con Sagrado no se
+  // notaba porque su fixture real coincide con el default hardcodeado; con cualquier
+  // otro club (Hernandez incluido) mostraba el partido equivocado.
+  if(typeof window._invalidateActiveFecha === 'function') window._invalidateActiveFecha();
   try {
     const snap = await get(ref(db, CLUB_PATH+'/config'));
     const cfg = snap.exists() ? snap.val() : {};
@@ -2980,10 +2988,18 @@ const COMP_CAT_PATHS = ['cat13','cat14','cat15','cat16','cat17','cat18','cat19',
 
 window._activeFechaCache = null;
 window._activeFechaTs = 0;
+window._activeFechaKey = null;
 
 async function _getActiveFecha(fixture, suspensions){
-  // Cache de 60 segundos para no consultar Firebase en cada render
-  if(window._activeFechaCache !== null && Date.now() - window._activeFechaTs < 60000){
+  // Cache de 60 segundos para no consultar Firebase en cada render. Va atada a
+  // CLUB_PATH+TORNEO_ID: un render que arranca ANTES de que loadClubConfig termine
+  // de resolver el club (o un listener viejo de un club anterior que todavía no se
+  // desuscribió) puede calcular y cachear el resultado de OTRO club. Sin la clave,
+  // ese valor quedaba pegado 60s y el club nuevo mostraba el próximo partido de
+  // otro club (con Sagrado no se notaba porque su fixture default coincide con el
+  // real; con cualquier otro club se veía mal).
+  const _cacheKey = CLUB_PATH + '|' + TORNEO_ID;
+  if(window._activeFechaCache !== null && window._activeFechaKey === _cacheKey && Date.now() - window._activeFechaTs < 60000){
     return window._activeFechaCache;
   }
   try {
@@ -3029,6 +3045,7 @@ async function _getActiveFecha(fixture, suspensions){
 
     window._activeFechaCache = result || null;
     window._activeFechaTs = Date.now();
+    window._activeFechaKey = _cacheKey;
     return window._activeFechaCache;
   } catch(e) {
     console.warn('_getActiveFecha error:', e);
@@ -3037,7 +3054,7 @@ async function _getActiveFecha(fixture, suspensions){
 }
 
 // Invalidar cache cuando se guarda una citación
-window._invalidateActiveFecha = function(){ window._activeFechaCache = null; };
+window._invalidateActiveFecha = function(){ window._activeFechaCache = null; window._activeFechaKey = null; };
 
 // Helper: conjunto de fechas ya jugadas según teamResults/scResults
 function _getPlayedFechas(){
