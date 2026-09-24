@@ -551,6 +551,29 @@
   .ckpi .n.win { color:var(--win); } .ckpi .n.draw { color:var(--draw); }
   .ckpi .n.loss{ color:var(--loss); } .ckpi .n.acc { color:var(--accent); }
 
+  /* Ficha de jugador: dos secciones bien separadas, Partidos y Entrenamientos */
+  .fsec + .fsec { border-top:1px solid var(--border); margin-top:var(--sp-6); padding-top:var(--sp-6); }
+  .fsh { display:flex; align-items:center; gap:var(--sp-3); margin-bottom:var(--sp-5); }
+  .fsh b { font-size:var(--f-sm); letter-spacing:1.5px; text-transform:uppercase; font-weight:700; }
+  .fbar { width:4px; height:16px; border-radius:2px; flex:none; }
+  .fanio { margin-left:auto; font-size:var(--f-sm); color:var(--muted); }
+  .cgrid.kpis.fk .ckpi { background:var(--surface2); border-radius:var(--r-md); padding:var(--sp-4) var(--sp-2); }
+  .cgrid.kpis.cuatro { grid-template-columns:1.35fr 1fr 1fr 1fr; }
+  .ckpi .n small { font-family:'DM Sans',sans-serif; font-size:var(--f-sm); color:var(--muted); }
+  .ckpi .n.cero { color:var(--muted); }
+  .ckpi .l .pt { margin-right:5px; vertical-align:middle; }
+  .frow { display:grid; grid-template-columns:minmax(96px,150px) 1fr auto; align-items:center;
+          gap:var(--sp-4); margin-top:var(--sp-4); font-size:var(--f-sm); }
+  .frow .ft { color:var(--muted); line-height:1.3; }
+  .frow .ft i { display:block; font-style:normal; font-size:var(--f-micro); opacity:.8; }
+  .frow .fv { text-align:right; white-space:nowrap; }
+  .fgt { display:flex; justify-content:space-between; font-size:var(--f-sm); color:var(--muted);
+         margin:var(--sp-5) 0 var(--sp-3); }
+  .ftira { display:flex; flex-wrap:wrap; gap:5px; }
+  .pt-chip.ult { box-shadow:0 0 0 2px var(--surface), 0 0 0 3.5px var(--text); }
+  .fley { display:flex; gap:var(--sp-5); flex-wrap:wrap; margin-top:var(--sp-5);
+          font-size:var(--f-micro); color:var(--muted); }
+  .fley span { display:flex; align-items:center; gap:5px; white-space:nowrap; }
   .cbar { height:6px; background:var(--border); border-radius:var(--r-xs); overflow:hidden; margin-top:var(--sp-3); }
   .cbar i { display:block; height:100%; border-radius:var(--r-xs); background:var(--accent); }
   .cbar i.win { background:var(--win); } .cbar i.draw { background:var(--draw); } .cbar i.loss { background:var(--loss); }
@@ -9575,15 +9598,40 @@ async function startCoordApp(){
     const cits = Object.entries(d.citaciones)
       .filter(([,c]) => c && c.citados && c.citados.length)
       .sort((a,b)=> String(orden(a[1])).localeCompare(String(orden(b[1]))));
-    let citado = 0, falto = 0, jugados = 0;
+    let citado = 0, falto = 0, jugados = 0, todo = 0, parcial = 0;
     const racha = [];
+    /* Todo el año, partido por partido, agrupado por torneo: una zona por grupo
+       (fixture de liga) y un grupo aparte con los amistosos y las copas, que no
+       pertenecen a ninguna fecha de liga. El total de cada grupo son TODAS las
+       citaciones de la categoría en él, no solo las de este jugador. */
+    const grupos = {};
     cits.forEach(([k,c])=>{
-      if(!(c.citados||[]).includes(nombre)){ racha.push({estado:'no', cit:c}); return; }
-      citado++;
-      const j = jugoEnPartido(c, d.stats[k] || null, nombre);
-      if(j === 'falto') falto++; else jugados++;
-      racha.push({estado:j || 'no', cit:c});
+      const gid = c.tipo ? '_extra' : k.slice(0, k.indexOf('::'));
+      const g = grupos[gid] || (grupos[gid] = {id:gid, total:0, citado:0, todo:0, parcial:0, falto:0, tira:[]});
+      g.total++;
+      let estado = 'no';
+      if((c.citados||[]).includes(nombre)){
+        citado++; g.citado++;
+        estado = jugoEnPartido(c, d.stats[k] || null, nombre) || 'no';
+        if(estado === 'falto'){ falto++; g.falto++; }
+        else {
+          jugados++;
+          if(estado === 'todo'){ todo++; g.todo++; } else { parcial++; g.parcial++; }
+        }
+      }
+      const it = {estado, cit:c, i:racha.length};
+      racha.push(it); g.tira.push(it);
     });
+    const _meta = id => { try{ return torneoMeta(id) || {}; }catch(e){ return {}; } };
+    const listaGrupos = Object.values(grupos).sort((a,b)=>{
+      if(a.id === '_extra') return 1;                 // amistosos y copas, al final
+      if(b.id === '_extra') return -1;
+      const oa = _meta(a.id).orden || 0, ob = _meta(b.id).orden || 0;
+      return oa !== ob ? oa - ob : String(a.id).localeCompare(String(b.id));
+    }).map(g => Object.assign(g, {
+      nombre: g.id === '_extra' ? 'Amistosos y copas' : (_meta(g.id).nombre || g.id),
+      actual: g.id === TORNEO_ID
+    }));
     const ult = racha.slice(-5);
     let sinCitar = 0;
     for(let i=racha.length-1; i>=0 && racha[i].estado==='no'; i--) sinCitar++;
@@ -9623,6 +9671,7 @@ async function startCoordApp(){
                  : (pres !== null && pres < OJO_PRESENCIA) ? 'Presencia baja'
                  : '';
     return { nombre, catKey, pres, citado, falto, jugados, racha:ult, motivo,
+             todo, parcial, totalCits:cits.length, grupos:listaGrupos,
              meses, motivos, faltasSeguidas, ultimaPresencia,
              totalSes, totalVino, ultimos6: ultimos6.length, vino6 };
   }
@@ -9637,44 +9686,101 @@ async function startCoordApp(){
   // grande con el número de fecha (o iniciales del rival) adentro, y el
   // partido más reciente pegado al nombre. r viene del más viejo al más
   // nuevo, así que se arma al revés — cada chip nuevo va adelante.
+  function _chipHtml(x, cuando, extra){
+    const estado = x.estado;
+    const cls = estado==='no' ? 'pn' : estado==='falto' ? 'pf' : estado==='todo' ? 'pc' : 'pm';
+    const est = estado==='no'    ? 'no citado'
+              : estado==='falto' ? 'faltó'
+              : estado==='todo'  ? 'jugó todo'
+              : (estado==='entro' ? 'entró desde el banco' : 'salió antes del final');
+    const info = esc(etiquetaPartido(x.cit))+' — '+cuando+': '+est;
+    return '<span class="pt pt-chip '+cls+(extra||'')+'" title="'+info+'">'+esc(etiquetaCorta(x.cit))+'</span>';
+  }
+  function _cuandoFue(atras){
+    return atras === 0 ? 'último partido'
+         : atras === 1 ? 'partido anterior'
+         : 'hace ' + atras + ' partidos';
+  }
   function rachaHtml(r){
     let html = '';
-    r.forEach((x, i) => {
-      const estado = x.estado;
-      const cls = estado==='no' ? 'pn' : estado==='falto' ? 'pf' : estado==='todo' ? 'pc' : 'pm';
-      const est = estado==='no'    ? 'no citado'
-                : estado==='falto' ? 'faltó'
-                : estado==='todo'  ? 'jugó todo'
-                : (estado==='entro' ? 'entró desde el banco' : 'salió antes del final');
-      const atras = r.length - 1 - i;
-      const cuando = atras === 0 ? 'último partido'
-                   : atras === 1 ? 'partido anterior'
-                   : 'hace ' + atras + ' partidos';
-      const info = etiquetaPartido(x.cit)+' — '+cuando+': '+est;
-      html = '<span class="pt pt-chip '+cls+'" title="'+info+'">'+etiquetaCorta(x.cit)+'</span>' + html;
-    });
+    r.forEach((x, i) => { html = _chipHtml(x, _cuandoFue(r.length - 1 - i)) + html; });
     return html;
+  }
+  // Un grupo entero, del más viejo al más nuevo (en la ficha se lee de corrido,
+  // a diferencia de la racha de la fila, que arranca por el último). Cada
+  // partido trae su lugar en el año (x.i), así "hace N partidos" sigue siendo
+  // cierto aunque el grupo sea un solo torneo.
+  function tiraHtml(tira, total){
+    return tira.map(x => {
+      const atras = total - 1 - x.i;
+      return _chipHtml(x, _cuandoFue(atras), atras === 0 ? ' ult' : '');
+    }).join('');
   }
 
   /* El detalle que hace falta para hablar con el padre. Un porcentaje suelto no
      alcanza: hay que poder decir "de los últimos 6 vino a 2, y las 4 faltas
      fueron sin aviso". */
-  function fichaEntrenamientos(j){
-    if(!j.totalSes) return '<div class="cnota" style="margin-top:var(--sp-4)">'+
-      'Sin entrenamientos cargados este año para esta categoría.</div>';
-    let h = '<div style="border-top:1px solid var(--border);margin-top:var(--sp-5);padding-top:var(--sp-4)">'+
-      '<div class="cet" style="margin-bottom:var(--sp-4)">Entrenamientos</div>';
+  function _seccionTitulo(txt, color){
+    return '<div class="fsh"><span class="fbar" style="background:'+color+'"></span>'+
+           '<b style="color:'+color+'">'+txt+'</b><span class="fanio">Temporada '+ANIO+'</span></div>';
+  }
 
-    h += '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">En el año</div>'+
-      '<div class="det">'+j.totalVino+' de '+j.totalSes+'</div>'+
-      '<div class="val" style="color:var(--'+pctCls(j.pres)+')">'+j.pres+'%</div></div>';
-
-    if(j.ultimos6){
-      const p6 = Math.round(j.vino6 / j.ultimos6 * 100);
-      h += '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">'+
-        'Últimos '+j.ultimos6+'</div><div class="det">'+j.vino6+' de '+j.ultimos6+'</div>'+
-        '<div class="val" style="color:var(--'+pctCls(p6)+')">'+p6+'%</div></div>';
+  /* Partidos del año, con TODOS los torneos y los amistosos y copas. Cada
+     número va contra el total de citaciones de la categoría en ese torneo: "22"
+     suelto no dice si es mucho o poco, "22 de 26" sí. */
+  function fichaPartidos(j){
+    let h = '<div class="fsec">'+_seccionTitulo('Partidos', 'var(--accent)');
+    if(!j.totalCits){
+      return h + '<div class="cnota" style="margin-top:0">Todavía no hay citaciones cargadas este año para esta categoría.</div></div>';
     }
+    const pc = (n, t) => t ? Math.round(n / t * 100) : 0;
+    const kpi = (n, chico, l, cls, punto) => '<div class="ckpi"><div class="n '+cls+'">'+n+
+      (chico ? '<small> '+chico+'</small>' : '')+'</div><div class="l">'+
+      (punto ? '<span class="pt '+punto+'"></span>' : '')+l+'</div></div>';
+    h += '<div class="cgrid kpis fk cuatro">'+
+      kpi(j.citado, 'de '+j.totalCits, 'citaciones', 'acc') +
+      kpi(j.todo, '', 'jugó todo', '', 'pc') +
+      kpi(j.parcial, '', 'parcial', '', 'pm') +
+      kpi(j.falto, '', 'faltó', j.falto ? 'loss' : 'cero', 'pf') +
+    '</div>';
+
+    // Cuánto fue citado, en la temporada y en cada torneo
+    const fila = (nombre, sub, cit, tot) => {
+      const p = pc(cit, tot);
+      return '<div class="frow"><div class="ft">'+esc(nombre)+'<i>'+sub+'</i></div>'+
+        '<div class="cbar" style="margin:0"><i style="width:'+p+'%"></i></div>'+
+        '<div class="fv">'+cit+' de '+tot+' &middot; <b style="color:var(--'+pctCls(p)+')">'+p+'%</b></div></div>';
+    };
+    h += fila('Temporada', 'todos los torneos', j.citado, j.totalCits);
+    j.grupos.forEach(g => {
+      h += fila(g.nombre, g.total+(g.total===1?' partido':' partidos')+(g.actual?' &middot; actual':''),
+                g.citado, g.total);
+    });
+
+    // Todos los partidos del año, torneo por torneo
+    j.grupos.forEach(g => {
+      h += '<div class="fgt"><span>'+esc(g.nombre)+'</span><span>'+g.total+
+           (g.total===1?' partido':' partidos')+'</span></div>'+
+           '<div class="ftira">'+tiraHtml(g.tira, j.totalCits)+'</div>';
+    });
+    h += '<div class="fley">'+
+      '<span><i class="pt pc"></i>Jugó todo</span><span><i class="pt pm"></i>Parcial</span>'+
+      '<span><i class="pt pf"></i>Faltó</span><span><i class="pt pn"></i>No citado</span></div>';
+    return h + '</div>';
+  }
+
+  function fichaEntrenamientos(j){
+    if(!j.totalSes) return '<div class="fsec">'+_seccionTitulo('Entrenamientos', 'var(--win)')+
+      '<div class="cnota" style="margin-top:0">Sin entrenamientos cargados este año para esta categoría.</div></div>';
+    let h = '<div class="fsec">'+_seccionTitulo('Entrenamientos', 'var(--win)');
+
+    const p6 = j.ultimos6 ? Math.round(j.vino6 / j.ultimos6 * 100) : null;
+    h += '<div class="cgrid kpis fk">'+
+      '<div class="ckpi"><div class="n '+pctCls(j.pres)+'">'+j.pres+'%</div><div class="l">presencia</div></div>'+
+      '<div class="ckpi"><div class="n">'+j.totalVino+'<small> de '+j.totalSes+'</small></div><div class="l">asistió</div></div>'+
+      (p6 === null ? '' : '<div class="ckpi"><div class="n '+pctCls(p6)+'">'+p6+'%</div>'+
+        '<div class="l">últimos '+j.ultimos6+' &middot; '+j.vino6+' de '+j.ultimos6+'</div></div>')+
+    '</div>';
 
     // Mes a mes: para ver si viene mejorando o cayendo
     if(j.meses.length){
@@ -9768,19 +9874,7 @@ async function startCoordApp(){
         '</button>';
         if(jugAbierto === id){
           f += '<div class="ccard" style="margin-top:calc(-1 * var(--sp-2));border-color:rgba(var(--accent-rgb),.35)">'+
-            '<div class="cgrid kpis">'+
-              '<div class="ckpi"><div class="n '+(j.pres===null?'':pctCls(j.pres))+'">'+
-                (j.pres===null?'—':j.pres+'%')+'</div><div class="l">presencia</div></div>'+
-              '<div class="ckpi"><div class="n acc">'+j.citado+'</div><div class="l">citaciones</div></div>'+
-              '<div class="ckpi"><div class="n '+(j.falto?'loss':'')+'">'+j.falto+'</div>'+
-                '<div class="l">'+(j.falto===1?'falta':'faltas')+'</div></div>'+
-            '</div>'+
-            '<div class="crow" style="margin-top:var(--sp-4)">'+
-              '<div class="nom" style="font-size:var(--f-sm);color:var(--muted)">Últimos partidos</div>'+
-              '<div class="racha">'+rachaHtml(j.racha)+'</div></div>'+
-            '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">'+
-              'De '+j.citado+(j.citado===1?' citación jugó':' citaciones jugó')+
-              '</div><div class="val">'+j.jugados+'</div></div>'+
+            fichaPartidos(j)+
             fichaEntrenamientos(j)+
           '</div>';
         }
