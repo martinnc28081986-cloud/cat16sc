@@ -138,7 +138,6 @@
   .pt-chip.pf { border-radius:var(--r-sm); color:var(--bg); }
   .cit-tot { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--muted);
              line-height:1; flex:none; margin-left:var(--sp-4); }
-  .prow.sin-ir { border-color:rgba(var(--draw-rgb),.45); background:rgba(var(--draw-rgb),.06); }
   /* Motivo de no citación: rotación sin color, lo demás con tono para que se vea */
   .prow.con-motivo { flex-wrap:wrap; }
   .mot-nc { display:block; flex:1 1 100%; width:100%; min-width:0; margin-top:calc(-1 * var(--sp-2));
@@ -150,7 +149,6 @@
   .mot-nc.r { color:var(--loss); border:1px solid rgba(var(--loss-rgb),.5); }
   .mot-nc.sd { font-style:italic; }
   .mot-nc option { background:var(--surface); color:var(--text); text-transform:none; }
-  .cit-aviso { font-size:var(--f-micro); font-weight:700; color:var(--draw); margin-top:2px; }
   .racha-leyenda { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap;
                    font-size:var(--f-micro); color:var(--muted); background:var(--surface2);
                    border:1px solid var(--border); border-radius:var(--r-md);
@@ -1306,6 +1304,9 @@ const MOTIVOS_NC = {
   personal:'Tema personal'
 };
 const MOTIVO_NC_DEFECTO = 'rotacion';
+// Valor interno (nunca se guarda) para un no citado de una citación vieja sin motivo.
+// Va acá, a nivel de módulo, porque lo usan tanto el profe como el coordinador.
+const MOTIVO_SIN_DATO = 'sindato';
 // Los que piden que alguien mire: lesión y comportamiento en rojo, el resto de
 // los que no son rotación en ámbar, rotación sin color.
 function motivoNCTono(k){ return k==='rotacion' ? '' : (k==='lesion'||k==='comportamiento') ? 'r' : 'o'; }
@@ -3084,7 +3085,6 @@ let markedAtt={}, markedCit={}, markedReasons={};
 // los no citados sin motivo (las de antes de que existiera el dato) quedan
 // 'sindato' hasta que el profe elija uno, en vez de pisarse todos con rotación
 // al volver a guardar.
-const MOTIVO_SIN_DATO = 'sindato';
 let markedMotivo = {};
 function _cargarMotivos(cit){
   markedMotivo = {};
@@ -4049,8 +4049,6 @@ window.loadFecha=function(val){
 // de 390px no quedaría lugar para el nombre. Cinco partidos son, con fechas
 // semanales, el último mes y pico.
 const RACHA_N = 5;
-// A partir de cuántas fechas seguidas afuera se muestra el aviso naranja.
-const RACHA_AVISO = 3;
 
 // etiquetaPartido()/etiquetaCorta() viven a nivel de módulo junto a
 // jugoEnPartido() — las usa también rachaHtml() del coordinador.
@@ -4116,11 +4114,10 @@ function renderCitList(){
   PLAYERS.forEach(name=>{
     const citado=markedCit[name]===true;
 
-    // Racha: un punto por partido. Se RECORRE del más viejo al más nuevo (así
-    // sinCitar cuenta bien las fechas seguidas afuera, que terminan en el último
-    // partido), pero se PINTA al revés: cada punto nuevo va adelante, así el
-    // último partido queda pegado al nombre y hacia la derecha van los anteriores.
-    let puntos='', sinCitar=0;
+    // Racha: un punto por partido. Se RECORRE del más viejo al más nuevo pero se
+    // PINTA al revés: cada punto nuevo va adelante, así el último partido queda
+    // pegado al nombre y hacia la derecha van los anteriores.
+    let puntos='';
     ultimos.forEach((p, i)=>{
       const j = jugoEnPartido(p.cit, p.stats, name);   // null si no fue citado
       const cls = j === null    ? 'pn'    // no citado
@@ -4142,18 +4139,14 @@ function renderCitList(){
       // como detalle completo para quien sí puede pasar el mouse.
       const info = etiquetaPartido(p.cit)+' — '+cuando+': '+est;
       puntos = '<span class="pt pt-chip '+cls+'" title="'+info+'">'+etiquetaCorta(p.cit)+'</span>' + puntos;
-      sinCitar = (j === null) ? sinCitar + 1 : 0;
     });
-    const avisa = ultimos.length >= RACHA_AVISO && sinCitar >= RACHA_AVISO;
-    const textoAviso = 'hace '+sinCitar+' fechas que no es citado';
 
     const row=document.createElement('div');
-    row.className='prow'+(citado?' citado':'')+(avisa && !citado?' sin-ir':'');
+    row.className='prow'+(citado?' citado':'');
     row.onclick=()=>{markedCit[name]=!citado;renderCitList();};
     row.innerHTML='<div class="tbtn">'+(citado?'&#9733;':'&middot;')+'</div>'+
       '<div class="pname">'+name+
         (CFG.playerCats?'<div class="psub">Cat '+CFG.playerCats[name]+'</div>':'')+
-        (avisa?'<div class="cit-aviso">'+textoAviso+'</div>':'')+
       '</div>'+
       (ultimos.length
         ? '<span class="cit-tot">'+(totales[name]||0)+'</span><span class="racha">'+puntos+'</span>'
