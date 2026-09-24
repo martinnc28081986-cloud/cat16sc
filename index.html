@@ -140,10 +140,12 @@
              line-height:1; flex:none; margin-left:var(--sp-4); }
   .prow.sin-ir { border-color:rgba(var(--draw-rgb),.45); background:rgba(var(--draw-rgb),.06); }
   /* Motivo de no citación: rotación sin color, lo demás con tono para que se vea */
-  .mot-nc { display:block; margin-top:var(--sp-2); max-width:100%; background:transparent;
-            color:var(--muted); border:1px dashed var(--border); border-radius:var(--r-full);
-            padding:2px var(--sp-4); font:inherit; font-size:var(--f-micro); font-weight:600;
-            text-transform:uppercase; letter-spacing:.5px; cursor:pointer; }
+  .prow.con-motivo { flex-wrap:wrap; }
+  .mot-nc { display:block; flex:1 1 100%; width:100%; min-width:0; margin-top:calc(-1 * var(--sp-2));
+            background:transparent; color:var(--muted); border:1px dashed var(--border);
+            border-radius:var(--r-sm); padding:var(--sp-2) var(--sp-4); font:inherit;
+            font-size:var(--f-micro); font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; cursor:pointer; }
   .mot-nc.o { color:var(--draw); border:1px solid rgba(var(--draw-rgb),.5); }
   .mot-nc.r { color:var(--loss); border:1px solid rgba(var(--loss-rgb),.5); }
   .mot-nc.sd { font-style:italic; }
@@ -4156,7 +4158,10 @@ function renderCitList(){
       pintar(actual);
       sel.onclick=e=>e.stopPropagation();
       sel.onchange=()=>{ markedMotivo[name]=sel.value; pintar(sel.value); };
-      row.querySelector('.pname').appendChild(sel);
+      // En su propia línea, al pie de la fila: al lado del nombre no entra en una
+      // grilla de dos columnas y ensanchaba la fila hasta hacer scroll horizontal.
+      row.classList.add('con-motivo');
+      row.appendChild(sel);
     }
     el.appendChild(row);
   });
