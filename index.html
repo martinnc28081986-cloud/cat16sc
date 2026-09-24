@@ -3116,8 +3116,22 @@ let _torneosExtraNombres = [];
 let selectedCamisetero = null;
 let pitchPlayers={}, benchPlayers=[], selectedPlayer=null, pitchTapReady=false;
 
+// dbPath de las categorías competitivas, para _getActiveFecha().
+// Tiene que estar definido ANTES de la primera llamada a renderFechaSelector()
+// (abajo): esa llamada usa _getActiveFecha() y con la constante más abajo fallaba
+// con "before initialization", así que la primera preselección de fecha se perdía.
+// OJO: estos son los dbPath reales de Firebase (ver CAT_CONFIG / el mapeo catNum
+// más abajo) — no 'cat14','cat15','cat17'... Con los nombres viejos solo cat13 y
+// cat16 coincidían de verdad, así que la detección de "qué categorías ya citaron"
+// quedaba ciega para cat2014/2015/2017/2018/2019/2020.
+const COMP_CAT_PATHS = ['cat13','cat16','cat2014','cat2015','cat2017','cat2018','cat2019','cat2020'];
+
 // ── POPULATE FIXTURE SELECTOR ──
-function renderFechaSelector(){
+// antesDeLaConfig: la llamada del arranque, que corre ANTES de loadClubConfig. Ahí el
+// FIXTURE y el torneo todavía no son los del club, así que se arma la lista pero NO se
+// preselecciona fecha (elegiría con datos que no corresponden y quedaría pegada). Las
+// llamadas de después, con la config ya cargada, preseleccionan como siempre.
+function renderFechaSelector(antesDeLaConfig){
   if(window._isEscuelita){ renderEncList(); return; }
   const sel=document.getElementById('citFechaSelect');
   const prev=sel.value;
@@ -3148,14 +3162,14 @@ function renderFechaSelector(){
       if(next){ sel.value=next.fecha; loadFecha(String(next.fecha)); }
       else { sel.value=''; loadFecha(''); }
     });
-  } else if(!prev){
+  } else if(!prev && !antesDeLaConfig){
     // Sin selección previa → auto-seleccionar la próxima fecha no citada
     _getActiveFecha(FIXTURE, _suspensions).then(next => {
       if(next && !sel.value){ sel.value=next.fecha; loadFecha(String(next.fecha)); }
     });
   }
 }
-renderFechaSelector();
+renderFechaSelector(true);
 
 // Al cambiar de temporada hay que soltar la fecha elegida: el número existe en
 // las dos zonas pero es otro partido. Sin esto quedaban marcados los citados de
@@ -3175,12 +3189,8 @@ window._resetFechaElegida = function(){
 // setSS y _CAT_LABELS se movieron a nivel de módulo (los usan los tres roles).
 
 // ── FECHA ACTIVA GLOBAL ──
-// La fecha activa es la primera donde al menos UNA categoría competitiva no citó
-// OJO: estos son los dbPath reales de Firebase (ver CAT_CONFIG / el mapeo catNum
-// unas líneas más abajo) — no 'cat14','cat15','cat17'... Con los nombres viejos
-// solo cat13 y cat16 coincidían de verdad, así que la detección de "qué
-// categorías ya citaron" quedaba ciega para cat2014/2015/2017/2018/2019/2020.
-const COMP_CAT_PATHS = ['cat13','cat16','cat2014','cat2015','cat2017','cat2018','cat2019','cat2020'];
+// La fecha activa es la primera donde al menos UNA categoría competitiva no citó.
+// COMP_CAT_PATHS se define más arriba, antes de renderFechaSelector().
 
 window._activeFechaCache = null;
 window._activeFechaTs = 0;
