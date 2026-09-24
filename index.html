@@ -144,11 +144,13 @@
             background:transparent; color:var(--muted); border:1px dashed var(--border);
             border-radius:var(--r-sm); padding:var(--sp-2) var(--sp-4); font:inherit;
             font-size:var(--f-micro); font-weight:600; text-transform:uppercase;
-            letter-spacing:.5px; cursor:pointer; }
+            letter-spacing:.5px; cursor:pointer; text-align:left; line-height:1.3;
+            -webkit-tap-highlight-color:transparent; }
+  /* El ↻ avisa que un toque cambia el motivo (como el botón de ausencias en Entreno) */
+  .mot-nc::after { content:'\21BB'; float:right; opacity:.6; }
   .mot-nc.o { color:var(--draw); border:1px solid rgba(var(--draw-rgb),.5); }
   .mot-nc.r { color:var(--loss); border:1px solid rgba(var(--loss-rgb),.5); }
   .mot-nc.sd { font-style:italic; }
-  .mot-nc option { background:var(--surface); color:var(--text); text-transform:none; }
   .racha-leyenda { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap;
                    font-size:var(--f-micro); color:var(--muted); background:var(--surface2);
                    border:1px solid var(--border); border-radius:var(--r-md);
@@ -1298,10 +1300,12 @@ window.REASON_LABELS = REASON_LABELS;
    citaciones/{key}/noCitados/{rsvpKey(nombre)} = clave. Las citaciones de antes
    de que existiera esto no tienen el dato: se muestran como "sin dato", no como
    rotación, para no inventar una estadística. */
+// El orden importa: es el que recorre el botón del profe con cada toque (los más
+// habituales primero, así quedan a uno o dos toques) y el del resumen del coordinador.
 const MOTIVOS_NC = {
-  rotacion:'Rotación', entreno_poco:'Entrenó poco', comportamiento:'Comportamiento',
-  lesion:'Lesión', enfermedad:'Enfermedad', otro_equipo:'Juega en otro equipo',
-  personal:'Tema personal'
+  rotacion:'Rotación', entreno_poco:'Entrenó poco', lesion:'Lesión',
+  enfermedad:'Enfermedad', personal:'Tema personal', otro_equipo:'Juega en otro equipo',
+  comportamiento:'Comportamiento'
 };
 const MOTIVO_NC_DEFECTO = 'rotacion';
 // Valor interno (nunca se guarda) para un no citado de una citación vieja sin motivo.
@@ -4162,29 +4166,33 @@ function renderCitList(){
         ? '<span class="cit-tot">'+(totales[name]||0)+'</span><span class="racha">'+puntos+'</span>'
         : '');
 
-    // Por qué no fue citado. Un desplegable nativo: en el celu abre el selector
-    // del teléfono, y no hace falta armar un menú propio dentro de una grilla de
-    // dos columnas. Se le frena el click para que no cite al jugador sin querer.
-    // Escuelita son encuentros sueltos, sin este dato.
+    // Por qué no fue citado. Un botón que pasa al motivo siguiente con cada toque,
+    // igual que el de las ausencias en Entreno (cycleReason). Se le frena el click
+    // para que no cite al jugador sin querer. Escuelita son encuentros sueltos,
+    // sin este dato.
     if(!citado && !window._isEscuelita){
-      const sel=document.createElement('select');
-      const actual=markedMotivo[name]||MOTIVO_NC_DEFECTO;
-      const pintar=v=>{ sel.className='mot-nc '+(v===MOTIVO_SIN_DATO?'sd':motivoNCTono(v)); };
-      sel.setAttribute('aria-label','Motivo por el que '+name+' no es citado');
-      const opciones=Object.entries(MOTIVOS_NC);
-      if(actual===MOTIVO_SIN_DATO) opciones.push([MOTIVO_SIN_DATO,'Sin dato']);
-      opciones.forEach(([k,l])=>{
-        const o=document.createElement('option'); o.value=k; o.textContent=l;
-        if(k===actual) o.selected=true;
-        sel.appendChild(o);
-      });
-      pintar(actual);
-      sel.onclick=e=>e.stopPropagation();
-      sel.onchange=()=>{ markedMotivo[name]=sel.value; pintar(sel.value); };
+      const btn=document.createElement('button');
+      btn.type='button';
+      const pintar=()=>{
+        const v=markedMotivo[name]||MOTIVO_NC_DEFECTO;
+        btn.className='mot-nc '+(v===MOTIVO_SIN_DATO?'sd':motivoNCTono(v));
+        btn.textContent=v===MOTIVO_SIN_DATO?'Sin dato':MOTIVOS_NC[v];
+        btn.setAttribute('aria-label','Motivo por el que '+name+' no es citado: '+btn.textContent+'. Tocar para cambiar');
+      };
+      btn.onclick=e=>{
+        e.stopPropagation();
+        const orden=Object.keys(MOTIVOS_NC);
+        const v=markedMotivo[name]||MOTIVO_NC_DEFECTO;
+        // Sin dato (citación vieja) arranca el ciclo por el primero; después del
+        // último vuelve al primero.
+        markedMotivo[name]=v===MOTIVO_SIN_DATO ? orden[0] : orden[(orden.indexOf(v)+1)%orden.length];
+        pintar();
+      };
+      pintar();
       // En su propia línea, al pie de la fila: al lado del nombre no entra en una
       // grilla de dos columnas y ensanchaba la fila hasta hacer scroll horizontal.
       row.classList.add('con-motivo');
-      row.appendChild(sel);
+      row.appendChild(btn);
     }
     el.appendChild(row);
   });
