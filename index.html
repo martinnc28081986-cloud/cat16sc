@@ -1148,7 +1148,7 @@ else pintarIconos();
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, update, remove, get, onValue, push, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, update, remove, get, onValue, push, onDisconnect, query, orderByChild, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const FC = {
@@ -1634,6 +1634,19 @@ onValue(connectedRef, snap => {
   }
 });
 
+// Borra registros de conexión de más de 24 h (huérfanos de cortes). Devuelve
+// cuántos borró.
+window._limpiarPresenceViejo = async function(){
+  try{
+    const viejos = await get(query(ref(db, 'presence'), orderByChild('t'), endAt(Date.now() - 24 * 3600 * 1000)));
+    if(!viejos.exists()) return 0;
+    const borrar = {};
+    viejos.forEach(c => { borrar[c.key] = null; });
+    await update(ref(db, 'presence'), borrar);
+    return Object.keys(borrar).length;
+  }catch(e){ console.warn('presence: no se pudo limpiar', e && e.message); return 0; }
+};
+
 window._updatePresenceCat = function(cat){
   _currentCat = cat;
   if(_myPresRef) set(_myPresRef, { t: Date.now(), cat });
@@ -1644,7 +1657,11 @@ setInterval(() => {
   if(_myPresRef && _currentCat) set(_myPresRef, { t: Date.now(), cat: _currentCat });
 }, 4 * 60 * 1000);
 
-onValue(ref(db, 'presence'), snap => {
+// Los registros de conexión se borran solos al desconectar (onDisconnect), pero
+// los de cortes de red o cierres bruscos quedaban para siempre, y cada cliente
+// bajaba TODOS en cada apertura. Se pide solo lo reciente (necesita el índice
+// "t" en las reglas) y el super admin purga lo viejo al entrar.
+onValue(query(ref(db, 'presence'), orderByChild('t'), startAt(Date.now() - 10 * 60 * 1000)), snap => {
   try {
     const _now = Date.now();
     const data = snap.exists()
@@ -2959,9 +2976,12 @@ async function loadClubConfig(){
 
     // ── NOMBRE DEL CLUB (para cabeceras de citación) ──
     try{
-      const clubSnap = await get(ref(db, CLUB_PATH));
-      if(clubSnap.exists() && clubSnap.val().nombre){
-        CFG.club = clubSnap.val().nombre;
+      // Solo el campo nombre. Antes se bajaba el nodo ENTERO del club (todas las
+      // categorías y temporadas: ~300 KB en un club con un año de datos, y
+      // crece cada año) en cada apertura, solo para leer un texto.
+      const nomSnap = await get(ref(db, CLUB_PATH+'/nombre'));
+      if(nomSnap.exists() && nomSnap.val()){
+        CFG.club = nomSnap.val();
       }
     }catch(e){}
 
@@ -7320,6 +7340,9 @@ async function startSuperAdminApp(){
   document.getElementById('coord-app').style.display = 'none';
   document.getElementById('superadmin-app').style.display = 'block';
   document.getElementById('loadingScreen').style.display = 'none';
+
+  // Mantenimiento: purgar registros de conexión huérfanos (sin esperar el resultado)
+  if(window._limpiarPresenceViejo) window._limpiarPresenceViejo();
 
   // Header
   const logo = document.querySelector('.logo');

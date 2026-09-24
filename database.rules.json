@@ -49,6 +49,7 @@
       }
     },
     "presence": {
+      ".indexOn": ["t"],
       ".read": "auth != null",
       ".write": "auth != null"
     }
