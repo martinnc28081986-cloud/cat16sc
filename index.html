@@ -138,8 +138,17 @@
   .pt-chip.pf { border-radius:var(--r-sm); color:var(--bg); }
   .cit-tot { font-family:'Bebas Neue',sans-serif; font-size:var(--f-xl); color:var(--muted);
              line-height:1; flex:none; margin-left:var(--sp-4); }
-  .prow.sin-ir { border-color:rgba(var(--draw-rgb),.45); background:rgba(var(--draw-rgb),.06); }
-  .cit-aviso { font-size:var(--f-micro); font-weight:700; color:var(--draw); margin-top:2px; }
+  /* Motivo de no citación: rotación sin color, lo demás con tono para que se vea */
+  .prow.con-motivo { flex-wrap:wrap; }
+  .mot-nc { display:block; flex:1 1 100%; width:100%; min-width:0; margin-top:calc(-1 * var(--sp-2));
+            background:transparent; color:var(--muted); border:1px dashed var(--border);
+            border-radius:var(--r-sm); padding:var(--sp-2) var(--sp-4); font:inherit;
+            font-size:var(--f-micro); font-weight:600; text-transform:uppercase;
+            letter-spacing:.5px; cursor:pointer; }
+  .mot-nc.o { color:var(--draw); border:1px solid rgba(var(--draw-rgb),.5); }
+  .mot-nc.r { color:var(--loss); border:1px solid rgba(var(--loss-rgb),.5); }
+  .mot-nc.sd { font-style:italic; }
+  .mot-nc option { background:var(--surface); color:var(--text); text-transform:none; }
   .racha-leyenda { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap;
                    font-size:var(--f-micro); color:var(--muted); background:var(--surface2);
                    border:1px solid var(--border); border-radius:var(--r-md);
@@ -551,6 +560,29 @@
   .ckpi .n.win { color:var(--win); } .ckpi .n.draw { color:var(--draw); }
   .ckpi .n.loss{ color:var(--loss); } .ckpi .n.acc { color:var(--accent); }
 
+  /* Ficha de jugador: dos secciones bien separadas, Partidos y Entrenamientos */
+  .fsec + .fsec { border-top:1px solid var(--border); margin-top:var(--sp-6); padding-top:var(--sp-6); }
+  .fsh { display:flex; align-items:center; gap:var(--sp-3); margin-bottom:var(--sp-5); }
+  .fsh b { font-size:var(--f-sm); letter-spacing:1.5px; text-transform:uppercase; font-weight:700; }
+  .fbar { width:4px; height:16px; border-radius:2px; flex:none; }
+  .fanio { margin-left:auto; font-size:var(--f-sm); color:var(--muted); }
+  .cgrid.kpis.fk .ckpi { background:var(--surface2); border-radius:var(--r-md); padding:var(--sp-4) var(--sp-2); }
+  .cgrid.kpis.cuatro { grid-template-columns:1.35fr 1fr 1fr 1fr; }
+  .ckpi .n small { font-family:'DM Sans',sans-serif; font-size:var(--f-sm); color:var(--muted); }
+  .ckpi .n.cero { color:var(--muted); }
+  .ckpi .l .pt { margin-right:5px; vertical-align:middle; }
+  .frow { display:grid; grid-template-columns:minmax(96px,150px) 1fr auto; align-items:center;
+          gap:var(--sp-4); margin-top:var(--sp-4); font-size:var(--f-sm); }
+  .frow .ft { color:var(--muted); line-height:1.3; }
+  .frow .ft i { display:block; font-style:normal; font-size:var(--f-micro); opacity:.8; }
+  .frow .fv { text-align:right; white-space:nowrap; }
+  .fgt { display:flex; justify-content:space-between; font-size:var(--f-sm); color:var(--muted);
+         margin:var(--sp-5) 0 var(--sp-3); }
+  .ftira { display:flex; flex-wrap:wrap; gap:5px; }
+  .pt-chip.ult { box-shadow:0 0 0 2px var(--surface), 0 0 0 3.5px var(--text); }
+  .fley { display:flex; gap:var(--sp-5); flex-wrap:wrap; margin-top:var(--sp-5);
+          font-size:var(--f-micro); color:var(--muted); }
+  .fley span { display:flex; align-items:center; gap:5px; white-space:nowrap; }
   .cbar { height:6px; background:var(--border); border-radius:var(--r-xs); overflow:hidden; margin-top:var(--sp-3); }
   .cbar i { display:block; height:100%; border-radius:var(--r-xs); background:var(--accent); }
   .cbar i.win { background:var(--win); } .cbar i.draw { background:var(--draw); } .cbar i.loss { background:var(--loss); }
@@ -1259,6 +1291,30 @@ function _fechaDeRegistro(cit){
 // el profe y los lee el coordinador, que no pasa por startApp.
 const REASON_LABELS = {lesionado:'Lesionado',enfermedad:'Enfermedad',personal:'Personal',suspendido:'Suspendido',sinaviso:'Sin aviso'};
 window.REASON_LABELS = REASON_LABELS;
+
+/* Por qué un jugador NO fue citado a un partido. La lista es una sola para todos
+   los clubes: el día que haga falta otro motivo se agrega acá y aparece en la
+   lista del profe y en la ficha del coordinador a la vez. Se guarda como
+   citaciones/{key}/noCitados/{rsvpKey(nombre)} = clave. Las citaciones de antes
+   de que existiera esto no tienen el dato: se muestran como "sin dato", no como
+   rotación, para no inventar una estadística. */
+const MOTIVOS_NC = {
+  rotacion:'Rotación', entreno_poco:'Entrenó poco', comportamiento:'Comportamiento',
+  lesion:'Lesión', enfermedad:'Enfermedad', otro_equipo:'Juega en otro equipo',
+  personal:'Tema personal'
+};
+const MOTIVO_NC_DEFECTO = 'rotacion';
+// Valor interno (nunca se guarda) para un no citado de una citación vieja sin motivo.
+// Va acá, a nivel de módulo, porque lo usan tanto el profe como el coordinador.
+const MOTIVO_SIN_DATO = 'sindato';
+// Los que piden que alguien mire: lesión y comportamiento en rojo, el resto de
+// los que no son rotación en ámbar, rotación sin color.
+function motivoNCTono(k){ return k==='rotacion' ? '' : (k==='lesion'||k==='comportamiento') ? 'r' : 'o'; }
+function motivoNoCitado(cit, nombre){
+  const m = cit && cit.noCitados && cit.noCitados[rsvpKey(nombre)];
+  return MOTIVOS_NC[m] ? m : null;
+}
+window.MOTIVOS_NC = MOTIVOS_NC;
 
 /* ── Cuánto jugó cada citado ────────────────────────────────────
    En LISFI a un jugador citado hay que ponerlo sí o sí, así que "citado pero se
@@ -3024,6 +3080,31 @@ const FIXTURE_DATES = {}; // Fechas no disponibles en LISFI
 
 let attendance={}, citaciones={};
 let markedAtt={}, markedCit={}, markedReasons={};
+// Motivo de no citación de cada jugador en la citación que se está editando.
+// Una citación nueva arranca todo en rotación. Una ya guardada trae lo que tenía:
+// los no citados sin motivo (las de antes de que existiera el dato) quedan
+// 'sindato' hasta que el profe elija uno, en vez de pisarse todos con rotación
+// al volver a guardar.
+let markedMotivo = {};
+function _cargarMotivos(cit){
+  markedMotivo = {};
+  if(!cit || !cit.citados || !cit.citados.length) return;   // sin guardar: rotación por defecto
+  PLAYERS.forEach(p => {
+    if(cit.citados.includes(p)) return;
+    markedMotivo[p] = motivoNoCitado(cit, p) || MOTIVO_SIN_DATO;
+  });
+}
+// noCitados a guardar: cada jugador no citado con su motivo (los que siguen
+// sin dato no se guardan).
+function _motivosParaGuardar(){
+  const out = {};
+  PLAYERS.forEach(p => {
+    if(markedCit[p] === true) return;
+    const m = markedMotivo[p] || MOTIVO_NC_DEFECTO;
+    if(m !== MOTIVO_SIN_DATO) out[rsvpKey(p)] = m;
+  });
+  return out;
+}
 let selHistMonth=null, selStatsMonth=null;
 let activeTab='tomar';
 let currentFecha = null;
@@ -3035,8 +3116,22 @@ let _torneosExtraNombres = [];
 let selectedCamisetero = null;
 let pitchPlayers={}, benchPlayers=[], selectedPlayer=null, pitchTapReady=false;
 
+// dbPath de las categorías competitivas, para _getActiveFecha().
+// Tiene que estar definido ANTES de la primera llamada a renderFechaSelector()
+// (abajo): esa llamada usa _getActiveFecha() y con la constante más abajo fallaba
+// con "before initialization", así que la primera preselección de fecha se perdía.
+// OJO: estos son los dbPath reales de Firebase (ver CAT_CONFIG / el mapeo catNum
+// más abajo) — no 'cat14','cat15','cat17'... Con los nombres viejos solo cat13 y
+// cat16 coincidían de verdad, así que la detección de "qué categorías ya citaron"
+// quedaba ciega para cat2014/2015/2017/2018/2019/2020.
+const COMP_CAT_PATHS = ['cat13','cat16','cat2014','cat2015','cat2017','cat2018','cat2019','cat2020'];
+
 // ── POPULATE FIXTURE SELECTOR ──
-function renderFechaSelector(){
+// antesDeLaConfig: la llamada del arranque, que corre ANTES de loadClubConfig. Ahí el
+// FIXTURE y el torneo todavía no son los del club, así que se arma la lista pero NO se
+// preselecciona fecha (elegiría con datos que no corresponden y quedaría pegada). Las
+// llamadas de después, con la config ya cargada, preseleccionan como siempre.
+function renderFechaSelector(antesDeLaConfig){
   if(window._isEscuelita){ renderEncList(); return; }
   const sel=document.getElementById('citFechaSelect');
   const prev=sel.value;
@@ -3067,14 +3162,14 @@ function renderFechaSelector(){
       if(next){ sel.value=next.fecha; loadFecha(String(next.fecha)); }
       else { sel.value=''; loadFecha(''); }
     });
-  } else if(!prev){
+  } else if(!prev && !antesDeLaConfig){
     // Sin selección previa → auto-seleccionar la próxima fecha no citada
     _getActiveFecha(FIXTURE, _suspensions).then(next => {
       if(next && !sel.value){ sel.value=next.fecha; loadFecha(String(next.fecha)); }
     });
   }
 }
-renderFechaSelector();
+renderFechaSelector(true);
 
 // Al cambiar de temporada hay que soltar la fecha elegida: el número existe en
 // las dos zonas pero es otro partido. Sin esto quedaban marcados los citados de
@@ -3084,6 +3179,7 @@ window._resetFechaElegida = function(){
   currentPartidoExtra = null;
   _fixtureInfoTorneo = null;
   markedCit = {};
+  _cargarMotivos(null);
   selectedCamisetero = null;
   const sel = document.getElementById('citFechaSelect'); if(sel) sel.value = '';
   const info = document.getElementById('fixtureInfo');   if(info) info.style.display = 'none';
@@ -3093,12 +3189,8 @@ window._resetFechaElegida = function(){
 // setSS y _CAT_LABELS se movieron a nivel de módulo (los usan los tres roles).
 
 // ── FECHA ACTIVA GLOBAL ──
-// La fecha activa es la primera donde al menos UNA categoría competitiva no citó
-// OJO: estos son los dbPath reales de Firebase (ver CAT_CONFIG / el mapeo catNum
-// unas líneas más abajo) — no 'cat14','cat15','cat17'... Con los nombres viejos
-// solo cat13 y cat16 coincidían de verdad, así que la detección de "qué
-// categorías ya citaron" quedaba ciega para cat2014/2015/2017/2018/2019/2020.
-const COMP_CAT_PATHS = ['cat13','cat16','cat2014','cat2015','cat2017','cat2018','cat2019','cat2020'];
+// La fecha activa es la primera donde al menos UNA categoría competitiva no citó.
+// COMP_CAT_PATHS se define más arriba, antes de renderFechaSelector().
 
 window._activeFechaCache = null;
 window._activeFechaTs = 0;
@@ -3224,6 +3316,7 @@ attendance={};
 citaciones={};
 markedAtt={};
 markedCit={};
+markedMotivo={};
 markedReasons={};
 selHistMonth=null;
 selStatsMonth=null;
@@ -3879,10 +3972,11 @@ window.loadPartidoExtra = function(key){
   currentFecha = null;
   currentPartidoExtra = key;
   document.getElementById('citFechaSelect').value = '';
-  markedCit = {}; selectedCamisetero = null;
+  markedCit = {}; selectedCamisetero = null; _cargarMotivos(null);
   const cit = citaciones[key];
   if(!cit) return;
   (cit.citados||[]).forEach(p => markedCit[p] = true);
+  _cargarMotivos(cit);
   selectedCamisetero = cit.camisetero || null;
 
   const tipoLabel = cit.tipo === 'torneo' ? (cit.torneo_nombre || 'Torneo') : 'Amistoso';
@@ -3926,7 +4020,7 @@ window.loadFecha=function(val){
     info.style.display='block';
     document.getElementById('fixtureTitleEl').innerHTML='Fecha '+f.fecha+' &mdash; vs '+_fmtRival(f.rival)+' <span class="fixture-badge fb-libre">SUSPENDIDA</span>';
     document.getElementById('fixtureSubEl').innerHTML='<span style="color:var(--red);font-weight:600">⛔ Esta fecha fue suspendida por el coordinador. No se puede citar.</span>';
-    markedCit={}; selectedCamisetero=null;
+    markedCit={}; selectedCamisetero=null; _cargarMotivos(null);
     renderCitList(); renderCamSelector();
     if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='Fecha suspendida'; }
     return;
@@ -3943,6 +4037,7 @@ window.loadFecha=function(val){
   const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
   markedCit={};
   selectedCamisetero=null;
+  _cargarMotivos(citaciones[key] || null);
   if(citaciones[key]){
     (citaciones[key].citados||[]).forEach(p=>markedCit[p]=true);
     selectedCamisetero=citaciones[key].camisetero||null;
@@ -3964,8 +4059,6 @@ window.loadFecha=function(val){
 // de 390px no quedaría lugar para el nombre. Cinco partidos son, con fechas
 // semanales, el último mes y pico.
 const RACHA_N = 5;
-// A partir de cuántas fechas seguidas afuera se muestra el aviso naranja.
-const RACHA_AVISO = 3;
 
 // etiquetaPartido()/etiquetaCorta() viven a nivel de módulo junto a
 // jugoEnPartido() — las usa también rachaHtml() del coordinador.
@@ -4031,18 +4124,18 @@ function renderCitList(){
   PLAYERS.forEach(name=>{
     const citado=markedCit[name]===true;
 
-    // Racha: un punto por partido. Se RECORRE del más viejo al más nuevo (así
-    // sinCitar cuenta bien las fechas seguidas afuera, que terminan en el último
-    // partido), pero se PINTA al revés: cada punto nuevo va adelante, así el
-    // último partido queda pegado al nombre y hacia la derecha van los anteriores.
-    let puntos='', sinCitar=0;
+    // Racha: un punto por partido. Se RECORRE del más viejo al más nuevo pero se
+    // PINTA al revés: cada punto nuevo va adelante, así el último partido queda
+    // pegado al nombre y hacia la derecha van los anteriores.
+    let puntos='';
     ultimos.forEach((p, i)=>{
       const j = jugoEnPartido(p.cit, p.stats, name);   // null si no fue citado
       const cls = j === null    ? 'pn'    // no citado
                 : j === 'falto' ? 'pf'    // citado pero faltó
                 : j === 'todo'  ? 'pc'    // jugó todo
                                 : 'pm';   // entró o salió: jugó una parte
-      const est = j === null    ? 'no citado'
+      const motNC = j === null ? motivoNoCitado(p.cit, name) : null;
+      const est = j === null    ? 'no citado' + (motNC ? ' ('+MOTIVOS_NC[motNC]+')' : '')
                 : j === 'falto' ? 'faltó'
                 : j === 'todo'  ? 'jugó todo'
                 : (j === 'entro' ? 'entró desde el banco' : 'salió antes del final');
@@ -4056,22 +4149,43 @@ function renderCitList(){
       // como detalle completo para quien sí puede pasar el mouse.
       const info = etiquetaPartido(p.cit)+' — '+cuando+': '+est;
       puntos = '<span class="pt pt-chip '+cls+'" title="'+info+'">'+etiquetaCorta(p.cit)+'</span>' + puntos;
-      sinCitar = (j === null) ? sinCitar + 1 : 0;
     });
-    const avisa = ultimos.length >= RACHA_AVISO && sinCitar >= RACHA_AVISO;
-    const textoAviso = 'hace '+sinCitar+' fechas que no es citado';
 
     const row=document.createElement('div');
-    row.className='prow'+(citado?' citado':'')+(avisa && !citado?' sin-ir':'');
+    row.className='prow'+(citado?' citado':'');
     row.onclick=()=>{markedCit[name]=!citado;renderCitList();};
     row.innerHTML='<div class="tbtn">'+(citado?'&#9733;':'&middot;')+'</div>'+
       '<div class="pname">'+name+
         (CFG.playerCats?'<div class="psub">Cat '+CFG.playerCats[name]+'</div>':'')+
-        (avisa?'<div class="cit-aviso">'+textoAviso+'</div>':'')+
       '</div>'+
       (ultimos.length
         ? '<span class="cit-tot">'+(totales[name]||0)+'</span><span class="racha">'+puntos+'</span>'
         : '');
+
+    // Por qué no fue citado. Un desplegable nativo: en el celu abre el selector
+    // del teléfono, y no hace falta armar un menú propio dentro de una grilla de
+    // dos columnas. Se le frena el click para que no cite al jugador sin querer.
+    // Escuelita son encuentros sueltos, sin este dato.
+    if(!citado && !window._isEscuelita){
+      const sel=document.createElement('select');
+      const actual=markedMotivo[name]||MOTIVO_NC_DEFECTO;
+      const pintar=v=>{ sel.className='mot-nc '+(v===MOTIVO_SIN_DATO?'sd':motivoNCTono(v)); };
+      sel.setAttribute('aria-label','Motivo por el que '+name+' no es citado');
+      const opciones=Object.entries(MOTIVOS_NC);
+      if(actual===MOTIVO_SIN_DATO) opciones.push([MOTIVO_SIN_DATO,'Sin dato']);
+      opciones.forEach(([k,l])=>{
+        const o=document.createElement('option'); o.value=k; o.textContent=l;
+        if(k===actual) o.selected=true;
+        sel.appendChild(o);
+      });
+      pintar(actual);
+      sel.onclick=e=>e.stopPropagation();
+      sel.onchange=()=>{ markedMotivo[name]=sel.value; pintar(sel.value); };
+      // En su propia línea, al pie de la fila: al lado del nombre no entra en una
+      // grilla de dos columnas y ensanchaba la fila hasta hacer scroll horizontal.
+      row.classList.add('con-motivo');
+      row.appendChild(sel);
+    }
     el.appendChild(row);
   });
   const n=Object.values(markedCit).filter(v=>v===true).length;
@@ -4250,9 +4364,10 @@ window.saveCitacion=async function(){
   if(currentPartidoExtra){
     const citados=PLAYERS.filter(p=>markedCit[p]===true);
     const existing=citaciones[currentPartidoExtra]||{};
+    const noCitados=_motivosParaGuardar();
     try{
-      await update(ref(db,DB_PREFIX+'/citaciones/'+currentPartidoExtra),{...existing,citados,camisetero:selectedCamisetero||null});
-      citaciones[currentPartidoExtra]={...existing,citados,camisetero:selectedCamisetero||null};
+      await update(ref(db,DB_PREFIX+'/citaciones/'+currentPartidoExtra),{...existing,citados,noCitados:Object.keys(noCitados).length?noCitados:null,camisetero:selectedCamisetero||null});
+      citaciones[currentPartidoExtra]={...existing,citados,noCitados,camisetero:selectedCamisetero||null};
       showToast('Partido guardado');
       btn.textContent='✓ Guardado';
       setTimeout(()=>{ btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; },1500);
@@ -4270,7 +4385,8 @@ window.saveCitacion=async function(){
     // Usar update() en vez de set() para no pisar campos existentes (whatsappShared, score, result, etc.)
     const _now = new Date();
     const _savedAt = _now.toISOString().substring(0,10); // YYYY-MM-DD
-    await update(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,citados,camisetero:selectedCamisetero||null,savedAt:_savedAt});
+    const noCitados=_motivosParaGuardar();
+    await update(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,citados,noCitados:Object.keys(noCitados).length?noCitados:null,camisetero:selectedCamisetero||null,savedAt:_savedAt});
     window._invalidateActiveFecha();
     showToast('Partido guardado');
     btn.textContent='&#10003; Guardado';
@@ -9598,15 +9714,47 @@ async function startCoordApp(){
     const cits = Object.entries(d.citaciones)
       .filter(([,c]) => c && c.citados && c.citados.length)
       .sort((a,b)=> String(orden(a[1])).localeCompare(String(orden(b[1]))));
-    let citado = 0, falto = 0, jugados = 0;
+    let citado = 0, falto = 0, jugados = 0, todo = 0, parcial = 0;
     const racha = [];
+    /* Todo el año, partido por partido, agrupado por torneo: una zona por grupo
+       (fixture de liga) y un grupo aparte con los amistosos y las copas, que no
+       pertenecen a ninguna fecha de liga. El total de cada grupo son TODAS las
+       citaciones de la categoría en él, no solo las de este jugador. */
+    const grupos = {}, motivosNC = {};
     cits.forEach(([k,c])=>{
-      if(!(c.citados||[]).includes(nombre)){ racha.push({estado:'no', cit:c}); return; }
-      citado++;
-      const j = jugoEnPartido(c, d.stats[k] || null, nombre);
-      if(j === 'falto') falto++; else jugados++;
-      racha.push({estado:j || 'no', cit:c});
+      const gid = c.tipo ? '_extra' : k.slice(0, k.indexOf('::'));
+      const g = grupos[gid] || (grupos[gid] = {id:gid, total:0, citado:0, todo:0, parcial:0, falto:0, tira:[]});
+      g.total++;
+      let estado = 'no';
+      if((c.citados||[]).includes(nombre)){
+        citado++; g.citado++;
+        estado = jugoEnPartido(c, d.stats[k] || null, nombre) || 'no';
+        if(estado === 'falto'){ falto++; g.falto++; }
+        else {
+          jugados++;
+          if(estado === 'todo'){ todo++; g.todo++; } else { parcial++; g.parcial++; }
+        }
+      }
+      // Por qué no fue citado (solo si el profe lo registró: las citaciones de
+      // antes no lo tienen y cuentan como "sin dato")
+      const mot = estado === 'no' ? motivoNoCitado(c, nombre) : null;
+      if(estado === 'no'){
+        const kk = mot || MOTIVO_SIN_DATO;
+        motivosNC[kk] = (motivosNC[kk]||0) + 1;
+      }
+      const it = {estado, cit:c, i:racha.length, mot};
+      racha.push(it); g.tira.push(it);
     });
+    const _meta = id => { try{ return torneoMeta(id) || {}; }catch(e){ return {}; } };
+    const listaGrupos = Object.values(grupos).sort((a,b)=>{
+      if(a.id === '_extra') return 1;                 // amistosos y copas, al final
+      if(b.id === '_extra') return -1;
+      const oa = _meta(a.id).orden || 0, ob = _meta(b.id).orden || 0;
+      return oa !== ob ? oa - ob : String(a.id).localeCompare(String(b.id));
+    }).map(g => Object.assign(g, {
+      nombre: g.id === '_extra' ? 'Amistosos y copas' : (_meta(g.id).nombre || g.id),
+      actual: g.id === TORNEO_ID
+    }));
     const ult = racha.slice(-5);
     let sinCitar = 0;
     for(let i=racha.length-1; i>=0 && racha[i].estado==='no'; i--) sinCitar++;
@@ -9641,11 +9789,15 @@ async function startCoordApp(){
     // Últimos 6 entrenamientos: la foto corta, que es la que dispara la charla
     const ultimos6 = Object.entries(d.sesiones).sort((x,y)=> y[0].localeCompare(x[0])).slice(0,6);
     const vino6 = ultimos6.filter(([,ses]) => (ses.present||[]).includes(nombre)).length;
-    const motivo = sinCitar >= OJO_SIN_CITAR ? 'Hace '+sinCitar+' fechas que no es citado'
+    // Si el último partido lo dejaron afuera por un motivo registrado, va al lado
+    const ultNC = racha.length ? racha[racha.length-1] : null;
+    const ultMotivo = ultNC && ultNC.estado === 'no' && ultNC.mot ? ' · '+MOTIVOS_NC[ultNC.mot] : '';
+    const motivo = sinCitar >= OJO_SIN_CITAR ? 'Hace '+sinCitar+' fechas que no es citado'+ultMotivo
                  : falto >= OJO_FALTAS       ? falto+' faltas a citaciones'
                  : (pres !== null && pres < OJO_PRESENCIA) ? 'Presencia baja'
                  : '';
     return { nombre, catKey, pres, citado, falto, jugados, racha:ult, motivo,
+             todo, parcial, totalCits:cits.length, grupos:listaGrupos, motivosNC,
              meses, motivos, faltasSeguidas, ultimaPresencia,
              totalSes, totalVino, ultimos6: ultimos6.length, vino6 };
   }
@@ -9660,44 +9812,119 @@ async function startCoordApp(){
   // grande con el número de fecha (o iniciales del rival) adentro, y el
   // partido más reciente pegado al nombre. r viene del más viejo al más
   // nuevo, así que se arma al revés — cada chip nuevo va adelante.
+  function _chipHtml(x, cuando, extra){
+    const estado = x.estado;
+    const cls = estado==='no' ? 'pn' : estado==='falto' ? 'pf' : estado==='todo' ? 'pc' : 'pm';
+    const est = estado==='no'    ? 'no citado' + (x.mot ? ' ('+MOTIVOS_NC[x.mot]+')' : '')
+              : estado==='falto' ? 'faltó'
+              : estado==='todo'  ? 'jugó todo'
+              : (estado==='entro' ? 'entró desde el banco' : 'salió antes del final');
+    const info = esc(etiquetaPartido(x.cit))+' — '+cuando+': '+est;
+    return '<span class="pt pt-chip '+cls+(extra||'')+'" title="'+info+'">'+esc(etiquetaCorta(x.cit))+'</span>';
+  }
+  function _cuandoFue(atras){
+    return atras === 0 ? 'último partido'
+         : atras === 1 ? 'partido anterior'
+         : 'hace ' + atras + ' partidos';
+  }
   function rachaHtml(r){
     let html = '';
-    r.forEach((x, i) => {
-      const estado = x.estado;
-      const cls = estado==='no' ? 'pn' : estado==='falto' ? 'pf' : estado==='todo' ? 'pc' : 'pm';
-      const est = estado==='no'    ? 'no citado'
-                : estado==='falto' ? 'faltó'
-                : estado==='todo'  ? 'jugó todo'
-                : (estado==='entro' ? 'entró desde el banco' : 'salió antes del final');
-      const atras = r.length - 1 - i;
-      const cuando = atras === 0 ? 'último partido'
-                   : atras === 1 ? 'partido anterior'
-                   : 'hace ' + atras + ' partidos';
-      const info = etiquetaPartido(x.cit)+' — '+cuando+': '+est;
-      html = '<span class="pt pt-chip '+cls+'" title="'+info+'">'+etiquetaCorta(x.cit)+'</span>' + html;
-    });
+    r.forEach((x, i) => { html = _chipHtml(x, _cuandoFue(r.length - 1 - i)) + html; });
     return html;
+  }
+  // Un grupo entero, del más viejo al más nuevo (en la ficha se lee de corrido,
+  // a diferencia de la racha de la fila, que arranca por el último). Cada
+  // partido trae su lugar en el año (x.i), así "hace N partidos" sigue siendo
+  // cierto aunque el grupo sea un solo torneo.
+  function tiraHtml(tira, total){
+    return tira.map(x => {
+      const atras = total - 1 - x.i;
+      return _chipHtml(x, _cuandoFue(atras), atras === 0 ? ' ult' : '');
+    }).join('');
   }
 
   /* El detalle que hace falta para hablar con el padre. Un porcentaje suelto no
      alcanza: hay que poder decir "de los últimos 6 vino a 2, y las 4 faltas
      fueron sin aviso". */
-  function fichaEntrenamientos(j){
-    if(!j.totalSes) return '<div class="cnota" style="margin-top:var(--sp-4)">'+
-      'Sin entrenamientos cargados este año para esta categoría.</div>';
-    let h = '<div style="border-top:1px solid var(--border);margin-top:var(--sp-5);padding-top:var(--sp-4)">'+
-      '<div class="cet" style="margin-bottom:var(--sp-4)">Entrenamientos</div>';
+  function _seccionTitulo(txt, color){
+    return '<div class="fsh"><span class="fbar" style="background:'+color+'"></span>'+
+           '<b style="color:'+color+'">'+txt+'</b><span class="fanio">Temporada '+ANIO+'</span></div>';
+  }
 
-    h += '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">En el año</div>'+
-      '<div class="det">'+j.totalVino+' de '+j.totalSes+'</div>'+
-      '<div class="val" style="color:var(--'+pctCls(j.pres)+')">'+j.pres+'%</div></div>';
-
-    if(j.ultimos6){
-      const p6 = Math.round(j.vino6 / j.ultimos6 * 100);
-      h += '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">'+
-        'Últimos '+j.ultimos6+'</div><div class="det">'+j.vino6+' de '+j.ultimos6+'</div>'+
-        '<div class="val" style="color:var(--'+pctCls(p6)+')">'+p6+'%</div></div>';
+  /* Partidos del año, con TODOS los torneos y los amistosos y copas. Cada
+     número va contra el total de citaciones de la categoría en ese torneo: "22"
+     suelto no dice si es mucho o poco, "22 de 26" sí. */
+  function fichaPartidos(j){
+    let h = '<div class="fsec">'+_seccionTitulo('Partidos', 'var(--accent)');
+    if(!j.totalCits){
+      return h + '<div class="cnota" style="margin-top:0">Todavía no hay citaciones cargadas este año para esta categoría.</div></div>';
     }
+    const pc = (n, t) => t ? Math.round(n / t * 100) : 0;
+    const kpi = (n, chico, l, cls, punto) => '<div class="ckpi"><div class="n '+cls+'">'+n+
+      (chico ? '<small> '+chico+'</small>' : '')+'</div><div class="l">'+
+      (punto ? '<span class="pt '+punto+'"></span>' : '')+l+'</div></div>';
+    h += '<div class="cgrid kpis fk cuatro">'+
+      kpi(j.citado, 'de '+j.totalCits, 'citaciones', 'acc') +
+      kpi(j.todo, '', 'jugó todo', '', 'pc') +
+      kpi(j.parcial, '', 'parcial', '', 'pm') +
+      kpi(j.falto, '', 'faltó', j.falto ? 'loss' : 'cero', 'pf') +
+    '</div>';
+
+    // Cuánto fue citado, en la temporada y en cada torneo
+    const fila = (nombre, sub, cit, tot) => {
+      const p = pc(cit, tot);
+      return '<div class="frow"><div class="ft">'+esc(nombre)+'<i>'+sub+'</i></div>'+
+        '<div class="cbar" style="margin:0"><i style="width:'+p+'%"></i></div>'+
+        '<div class="fv">'+cit+' de '+tot+' &middot; <b style="color:var(--'+pctCls(p)+')">'+p+'%</b></div></div>';
+    };
+    h += fila('Temporada', 'todos los torneos', j.citado, j.totalCits);
+    j.grupos.forEach(g => {
+      h += fila(g.nombre, g.total+(g.total===1?' partido':' partidos')+(g.actual?' &middot; actual':''),
+                g.citado, g.total);
+    });
+
+    // Por qué no lo citaron. Rotación va sin color; lesión y comportamiento en
+    // rojo, el resto en ámbar; lo que no tiene motivo cargado, "sin dato".
+    const noCit = j.totalCits - j.citado;
+    if(noCit > 0){
+      const orden = Object.keys(MOTIVOS_NC).concat([MOTIVO_SIN_DATO]);
+      h += '<div style="margin-top:var(--sp-5)">'+
+        '<div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-3)">'+
+        'No citado: '+noCit+' de '+j.totalCits+' &middot; por qué</div>'+
+        '<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap">'+
+        orden.filter(k => j.motivosNC[k]).map(k => {
+          const tono = k === MOTIVO_SIN_DATO ? '' : motivoNCTono(k);
+          return '<span class="ccat'+(tono==='r'?' falta':tono==='o'?' medio':'')+'"'+
+            (k===MOTIVO_SIN_DATO?' style="font-style:italic"':'')+'>'+
+            (k===MOTIVO_SIN_DATO ? 'Sin dato' : esc(MOTIVOS_NC[k]))+' &middot; '+j.motivosNC[k]+'</span>';
+        }).join('')+
+        '</div></div>';
+    }
+
+    // Todos los partidos del año, torneo por torneo
+    j.grupos.forEach(g => {
+      h += '<div class="fgt"><span>'+esc(g.nombre)+'</span><span>'+g.total+
+           (g.total===1?' partido':' partidos')+'</span></div>'+
+           '<div class="ftira">'+tiraHtml(g.tira, j.totalCits)+'</div>';
+    });
+    h += '<div class="fley">'+
+      '<span><i class="pt pc"></i>Jugó todo</span><span><i class="pt pm"></i>Parcial</span>'+
+      '<span><i class="pt pf"></i>Faltó</span><span><i class="pt pn"></i>No citado</span></div>';
+    return h + '</div>';
+  }
+
+  function fichaEntrenamientos(j){
+    if(!j.totalSes) return '<div class="fsec">'+_seccionTitulo('Entrenamientos', 'var(--win)')+
+      '<div class="cnota" style="margin-top:0">Sin entrenamientos cargados este año para esta categoría.</div></div>';
+    let h = '<div class="fsec">'+_seccionTitulo('Entrenamientos', 'var(--win)');
+
+    const p6 = j.ultimos6 ? Math.round(j.vino6 / j.ultimos6 * 100) : null;
+    h += '<div class="cgrid kpis fk">'+
+      '<div class="ckpi"><div class="n '+pctCls(j.pres)+'">'+j.pres+'%</div><div class="l">presencia</div></div>'+
+      '<div class="ckpi"><div class="n">'+j.totalVino+'<small> de '+j.totalSes+'</small></div><div class="l">asistió</div></div>'+
+      (p6 === null ? '' : '<div class="ckpi"><div class="n '+pctCls(p6)+'">'+p6+'%</div>'+
+        '<div class="l">últimos '+j.ultimos6+' &middot; '+j.vino6+' de '+j.ultimos6+'</div></div>')+
+    '</div>';
 
     // Mes a mes: para ver si viene mejorando o cayendo
     if(j.meses.length){
@@ -9791,19 +10018,7 @@ async function startCoordApp(){
         '</button>';
         if(jugAbierto === id){
           f += '<div class="ccard" style="margin-top:calc(-1 * var(--sp-2));border-color:rgba(var(--accent-rgb),.35)">'+
-            '<div class="cgrid kpis">'+
-              '<div class="ckpi"><div class="n '+(j.pres===null?'':pctCls(j.pres))+'">'+
-                (j.pres===null?'—':j.pres+'%')+'</div><div class="l">presencia</div></div>'+
-              '<div class="ckpi"><div class="n acc">'+j.citado+'</div><div class="l">citaciones</div></div>'+
-              '<div class="ckpi"><div class="n '+(j.falto?'loss':'')+'">'+j.falto+'</div>'+
-                '<div class="l">'+(j.falto===1?'falta':'faltas')+'</div></div>'+
-            '</div>'+
-            '<div class="crow" style="margin-top:var(--sp-4)">'+
-              '<div class="nom" style="font-size:var(--f-sm);color:var(--muted)">Últimos partidos</div>'+
-              '<div class="racha">'+rachaHtml(j.racha)+'</div></div>'+
-            '<div class="crow"><div class="nom" style="font-size:var(--f-sm);color:var(--muted)">'+
-              'De '+j.citado+(j.citado===1?' citación jugó':' citaciones jugó')+
-              '</div><div class="val">'+j.jugados+'</div></div>'+
+            fichaPartidos(j)+
             fichaEntrenamientos(j)+
           '</div>';
         }
