@@ -4937,11 +4937,10 @@ function renderPlantel(){
   if(!PLAYERS.length){
     html += `<div style="color:var(--muted);font-size:var(--f-md);margin-bottom:var(--sp-5)">Sin jugadores activos</div>`;
   } else {
-    // Agrupados por puesto, igual que en Citaciones (los sin puesto al final), para
-    // ver de un vistazo a quién le falta cargarlo
-    const _orden = Object.keys(POSICIONES).concat([POS_SIN]);
-    const _pl = [...PLAYERS].sort((a,b)=> _orden.indexOf(posValida(PLAYER_POS[a])) - _orden.indexOf(posValida(PLAYER_POS[b])) || a.localeCompare(b,'es'));
-    _pl.forEach(nombre => {
+    // El orden acá NO depende del puesto: si cada toque movía al jugador de lugar, no se
+    // podía ir pasando de puesto en puesto hasta dar con el correcto. El agrupado por
+    // puesto es solo de Citaciones. Los que no tienen puesto se ven en ámbar.
+    PLAYERS.forEach(nombre => {
       const _p = posValida(PLAYER_POS[nombre]);
       html += `<div class="prow" style="justify-content:space-between;margin-bottom:var(--sp-3)">
         <div style="font-size:var(--f-md);font-weight:600;flex:1;min-width:0">${nombre}</div>
