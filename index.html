@@ -7544,6 +7544,39 @@ async function renderSAFacturacion(){
   }
 }
 
+/* ── ALTA Y BAJA DE CUENTAS ─────────────────────────────────────────────
+   La cuenta de acceso (Firebase Auth) no se puede borrar desde el navegador: solo
+   un servidor puede. Antes "Elim." borraba el perfil de users/ y dejaba la cuenta
+   suelta, y ese mail quedaba trabado para siempre ("ya existe pero no tiene perfil").
+   Ahora la baja deja en users/{uid} una MARCA sin acceso (role 'baja', solo con el mail)
+   y el alta, si el mail ya tiene cuenta, la RECICLA: reutiliza el uid y le pisa el perfil.
+   Es igual para todos los clubes. */
+const _SA_API_KEY = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
+const ROL_BAJA = 'baja';
+
+// Devuelve el uid de la cuenta de este mail: la crea, o reutiliza la que ya existe.
+async function _saObtenerUid(email){
+  const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+_SA_API_KEY, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email, password: Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken:true})
+  });
+  const data = await resp.json();
+  if(!data.error) return { uid: data.localId, nueva: true };
+  if(data.error.message !== 'EMAIL_EXISTS') throw new Error(data.error.message);
+
+  // Ya tiene cuenta: se busca su perfil (o la marca de baja) por mail
+  const snap = await get(ref(db, 'users'));
+  let hallado = null;
+  snap.forEach(c => {
+    const p = c.val();
+    if(p && String(p.email||'').trim().toLowerCase() === email.trim().toLowerCase()) hallado = { uid:c.key, perfil:p };
+  });
+  if(!hallado) throw new Error('Ese mail ya tiene una cuenta pero sin registro en la app (de antes de esta mejora). Avisá a soporte para reconectarla.');
+  // Nunca pisar el perfil de un super admin con uno común
+  if(hallado.perfil.role === 'super-admin') throw new Error('Ese mail es de un super admin');
+  return { uid: hallado.uid, nueva: false };
+}
+
 // ── TAB USUARIOS ──
 async function renderSAUsuarios(){
   const el = document.getElementById('sa-usuarios');
@@ -7552,7 +7585,8 @@ async function renderSAUsuarios(){
     const snap = await get(ref(db, 'users'));
     if(!snap.exists()) throw new Error('no_data');
     const users = snap.exists() ? snap.val() : {};
-    const uids = Object.keys(users);
+    // Las marcas de baja no son usuarios: no dan acceso y no se listan
+    const uids = Object.keys(users).filter(uid => !users[uid] || users[uid].role !== ROL_BAJA);
 
     const roleLabel = { 'super-admin':'Super Admin', 'coordinator':'Coordinador', 'profe':'Profe' };
     const roleColor = { 'super-admin':'var(--yellow)', 'coordinator':'var(--green)', 'profe':'var(--text)' };
@@ -7921,8 +7955,8 @@ window.saCrearClubFinal = async function(){
       await update(ref(db, 'clubs/'+m.clubId+'/config'), cfgUpd);
     }
 
-    // 2. Crear usuarios y enviar invitaciones via Firebase Auth REST
-    const API_KEY = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
+    // 2. Crear usuarios (o reciclar la cuenta de un mail ya existente) y enviar invitaciones
+    const API_KEY = _SA_API_KEY;
     let usuariosCreados = 0;
     let errores = [];
 
@@ -7933,20 +7967,8 @@ window.saCrearClubFinal = async function(){
       const roles = u.rol === 'profe+coord' ? ['profe','coordinator'] : [u.rol || 'profe'];
 
       try {
-        // Crear usuario en Firebase Auth via REST API
-        const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+API_KEY, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ email: u.email, password: Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken: true })
-        });
-        const data = await resp.json();
-
-        if(data.error){
-          errores.push(cat+': '+data.error.message);
-          continue;
-        }
-
-        const uid = data.localId;
+        // Cuenta de acceso: nueva, o la que ya tenía ese mail
+        const { uid } = await _saObtenerUid(u.email);
 
         // Guardar perfil en users/
         const perfil = {
@@ -8685,7 +8707,13 @@ window._saDeleteUser = async function(uid, email, btn){
   const row = btn ? btn.closest('div[style*="margin-bottom:var(--sp-3)"]') : null;
   if(row) row.remove();
   try{
-    await remove(ref(db, 'users/' + uid));
+    // No se borra el nodo: la cuenta de acceso no se puede borrar desde acá, así que
+    // se deja una marca sin acceso con el mail. Si ese mail se vuelve a agregar,
+    // _saObtenerUid la encuentra y reutiliza la cuenta (ver el comentario de arriba).
+    const actual = await get(ref(db, 'users/' + uid));
+    const mail = (actual.exists() && actual.val().email) || email || '';
+    if(actual.exists() && actual.val().role === 'super-admin'){ showToast('No se puede eliminar a un super admin'); return; }
+    await set(ref(db, 'users/' + uid), { email: mail, role: ROL_BAJA, bajaTs: Date.now() });
     showToast('\u2713 Usuario eliminado: ' + display);
   }catch(e){
     // Si falla, mostrar error pero la fila ya fue removida visualmente
@@ -8808,6 +8836,8 @@ window._saAbrirAddUser = function(clubId){
         <span style="font-size:var(--f-md)">Enviar email de invitación</span>
       </label>
 
+      <div id="addUserError" role="alert" style="display:none;margin-bottom:var(--sp-5);padding:var(--sp-4) var(--sp-5);border-radius:var(--r-md);border:1px solid rgba(255,23,68,0.4);background:rgba(255,23,68,0.1);color:#ff4d6d;font-size:var(--f-sm);line-height:1.5"></div>
+
       <button id="addUserBtn" onclick="window._saCrearUsuario('${clubId}')"
         style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer;margin-bottom:var(--sp-4)">
         ✓ Crear usuario
@@ -8834,29 +8864,12 @@ window._saCrearUsuario = async function(clubId){
   const btn = document.getElementById('addUserBtn');
   btn.disabled = true; btn.textContent = 'Creando...';
 
-  const API_KEY = 'AIzaSyBnQeoRwr8ZZOfuwk_h2yXsgv4Q1KqSo7w';
+  const API_KEY = _SA_API_KEY;
+  const errPrev = document.getElementById('addUserError'); if(errPrev) errPrev.style.display = 'none';
   try{
-    let uid;
-
-    // Intentar crear en Firebase Auth
-    const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+API_KEY,{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({email, password: Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2)+'Aa1!', returnSecureToken:true})
-    });
-    const data = await resp.json();
-
-    if(data.error && data.error.message === 'EMAIL_EXISTS'){
-      // Usuario ya existe — buscar UID en /users/ por email
-      const usersSnap = await get(ref(db,'users'));
-      if(usersSnap.exists()){
-        usersSnap.forEach(child=>{ if(child.val().email===email) uid=child.key; });
-      }
-      if(!uid) throw new Error('El email ya existe en Auth pero no tiene perfil en la app. Contactá soporte.');
-    } else if(data.error){
-      throw new Error(data.error.message);
-    } else {
-      uid = data.localId;
-    }
+    // Cuenta de acceso: nueva, o la que ya tenía ese mail (por ejemplo la de un
+    // usuario dado de baja, que se recicla)
+    const { uid } = await _saObtenerUid(email);
 
     // Guardar/actualizar perfil
     const isCoord = rol==='coordinator'||rol==='profe+coord';
