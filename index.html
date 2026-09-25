@@ -6009,9 +6009,11 @@ async function renderTablas(){
         const condLbl=r.cond==='L'?'Loc':'Vis';
         const scoreDisp=r.cond==='L'?r.gf+'-'+r.gc:r.gc+'-'+r.gf;
         const isRight=align==='right';
-        const rival=r.rival?(' vs '+r.rival.substring(0,8)):'';
+        // El rival va en las dos columnas: antes solo salía en la del equipo de la
+        // derecha, y en la del club propio quedaba el resultado sin decir contra quién.
+        const rival=r.rival?(' vs '+r.rival.substring(0,8).replace(/&/g,'&amp;').replace(/</g,'&lt;')):'';
         return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-4)">
-          <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-1);${isRight?'text-align:right':''}">F${r.fecha} <span class="res-cond ${condCls}">${condLbl}</span>${isRight?rival:''}</div>
+          <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-1);${isRight?'text-align:right':''}">F${r.fecha} <span class="res-cond ${condCls}">${condLbl}</span>${rival}</div>
           <div style="display:flex;align-items:baseline;gap:var(--sp-2);${isRight?'justify-content:flex-end':''}">
             <div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-xl);color:${resCol}">${scoreDisp}</div>
             <div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-sm);color:${resCol}">${resLbl}</div>
