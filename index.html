@@ -8569,6 +8569,7 @@ window.saEditarClub = async function(clubId){
       </div>
       <div style="display:flex;flex-direction:column;gap:var(--sp-2);flex-shrink:0">
         <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-micro);font-weight:700;cursor:pointer">✏️ Editar</button>
+        <button onclick="window._saResetPass('${u.email||''}')" style="background:rgba(255,171,64,0.12);color:var(--yellow);border:1px solid rgba(255,171,64,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-micro);font-weight:700;cursor:pointer">🔑 Clave</button>
         <button onclick="window._saDeleteUser('${u.uid}','${u.email||''}',this)" style="background:rgba(255,23,68,0.12);color:#ff4d6d;border:1px solid rgba(255,23,68,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-micro);font-weight:700;cursor:pointer">🗑 Elim.</button>
       </div>
     </div>`;
@@ -8692,6 +8693,9 @@ window._saGuardarEdicion = async function(clubId){
 
 window._saResetPass = async function(email){
   if(!email){ showToast('Sin email'); return; }
+  // Manda un mail a un tercero: se confirma antes. El link dura poco (Firebase lo
+  // vence a la hora) y el anterior deja de servir, así que se avisa.
+  if(!confirm('¿Enviar a '+email+' un mail para crear una contraseña nueva?\n\nEl link dura poco y los mails anteriores dejan de servir.')) return;
   try{
     await sendPasswordResetEmail(auth, email);
     showToast('✓ Email de reset enviado a '+email);
