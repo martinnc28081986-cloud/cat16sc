@@ -2884,6 +2884,7 @@ let PLAYERS = [];
 let PLAYERS_INACTIVE = []; // jugadores dados de baja
 let PLAYER_POS = {};       // nombre -> puesto ('arq'|'def'|'med'|'del'); sin entrada = sin puesto
 let _altaPos = null;       // puesto elegido en el formulario de alta de Plantel (null = todavía no eligió)
+let _ordenPlantel = null;  // orden de la lista de Plantel, fijo mientras se está en la pestaña
 
 // Cargar jugadores desde Firebase (sobrescribe los hardcodeados si existen)
 
@@ -4878,7 +4879,7 @@ window.switchTab=function(tab){
     renderFormacion();
   }
   if(tab==='pospartido') renderPosPartido();
-  if(tab==='plantel') renderPlantel();
+  if(tab==='plantel') renderPlantel(true);
 };
 
 
@@ -4910,7 +4911,9 @@ async function _savePlayers(){
   await set(ref(db, CAT_PREFIX()+'/players'), data);
 }
 
-function renderPlantel(){
+// reordenar: true al ENTRAR a la pestaña (reagrupa por puesto); las demás llamadas
+// (cambiar un puesto, dar de alta, baja…) conservan el orden que ya tenía la lista.
+function renderPlantel(reordenar){
   const el = document.getElementById('plantelContent');
   if(!el) return;
 
@@ -4937,11 +4940,18 @@ function renderPlantel(){
   if(!PLAYERS.length){
     html += `<div style="color:var(--muted);font-size:var(--f-md);margin-bottom:var(--sp-5)">Sin jugadores activos</div>`;
   } else {
-    // Agrupados por puesto, igual que en Citaciones (los sin puesto al final), para
-    // ver de un vistazo a quién le falta cargarlo
-    const _orden = Object.keys(POSICIONES).concat([POS_SIN]);
-    const _pl = [...PLAYERS].sort((a,b)=> _orden.indexOf(posValida(PLAYER_POS[a])) - _orden.indexOf(posValida(PLAYER_POS[b])) || a.localeCompare(b,'es'));
-    _pl.forEach(nombre => {
+    // Ordenados por puesto (arqueros, defensores, mediocampistas, delanteros y al final
+    // los sin puesto), pero el orden se toma UNA vez, al entrar a la pestaña, y queda
+    // fijo mientras se está en ella: si cada toque movía al jugador de lugar, no se podía
+    // ir pasando de puesto en puesto hasta dar con el correcto. Se reordena recién al
+    // volver a entrar. Los jugadores dados de alta o reactivados en el medio van al final.
+    if(reordenar || !_ordenPlantel){
+      const _orden = Object.keys(POSICIONES).concat([POS_SIN]);
+      _ordenPlantel = [...PLAYERS].sort((a,b)=>
+        _orden.indexOf(posValida(PLAYER_POS[a])) - _orden.indexOf(posValida(PLAYER_POS[b])) || a.localeCompare(b,'es'));
+    }
+    const _lista = _ordenPlantel.filter(n => PLAYERS.includes(n)).concat(PLAYERS.filter(n => !_ordenPlantel.includes(n)));
+    _lista.forEach(nombre => {
       const _p = posValida(PLAYER_POS[nombre]);
       html += `<div class="prow" style="justify-content:space-between;margin-bottom:var(--sp-3)">
         <div style="font-size:var(--f-md);font-weight:600;flex:1;min-width:0">${nombre}</div>
