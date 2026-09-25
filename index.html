@@ -1219,23 +1219,35 @@ let _todasLasZonasDe = null;   // para qué categoría se bajó (al saltar de cl
 
 function _claveCache(){ return CAT_PREFIX(); }
 
+// La descarga en curso, por categoría. Varias partes de la pantalla piden las zonas a la
+// vez al entrar (la lista de citación, la rotación de camisetas…) y, sin esto, cada una
+// bajaba su propia copia: la categoría se descargaba dos o tres veces en cada entrada.
+let _zonasEnCurso = null;
+let _zonasEnCursoDe = null;
+
 async function cargarTodasLasZonas(forzar){
   const clave = _claveCache();
   if(!forzar && _todasLasZonas && _todasLasZonasDe === clave) return _todasLasZonas;
-  try{
-    const snap = await get(ref(db, clave+'/torneos'));
-    _todasLasZonas   = snap.exists() ? (snap.val() || {}) : {};
-    _todasLasZonasDe = clave;
-  }catch(e){
-    console.warn('cargarTodasLasZonas:', e && e.message);
-    _todasLasZonas = {}; _todasLasZonasDe = clave;
-  }
-  return _todasLasZonas;
+  if(!forzar && _zonasEnCurso && _zonasEnCursoDe === clave) return _zonasEnCurso;
+  const p = (async () => {
+    try{
+      const snap = await get(ref(db, clave+'/torneos'));
+      _todasLasZonas   = snap.exists() ? (snap.val() || {}) : {};
+      _todasLasZonasDe = clave;
+    }catch(e){
+      console.warn('cargarTodasLasZonas:', e && e.message);
+      _todasLasZonas = {}; _todasLasZonasDe = clave;
+    }
+    return _todasLasZonas;
+  })();
+  _zonasEnCurso = p; _zonasEnCursoDe = clave;
+  try{ return await p; }
+  finally{ if(_zonasEnCurso === p){ _zonasEnCurso = null; _zonasEnCursoDe = null; } }
 }
 window.cargarTodasLasZonas = cargarTodasLasZonas;
 
 // Al cambiar de club, de categoría o de temporada, la cache no sirve más.
-function limpiarCacheDeZonas(){ _todasLasZonas = null; _todasLasZonasDe = null; }
+function limpiarCacheDeZonas(){ _todasLasZonas = null; _todasLasZonasDe = null; _zonasEnCurso = null; _zonasEnCursoDe = null; }
 window.limpiarCacheDeZonas = limpiarCacheDeZonas;
 
 // ── De qué año es cada cosa ────────────────────────────────────
@@ -1577,6 +1589,20 @@ function torneoMeta(id){
 // desfasados y la app entraba en solo lectura sin que nadie lo hubiera pedido.
 function esHistorico(){
   return !!window._viewTorneo && !!TORNEO_ACTIVO && window._viewTorneo !== TORNEO_ACTIVO;
+}
+
+/* Listeners de document/window/elemento fijo que registra startApp().
+   startApp() se ejecuta ENTERO cada vez que se entra a una categoría (sin recargar la
+   página), y cada ejecución agregaba otro manejador sin sacar el de la anterior: tras unos
+   cambios de categoría cada clic disparaba una pila de manejadores viejos, atados a los datos
+   de la categoría de antes (que además volvían a leer de Firebase), y la app se iba poniendo
+   cada vez más lenta. Con esto cada nombre tiene UN solo manejador: el de la última entrada. */
+const _listenersUnicos = {};
+function listenerUnico(nombre, target, tipo, fn){
+  const previo = _listenersUnicos[nombre];
+  if(previo) previo.target.removeEventListener(previo.tipo, previo.fn);
+  _listenersUnicos[nombre] = { target, tipo, fn };
+  target.addEventListener(tipo, fn);
 }
 
 // Limpia el estado de temporada al cambiar de club o de categoría.
@@ -2671,6 +2697,17 @@ document.body.classList.remove('coord-mode');
 window._appGen = (window._appGen||0) + 1;
 const _myGen = window._appGen;
 
+// Soltar de inmediato las suscripciones de la categoría anterior. Antes seguían vivas
+// hasta que la nueva terminaba de cargar su configuración (un par de segundos), y en ese
+// lapso redibujaban la pantalla con los datos de la categoría de antes.
+[window._unsub1, window._unsub2, window._unsub3].forEach(u => { if(u) try{u();}catch(e){} });
+window._unsub1 = window._unsub2 = window._unsub3 = null;
+
+// false hasta que loadClubConfig termina: recién ahí se conocen el torneo y el fixture del
+// club. Antes de eso, calcular "el próximo partido" lee las 8 categorías con el torneo
+// equivocado ('default'), descarta el resultado y lo repite después.
+let _configCargada = false;
+
 // Devuelve la config de una categoría. Si no está en CAT_CONFIG, se deriva de la
 // clave: 'cat2021' -> dbPath 'cat2021'. Todos los años entra una categoría nueva
 // (y sale la más grande), así que esto no puede depender de una lista fija.
@@ -2789,11 +2826,15 @@ catBadge.textContent = _catLabels[cat] || cat.toUpperCase();
 (async()=>{
   try{
     const clubId = CLUB_PATH.split('/').pop();
-    const snap = await get(ref(db,'clubs/'+clubId+'/config'));
+    // Solo la config y el nombre, y las dos a la vez. Antes se bajaba el nodo ENTERO del
+    // club (todas las categorías y todas las temporadas: ~280 KB en Sagrado Corazón, y
+    // crece cada año) en cada entrada a una categoría, solo para leer un texto.
+    const [snap, nomSnap] = await Promise.all([
+      get(ref(db,'clubs/'+clubId+'/config')),
+      get(ref(db,'clubs/'+clubId+'/nombre'))
+    ]);
     const cfg = snap.exists()?snap.val():{};
-    const clubSnap = await get(ref(db,'clubs/'+clubId));
-    const clubData = clubSnap.exists()?clubSnap.val():{};
-    const nombreClub = clubData.nombre || (clubId.charAt(0).toUpperCase()+clubId.slice(1).replace(/-/g,' '));
+    const nombreClub = (nomSnap.exists() && nomSnap.val()) || (clubId.charAt(0).toUpperCase()+clubId.slice(1).replace(/-/g,' '));
     window._clubNombreHeader = nombreClub;
     window._clubLigaHeader = cfg.liga || (cfg.ligaId ? cfg.ligaId.toUpperCase().replace(/-/g,' ') : '');
     renderHeaderSub();
@@ -2921,7 +2962,7 @@ const FIXTURE_DEFAULT = [...FIXTURE]; // backup del hardcodeado
 
 
 async function loadClubConfig(){
-  if(window._isEscuelita) return;
+  if(window._isEscuelita){ _configCargada = true; return; }
   try {
     const snap = await get(ref(db, CLUB_PATH+'/config'));
     const cfg = snap.exists() ? snap.val() : {};
@@ -3056,10 +3097,11 @@ async function loadClubConfig(){
     // todavía sin corregir. Se invalida esa caché y se vuelve a pintar ACÁ,
     // como último paso, para que quede lo correcto sin importar qué se haya
     // calculado antes.
+    _configCargada = true;
     if(typeof window._invalidateActiveFecha === 'function') window._invalidateActiveFecha();
     if(typeof renderNextMatch === 'function') renderNextMatch();
     _startFirebaseListeners();
-  } catch(e){ console.warn('loadClubConfig error:', e); _startFirebaseListeners(); }
+  } catch(e){ console.warn('loadClubConfig error:', e); _configCargada = true; _startFirebaseListeners(); }
 }
 
 async function _saveDefaultClubConfig(){
@@ -3236,6 +3278,30 @@ window._activeFechaCache = null;
 window._activeFechaTs = 0;
 window._activeFechaKey = null;
 
+/* Lee las citaciones de las 8 categorías competitivas del torneo en curso. Al entrar a una
+   categoría, o a Tablas, Formación y Pos partido, varias partes de la pantalla piden la
+   fecha activa AL MISMO TIEMPO, y como el caché recién se llena cuando termina la primera,
+   cada una lanzaba sus propias 8 lecturas (48 al entrar a una categoría). Ahora las que
+   llegan mientras hay una lectura en curso comparten esa misma. Solo se comparte la
+   descarga: el cálculo de cada llamada sigue siendo suyo. */
+let _citsCatsEnCurso = null, _citsCatsClave = null;
+function _citacionesDeCategorias(){
+  const clave = CLUB_PATH + '|' + TORNEO_ID;
+  if(_citsCatsEnCurso && _citsCatsClave === clave) return _citsCatsEnCurso;
+  const p = (async () => {
+    const snaps = await Promise.all(
+      COMP_CAT_PATHS.map(cat => get(ref(db, CLUB_PATH+'/'+cat+'/torneos/'+TORNEO_ID+'/citaciones')))
+    );
+    const all = {};
+    COMP_CAT_PATHS.forEach((cat, i) => { all[cat] = snaps[i].exists() ? snaps[i].val() : {}; });
+    return all;
+  })();
+  _citsCatsEnCurso = p; _citsCatsClave = clave;
+  const soltar = () => { if(_citsCatsEnCurso === p){ _citsCatsEnCurso = null; _citsCatsClave = null; } };
+  p.then(soltar, soltar);
+  return p;
+}
+
 async function _getActiveFecha(fixture, suspensions){
   // Cache de 60 segundos para no consultar Firebase en cada render. Va atada a
   // CLUB_PATH+TORNEO_ID: un render que arranca ANTES de que loadClubConfig termine
@@ -3245,18 +3311,14 @@ async function _getActiveFecha(fixture, suspensions){
   // otro club (con Sagrado no se notaba porque su fixture default coincide con el
   // real; con cualquier otro club se veía mal).
   const _cacheKey = CLUB_PATH + '|' + TORNEO_ID;
-  if(window._activeFechaCache !== null && window._activeFechaKey === _cacheKey && Date.now() - window._activeFechaTs < 60000){
+  // Vale también cuando el resultado es null ("no hay fecha activa"): antes ese caso no se
+  // cacheaba, y cada llamada volvía a bajar las citaciones de las 8 categorías.
+  if(window._activeFechaKey === _cacheKey && Date.now() - window._activeFechaTs < 60000){
     return window._activeFechaCache;
   }
   try {
-    // Leer citaciones de todas las cats competitivas en paralelo
-    const snaps = await Promise.all(
-      COMP_CAT_PATHS.map(cat => get(ref(db, CLUB_PATH+'/'+cat+'/torneos/'+TORNEO_ID+'/citaciones')))
-    );
-    const allCits = {};
-    COMP_CAT_PATHS.forEach((cat, i) => {
-      allCits[cat] = snaps[i].exists() ? snaps[i].val() : {};
-    });
+    // Citaciones de todas las cats competitivas (una sola lectura compartida, ver abajo)
+    const allCits = await _citacionesDeCategorias();
 
     // Solo considerar categorías que tienen al menos UNA citación guardada (activas)
     const activeCats = COMP_CAT_PATHS.filter(cat => Object.keys(allCits[cat]).length > 0);
@@ -3340,6 +3402,9 @@ function renderNextMatch(){
   // En una temporada archivada no hay próximo partido. Sin esto mostraba el
   // rival de la zona vigente arriba del fixture de la zona vieja.
   if(typeof esHistorico==='function' && esHistorico()){ el.textContent=''; return; }
+  // Sin la config del club todavía no se puede calcular; loadClubConfig vuelve a llamar
+  // a esta función apenas termina.
+  if(!_configCargada) return;
   _getProximoPartidoReal(FIXTURE, _suspensions).then(next => {
     // Esta llamada puede venir de un startApp() viejo que reci\u00e9n termina: si ya
     // hay uno m\u00e1s nuevo corriendo, no pisar la pantalla del club/categor\u00eda actual.
@@ -3386,6 +3451,7 @@ const _loadTimeout = setTimeout(()=>{
 function _startFirebaseListeners(){
   if(window._unsub1) try{window._unsub1();}catch(e){}
   if(window._unsub2) try{window._unsub2();}catch(e){}
+  if(window._unsub3) try{window._unsub3();}catch(e){}
   try {
     window._unsub1 = onValue(ref(db,DB_PREFIX+'/attendance'), snap => {
       clearTimeout(_loadTimeout);
@@ -3404,7 +3470,9 @@ function _startFirebaseListeners(){
       citaciones=snap.val()||{};
       refresh();
     }, ()=>{});
-    onValue(ref(db,DB_PREFIX+'/torneos_extra_nombres'), snap => {
+    // Guardado en _unsub3 para poder soltarlo: antes quedaba suscripto para siempre y cada
+    // cambio de categoría sumaba otro listener.
+    window._unsub3 = onValue(ref(db,DB_PREFIX+'/torneos_extra_nombres'), snap => {
       _torneosExtraNombres = snap.val() ? Object.values(snap.val()) : [];
     }, ()=>{});
   } catch(e) {
@@ -3415,8 +3483,8 @@ function _startFirebaseListeners(){
 }
 
 // ── OFFLINE / ONLINE ──
-window.addEventListener('offline', ()=>setSS('error'));
-window.addEventListener('online',  ()=>setSS('live'));
+listenerUnico('red-offline', window, 'offline', ()=>setSS('error'));
+listenerUnico('red-online',  window, 'online',  ()=>setSS('live'));
 
 function refresh() {
   renderNextMatch();
@@ -3459,7 +3527,7 @@ window.cycleReason=function(name,e){
 
 // ── INIT ──
 document.getElementById('sessionDate').value=today();
-document.getElementById('sessionDate').addEventListener('change',function(){ loadAttMarks(this.value); renderAtt(); });
+listenerUnico('fecha-entreno', document.getElementById('sessionDate'), 'change', function(){ loadAttMarks(this.value); renderAtt(); });
 
 // ── PRESENTES ──
 function loadAttMarks(d){
@@ -4875,7 +4943,9 @@ window.switchTab=function(tab){
   if(tab==='citaciones'){ renderCitList(); renderCamSelector(); }
   if(tab==='tablas') renderTablas(); // async, no necesita await aquí
   if(tab==='formacion'){
-    window._activeFechaCache = null; // forzar recarga desde Firebase
+    // Antes se anulaba la caché acá, y cada visita a Formación volvía a bajar las citaciones
+    // de las 8 categorías antes de dibujar. No hace falta: cada citación que se guarda ya
+    // invalida la caché (_invalidateActiveFecha), y si no, vence sola a los 60 s.
     renderFormacion();
   }
   if(tab==='pospartido') renderPosPartido();
@@ -5922,7 +5992,7 @@ window._ppToggle=async function(key){
 };
 
 // Event delegation para botones del panel
-document.addEventListener('click',function(e){
+listenerUnico('pospartido-click', document, 'click', function(e){
   const t=e.target;
   if(t.dataset.ppMas){ _ppAdjust(t.dataset.ppMas,1); return; }
   if(t.dataset.ppMenos){ _ppAdjust(t.dataset.ppMenos,-1); return; }
@@ -5932,7 +6002,7 @@ document.addEventListener('click',function(e){
   if(t.dataset.ppRes){ _ppEditStats.manualResult=t.dataset.ppRes; renderPosPartido(); return; }
   if(t.dataset.ppGuardar){ window._ppGuardar(); return; }
 });
-document.addEventListener('input',function(e){
+listenerUnico('pospartido-input', document, 'input', function(e){
   const t=e.target;
   if(t.dataset.ppGf!==undefined){ _ppEditStats.manualGF=parseInt(t.value)||0; }
   if(t.dataset.ppGc!==undefined){ _ppEditStats.manualGC=parseInt(t.value)||0; }
@@ -5989,6 +6059,11 @@ window.markAll = function(type, val){
   }
 };
 // INIT
+// Siempre se arranca en Entreno, en Asistencia y con la fecha de hoy, en cada entrada a una
+// categoría. Antes se reseteaba la vista pero no la barra de abajo ni el título de sección,
+// así que al cambiar de categoría desde otra pestaña quedaba una pantalla con la barra de otra.
+switchSection('ent');
+document.getElementById('sessionDate').value = today();
 loadClubConfig().then(()=> loadPlayersFromDB()).then(()=>{ loadAttMarks(today()); renderAtt(); renderNextMatch(); });
 
 
