@@ -3385,9 +3385,9 @@ async function loadClubConfig(){
     if(cfg.address) CFG.address = cfg.address;
 
     // ── CONFIRMACIÓN DE ASISTENCIA POR LINK (RSVP) ──
-    // Piloto: solo para los clubes que lo tengan activado en su propia config
-    // (clubs/{clubId}/config.rsvpHabilitado), no un club hardcodeado en el
-    // código — así cualquier club puede sumarse después sin tocar nada acá.
+    // Opcional por club: solo para los que lo tengan activado en su propia config
+    // (clubs/{clubId}/config.rsvpHabilitado, se marca en Super Admin > Editar club). No hay ningún
+    // club fijo en el código: cualquiera puede activarlo o desactivarlo sin tocar nada acá.
     CFG.rsvpHabilitado = !!cfg.rsvpHabilitado;
 
     // ── NOMBRE DEL CLUB (para cabeceras de citación) ──
@@ -5018,8 +5018,8 @@ window.shareCit = async function(key){
   cit.citados.forEach((p,i)=>lines.push('  '+(i+1)+'. '+p));
   if(cit.camisetero){ lines.push(''); lines.push('👕 Camisetas: *'+cit.camisetero+'*'); }
   lines.push('');
-  // Piloto: el link de confirmación solo se manda si el club lo tiene
-  // activado en su config (CFG.rsvpHabilitado) — hoy solo Hernandez.
+  // El link de confirmación solo se manda si el club lo tiene activado en su config
+  // (CFG.rsvpHabilitado). Es una opción de cada club, no de un club en particular.
   if(CFG.rsvpHabilitado){
     const clubIdWA = CLUB_PATH.split('/')[1] || '';
     // Link corto: en vez de mandar club+categoría+torneo+clave en la URL (largo,
@@ -8036,10 +8036,7 @@ function saSaludDeClubes(clubs, users){
     if(invalidas.length) hay(u.clubId, 'error', quien+': tiene una categoría que no existe ('+invalidas.join(', ')+').');
   });
 
-  // Diferencias entre clubes que no son un error pero conviene tener presentes
-  const conRsvp = Object.keys(clubs).filter(id => clubs[id].config && clubs[id].config.rsvpHabilitado);
-  if(conRsvp.length && conRsvp.length < Object.keys(clubs).length)
-    hay('-', 'info', 'La confirmación de asistencia por link (RSVP) está activada solo en: '+conRsvp.map(nombreDe).join(', ')+'.');
+  // (La confirmación de asistencia por link es opcional por club: que unos la tengan y otros no es normal, no se marca.)
   return out;
 }
 
@@ -9343,8 +9340,9 @@ window.saEditarClub = async function(clubId){
       <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-6)">${diasHtml}</div>
       <label style="display:flex;align-items:center;gap:var(--sp-4);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-6);cursor:pointer">
         <input type="checkbox" id="editClubRsvp" ${club.config?.rsvpHabilitado?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
-        <span style="font-size:var(--f-md)">Confirmación de asistencia por WhatsApp (piloto)</span>
+        <span style="font-size:var(--f-md)">Confirmación de asistencia por link (opcional)</span>
       </label>
+      <div style="font-size:var(--f-micro);color:var(--muted);line-height:1.5;margin:calc(-1 * var(--sp-4)) 0 var(--sp-6)">Cada club decide si la usa. Si está activada, el mensaje de citación de WhatsApp incluye un link para que los padres confirmen si el jugador va o no, y el profe ve las respuestas.</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4)">
         <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Usuarios (${clubUsers.length})</div>
         <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer">+ Agregar usuario</button>
