@@ -94,6 +94,8 @@ function seed() {
           torneoActivo: 'z2', ligaNombre: 'CLUB A',
           temporadas: { z1: { nombre: 'Zona II B 2026', orden: 1 }, z2: { nombre: 'Zona Campeonato 2026', orden: 2 } },
           fixture: { 1: { rival: 'RIVAL D', cond: 'L' }, 2: { rival: 'RIVAL E', cond: 'V' }, 3: { rival: 'RIVAL F', cond: 'L' }, 4: { rival: 'RIVAL G', cond: 'V' } },
+          // Entrenamiento suspendido (formato plano AAAA-MM-DD, como lo guarda el panel de coordinación)
+          suspensionesEnt: { '2026-09-08': true },
         },
         // Los días van como TEXTO, como en producción. La 2014 entrena distinto del resto del club.
         diasEntrenamiento: ['2', '4'],

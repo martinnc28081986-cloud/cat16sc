@@ -163,6 +163,7 @@
   .dcat-nom { width:44px; flex:none; font-family:'Bebas Neue',sans-serif; font-size:var(--f-md); letter-spacing:1px; color:var(--muted); }
   .dcat-dia { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:var(--f-micro); background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); padding:var(--sp-2) 0; cursor:pointer; }
   .dcat-dia.on { border-color:var(--accent); }
+  .dcat-b { flex:1; padding:var(--sp-3) 0; text-align:center; min-width:0; font-size:var(--f-micro); }
   .dcat-dia input { width:14px; height:14px; accent-color:var(--accent); }
   /* Salud de clubes (super admin) */
   .salud-card { margin-bottom:var(--sp-6); }
@@ -1762,6 +1763,16 @@ function numsDeDias(a){
   return [...new Set(l.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6))].sort((x, y) => x - y);
 }
 // Días de una categoría: los suyos si tiene, y si no los del club
+// ¿Se suspendió el entrenamiento de ese día (AAAA-MM-DD)? El panel de coordinación guarda
+// config/suspensionesEnt/{AAAA-MM-DD}; se acepta también el formato viejo {AAAA-MM:{DD:true}}.
+// Vale para todas las categorías del club y esos días no cuentan en ninguna estadística.
+function entSuspendidoEn(mapa, iso){
+  if(!mapa || !iso) return false;
+  if(mapa[iso]) return true;
+  const p = String(iso).split('-');
+  const mes = mapa[p[0]+'-'+p[1]];
+  return !!(mes && typeof mes === 'object' && mes[p[2]]);
+}
 function diasDeCategoria(diasClub, porCat, catKey){
   const propios = numsDeDias(porCat && porCat[catKey]);
   return propios.length ? propios : numsDeDias(diasClub);
@@ -2120,6 +2131,7 @@ function suscribirSuspensiones(){
   _unsubSusp.push(onValue(ref(db, rutaClub+'/config/suspensionesEnt'), snap => {
     if(rutaClub !== CLUB_PATH) return;
     _suspensionesEnt = snap.val() || {};
+    if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
   }, ()=>{}));
 }
 window.suscribirSuspensiones = suscribirSuspensiones;
@@ -3912,8 +3924,7 @@ function renderAtt(){
   const el=document.getElementById('playerList'); el.innerHTML='';
   const dateVal=document.getElementById('sessionDate').value;
   if(dateVal){
-    const [dY,dM,dD]=dateVal.split('-');
-    if(_suspensionesEnt[dY+'-'+dM]&&_suspensionesEnt[dY+'-'+dM][dD]){
+    if(entSuspendidoEn(_suspensionesEnt, dateVal)){
       el.innerHTML=`<div style="text-align:center;padding:var(--sp-9) var(--sp-6)">
         <div style="font-size:var(--f-3xl);margin-bottom:var(--sp-5)">⛔</div>
         <div style="font-size:var(--f-lg);font-weight:700;color:var(--red);margin-bottom:var(--sp-3)">Hoy no se entrena</div>
@@ -3928,7 +3939,7 @@ function renderAtt(){
   PLAYERS.forEach(name=>{
     const s=markedAtt[name];
     let streak=0;
-    for(const d of Object.keys(attendance).sort().reverse()){ if((attendance[d].present||[]).includes(name)) streak++; else break; }
+    for(const d of Object.keys(attendance).filter(x=>!entSuspendidoEn(_suspensionesEnt,x)).sort().reverse()){ if((attendance[d].present||[]).includes(name)) streak++; else break; }
     const row=document.createElement('div');
     row.className='prow'+(s===true?' present':'');
     row.onclick=()=>{ markedAtt[name]=markedAtt[name]===true?undefined:true; renderAtt(); };
@@ -4000,6 +4011,8 @@ function ASIS(){
     if(anioDeSesion(f, TORNEO_ID) !== anio) return;
     out[f] = Object.assign({}, attendance[f], {_zona: TORNEO_ID});
   });
+  // Los días sin entrenamiento no cuentan: ni como entrenamiento hecho ni como falta
+  Object.keys(out).forEach(f => { if(entSuspendidoEn(_suspensionesEnt, f)) delete out[f]; });
   return out;
 }
 
@@ -9976,6 +9989,7 @@ async function startCoordApp(){
   let DIAS_ENT = [], SUSP_ENT = {};
   let DIAS_CAT = {};          // días de las categorías que entrenan distinto del resto del club (ver diasDeCategoria)
   let entFiltro = '';         // categoría elegida en el calendario de entrenamientos ('' = todas)
+  let entBorrador = null;     // edición de días de entrenamiento en curso: { catKey: [0-6] } (null = sin editar)
   const diasDe = catKey => diasDeCategoria(DIAS_ENT, DIAS_CAT, catKey);
 
   /* ── DÍA DE CITACIÓN ────────────────────────────────────────────
@@ -10032,6 +10046,7 @@ async function startCoordApp(){
       Object.entries(z.attendance || {}).forEach(([fecha,val])=>{
         if(anioDeSesion(fecha, zonaId) !== ANIO) return;
         if(corte && fecha > corte) return;
+        if(entSuspendidoEn(SUSP_ENT, fecha)) return;   // día sin entrenamiento: no cuenta
         out.sesiones[fecha] = val;
       });
       Object.entries(z.citaciones || {}).forEach(([key,val])=>{
@@ -10117,7 +10132,7 @@ async function startCoordApp(){
       if(iso(d) > hasta) break;
       const dow = d.getDay();                         // 0 dom … 6 sáb
       if(!diasCat.includes(dow)) continue;
-      if((SUSP_ENT||{})[iso(d)]) continue;            // suspendido: no cuenta
+      if(entSuspendidoEn(SUSP_ENT, iso(d))) continue; // suspendido: no cuenta
       esperados++;
     }
     const ses = datosDeCat(catKey).sesiones;
@@ -10316,9 +10331,14 @@ async function startCoordApp(){
 
   window.coordSuspEnt = async function(iso){
     if(_roGuard()) return;
-    const estaba = !!SUSP_ENT[iso];
+    const estaba = entSuspendidoEn(SUSP_ENT, iso);
     try{
-      if(estaba){ await remove(ref(db, CLUB_PATH+'/config/suspensionesEnt/'+iso)); delete SUSP_ENT[iso]; }
+      if(estaba){
+        // Se borra en los dos formatos: el plano (AAAA-MM-DD) y el viejo anidado (AAAA-MM/DD)
+        const [py, pm, pd] = iso.split('-');
+        await update(ref(db, CLUB_PATH+'/config/suspensionesEnt'), { [iso]: null, [py+'-'+pm+'/'+pd]: null });
+        delete SUSP_ENT[iso]; if(SUSP_ENT[py+'-'+pm]) delete SUSP_ENT[py+'-'+pm][pd];
+      }
       else      { await set(ref(db, CLUB_PATH+'/config/suspensionesEnt/'+iso), true); SUSP_ENT[iso] = true; }
     }catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
     if(!estaba){
@@ -10978,9 +10998,19 @@ async function startCoordApp(){
          _nombreMes(new Date().getMonth())+'</span></div>';
     const catsEnt = ALL_CATS;                    // todas, Escuelita incluida
     const hayDias = catsEnt.some(c => diasDe(c.key).length);
-    if(!hayDias){
-      h += '<div class="cvacio">Este club no tiene días de entrenamiento configurados.<br>'+
-           'Se cargan desde el panel de Super Admin.</div>';
+    const _botonEditar = archivoBloqueado() ? '' :
+      '<div class="cfila"><button class="cbtn" onclick="window.coordEntEditar()">'+(hayDias ? 'Cambiar días de entrenamiento' : 'Definir días de entrenamiento')+'</button></div>';
+    if(entBorrador){
+      // Editor: los días de cada categoría (cada una puede entrenar distinto)
+      h += '<div class="ccard"><div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-4)">'+
+        'Marcá los días que entrena cada categoría. Con "Igualar" copiás los días de una a todas las demás.</div>'+
+        catsEnt.map(c => '<div class="dcat-fila"><span class="dcat-nom">'+esc(c.label.replace(/^Cat /,''))+'</span>'+
+          [1,2,3,4,5,6].map(d => '<button class="cbtn dcat-b'+(entBorrador[c.key].includes(d)?' on':'')+'" onclick="window.coordEntDia(\''+c.key+'\','+d+')">'+_CORTO_DIA[d]+'</button>').join('')+
+          '<button class="cbtn dcat-b" style="flex:none" onclick="window.coordEntIgualar(\''+c.key+'\')">Igualar</button></div>').join('')+
+        '<div class="cfila" style="margin-top:var(--sp-5)"><button class="cbtn on" onclick="window.coordEntGuardar()">Guardar</button>'+
+        '<button class="cbtn" onclick="window.coordEntCancelar()">Cancelar</button></div></div>';
+    } else if(!hayDias){
+      h += '<div class="cvacio">Este club todavía no tiene días de entrenamiento configurados.</div>'+_botonEditar;
     } else {
       // Resumen: las categorías con los mismos días van juntas
       const grupos = {};
@@ -10988,7 +11018,7 @@ async function startCoordApp(){
       const resumen = Object.values(grupos).sort((a,b) => b.cats.length - a.cats.length).map(g =>
         '<div class="crow"><div class="nom" style="font-size:var(--f-sm)">'+g.dias.map(d => _CORTO_DIA[d]).join(' · ')+'</div>'+
         '<div class="det" style="text-align:right">'+(Object.keys(grupos).length === 1 ? 'todas las categorías' : g.cats.map(c => esc(c.label.replace(/^Cat /,''))).join(', '))+'</div></div>').join('');
-      h += '<div class="ccard">'+resumen+'</div>';
+      h += '<div class="ccard">'+resumen+'</div>'+_botonEditar;
 
       // Filtro por categoría (solo si hay más de un esquema de días)
       const distintos = Object.keys(grupos).length > 1;
@@ -11010,7 +11040,7 @@ async function startCoordApp(){
         (entFiltro ? '<b style="color:var(--text)">'+esc(catDe(entFiltro).label)+'</b>: '+dias.length+' entrenamientos este mes. ' : dias.length+' días con entrenamiento este mes. ')+
         'Tocá un día para marcarlo como sin entrenamiento (feriado, lluvia, cancha ocupada): vale para todo el club y no cuenta en la carga de los profes.</div>'+
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:var(--sp-3)">'+
-        dias.map(d=>'<button class="cbtn'+(SUSP_ENT[iso(d)]?' peligro':'')+'" style="text-align:center"'+
+        dias.map(d=>'<button class="cbtn'+(entSuspendidoEn(SUSP_ENT, iso(d))?' peligro':'')+'" style="text-align:center"'+
           (archivoBloqueado()?' disabled':' onclick="window.coordSuspEnt(\''+iso(d)+'\')"')+'>'+d+'</button>').join('')+
         '</div></div>';
     }
@@ -11054,6 +11084,44 @@ async function startCoordApp(){
   }
   window.coordUsoPer = function(k){ usoPer = k; pintar(); };
   window.coordEntCat = function(k){ entFiltro = k; pintar(); };
+  window.coordEntEditar = function(){
+    if(_roGuard()) return;
+    entBorrador = {}; ALL_CATS.forEach(c => { entBorrador[c.key] = diasDe(c.key).slice(); });
+    pintar();
+  };
+  window.coordEntDia = function(k, d){
+    if(!entBorrador) return;
+    const a = entBorrador[k], i = a.indexOf(d);
+    if(i >= 0) a.splice(i, 1); else a.push(d);
+    a.sort((x, y) => x - y); pintar();
+  };
+  window.coordEntIgualar = function(k){
+    if(!entBorrador) return;
+    ALL_CATS.forEach(c => { entBorrador[c.key] = entBorrador[k].slice(); }); pintar();
+  };
+  window.coordEntCancelar = function(){ entBorrador = null; pintar(); };
+  // Se guarda el esquema más común como días del club y solo las categorías que difieren como
+  // diasPorCategoria (el mismo formato que carga el super admin en "Editar club").
+  window.coordEntGuardar = async function(){
+    if(!entBorrador || _roGuard()) return;
+    const sinDias = ALL_CATS.filter(c => !entBorrador[c.key].length);
+    if(sinDias.length){ showToast('Falta marcar los días de: '+sinDias.map(c => c.label.replace(/^Cat /,'')).join(', ')); return; }
+    const firma = k => entBorrador[k].join(',');
+    const cuenta = {}; ALL_CATS.forEach(c => { cuenta[firma(c.key)] = (cuenta[firma(c.key)] || 0) + 1; });
+    const actual = DIAS_ENT.join(',');
+    const maximo = Math.max(...Object.values(cuenta));
+    const base = (cuenta[actual] === maximo) ? actual : Object.keys(cuenta).find(f => cuenta[f] === maximo);
+    const porCat = {};
+    ALL_CATS.forEach(c => { if(firma(c.key) !== base) porCat[c.key] = entBorrador[c.key].map(String); });
+    const dias = base.split(',').map(Number);
+    try{
+      await update(ref(db, CLUB_PATH), { diasEntrenamiento: dias.map(String), diasPorCategoria: Object.keys(porCat).length ? porCat : null });
+    }catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
+    DIAS_ENT = dias; _coordDiasEntGlobal = DIAS_ENT; DIAS_CAT = porCat;
+    entBorrador = null; entFiltro = '';
+    showToast('Días de entrenamiento guardados');
+    pintar();
+  };
 
   /* ══════════ ROUTER ══════════ */
   const TABS = [
