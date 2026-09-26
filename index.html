@@ -10390,7 +10390,7 @@ async function startCoordApp(){
   /* ══════════ HOY ══════════ */
   function vistaHoy(){
     if(!cargado) return spinner;
-    const prox = proximaFecha(), ult = ultimaJugada(), pend = pendientes();
+    const prox = proximaFecha(), ult = ultimaJugada();
     let h = '';
 
     if(!_hayFixture){
@@ -10419,52 +10419,6 @@ async function startCoordApp(){
         '</div></div>';
     } else {
       h += '<div class="cvacio">No queda ninguna fecha por jugar en esta temporada.</div>';
-    }
-
-    // Pendientes
-    h += '<div class="csec">'+icono('lista')+'Pendientes<span class="cont">'+pend.length+
-         (pend.length===1?' cosa por resolver':' cosas por resolver')+'</span></div>';
-    // Cuántas no citaron todavía — se sabe siempre, aunque el pendiente no
-    // se muestre hasta el día de citación
-    const faltanCitar = prox ? COMP_CATS.filter(c => !citoLaFecha(c.key, prox)) : [];
-
-    // Antes del día de citación no se reclama, pero hay que decir por qué: si no,
-    // parece que está todo al día cuando en realidad todavía nadie citó.
-    if(faltanCitar.length && !esDiaDeCitacion()){
-      h += '<div class="cnota" style="margin:0 0 var(--sp-4)">'+
-        faltanCitar.length+(faltanCitar.length===1?' categoría todavía no citó':' categorías todavía no citaron')+
-        ' para la fecha '+prox.fecha+'. No se reclama hasta el <b>'+_DIAS_ISO[DIAS_DE_CITACION[0]]+'</b>, '+
-        'para que el aviso no se vuelva paisaje. Igual podés avisarles ahora.</div>';
-    }
-    if(!pend.length && !faltanCitar.length){
-      h += '<div class="cvacio">Está todo al día.<br>Ninguna categoría tiene carga pendiente.</div>';
-    }
-    if(pend.length || faltanCitar.length){
-      const sinAvisar = prox
-        ? COMP_CATS.filter(c => !citoLaFecha(c.key,prox) && !avisoDe(c.key, prox.fecha)).map(c=>c.key)
-        : [];
-      if(sinAvisar.length && !archivoBloqueado()){
-        h += '<div class="ccard" style="border-color:rgba(var(--draw-rgb),.35);background:rgba(var(--draw-rgb),.06);'+
-          'display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap">'+
-          '<div style="flex:1;min-width:180px"><div style="font-weight:600">Avisar a los que faltan citar</div>'+
-          '<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">'+
-            'Les aparece el cartel en su categoría. '+sinAvisar.length+' sin avisar.</div></div>'+
-          '<button class="cbtn on" onclick="window.coordAvisar('+JSON.stringify(sinAvisar).replace(/"/g,'&quot;')+
-            ','+(prox?prox.fecha:'null')+')">Avisar a '+sinAvisar.length+'</button></div>';
-      }
-    }
-    if(pend.length){
-      h += pend.map(p=>{
-        const av = p.tipo==='citar' ? avisoDe(p.cat.key, p.fecha && p.fecha.fecha) : null;
-        let est = esc(p.cat.label);
-        if(av) est += ' &middot; avisado '+_haceCuanto(av.ts)+' &middot; '+
-          (av.visto ? '<span style="color:var(--draw)">lo vio '+_haceCuanto(av.visto)+' y no citó</span>'
-                    : '<span style="color:var(--muted)">todavía no entró a la app</span>');
-        return '<div class="cpend '+p.nivel+'">'+chipCat(p.cat)+
-          '<div class="qc"><div class="qui">'+esc(p.que)+'</div><div class="que">'+est+'</div></div>'+
-          '<button class="cbtn'+(av && !av.visto ? ' on' : '')+'" onclick="window.coordRecordar(\''+
-            p.cat.key+'\',\''+p.tipo+'\')">'+(av ? 'WhatsApp' : 'Avisar')+'</button></div>';
-      }).join('');
     }
 
     // Último partido
@@ -10536,6 +10490,25 @@ async function startCoordApp(){
       '<div class="ckpi"><div class="n win">'+alDia.length+'</div><div class="l">al día</div></div>'+
     '</div></div>';
 
+    // Cuántas no citaron todavía — se sabe siempre, aunque el pendiente no se muestre hasta el día de citación
+    const faltanCitar = prox ? COMP_CATS.filter(c => !citoLaFecha(c.key, prox)) : [];
+    if(faltanCitar.length && !esDiaDeCitacion()){
+      h += '<div class="cnota" style="margin:0 0 var(--sp-4)">'+
+        faltanCitar.length+(faltanCitar.length===1?' categoría todavía no citó':' categorías todavía no citaron')+
+        ' para la fecha '+prox.fecha+'. No se reclama hasta el <b>'+_DIAS_ISO[DIAS_DE_CITACION[0]]+'</b>, '+
+        'para que el aviso no se vuelva paisaje. Igual podés avisarles ahora.</div>';
+    }
+    const sinAvisar = prox ? faltanCitar.filter(c => !avisoDe(c.key, prox.fecha)).map(c => c.key) : [];
+    if(sinAvisar.length && !archivoBloqueado()){
+      h += '<div class="ccard" style="border-color:rgba(var(--draw-rgb),.35);background:rgba(var(--draw-rgb),.06);'+
+        'display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:180px"><div style="font-weight:600">Avisar a los que faltan citar</div>'+
+        '<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">'+
+          'Les aparece el cartel en su categoría. '+sinAvisar.length+' sin avisar.</div></div>'+
+        '<button class="cbtn on" onclick="window.coordAvisar('+JSON.stringify(sinAvisar).replace(/"/g,'&quot;')+
+          ','+prox.fecha+')">Avisar a '+sinAvisar.length+'</button></div>';
+    }
+
     if(!conPend.length){
       h += '<div class="cvacio">Está todo al día.<br>Ninguna categoría tiene carga pendiente esta semana.</div>';
     } else {
@@ -10543,6 +10516,8 @@ async function startCoordApp(){
       conPend.forEach(c => {
         const pends = por[c.key], alta = pends.some(p => p.nivel === 'alta');
         const e = entrenosSemana(c.key);
+        const pc = pends.find(p => p.tipo === 'citar');
+        const av = pc ? avisoDe(c.key, pc.fecha && pc.fecha.fecha) : null;
         h += '<div class="ccard sem-card '+(alta ? 'alta' : 'media')+'">'+
           '<div class="sem-h"><span class="sem-nom">'+esc(c.label)+'</span>'+
             '<span class="ccat '+(alta ? 'falta' : 'medio')+'">'+pends.length+(pends.length === 1 ? ' pendiente' : ' pendientes')+'</span></div>'+
@@ -10552,6 +10527,8 @@ async function startCoordApp(){
                 esc(diasDe(c.key).map(d => _CORTO_DIA[d]).join(', '))+'</div>'
             : '')+
           _lineasSemana(c, pends).map(t => '<div class="sem-lin sem-t">&bull; '+esc(t)+'</div>').join('')+
+          (av ? '<div class="sem-lin">Avisado '+_haceCuanto(av.ts)+' &middot; '+
+            (av.visto ? '<span style="color:var(--draw)">lo vio '+_haceCuanto(av.visto)+' y no citó</span>' : 'todavía no entró a la app')+'</div>' : '')+
           '<div class="sem-acc"><button class="cbtn on" onclick="window.coordSemAvisar(\''+c.key+'\')">Avisar al profe</button>'+
             '<button class="cbtn" onclick="window.coordSemVer(\''+c.key+'\')">Ver</button></div>'+
         '</div>';
@@ -10574,11 +10551,23 @@ async function startCoordApp(){
     return h;
   }
 
-  window.coordSemAvisar = function(catKey){
+  window.coordSemAvisar = async function(catKey){
     const c = catDe(catKey);
-    const lineas = _lineasSemana(c, _pendientesPorCat()[catKey] || []);
+    const pends = _pendientesPorCat()[catKey] || [];
+    const lineas = _lineasSemana(c, pends);
     if(!lineas.length) return;
-    abrirDlgWA('Avisar a '+c.label, 'Revisá el texto antes de mandarlo.',
+    // Si falta citar, además del WhatsApp le aparece el cartel al profe en la app
+    const pc = pends.find(p => p.tipo === 'citar');
+    let cartel = false;
+    if(pc){
+      if(_roGuard()) return;
+      const ts = Date.now(), fecha = pc.fecha ? pc.fecha.fecha : null;
+      try{
+        await update(ref(db, AVISOS_PATH), { [catKey]: { fecha, ts, visto:null } });
+        AVISOS[catKey] = { fecha, ts, visto:null }; cartel = true;
+      }catch(e){ showToast('No se pudo dejar el aviso en la app'); }
+    }
+    abrirDlgWA('Avisar a '+c.label, cartel ? 'Le aparece el cartel en su categoría. Revisá el texto antes de mandarlo.' : 'Revisá el texto antes de mandarlo.',
       ['📋 *'+_clubNombre.toUpperCase()+' — PENDIENTES DE LA SEMANA*', '👥 '+c.label, '',
        ...lineas.map(t => '  • '+t), '', '👉 app.miplantel.com.ar'].join('\n'));
   };
@@ -11276,7 +11265,7 @@ async function startCoordApp(){
     el.innerHTML = TABS.map(t =>
       '<button class="ctab'+(tabAct===t.id?' on':'')+'" onclick="window.coordTab(\''+t.id+'\')">'+
       '<span class="ico" data-ico="'+t.ico+'"></span>'+t.lbl+
-      (t.id==='hoy' && nPend ? '<span class="pin">'+nPend+'</span>' : '')+'</button>').join('');
+      (t.id==='semana' && nPend ? '<span class="pin">'+nPend+'</span>' : '')+'</button>').join('');
     pintarIconos(el);
   }
 

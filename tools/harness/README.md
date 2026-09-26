@@ -22,6 +22,7 @@ Se necesita solo Node. Con `PORT=9000 node tools/harness/server.js` cambia el pu
 | `PROFEH` / `PROFES` | profe de Hernández / de Sagrado Corazón | clubes de la liga LISFI |
 | `PROFEB` | profe de Club B | club chico, una categoría |
 | `PROFEC` / `COORDC` | profe / coordinador de **Club C** | club **nuevo**: sin fixture, categoría 2021 y lista de categorías repetida |
+| `COORDH` | coordinador de **Hernández** | club con fixture de liga (una fecha por jugar): sirve para probar citaciones y pendientes |
 | `SA` | super admin | panel de super admin (clubes, usuarios, uso, salud) |
 | `BAJ1` | usuario dado de baja | tiene que quedar sin acceso |
 | `BADROL`, `HUERFANO`, `SINCAT` | usuarios con datos mal armados **a propósito** | que "Salud de clubes" los marque |
@@ -37,7 +38,7 @@ http://localhost:8125/?as=PROFE&smoke=1
 
 Recorre todas las pantallas de ese usuario y junta errores. El resultado queda en `window.__smoke` y en el
 título de la pestaña (`SMOKE OK profe` / `SMOKE FALLA profe`). **Antes de publicar un cambio, correrlo con
-`PROFE`, `PROFE2`, `COORD`, `COORDC`, `PROFEC`, `PROFEH` y `SA`** (y con `&big=1` para nombres largos).
+`PROFE`, `PROFE2`, `COORD`, `COORDC`, `COORDH`, `PROFEC`, `PROFEH` y `SA`** (y con `&big=1` para nombres largos).
 
 ## Qué se puede medir
 

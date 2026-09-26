@@ -77,6 +77,7 @@ function seed() {
       PROFE2:   { role: 'profe', clubId: 'clubA', cats: ['cat16', 'cat2014'], email: 'p2@x.com' },     // dos categorías
       COORD:    { role: 'coordinator', clubId: 'clubA', email: 'coord@x.com' },
       PROFEH:   { role: 'profe', clubId: 'hernandez', cat: 'cat16', email: 'h@x.com' },
+      COORDH:   { role: 'coordinator', clubId: 'hernandez', email: 'ch@x.com' },                        // club con fixture de liga
       PROFES:   { role: 'profe', clubId: 'sagrado-corazon', cat: 'cat16', email: 's@x.com' },
       PROFEB:   { role: 'profe', clubId: 'clubB', cat: 'cat16', email: 'b@x.com' },
       PROFEC:   { role: 'profe', clubId: 'clubC', cat: 'cat2021', email: 'c@x.com' },                  // categoría nueva
@@ -87,6 +88,8 @@ function seed() {
       HUERFANO: { role: 'profe', clubId: 'noexiste', cat: 'cat16', email: 'h@nada.com' },               // club inexistente
       SINCAT:   { role: 'profe', clubId: 'clubA', email: 'sincat@x.com' },                              // profe sin categoría
     },
+    // Fixture de la liga (para probar citaciones y pendientes en clubes que usan liga)
+    ligas: { 'lisfi-zona-campeonato-2026': { fixture: { 1: { rival: 'X1' }, 2: { rival: 'TALLERES B.' }, 3: { rival: 'DEFENSA' }, 4: { rival: 'V.S CARLOS BCO.' }, 30: { rival: 'PROXIMO FC' } } } },
     clubs: {
       clubC: { nombre: 'Club C', cats: ['cat13', 'cat16', 'cat2021', 'cat13', 'cat16', 'cat2021'],
         config: { torneoActivo: 'zc', ligaNombre: 'CLUB C', temporadas: { zc: { nombre: 'Torneo C', orden: 1 } } },
