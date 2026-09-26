@@ -150,7 +150,7 @@
 
   /* ── BOTTOM NAV ── */
   .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--surface); border-top:1px solid var(--border); display:flex; padding:var(--sp-3) var(--sp-4) var(--sp-5); gap:var(--sp-3); max-width:720px; margin:0 auto; }
-  .bnav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:var(--sp-2); cursor:pointer; border-radius:var(--r-md); padding:var(--sp-4) var(--sp-2) var(--sp-3); border:1px solid transparent; transition:all 0.2s; }
+  .bnav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:var(--sp-2); cursor:pointer; border-radius:var(--r-md); padding:var(--sp-4) var(--sp-2) var(--sp-3); border:1px solid transparent; transition:background-color .15s, border-color .15s, color .15s; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
   .bnav-item .bnav-icon { font-size:var(--f-xl); line-height:1; }
   .bnav-item .bnav-lbl { font-size:var(--f-micro); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--muted); }
   .bnav-item .bnav-icon { color:var(--muted); }
@@ -177,9 +177,9 @@
   .tgl-dot-par { background:var(--yellow); }
   .tgl-dot-plantel { background:var(--win); }
   .tabs { display:flex; overflow-x:auto; padding:0 var(--sp-3) var(--sp-3); gap:var(--sp-2); justify-content:center; }
-  .tab { flex-shrink:0; padding:var(--sp-3) var(--sp-4); border-radius:var(--r-full); font-size:var(--f-micro); font-weight:600; letter-spacing:0.1px; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; transition:all 0.2s; white-space:nowrap; }
+  .tab { flex-shrink:0; padding:var(--sp-3) var(--sp-4); border-radius:var(--r-full); font-size:var(--f-micro); font-weight:600; letter-spacing:0.1px; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; transition:background-color .15s, border-color .15s, color .15s; touch-action:manipulation; -webkit-tap-highlight-color:transparent; white-space:nowrap; }
   .tabs-par-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:var(--sp-2); padding:0 var(--sp-2) var(--sp-4); }
-  .tab-icon-btn { display:flex; flex-direction:column; align-items:center; gap:var(--sp-1); padding:var(--sp-3) var(--sp-1); border-radius:var(--r-md); font-size:var(--f-micro); font-weight:700; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; letter-spacing:0.1px; transition:all 0.2s; }
+  .tab-icon-btn { display:flex; flex-direction:column; align-items:center; gap:var(--sp-1); padding:var(--sp-3) var(--sp-1); border-radius:var(--r-md); font-size:var(--f-micro); font-weight:700; text-transform:uppercase; color:var(--muted); cursor:pointer; border:1px solid transparent; letter-spacing:0.1px; transition:background-color .15s, border-color .15s, color .15s; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
   .tab-icon-btn .tib-icon { font-size:var(--f-lg); line-height:1; }
   .tab-icon-btn .tib-lbl { font-size:var(--f-micro); text-align:center; line-height:1.2; }
   .tab-icon-btn.ay { color:var(--yellow); background:rgba(var(--draw-rgb),0.12); border-color:rgba(var(--draw-rgb),0.3); }
@@ -191,6 +191,9 @@
 
   .view { display:none; padding:var(--sp-6); }
   .view.active { display:block; }
+  @keyframes viewIn { from{opacity:0} to{opacity:1} }
+  .view.active { animation:viewIn .16s ease-out; }
+  @media (prefers-reduced-motion:reduce){ .view.active{ animation:none; } }
 
   .btn { padding:var(--sp-4) var(--sp-6); border-radius:var(--r-md); border:none; font-family:'DM Sans',sans-serif; font-weight:600; font-size:var(--f-md); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
   .btn-g { background:var(--accent); color:#021529; }
@@ -1948,6 +1951,12 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     // No autenticado — mostrar login
+    // doLogin deja el botón en "Ingresando..." deshabilitado esperando que la
+    // pantalla cambie; si después se cierra sesión SIN recargar, quedaba así y no
+    // se podía volver a entrar hasta refrescar la página.
+    const _lb = document.getElementById('loginBtn');
+    if(_lb){ _lb.disabled = false; _lb.textContent = 'Ingresar'; }
+    const _lp = document.getElementById('loginPass'); if(_lp) _lp.value = '';
     document.getElementById('loginScreen').style.display='flex';
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('logoutBtn').style.display='none';
@@ -2847,19 +2856,20 @@ async function loadClubConfig(){
     // Mirando una temporada archivada se usa la liga de ESA temporada, no la actual
     const ligaId = (esHistorico() ? torneoMeta(TORNEO_ID).ligaId : null) || cfg.ligaId || cfg.liga_id || null;
     let ligaData = null;
-    if(ligaId && ligaId.includes('-202')){
-      // Solo si ligaId tiene formato de liga compartida (ej: lisfi-ii-zona-b-2026)
-      try {
-        const ligaSnap = await get(ref(db, 'ligas/'+ligaId));
-        if(ligaSnap.exists()) ligaData = ligaSnap.val();
-      } catch(e){ console.warn('Error leyendo liga:', e); }
-    }
-
+    // Estas lecturas no dependen una de otra: se largan JUNTAS y se espera a
+    // todas a la vez. Antes iban en fila (liga → archivo de la zona → nombre) y
+    // cada una sumaba su viaje completo a Firebase al tiempo de entrada.
+    const nombreP = get(ref(db, CLUB_PATH+'/nombre')).catch(()=>null);
+    // Solo si ligaId tiene formato de liga compartida (ej: lisfi-ii-zona-b-2026)
+    const ligaDataP = (ligaId && ligaId.includes('-202'))
+      ? get(ref(db, 'ligas/'+ligaId)).then(s => s.exists() ? s.val() : null)
+          .catch(e => { console.warn('Error leyendo liga:', e); return null; })
+      : Promise.resolve(null);
     // Si el liga_data.json que bajó al arrancar es de otra zona (pasa en todos los
     // clubes que no son el principal), bajar el archivo de ESTA zona.
-    if(ligaId && !esHistorico() && (!window._ligaDataRaw || window._ligaDataRaw.zona !== ligaId)){
-      await bajarLigaDataDeZona(ligaId);
-    }
+    const bajarP = (ligaId && !esHistorico() && (!window._ligaDataRaw || window._ligaDataRaw.zona !== ligaId))
+      ? bajarLigaDataDeZona(ligaId) : Promise.resolve();
+    [ligaData] = await Promise.all([ligaDataP, bajarP]);
 
     // Foto de resultados de esa zona (la usa el selector de temporadas).
     // Va ANTES de prepararTablasDeZona para que la tabla no se reinicie en cero
@@ -2924,8 +2934,8 @@ async function loadClubConfig(){
       // Solo el campo nombre. Antes se bajaba el nodo ENTERO del club (todas las
       // categorías y temporadas: ~300 KB en un club con un año de datos, y
       // crece cada año) en cada apertura, solo para leer un texto.
-      const nomSnap = await get(ref(db, CLUB_PATH+'/nombre'));
-      if(nomSnap.exists() && nomSnap.val()){
+      const nomSnap = await nombreP;   // se pidió arriba, junto con la liga
+      if(nomSnap && nomSnap.exists() && nomSnap.val()){
         CFG.club = nomSnap.val();
       }
     }catch(e){}
@@ -2946,12 +2956,16 @@ async function loadClubConfig(){
     }
 
     // Migración automática de temporada — una sola vez por sesión, solo coord/admin
+    // En segundo plano: comprobar si el club ya está en la zona vigente son
+    // varias lecturas seguidas a Firebase (~1-4 s en la primera entrada) y casi
+    // siempre la respuesta es "ya está migrado". Esperarlo hacía que el
+    // coordinador y el super admin miraran la pantalla de carga de más. Si
+    // resulta que sí migró, se relee la config y se redibuja como antes.
     if(!window._migracionIntentada){
       window._migracionIntentada = true;
-      if(await migrarTemporadaSiHaceFalta()){
-        await loadClubConfig(); // releer ya con la temporada nueva
-        return;
-      }
+      migrarTemporadaSiHaceFalta().then(async migro => {
+        if(migro && window._appGen === _myGen) await loadClubConfig();
+      }).catch(()=>{});
     }
 
     renderSeasonBar();
@@ -4301,7 +4315,7 @@ window.deleteCitacion = async function(key){
 window.editCitacion = function(key){
   const cit = citaciones[key];
   if(!cit) return;
-  switchTab('citaciones');
+  switchTab('citaciones', true); // sincrónico: lo de abajo necesita el formulario ya armado
   if(cit.tipo){
     loadPartidoExtra(key);
   } else {
@@ -4674,18 +4688,8 @@ window.switchSection=function(sec){
   if(isPlantel) switchTab('plantel');
 };
 
-window.switchTab=function(tab){
-  activeTab=tab;
-  const tabsEnt=['tomar','historial','stats'];
-  const tabsPar=['tablas','cit-stats','citaciones','formacion','pospartido'];
-  const tabsPlantel=['plantel'];
-  const isEnt=tabsEnt.includes(tab);
-  const isPlantel=tabsPlantel.includes(tab);
-  document.querySelectorAll('.tabs-ent .tab').forEach((t,i)=>{ t.className='tab'+(tabsEnt[i]===tab?' ag':''); });
-  document.querySelectorAll('.tabs-par-grid .tab-icon-btn').forEach((t,i)=>{ t.className='tab-icon-btn'+(tabsPar[i]===tab?' ay':''); });
-  document.querySelectorAll('.tabs-plantel .tab').forEach((t,i)=>{ t.className='tab'+(tabsPlantel[i]===tab?' agg':''); });
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-'+tab).classList.add('active');
+// Arma el contenido de una pestaña (lo pesado).
+function _renderTab(tab){
   if(tab==='historial') renderHistory(selHistMonth);
   if(tab==='stats'){ renderStats(selStatsMonth); if(window._isEscuelita) renderPlantelMgr(); }
   if(tab==='cit-stats') renderCitStats();
@@ -4697,6 +4701,35 @@ window.switchTab=function(tab){
   }
   if(tab==='pospartido') renderPosPartido();
   if(tab==='plantel') renderPlantel();
+}
+
+// Al tocar una pestaña, primero se pinta el cambio (resaltado + vista) y RECIÉN
+// después se arma el contenido. Antes todo ocurría en el mismo instante, así que
+// el navegador no podía dibujar nada hasta terminar de armar la pantalla: en un
+// celular de gama media el toque se sentía trabado. `sincrono` = armar ya mismo
+// (para código que necesita el contenido listo apenas vuelve la llamada).
+let _tabRenderToken = 0;
+window.switchTab=function(tab, sincrono){
+  activeTab=tab;
+  const tabsEnt=['tomar','historial','stats'];
+  const tabsPar=['tablas','cit-stats','citaciones','formacion','pospartido'];
+  const tabsPlantel=['plantel'];
+  document.querySelectorAll('.tabs-ent .tab').forEach((t,i)=>{ t.className='tab'+(tabsEnt[i]===tab?' ag':''); });
+  document.querySelectorAll('.tabs-par-grid .tab-icon-btn').forEach((t,i)=>{ t.className='tab-icon-btn'+(tabsPar[i]===tab?' ay':''); });
+  document.querySelectorAll('.tabs-plantel .tab').forEach((t,i)=>{ t.className='tab'+(tabsPlantel[i]===tab?' agg':''); });
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+
+  const token = ++_tabRenderToken;
+  if(sincrono){ _renderTab(tab); return; }
+  let hecho = false;
+  const armar = ()=>{
+    // Si mientras tanto tocó otra pestaña, esta ya no hace falta
+    if(hecho || token !== _tabRenderToken) return;
+    hecho = true; _renderTab(tab);
+  };
+  requestAnimationFrame(()=>setTimeout(armar, 0));
+  setTimeout(armar, 80); // respaldo: con la pestaña del navegador en segundo plano no hay frames
 };
 
 
@@ -5747,7 +5780,23 @@ window.markAll = function(type, val){
   }
 };
 // INIT
-loadClubConfig().then(()=> loadPlayersFromDB()).then(()=>{ loadAttMarks(today()); renderAtt(); renderNextMatch(); });
+// Baja en segundo plano, con la app ya usable, lo que las pestañas pesadas
+// necesitan la primera vez que se abren (Pos partido tardaba ~1 s porque recién
+// ahí pedía los goleadores históricos y los stats de cada partido, uno por uno).
+// Si se cambia de club/categoría antes de que corra, no hace nada.
+function _precalentarPantallas(gen){
+  if(gen !== window._appGen || window._isEscuelita) return;
+  try{
+    cargarTodasLasZonas();
+    _loadHistoricos();
+    Object.entries(citaciones || {}).forEach(([key, m])=>{
+      if(m && m.citados && m.citados.length && (m.fecha || m.tipo) && _ppCache[key] === undefined){
+        _ppGetStats(key).then(s => { if(_ppCache[key] === undefined) _ppCache[key] = s; });
+      }
+    });
+  }catch(e){ console.warn('precalentar:', e && e.message); }
+}
+loadClubConfig().then(()=> loadPlayersFromDB()).then(()=>{ loadAttMarks(today()); renderAtt(); renderNextMatch(); setTimeout(()=>_precalentarPantallas(_myGen), 1500); });
 
 
 async function renderTablas(){
@@ -8827,19 +8876,15 @@ async function startCoordApp(){
   // atado al club por defecto y nunca se re-suscribía)
   if(typeof suscribirSuspensiones === 'function') suscribirSuspensiones();
 
+  // En segundo plano (ver el mismo comentario en loadClubConfig): esperar la
+  // comprobación de migración dejaba al coordinador varios segundos mirando la
+  // pantalla de carga solo para confirmar que "ya está migrado". Si migró de
+  // verdad, se rearma el panel con la temporada nueva.
   if(!window._migracionIntentada){
     window._migracionIntentada = true;
-    if(await migrarTemporadaSiHaceFalta()){
-      try{
-        const s2 = await get(ref(db, CLUB_PATH+'/config'));
-        if(s2.exists()){
-          const c2 = s2.val();
-          TORNEO_ACTIVO = c2.torneoActivo || TORNEO_ACTIVO;
-          TEMPORADAS    = c2.temporadas || {};
-          TORNEO_ID     = window._viewTorneo || TORNEO_ACTIVO;
-        }
-      }catch(e){}
-    }
+    migrarTemporadaSiHaceFalta().then(migro => {
+      if(migro && window._isCoordView) startCoordApp();
+    }).catch(()=>{});
   }
   aplicarLigaDataDeTemporada();
   await Promise.race([ window._ligaDataReady, new Promise(r => setTimeout(r, 5000)) ]);
