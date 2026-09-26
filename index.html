@@ -155,6 +155,15 @@
              letter-spacing:.5px; font-family:'DM Sans',sans-serif; cursor:pointer; white-space:nowrap; flex-shrink:0; }
   .pos-tag::after { content:' \21BB'; opacity:.6; }
   .pos-tag.sin { border-style:dashed; border-color:rgba(var(--draw-rgb),.6); color:var(--draw); }
+  /* Días de entrenamiento por categoría (Editar club) */
+  .dcat-caja { margin-bottom:var(--sp-6); border:1px solid var(--border); border-radius:var(--r-md); padding:var(--sp-4) var(--sp-5); }
+  .dcat-caja summary { cursor:pointer; font-size:var(--f-sm); font-weight:600; }
+  .dcat-ayuda { font-size:var(--f-micro); color:var(--muted); line-height:1.5; margin:var(--sp-3) 0 var(--sp-4); }
+  .dcat-fila { display:flex; align-items:center; gap:var(--sp-2); padding:var(--sp-2) 0; }
+  .dcat-nom { width:44px; flex:none; font-family:'Bebas Neue',sans-serif; font-size:var(--f-md); letter-spacing:1px; color:var(--muted); }
+  .dcat-dia { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:var(--f-micro); background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); padding:var(--sp-2) 0; cursor:pointer; }
+  .dcat-dia.on { border-color:var(--accent); }
+  .dcat-dia input { width:14px; height:14px; accent-color:var(--accent); }
   /* Salud de clubes (super admin) */
   .salud-card { margin-bottom:var(--sp-6); }
   .salud-cab { display:flex; align-items:center; gap:var(--sp-4); flex-wrap:wrap; }
@@ -1740,6 +1749,26 @@ function catColor(k){
   let h = 0; for(const ch of String(k)) h = (h*31 + ch.charCodeAt(0)) % 360;
   return 'hsl('+h+',52%,52%)';
 }
+/* Días de entrenamiento. Cada club entrena días distintos y, dentro del club, cada categoría puede
+   tener los suyos (ej.: Sagrado Corazón entrena martes, jueves y viernes salvo la 2013, que entrena
+   martes y jueves; Hernández entrena lunes, miércoles y viernes las cuatro más chicas y martes y jueves
+   las más grandes). Se guarda así:
+     clubs/{club}/diasEntrenamiento          → días de TODO el club (el valor por defecto)
+     clubs/{club}/diasPorCategoria/{cat}     → días de esa categoría, SI entrena distinto
+   Los días van como texto ("1" lunes … "6" sábado, "0" domingo) y acá se pasan a número, que es como
+   los devuelve Date.getDay(): comparar el texto con ese número no coincidía nunca. */
+function numsDeDias(a){
+  const l = Array.isArray(a) ? a : Object.values(a || {});
+  return [...new Set(l.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6))].sort((x, y) => x - y);
+}
+// Días de una categoría: los suyos si tiene, y si no los del club
+function diasDeCategoria(diasClub, porCat, catKey){
+  const propios = numsDeDias(porCat && porCat[catKey]);
+  return propios.length ? propios : numsDeDias(diasClub);
+}
+const _NOMBRE_DIA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const _CORTO_DIA  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
 // Categorías de competencia (todas menos Escuelita) del club que se está mirando. Sale de
 // clubs/{club}/cats; si el club no la tiene cargada, se usan todas las del catálogo.
 window._catsDelClub = null;
@@ -7990,9 +8019,14 @@ function saSaludDeClubes(clubs, users){
     }
 
     const rawDias = arr(c.diasEntrenamiento), dias = [...new Set(rawDias)];
-    if(!rawDias.length) hay(id, 'info', nom+': no tiene días de entrenamiento cargados (el calendario de entrenamientos del coordinador queda vacío).');
+    if(!rawDias.length && !Object.keys(c.diasPorCategoria || {}).length) hay(id, 'info', nom+': no tiene días de entrenamiento cargados (el calendario de entrenamientos del coordinador queda vacío).');
     else if(rawDias.length !== dias.length) hay(id, 'aviso', nom+': los días de entrenamiento están repetidos.', { desc:'Dejar cada día una vez', tipo:'dias', clubId:id, valor:dias });
 
+    // Días propios de una categoría: solo tiene sentido para las que el club tiene, y con días válidos
+    Object.entries(c.diasPorCategoria || {}).forEach(([k, v]) => {
+      if(!CATEGORIAS.includes(k) || (cats.length && !cats.includes(k))) hay(id, 'aviso', nom+': tiene días de entrenamiento para '+catCorta(k)+', que no está en la lista de categorías del club.');
+      else if(!numsDeDias(v).length) hay(id, 'aviso', nom+' · '+catNombre(k)+': los días de entrenamiento propios no son válidos, se usan los del club.');
+    });
     const cfg = c.config || {};
     if(!cfg.torneoActivo) hay(id, 'error', nom+': no tiene torneo activo en la configuración.');
     if(!cfg.ligaId) hay(id, 'aviso', nom+': no tiene liga asignada en la configuración.');
@@ -9309,12 +9343,19 @@ window.saEditarClub = async function(clubId){
       <span style="font-size:var(--f-md)">${c.label}</span>
     </label>`).join('');
   const _diasSemana=[{v:'1',l:'Lun'},{v:'2',l:'Mar'},{v:'3',l:'Mié'},{v:'4',l:'Jue'},{v:'5',l:'Vie'},{v:'6',l:'Sáb'}];
-  const _diasActuales=Array.isArray(club.diasEntrenamiento)?club.diasEntrenamiento:[];
+  const _diasActuales=numsDeDias(club.diasEntrenamiento).map(String);
   const diasHtml=_diasSemana.map(d=>`
     <label style="display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);background:var(--surface2);border:1px solid ${_diasActuales.includes(d.v)?'var(--accent)':'var(--border)'};border-radius:var(--r-md);padding:var(--sp-4) var(--sp-2);cursor:pointer;flex:1">
       <input type="checkbox" class="editDiaCheck" value="${d.v}" ${_diasActuales.includes(d.v)?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
       <span style="font-size:var(--f-sm);font-weight:600">${d.l}</span>
     </label>`).join('');
+  // Días de las categorías que entrenan distinto del resto del club (clubs/{club}/diasPorCategoria/{cat})
+  const _diasCat = club.diasPorCategoria || {};
+  const diasCatHtml = CAT_OPTS.map(c => {
+    const propios = numsDeDias(_diasCat[c.key]).map(String);
+    return '<div class="dcat-fila"><span class="dcat-nom">'+catCorta(c.key)+'</span>'+
+      _diasSemana.map(d => '<label class="dcat-dia'+(propios.includes(d.v)?' on':'')+'"><input type="checkbox" class="editDiaCat" data-cat="'+c.key+'" value="'+d.v+'"'+(propios.includes(d.v)?' checked':'')+'><span>'+d.l+'</span></label>').join('')+'</div>';
+  }).join('');
 
   overlay.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-8);width:100%;max-width:420px;margin:auto">
@@ -9337,7 +9378,12 @@ window.saEditarClub = async function(clubId){
       <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-4)">Categorías activas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-6)">${catsHtml}</div>
       <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-4)">Días de entrenamiento</div>
-      <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-6)">${diasHtml}</div>
+      <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5)">${diasHtml}</div>
+      <details class="dcat-caja" ${Object.keys(_diasCat).length?'open':''}>
+        <summary>Días distintos por categoría</summary>
+        <div class="dcat-ayuda">Marcá los días solo de la categoría que entrena distinto del resto del club (por ejemplo, la 2013 un día menos). Las que no marques usan los días de arriba.</div>
+        ${diasCatHtml}
+      </details>
       <label style="display:flex;align-items:center;gap:var(--sp-4);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-6);cursor:pointer">
         <input type="checkbox" id="editClubRsvp" ${club.config?.rsvpHabilitado?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
         <span style="font-size:var(--f-md)">Confirmación de asistencia por link (opcional)</span>
@@ -9391,6 +9437,9 @@ window._saGuardarEdicion = async function(clubId){
   const _ov = document.getElementById('saEditOverlay') || document;
   const cats = [...new Set([..._ov.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value))];
   const diasEntrenamiento = [...new Set([..._ov.querySelectorAll('.editDiaCheck:checked')].map(cb=>cb.value))];
+  // Solo se guardan las categorías con días propios; el resto usa los del club
+  const diasPorCategoria = {};
+  _ov.querySelectorAll('.editDiaCat:checked').forEach(cb => { (diasPorCategoria[cb.dataset.cat] = diasPorCategoria[cb.dataset.cat] || []).push(cb.value); });
   const rsvpHabilitado = !!document.getElementById('editClubRsvp')?.checked;
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
@@ -9410,6 +9459,7 @@ window._saGuardarEdicion = async function(clubId){
   }
   // Preservar data existente del club, solo actualizar campos del SA
   const updates = {...current, nombre, cats, diasEntrenamiento};
+  if(Object.keys(diasPorCategoria).length) updates.diasPorCategoria = diasPorCategoria; else delete updates.diasPorCategoria;
   // ligaId vive solo en config (ver comentario en saEditarClub) — se borra el
   // campo suelto en la raíz si quedó de una versión vieja de este formulario,
   // para que no vuelva a pisar el de config la próxima vez que se edite.
@@ -9924,6 +9974,9 @@ async function startCoordApp(){
   let filtroJug = '', catJug = '', jugAbierto = null, catLiga = null;
   let AVISOS = {};       // clubs/{club}/config/avisos
   let DIAS_ENT = [], SUSP_ENT = {};
+  let DIAS_CAT = {};          // días de las categorías que entrenan distinto del resto del club (ver diasDeCategoria)
+  let entFiltro = '';         // categoría elegida en el calendario de entrenamientos ('' = todas)
+  const diasDe = catKey => diasDeCategoria(DIAS_ENT, DIAS_CAT, catKey);
 
   /* ── DÍA DE CITACIÓN ────────────────────────────────────────────
      De lunes a jueves es normal que ninguna categoría haya citado todavía, y
@@ -10056,13 +10109,14 @@ async function startCoordApp(){
     const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay()+6)%7));
     const iso = d => d.toISOString().slice(0,10);
     const desde = iso(lunes), hasta = iso(hoy);
-    const dias = (DIAS_ENT||[]).length;
+    const diasCat = diasDe(catKey);              // los de ESTA categoría (o los del club si no tiene propios)
+    const dias = diasCat.length;
     let esperados = 0;
     for(let i=0;i<7;i++){
       const d = new Date(lunes); d.setDate(lunes.getDate()+i);
       if(iso(d) > hasta) break;
       const dow = d.getDay();                         // 0 dom … 6 sáb
-      if(!(DIAS_ENT||[]).includes(dow)) continue;
+      if(!diasCat.includes(dow)) continue;
       if((SUSP_ENT||{})[iso(d)]) continue;            // suspendido: no cuenta
       esperados++;
     }
@@ -10918,24 +10972,43 @@ async function startCoordApp(){
         '</div>'; }).join('')+'</div>';
     }
 
-    // Días de entrenamiento del mes en curso
+    // Días de entrenamiento del mes en curso. Cada categoría puede entrenar días distintos: se ve
+    // el conjunto de todas o la de una categoría (entFiltro), con un resumen de quién entrena cuándo.
     h += '<div class="csec">'+icono('cono')+'Entrenamientos<span class="cont">'+
          _nombreMes(new Date().getMonth())+'</span></div>';
-    if(!(DIAS_ENT||[]).length){
+    const catsEnt = ALL_CATS;                    // todas, Escuelita incluida
+    const hayDias = catsEnt.some(c => diasDe(c.key).length);
+    if(!hayDias){
       h += '<div class="cvacio">Este club no tiene días de entrenamiento configurados.<br>'+
            'Se cargan desde el panel de Super Admin.</div>';
     } else {
+      // Resumen: las categorías con los mismos días van juntas
+      const grupos = {};
+      catsEnt.forEach(c => { const d = diasDe(c.key); if(!d.length) return; (grupos[d.join(',')] = grupos[d.join(',')] || { dias:d, cats:[] }).cats.push(c); });
+      const resumen = Object.values(grupos).sort((a,b) => b.cats.length - a.cats.length).map(g =>
+        '<div class="crow"><div class="nom" style="font-size:var(--f-sm)">'+g.dias.map(d => _CORTO_DIA[d]).join(' · ')+'</div>'+
+        '<div class="det" style="text-align:right">'+(Object.keys(grupos).length === 1 ? 'todas las categorías' : g.cats.map(c => esc(c.label.replace(/^Cat /,''))).join(', '))+'</div></div>').join('');
+      h += '<div class="ccard">'+resumen+'</div>';
+
+      // Filtro por categoría (solo si hay más de un esquema de días)
+      const distintos = Object.keys(grupos).length > 1;
+      if(entFiltro && !catsEnt.some(c => c.key === entFiltro)) entFiltro = '';
+      if(distintos){
+        h += '<div class="cfila"><button class="cbtn'+(entFiltro===''?' on':'')+'" onclick="window.coordEntCat(\'\')">Todas</button>'+
+          catsEnt.map(c => '<button class="cbtn'+(entFiltro===c.key?' on':'')+'" onclick="window.coordEntCat(\''+c.key+'\')">'+esc(c.label.replace(/^Cat /,''))+'</button>').join('')+'</div>';
+      }
+      const diasVista = entFiltro ? diasDe(entFiltro) : [...new Set(catsEnt.flatMap(c => diasDe(c.key)))];
       const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
       const ultimo = new Date(y, m+1, 0).getDate();
       const dias = [];
       for(let d=1; d<=ultimo; d++){
         const fecha = new Date(y, m, d);
-        if(DIAS_ENT.includes(fecha.getDay())) dias.push(d);
+        if(diasVista.includes(fecha.getDay())) dias.push(d);
       }
       const iso = d => y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
       h += '<div class="ccard"><div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">'+
-        'Tocá un día para marcarlo como sin entrenamiento (feriado, lluvia, cancha ocupada). '+
-        'Los días marcados no cuentan en la carga de los profes.</div>'+
+        (entFiltro ? '<b style="color:var(--text)">'+esc(catDe(entFiltro).label)+'</b>: '+dias.length+' entrenamientos este mes. ' : dias.length+' días con entrenamiento este mes. ')+
+        'Tocá un día para marcarlo como sin entrenamiento (feriado, lluvia, cancha ocupada): vale para todo el club y no cuenta en la carga de los profes.</div>'+
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:var(--sp-3)">'+
         dias.map(d=>'<button class="cbtn'+(SUSP_ENT[iso(d)]?' peligro':'')+'" style="text-align:center"'+
           (archivoBloqueado()?' disabled':' onclick="window.coordSuspEnt(\''+iso(d)+'\')"')+'>'+d+'</button>').join('')+
@@ -10980,6 +11053,7 @@ async function startCoordApp(){
       'una pestaña olvidada abierta no suma. Los datos empiezan el día que se activó la medición.</div>';
   }
   window.coordUsoPer = function(k){ usoPer = k; pintar(); };
+  window.coordEntCat = function(k){ entFiltro = k; pintar(); };
 
   /* ══════════ ROUTER ══════════ */
   const TABS = [
@@ -11046,7 +11120,9 @@ async function startCoordApp(){
           .then(s => { D[cat.key].plantel = _nombresDePlantel(s.val(), cat); }).catch(()=>{}),
       ]);
       lecturas.push(get(ref(db, CLUB_PATH+'/diasEntrenamiento'))
-        .then(s => { DIAS_ENT = s.val() || []; _coordDiasEntGlobal = DIAS_ENT; }).catch(()=>{}));
+        .then(s => { DIAS_ENT = numsDeDias(s.val()); _coordDiasEntGlobal = DIAS_ENT; }).catch(()=>{}));
+      lecturas.push(get(ref(db, CLUB_PATH+'/diasPorCategoria'))
+        .then(s => { DIAS_CAT = s.val() || {}; }).catch(()=>{}));
       lecturas.push(get(ref(db, CLUB_PATH+'/config/suspensionesEnt'))
         .then(s => { SUSP_ENT = s.val() || {}; _coordSuspEntGlobal = SUSP_ENT; }).catch(()=>{}));
       lecturas.push(get(ref(db, AVISOS_PATH))
