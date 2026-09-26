@@ -623,6 +623,20 @@
            border-left:3px solid var(--muted); margin-bottom:var(--sp-3); }
   .cpend.alta  { border-left-color:var(--loss); }
   .cpend.media { border-left-color:var(--draw); }
+  /* Semana: una tarjeta por categoría con lo que le falta */
+  .sem-card { border-left:3px solid var(--muted); }
+  .sem-card.alta  { border-left-color:var(--loss); }
+  .sem-card.media { border-left-color:var(--draw); }
+  .sem-h { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4); }
+  .sem-nom { font-weight:600; font-size:var(--f-lg); }
+  .sem-bar { display:flex; gap:var(--sp-2); margin:var(--sp-4) 0 var(--sp-3); }
+  .sem-bar i { flex:1; height:6px; border-radius:var(--r-xs); background:var(--border); }
+  .sem-bar i.ok  { background:var(--win); }
+  .sem-bar i.mal { background:var(--loss); }
+  .sem-lin { font-size:var(--f-sm); color:var(--muted); line-height:1.5; }
+  .sem-lin.sem-t { color:var(--text); }
+  .sem-acc { display:flex; gap:var(--sp-4); margin-top:var(--sp-5); }
+  .sem-acc .cbtn { flex:1; text-align:center; }
   .cpend .qc { flex:1; min-width:0; }
   .cpend .qui { font-weight:600; font-size:var(--f-md); }
   .cpend .que { font-size:var(--f-sm); color:var(--muted); margin-top:var(--sp-1); }
@@ -10118,26 +10132,40 @@ async function startCoordApp(){
     return cargados >= r.gf ? null : (r.gf - cargados);
   }
 
-  // Entrenamientos de esta semana: cuántos se esperaban y cuántos se cargaron
-  function entrenosDeLaSemana(catKey){
-    const hoy = new Date();
+  // Fecha local AAAA-MM-DD (toISOString es UTC: de noche, en Argentina, ya daba el día siguiente)
+  const _isoLocal = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  function _semanaActual(){
+    const hoy = new Date(); hoy.setHours(12,0,0,0);
     const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay()+6)%7));
-    const iso = d => d.toISOString().slice(0,10);
-    const desde = iso(lunes), hasta = iso(hoy);
-    const diasCat = diasDe(catKey);              // los de ESTA categoría (o los del club si no tiene propios)
-    const dias = diasCat.length;
-    let esperados = 0;
-    for(let i=0;i<7;i++){
-      const d = new Date(lunes); d.setDate(lunes.getDate()+i);
-      if(iso(d) > hasta) break;
-      const dow = d.getDay();                         // 0 dom … 6 sáb
-      if(!diasCat.includes(dow)) continue;
-      if(entSuspendidoEn(SUSP_ENT, iso(d))) continue; // suspendido: no cuenta
-      esperados++;
-    }
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate()+6);
+    return { hoy, lunes, domingo };
+  }
+
+  // Entrenamientos de esta semana de UNA categoría: los días que le tocaban (hasta hoy, sin los
+  // suspendidos) y cuáles tienen asistencia cargada. Cada categoría entrena sus propios días.
+  function entrenosSemana(catKey){
+    const s = _semanaActual();
+    const diasCat = diasDe(catKey);
     const ses = datosDeCat(catKey).sesiones;
+    const desde = _isoLocal(s.lunes), hasta = _isoLocal(s.hoy);
+    const dias = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(s.lunes); d.setDate(s.lunes.getDate()+i);
+      const f = _isoLocal(d);
+      if(f > hasta) break;
+      if(!diasCat.includes(d.getDay())) continue;
+      if(entSuspendidoEn(SUSP_ENT, f)) continue;          // suspendido: no cuenta
+      dias.push({ iso:f, dow:d.getDay(), hecho:!!ses[f] });
+    }
     const cargados = Object.keys(ses).filter(f => f >= desde && f <= hasta).length;
-    return { cargados, esperados: dias ? esperados : 0 };
+    // Una asistencia cargada en un día que no era de entrenamiento ocupa el primer lugar vacío
+    let extra = cargados - dias.filter(x => x.hecho).length;
+    dias.forEach(x => { if(!x.hecho && extra > 0){ x.hecho = true; extra--; } });
+    return { cargados, esperados: diasCat.length ? dias.length : 0, dias: diasCat.length ? dias : [] };
+  }
+  function entrenosDeLaSemana(catKey){
+    const e = entrenosSemana(catKey);
+    return { cargados:e.cargados, esperados:e.esperados };
   }
 
   // Presencia del año por categoría, sobre el plantel REAL (no un 14 fijo)
@@ -10362,7 +10390,7 @@ async function startCoordApp(){
   /* ══════════ HOY ══════════ */
   function vistaHoy(){
     if(!cargado) return spinner;
-    const prox = proximaFecha(), ult = ultimaJugada(), pend = pendientes();
+    const prox = proximaFecha(), ult = ultimaJugada();
     let h = '';
 
     if(!_hayFixture){
@@ -10393,52 +10421,6 @@ async function startCoordApp(){
       h += '<div class="cvacio">No queda ninguna fecha por jugar en esta temporada.</div>';
     }
 
-    // Pendientes
-    h += '<div class="csec">'+icono('lista')+'Pendientes<span class="cont">'+pend.length+
-         (pend.length===1?' cosa por resolver':' cosas por resolver')+'</span></div>';
-    // Cuántas no citaron todavía — se sabe siempre, aunque el pendiente no
-    // se muestre hasta el día de citación
-    const faltanCitar = prox ? COMP_CATS.filter(c => !citoLaFecha(c.key, prox)) : [];
-
-    // Antes del día de citación no se reclama, pero hay que decir por qué: si no,
-    // parece que está todo al día cuando en realidad todavía nadie citó.
-    if(faltanCitar.length && !esDiaDeCitacion()){
-      h += '<div class="cnota" style="margin:0 0 var(--sp-4)">'+
-        faltanCitar.length+(faltanCitar.length===1?' categoría todavía no citó':' categorías todavía no citaron')+
-        ' para la fecha '+prox.fecha+'. No se reclama hasta el <b>'+_DIAS_ISO[DIAS_DE_CITACION[0]]+'</b>, '+
-        'para que el aviso no se vuelva paisaje. Igual podés avisarles ahora.</div>';
-    }
-    if(!pend.length && !faltanCitar.length){
-      h += '<div class="cvacio">Está todo al día.<br>Ninguna categoría tiene carga pendiente.</div>';
-    }
-    if(pend.length || faltanCitar.length){
-      const sinAvisar = prox
-        ? COMP_CATS.filter(c => !citoLaFecha(c.key,prox) && !avisoDe(c.key, prox.fecha)).map(c=>c.key)
-        : [];
-      if(sinAvisar.length && !archivoBloqueado()){
-        h += '<div class="ccard" style="border-color:rgba(var(--draw-rgb),.35);background:rgba(var(--draw-rgb),.06);'+
-          'display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap">'+
-          '<div style="flex:1;min-width:180px"><div style="font-weight:600">Avisar a los que faltan citar</div>'+
-          '<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">'+
-            'Les aparece el cartel en su categoría. '+sinAvisar.length+' sin avisar.</div></div>'+
-          '<button class="cbtn on" onclick="window.coordAvisar('+JSON.stringify(sinAvisar).replace(/"/g,'&quot;')+
-            ','+(prox?prox.fecha:'null')+')">Avisar a '+sinAvisar.length+'</button></div>';
-      }
-    }
-    if(pend.length){
-      h += pend.map(p=>{
-        const av = p.tipo==='citar' ? avisoDe(p.cat.key, p.fecha && p.fecha.fecha) : null;
-        let est = esc(p.cat.label);
-        if(av) est += ' &middot; avisado '+_haceCuanto(av.ts)+' &middot; '+
-          (av.visto ? '<span style="color:var(--draw)">lo vio '+_haceCuanto(av.visto)+' y no citó</span>'
-                    : '<span style="color:var(--muted)">todavía no entró a la app</span>');
-        return '<div class="cpend '+p.nivel+'">'+chipCat(p.cat)+
-          '<div class="qc"><div class="qui">'+esc(p.que)+'</div><div class="que">'+est+'</div></div>'+
-          '<button class="cbtn'+(av && !av.visto ? ' on' : '')+'" onclick="window.coordRecordar(\''+
-            p.cat.key+'\',\''+p.tipo+'\')">'+(av ? 'WhatsApp' : 'Avisar')+'</button></div>';
-      }).join('');
-    }
-
     // Último partido
     if(ult){
       h += '<div class="csec">'+icono('pelota')+'Fecha '+ult.fecha+' &middot; vs '+esc(ult.rival)+'</div>';
@@ -10461,6 +10443,148 @@ async function startCoordApp(){
     }
     return h;
   }
+
+  /* ══════════ SEMANA ══════════
+     Qué hay que resolver esta semana, categoría por categoría, con el aviso al profe en un toque.
+     Junta lo que "Hoy" muestra suelto (citaciones, goles, entrenamientos) y agrega qué días de
+     entrenamiento faltan, según los días de CADA categoría. */
+  function _pendientesPorCat(){
+    const por = {};
+    ALL_CATS.forEach(c => { por[c.key] = []; });
+    pendientes().forEach(p => { (por[p.cat.key] = por[p.cat.key] || []).push(p); });
+    // pendientes() mira solo las categorías de competencia; los entrenos cuentan en todas
+    ALL_CATS.filter(c => c.escuelita).forEach(c => {
+      const e = entrenosSemana(c.key);
+      if(e.esperados && e.cargados < e.esperados)
+        por[c.key].push({ nivel:'media', cat:c, tipo:'entreno', que:'Cargó '+e.cargados+' de '+e.esperados+' entrenamientos' });
+    });
+    return por;
+  }
+  function _unir(a){ return a.length < 2 ? a.join('') : a.slice(0,-1).join(', ')+' y '+a[a.length-1]; }
+  // Las líneas de cada pendiente; en entrenamientos dice QUÉ días faltan
+  function _lineasSemana(c, pends){
+    const hoyIso = _isoLocal(new Date());
+    return pends.map(p => {
+      if(p.tipo !== 'entreno') return p.que;
+      const faltan = entrenosSemana(c.key).dias.filter(x => !x.hecho)
+        .map(x => x.iso === hoyIso ? 'hoy' : _NOMBRE_DIA[x.dow].toLowerCase());
+      return faltan.length ? 'Sin asistencia cargada: '+_unir(faltan) : p.que;
+    });
+  }
+  function _etiquetaSemana(){
+    const s = _semanaActual();
+    const f = d => _CORTO_DIA[d.getDay()]+' '+d.getDate();
+    return f(s.lunes)+' al '+f(s.domingo)+' '+_nombreMes(s.domingo.getMonth()).slice(0,3);
+  }
+
+  function vistaSemana(){
+    if(!cargado) return spinner;
+    const por = _pendientesPorCat();
+    const peso = c => por[c.key].reduce((n,p) => n + (p.nivel === 'alta' ? 10 : 1), 0);
+    const conPend = ALL_CATS.filter(c => por[c.key].length).sort((a,b) => peso(b) - peso(a));
+    const alDia = ALL_CATS.filter(c => !por[c.key].length);
+    const hoyIso = _isoLocal(new Date()), prox = proximaFecha();
+    let h = '<div class="csec">'+icono('lista')+'Esta semana<span class="cont">'+_etiquetaSemana()+'</span></div>';
+    h += '<div class="ccard"><div class="cgrid kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))">'+
+      '<div class="ckpi"><div class="n '+(conPend.length ? 'loss' : 'win')+'">'+conPend.length+'</div><div class="l">para resolver</div></div>'+
+      '<div class="ckpi"><div class="n win">'+alDia.length+'</div><div class="l">al día</div></div>'+
+    '</div></div>';
+
+    // Cuántas no citaron todavía — se sabe siempre, aunque el pendiente no se muestre hasta el día de citación
+    const faltanCitar = prox ? COMP_CATS.filter(c => !citoLaFecha(c.key, prox)) : [];
+    if(faltanCitar.length && !esDiaDeCitacion()){
+      h += '<div class="cnota" style="margin:0 0 var(--sp-4)">'+
+        faltanCitar.length+(faltanCitar.length===1?' categoría todavía no citó':' categorías todavía no citaron')+
+        ' para la fecha '+prox.fecha+'. No se reclama hasta el <b>'+_DIAS_ISO[DIAS_DE_CITACION[0]]+'</b>, '+
+        'para que el aviso no se vuelva paisaje. Igual podés avisarles ahora.</div>';
+    }
+    const sinAvisar = prox ? faltanCitar.filter(c => !avisoDe(c.key, prox.fecha)).map(c => c.key) : [];
+    if(sinAvisar.length && !archivoBloqueado()){
+      h += '<div class="ccard" style="border-color:rgba(var(--draw-rgb),.35);background:rgba(var(--draw-rgb),.06);'+
+        'display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:180px"><div style="font-weight:600">Avisar a los que faltan citar</div>'+
+        '<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">'+
+          'Les aparece el cartel en su categoría. '+sinAvisar.length+' sin avisar.</div></div>'+
+        '<button class="cbtn on" onclick="window.coordAvisar('+JSON.stringify(sinAvisar).replace(/"/g,'&quot;')+
+          ','+prox.fecha+')">Avisar a '+sinAvisar.length+'</button></div>';
+    }
+
+    if(!conPend.length){
+      h += '<div class="cvacio">Está todo al día.<br>Ninguna categoría tiene carga pendiente esta semana.</div>';
+    } else {
+      h += '<div class="csec">Para resolver</div>';
+      conPend.forEach(c => {
+        const pends = por[c.key], alta = pends.some(p => p.nivel === 'alta');
+        const e = entrenosSemana(c.key);
+        const pc = pends.find(p => p.tipo === 'citar');
+        const av = pc ? avisoDe(c.key, pc.fecha && pc.fecha.fecha) : null;
+        h += '<div class="ccard sem-card '+(alta ? 'alta' : 'media')+'">'+
+          '<div class="sem-h"><span class="sem-nom">'+esc(c.label)+'</span>'+
+            '<span class="ccat '+(alta ? 'falta' : 'medio')+'">'+pends.length+(pends.length === 1 ? ' pendiente' : ' pendientes')+'</span></div>'+
+          (e.esperados
+            ? '<div class="sem-bar">'+e.dias.map(x => '<i class="'+(x.hecho ? 'ok' : x.iso === hoyIso ? '' : 'mal')+'"></i>').join('')+'</div>'+
+              '<div class="sem-lin">Entrenamientos '+e.cargados+' de '+e.esperados+' &middot; entrena '+
+                esc(diasDe(c.key).map(d => _CORTO_DIA[d]).join(', '))+'</div>'
+            : '')+
+          _lineasSemana(c, pends).map(t => '<div class="sem-lin sem-t">&bull; '+esc(t)+'</div>').join('')+
+          (av ? '<div class="sem-lin">Avisado '+_haceCuanto(av.ts)+' &middot; '+
+            (av.visto ? '<span style="color:var(--draw)">lo vio '+_haceCuanto(av.visto)+' y no citó</span>' : 'todavía no entró a la app')+'</div>' : '')+
+          '<div class="sem-acc"><button class="cbtn on" onclick="window.coordSemAvisar(\''+c.key+'\')">Avisar al profe</button>'+
+            '<button class="cbtn" onclick="window.coordSemVer(\''+c.key+'\')">Ver</button></div>'+
+        '</div>';
+      });
+    }
+
+    if(alDia.length){
+      h += '<div class="csec">Al día</div><div class="ccard">'+alDia.map(c => {
+        const e = entrenosSemana(c.key);
+        const partes = [];
+        partes.push(e.esperados ? e.cargados+' de '+e.esperados+' entrenos' : 'sin entrenamientos esta semana');
+        if(prox && !c.escuelita && citoLaFecha(c.key, prox)) partes.push('citó F'+prox.fecha);
+        return '<div class="crow">'+chipCat(c)+'<div class="nom"></div><div class="det" style="color:var(--win)">'+esc(partes.join(' · '))+'</div></div>';
+      }).join('')+'</div>';
+    }
+
+    h += '<div style="margin-top:var(--sp-5)"><button class="cbtn" style="width:100%" onclick="window.coordSemResumen()">Mandar resumen semanal por WhatsApp</button></div>';
+    h += '<div class="cnota">Los feriados y las suspensiones no cuentan como faltantes. Cada categoría se mide con sus propios '+
+         'días de entrenamiento. Nada sale sin que lo leas antes.</div>';
+    return h;
+  }
+
+  window.coordSemAvisar = async function(catKey){
+    const c = catDe(catKey);
+    const pends = _pendientesPorCat()[catKey] || [];
+    const lineas = _lineasSemana(c, pends);
+    if(!lineas.length) return;
+    // Si falta citar, además del WhatsApp le aparece el cartel al profe en la app
+    const pc = pends.find(p => p.tipo === 'citar');
+    let cartel = false;
+    if(pc){
+      if(_roGuard()) return;
+      const ts = Date.now(), fecha = pc.fecha ? pc.fecha.fecha : null;
+      try{
+        await update(ref(db, AVISOS_PATH), { [catKey]: { fecha, ts, visto:null } });
+        AVISOS[catKey] = { fecha, ts, visto:null }; cartel = true;
+      }catch(e){ showToast('No se pudo dejar el aviso en la app'); }
+    }
+    abrirDlgWA('Avisar a '+c.label, cartel ? 'Le aparece el cartel en su categoría. Revisá el texto antes de mandarlo.' : 'Revisá el texto antes de mandarlo.',
+      ['📋 *'+_clubNombre.toUpperCase()+' — PENDIENTES DE LA SEMANA*', '👥 '+c.label, '',
+       ...lineas.map(t => '  • '+t), '', '👉 app.miplantel.com.ar'].join('\n'));
+  };
+  window.coordSemVer = function(catKey){ catJug = catKey; jugAbierto = null; window.coordTab('jugadores'); };
+  window.coordSemResumen = function(){
+    const por = _pendientesPorCat();
+    const conPend = ALL_CATS.filter(c => por[c.key].length), alDia = ALL_CATS.filter(c => !por[c.key].length);
+    const corto = c => c.label.replace(/^Cat /,'');
+    const txt = ['📊 *'+_clubNombre.toUpperCase()+' — RESUMEN DE LA SEMANA*', '📅 '+_etiquetaSemana()];
+    if(alDia.length) txt.push('', '✅ Al día: '+alDia.map(corto).join(', '));
+    if(conPend.length){
+      txt.push('', '⚠️ Para resolver:');
+      conPend.forEach(c => txt.push('  • '+c.label+': '+_lineasSemana(c, por[c.key]).join('; ')));
+    } else txt.push('', 'Ninguna categoría tiene carga pendiente.');
+    txt.push('', '👉 app.miplantel.com.ar');
+    abrirDlgWA('Resumen semanal', 'Revisá el texto antes de mandarlo.', txt.join('\n'));
+  };
 
   /* ══════════ EQUIPOS ══════════ */
   function vistaEquipos(){
@@ -11126,6 +11250,7 @@ async function startCoordApp(){
   /* ══════════ ROUTER ══════════ */
   const TABS = [
     { id:'hoy',        lbl:'Hoy',        ico:'tabla',      render:vistaHoy },
+    { id:'semana',     lbl:'Semana',     ico:'lista',      render:vistaSemana },
     { id:'equipos',    lbl:'Equipos',    ico:'plantel',    render:vistaEquipos },
     { id:'jugadores',  lbl:'Jugadores',  ico:'presencia',  render:vistaJugadores },
     { id:'liga',       lbl:'Liga',       ico:'copa',       render:vistaLiga },
@@ -11140,7 +11265,7 @@ async function startCoordApp(){
     el.innerHTML = TABS.map(t =>
       '<button class="ctab'+(tabAct===t.id?' on':'')+'" onclick="window.coordTab(\''+t.id+'\')">'+
       '<span class="ico" data-ico="'+t.ico+'"></span>'+t.lbl+
-      (t.id==='hoy' && nPend ? '<span class="pin">'+nPend+'</span>' : '')+'</button>').join('');
+      (t.id==='semana' && nPend ? '<span class="pin">'+nPend+'</span>' : '')+'</button>').join('');
     pintarIconos(el);
   }
 

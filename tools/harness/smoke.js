@@ -49,7 +49,7 @@
     // La app tiene que abrir en Entreno
     window.switchSection('ent'); window.switchTab('tomar');
   } else if (rol === 'coordinador') {
-    for (const t of ['hoy', 'equipos', 'jugadores', 'liga', 'calendario', 'uso']) {
+    for (const t of ['hoy', 'semana', 'equipos', 'jugadores', 'liga', 'calendario', 'uso']) {
       try { window.coordTab(t); await esperar(600); revisar('coord/' + t, texto('coordVista')); }
       catch (e) { anotar('pantalla coord/' + t, e.message); }
     }
