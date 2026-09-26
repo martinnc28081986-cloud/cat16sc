@@ -155,6 +155,18 @@
              letter-spacing:.5px; font-family:'DM Sans',sans-serif; cursor:pointer; white-space:nowrap; flex-shrink:0; }
   .pos-tag::after { content:' \21BB'; opacity:.6; }
   .pos-tag.sin { border-style:dashed; border-color:rgba(var(--draw-rgb),.6); color:var(--draw); }
+  /* Salud de clubes (super admin) */
+  .salud-card { margin-bottom:var(--sp-6); }
+  .salud-cab { display:flex; align-items:center; gap:var(--sp-4); flex-wrap:wrap; }
+  .salud-cab b { font-size:var(--f-md); }
+  .salud-res { margin-left:auto; font-size:var(--f-sm); color:var(--muted); }
+  .salud-pto { width:8px; height:8px; border-radius:50%; flex:none; margin-top:6px; }
+  .salud-pto.grande { width:10px; height:10px; margin-top:0; }
+  .salud-lista { margin-top:var(--sp-5); border-top:1px solid var(--border); padding-top:var(--sp-3); }
+  .salud-fila { display:flex; align-items:flex-start; gap:var(--sp-4); padding:var(--sp-4) 0; border-bottom:1px solid rgba(255,255,255,.05); }
+  .salud-fila:last-child { border-bottom:none; }
+  .salud-txt { flex:1; min-width:0; font-size:var(--f-sm); line-height:1.4; }
+  .salud-fila .cbtn { flex:none; }
   /* Tablero de uso (coordinación y super admin) */
   .uso-fila { display:flex; align-items:center; gap:var(--sp-4); padding:var(--sp-4) 0; border-bottom:1px solid rgba(255,255,255,.05); flex-wrap:wrap; }
   .uso-fila:last-child { border-bottom:none; }
@@ -3373,9 +3385,9 @@ async function loadClubConfig(){
     if(cfg.address) CFG.address = cfg.address;
 
     // ── CONFIRMACIÓN DE ASISTENCIA POR LINK (RSVP) ──
-    // Piloto: solo para los clubes que lo tengan activado en su propia config
-    // (clubs/{clubId}/config.rsvpHabilitado), no un club hardcodeado en el
-    // código — así cualquier club puede sumarse después sin tocar nada acá.
+    // Opcional por club: solo para los que lo tengan activado en su propia config
+    // (clubs/{clubId}/config.rsvpHabilitado, se marca en Super Admin > Editar club). No hay ningún
+    // club fijo en el código: cualquiera puede activarlo o desactivarlo sin tocar nada acá.
     CFG.rsvpHabilitado = !!cfg.rsvpHabilitado;
 
     // ── NOMBRE DEL CLUB (para cabeceras de citación) ──
@@ -5006,8 +5018,8 @@ window.shareCit = async function(key){
   cit.citados.forEach((p,i)=>lines.push('  '+(i+1)+'. '+p));
   if(cit.camisetero){ lines.push(''); lines.push('👕 Camisetas: *'+cit.camisetero+'*'); }
   lines.push('');
-  // Piloto: el link de confirmación solo se manda si el club lo tiene
-  // activado en su config (CFG.rsvpHabilitado) — hoy solo Hernandez.
+  // El link de confirmación solo se manda si el club lo tiene activado en su config
+  // (CFG.rsvpHabilitado). Es una opción de cada club, no de un club en particular.
   if(CFG.rsvpHabilitado){
     const clubIdWA = CLUB_PATH.split('/')[1] || '';
     // Link corto: en vez de mandar club+categoría+torneo+clave en la URL (largo,
@@ -5119,7 +5131,7 @@ function renderCitStats(){
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5);margin-bottom:var(--sp-6)">
       <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:var(--sp-4)">Progreso del torneo</div>
       <div style="display:flex;justify-content:space-between;font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">
-        <span>F1</span><span style="color:var(--yellow)">F${jugadas||'—'} actual</span><span>F${FIXTURE[FIXTURE.length-1].fecha}</span>
+        <span>F1</span><span style="color:var(--yellow)">F${jugadas||'—'} actual</span><span>${FIXTURE.length ? 'F'+FIXTURE[FIXTURE.length-1].fecha : '—'}</span>
       </div>
       <div style="height:5px;background:var(--border);border-radius:var(--r-sm);margin-bottom:var(--sp-5)">
         <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:var(--r-sm);transition:width 0.4s"></div>
@@ -7945,15 +7957,130 @@ function _planBadge(club){
 }
 
 // ── TAB CLUBES ──
+/* ── SALUD DE CLUBES ─────────────────────────────────────────────────────
+   Revisa que todos los clubes estén guardados con la misma forma y marca lo que se aparta:
+   categorías que faltan o se repiten, usuarios con un rol o una categoría que la app no
+   entiende, jugadores repetidos, etc. Así un desvío se ve acá, antes de que lo note un profe.
+   Cada aviso dice qué pasa y, cuando es seguro corregirlo solo, trae el botón para hacerlo.
+   nivel: 'error' (algo no funciona), 'aviso' (conviene revisar), 'info' (dato útil). */
+const _ROLES_VALIDOS = ['profe','coordinator','super-admin','baja'];
+function saSaludDeClubes(clubs, users){
+  const out = [];
+  const arr = v => Array.isArray(v) ? v : Object.values(v || {});
+  const hay = (club, nivel, texto, arreglo) => out.push({ club, nivel, texto, arreglo: arreglo || null });
+  const nombreDe = id => (clubs[id] && clubs[id].nombre) || id;
+
+  Object.entries(clubs).forEach(([id, c]) => {
+    const nom = nombreDe(id);
+    const rawCats = arr(c.cats);
+    const cats = [...new Set(rawCats)];
+    const conDatos = CATEGORIAS.filter(k => c[k] !== undefined);
+
+    if(!cats.length){
+      hay(id, 'aviso', nom+': no tiene guardada la lista de categorías del club.',
+          conDatos.length ? { desc:'Guardar las categorías que ya tienen datos ('+conDatos.map(catCorta).join(', ')+')', tipo:'cats', clubId:id, valor:CATEGORIAS.filter(k => conDatos.includes(k)) } : null);
+    } else {
+      if(rawCats.length !== cats.length)
+        hay(id, 'aviso', nom+': la lista de categorías tiene repetidas ('+rawCats.length+' entradas, '+cats.length+' distintas). Se ve cada categoría más de una vez.',
+            { desc:'Dejar cada categoría una sola vez', tipo:'cats', clubId:id, valor:cats });
+      const faltan = conDatos.filter(k => !cats.includes(k));
+      if(faltan.length)
+        hay(id, 'aviso', nom+': tiene datos de '+faltan.map(catCorta).join(', ')+' pero esa categoría no figura en la lista del club.',
+            { desc:'Agregar '+faltan.map(catCorta).join(', ')+' a la lista', tipo:'cats', clubId:id, valor:CATEGORIAS.filter(k => cats.includes(k) || faltan.includes(k)) });
+    }
+
+    const rawDias = arr(c.diasEntrenamiento), dias = [...new Set(rawDias)];
+    if(!rawDias.length) hay(id, 'info', nom+': no tiene días de entrenamiento cargados (el calendario de entrenamientos del coordinador queda vacío).');
+    else if(rawDias.length !== dias.length) hay(id, 'aviso', nom+': los días de entrenamiento están repetidos.', { desc:'Dejar cada día una vez', tipo:'dias', clubId:id, valor:dias });
+
+    const cfg = c.config || {};
+    if(!cfg.torneoActivo) hay(id, 'error', nom+': no tiene torneo activo en la configuración.');
+    if(!cfg.ligaId) hay(id, 'aviso', nom+': no tiene liga asignada en la configuración.');
+    if(cfg.ligaId && !cfg.ligaNombre) hay(id, 'info', nom+': falta el nombre del club en la liga; se completa solo la primera vez que entra un coordinador.');
+    if(!cfg.temporadas) hay(id, 'info', nom+': falta el registro de temporadas; se completa solo la primera vez que entra un coordinador.');
+
+    // Jugadores repetidos dentro de una categoría
+    CATEGORIAS.forEach(k => {
+      const ps = c[k] && c[k].players; if(!ps) return;
+      const cuenta = {};
+      Object.values(ps).forEach(p => { const n = String((p && (p.nombre || p.name)) || '').trim().toLowerCase(); if(n) cuenta[n] = (cuenta[n]||0) + 1; });
+      const rep = Object.keys(cuenta).filter(n => cuenta[n] > 1);
+      if(rep.length) hay(id, 'aviso', nom+' · '+catNombre(k)+': jugadores repetidos ('+rep.slice(0,4).join(', ')+(rep.length>4?'…':'')+').');
+    });
+
+    const us = Object.entries(users).filter(([, u]) => u && u.clubId === id && u.role !== 'baja');
+    if(us.length && !us.some(([, u]) => u.role === 'coordinator')) hay(id, 'info', nom+': no tiene ningún coordinador.');
+  });
+
+  Object.entries(users).forEach(([uid, u]) => {
+    if(!u || u.role === 'baja') return;
+    const quien = (u.email || uid.slice(0,6)) + (u.clubId ? ' ('+nombreDe(u.clubId)+')' : '');
+    if(!_ROLES_VALIDOS.includes(u.role)){
+      hay(u.clubId || '-', 'error', quien+': tiene el rol "'+u.role+'", que la app no reconoce. Esa persona entra con "sin acceso configurado".',
+          u.role === 'coordinador' ? { desc:'Cambiar el rol a "coordinator"', tipo:'rol', uid, valor:'coordinator' } : null);
+      return;
+    }
+    if(u.role === 'super-admin') return;
+    if(!u.clubId || !clubs[u.clubId]){ hay(u.clubId || '-', 'error', quien+': apunta a un club que no existe.'); return; }
+    const misCats = [...new Set(arr(u.cats))].filter(Boolean);
+    if(arr(u.cats).length !== misCats.length && misCats.length)
+      hay(u.clubId, 'aviso', quien+': tiene categorías repetidas.', { desc:'Dejar cada categoría una vez', tipo:'usercats', uid, valor:misCats });
+    if(!misCats.length && u.cat && u.role === 'profe')
+      hay(u.clubId, 'info', quien+': tiene la categoría en el formato viejo (solo "cat").', { desc:'Guardarla también como "cats"', tipo:'usercats', uid, valor:[u.cat] });
+    const cs = misCats.length ? misCats : (u.cat ? [u.cat] : []);
+    if(u.role === 'profe' && !cs.length) hay(u.clubId, 'aviso', quien+': es profe pero no tiene categoría asignada.');
+    const delClub = [...new Set(arr(clubs[u.clubId].cats))];
+    const fuera = cs.filter(k => delClub.length && !delClub.includes(k));
+    if(fuera.length) hay(u.clubId, 'aviso', quien+': tiene asignada '+fuera.map(catCorta).join(', ')+', que no está en la lista de categorías del club.');
+    const invalidas = cs.filter(k => !CATEGORIAS.includes(k));
+    if(invalidas.length) hay(u.clubId, 'error', quien+': tiene una categoría que no existe ('+invalidas.join(', ')+').');
+  });
+
+  // (La confirmación de asistencia por link es opcional por club: que unos la tengan y otros no es normal, no se marca.)
+  return out;
+}
+
+window.saArreglar = async function(i){
+  const it = (window._saSalud || [])[i];
+  if(!it || !it.arreglo) return;
+  const a = it.arreglo;
+  if(!confirm(a.desc+'?\n\n'+it.texto)) return;
+  try{
+    if(a.tipo === 'cats')          await set(ref(db, 'clubs/'+a.clubId+'/cats'), a.valor);
+    else if(a.tipo === 'dias')     await set(ref(db, 'clubs/'+a.clubId+'/diasEntrenamiento'), a.valor);
+    else if(a.tipo === 'usercats') await set(ref(db, 'users/'+a.uid+'/cats'), a.valor);
+    else if(a.tipo === 'rol')      await set(ref(db, 'users/'+a.uid+'/role'), a.valor);
+    showToast('✓ Corregido');
+    renderSAClubes();
+  }catch(e){ showToast('Error: '+e.message); }
+};
+
+function saSaludHtml(items){
+  const err = items.filter(x => x.nivel === 'error').length, avi = items.filter(x => x.nivel === 'aviso').length, inf = items.filter(x => x.nivel === 'info').length;
+  const color = err ? 'var(--loss)' : avi ? 'var(--draw)' : 'var(--win)';
+  const resumen = !items.length ? 'Todos los clubes están en orden'
+    : (err ? err+' error'+(err!==1?'es':'') : '') + (err && (avi||inf) ? ' · ' : '') + (avi ? avi+' aviso'+(avi!==1?'s':'') : '') + ((err||avi) && inf ? ' · ' : '') + (inf ? inf+' nota'+(inf!==1?'s':'') : '');
+  const orden = { error:0, aviso:1, info:2 }, tono = { error:'var(--loss)', aviso:'var(--draw)', info:'var(--muted)' };
+  const idx = items.map((x, i) => ({ x, i })).sort((a, b) => orden[a.x.nivel] - orden[b.x.nivel]);
+  const filas = idx.map(({ x, i }) => '<div class="salud-fila"><span class="salud-pto" style="background:'+tono[x.nivel]+'"></span>'+
+    '<div class="salud-txt">'+_usoEsc(x.texto)+'</div>'+
+    (x.arreglo ? '<button class="cbtn" onclick="window.saArreglar('+i+')">'+_usoEsc(x.arreglo.desc.length > 34 ? 'Corregir' : x.arreglo.desc)+'</button>' : '')+'</div>').join('');
+  return '<div class="ccard salud-card" style="border-color:'+color+'">'+
+    '<div class="salud-cab"><span class="salud-pto grande" style="background:'+color+'"></span><b>Salud de clubes</b><span class="salud-res">'+resumen+'</span></div>'+
+    (items.length ? '<div class="salud-lista">'+filas+'</div>' : '')+'</div>';
+}
+
 async function renderSAClubes(){
   const el = document.getElementById('sa-clubes');
   el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:var(--sp-9)">Cargando...</div>';
   try {
-    const snap = await get(ref(db, 'clubs'));
+    const [snap, uSnap] = await Promise.all([ get(ref(db, 'clubs')), get(ref(db, 'users')).catch(() => null) ]);
     const clubs = snap.exists() ? snap.val() : {};
+    const usersTodos = uSnap && uSnap.exists() ? uSnap.val() : {};
+    window._saSalud = saSaludDeClubes(clubs, usersTodos);
     const ids = Object.keys(clubs);
 
-    let html = `
+    let html = saSaludHtml(window._saSalud) + `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-6)">
         <div style="font-size:var(--f-sm);color:var(--muted);text-transform:uppercase;letter-spacing:1px">${ids.length} club${ids.length!==1?'s':''} registrado${ids.length!==1?'s':''}</div>
         <button onclick="window.saAltaClub()" style="background:var(--green);color:#000;border:none;border-radius:var(--r-md);padding:var(--sp-4) var(--sp-6);font-size:var(--f-sm);font-weight:700;cursor:pointer">+ Nuevo club</button>
@@ -9213,8 +9340,9 @@ window.saEditarClub = async function(clubId){
       <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-6)">${diasHtml}</div>
       <label style="display:flex;align-items:center;gap:var(--sp-4);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-6);cursor:pointer">
         <input type="checkbox" id="editClubRsvp" ${club.config?.rsvpHabilitado?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
-        <span style="font-size:var(--f-md)">Confirmación de asistencia por WhatsApp (piloto)</span>
+        <span style="font-size:var(--f-md)">Confirmación de asistencia por link (opcional)</span>
       </label>
+      <div style="font-size:var(--f-micro);color:var(--muted);line-height:1.5;margin:calc(-1 * var(--sp-4)) 0 var(--sp-6)">Cada club decide si la usa. Si está activada, el mensaje de citación de WhatsApp incluye un link para que los padres confirmen si el jugador va o no, y el profe ve las respuestas.</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4)">
         <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Usuarios (${clubUsers.length})</div>
         <button onclick="window._saAbrirAddUser('${clubId}')" style="background:rgba(77,115,245,0.15);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-sm);font-weight:700;cursor:pointer">+ Agregar usuario</button>
