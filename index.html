@@ -4979,7 +4979,6 @@ window.editCitacion = function(key){
 window.shareCit = async function(key){
   const cit = citaciones[key];
   if(!cit||!cit.citados||!cit.citados.length){ showToast('Sin citados para compartir'); return; }
-  const condLabel = cit.condicion==='L'?'LOCAL':'VISITANTE';
   // Direcciones de canchas LISFI Zona II
   const RIVAL_ADDRESSES_DEFAULT = {
     'ADAFI': '10 y 508 M. B. Gonnet',
@@ -5077,7 +5076,11 @@ window.shareCit = async function(key){
     const torneoWA = nombreDelTorneoActual();
     if(torneoWA) lines.push('🏆 '+torneoWA);
   }
-  lines.push('🆚 vs '+cit.rival+' | '+condLabel);
+  lines.push('🆚 vs '+cit.rival);
+  // La condición va sola en su propio renglón (y en negrita): antes iba pegada al
+  // rival ("vs X | LOCAL") y se leía de pasada; así los padres ven de un golpe si
+  // hay que ir a la cancha del club o viajar.
+  if(cit.condicion === 'L' || cit.condicion === 'V') lines.push(cit.condicion === 'L' ? '🏠 *De local*' : '🚌 *De visitante*');
   if(fechaStr) lines.push('📅 '+fechaStr);
   if(matchTime) lines.push('⏰ Partido: '+matchTime+' hs');
   if(citTime) lines.push('🕑 Horario de citación: '+citTime+' hs');
