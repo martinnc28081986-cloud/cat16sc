@@ -42,6 +42,13 @@ function seed() {
   };
   const z2stats = {};
   Object.keys(z2cit).forEach(k => { z2stats[k] = { jugadores: {} }; z2cit[k].citados.forEach(n => { z2stats[k].jugadores[n] = { jugo: 'todo' }; }); });
+  // Asistencia de ESTA semana (para probar la pestaña Semana): los días de la semana que se piden (1 = lunes)
+  const asisSemana = (dows, pres, aus) => {
+    const h = new Date(); const lunes = new Date(h); lunes.setDate(h.getDate() - ((h.getDay() + 6) % 7));
+    const out = {};
+    dows.forEach(w => { const d = new Date(lunes); d.setDate(lunes.getDate() + (w - 1)); if (d > h) return; out[d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')] = { present: pres, absent: aus, reasons: {} }; });
+    return out;
+  };
   const att = {
     '2026-09-01': { present: ['Benja', 'Ciro', 'Feli'], absent: ['Mateo', 'Ramiro', 'Santi'], reasons: { Mateo: 'lesionado', Ramiro: 'sinaviso', Santi: 'personal' } },
     '2026-09-08': { present: ['Benja', 'Ciro', 'Feli', 'Santi'], absent: ['Mateo', 'Ramiro'], reasons: { Mateo: 'lesionado', Ramiro: 'sinaviso' } },
@@ -100,8 +107,8 @@ function seed() {
         // Los días van como TEXTO, como en producción. La 2014 entrena distinto del resto del club.
         diasEntrenamiento: ['2', '4'],
         diasPorCategoria: { cat2014: ['1', '3', '5'] },
-        cat2014: { players: { q0: { nombre: 'Otro Uno', activo: true }, q1: { nombre: 'Otro Dos', activo: true } }, torneos: { z2: { attendance: {}, citaciones: {}, stats: {} } } },
-        cat16: { players, torneos: { z1: { attendance: {}, citaciones: z1cit, stats: z1stats }, z2: { attendance: att, citaciones: z2cit, stats: z2stats } } },
+        cat2014: { players: { q0: { nombre: 'Otro Uno', activo: true }, q1: { nombre: 'Otro Dos', activo: true } }, torneos: { z2: { attendance: asisSemana([1, 3], ['Otro Uno'], ['Otro Dos']), citaciones: {}, stats: {} } } },
+        cat16: { players, torneos: { z1: { attendance: {}, citaciones: z1cit, stats: z1stats }, z2: { attendance: Object.assign({}, att, asisSemana([2, 4], ['Benja', 'Ciro'], ['Mateo'])), citaciones: z2cit, stats: z2stats } } },
       },
     },
   };
