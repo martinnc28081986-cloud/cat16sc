@@ -1653,6 +1653,7 @@ function resetContextoTemporada(){
   window._clubNombreHeader  = null;
   window._clubLigaHeader    = null;
   window._migracionIntentada = false;
+  window._catsDelClub       = null;   // las categorías del club anterior no valen para el nuevo
   window._tablaEnCero       = false;
   window._isCoordView       = false;
   if(document.body) document.body.classList.remove('ro-mode');
@@ -1687,7 +1688,53 @@ let _connectedCats = [];
 // (profe, coordinador y super admin). Cuando estaba adentro de startApp(), en el
 // panel Super Admin y en el del coordinador el cartel se quedaba en
 // "conectando..." para siempre, aunque la conexión estuviera perfecta.
-const _CAT_LABELS = {cat16:'2016',cat13:'2013',cat2020:'2020',cat2019:'2019',cat2018:'2018',cat2017:'2017',cat2015:'2015',cat2014:'2014',escuelita:'ESC'};
+
+/* ══════════════════════════════════════════════════════════════════════
+   CATEGORÍAS — ÚNICO LUGAR
+   Todo lo que necesita saber de una categoría (su número, su nombre, su color, qué opciones
+   se ofrecen al armar un club o un usuario) se DERIVA de su clave ('cat16', 'cat2014',
+   'escuelita') con las funciones de acá. Antes había una copia escrita a mano de estos mapas
+   en unos doce lugares, y una categoría nueva quedaba sin resolver en algunos: por ejemplo
+   la 2021 se tomaba por la 2016 al buscar resultados de liga.
+   Para sumar una categoría nueva alcanza con agregar su clave a CATEGORIAS. */
+const CATEGORIAS = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020','escuelita'];
+// Año de la categoría: 'cat16' → 2016, 'cat13' → 2013, 'cat2014' → 2014. Escuelita y lo que no
+// tenga forma de categoría → 0.
+function anioDeCategoria(k){
+  const m = String(k || '').match(/^cat(\d{2,4})$/);
+  if(!m) return 0;
+  const n = m[1];
+  return n.length === 4 ? +n : +((+n <= 30 ? '20' : '19') + n);
+}
+// Número corto que usa la liga: 2016 → 16, 2013 → 13 (0 para Escuelita)
+function numDeCategoria(k){ const a = anioDeCategoria(k); return a ? a % 100 : 0; }
+// El mismo dato como "mapa" (NUM_DE_CATEGORIA['cat2014'] → 14), para el código que lo usa así.
+// No es una lista escrita a mano: cualquier clave con forma de categoría responde.
+const NUM_DE_CATEGORIA = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? (numDeCategoria(k) || undefined) : undefined) });
+// '2016' / 'ESC' (cartel de conexión, listas compactas)
+function catCorta(k){ return k === 'escuelita' ? 'ESC' : (anioDeCategoria(k) ? String(anioDeCategoria(k)) : String(k || '')); }
+// 'Cat 2016' / 'Escuelita'
+function catNombre(k){ return k === 'escuelita' ? 'Escuelita' : (anioDeCategoria(k) ? 'Cat '+anioDeCategoria(k) : String(k || '')); }
+// 'CAT 2016' / 'ESCUELITA' (insignia del encabezado)
+function catMayus(k){ return catNombre(k).toUpperCase(); }
+// Opciones para armar un club o un usuario: [{key, label}]
+function catOpciones(){ return CATEGORIAS.map(k => ({ key:k, label:catNombre(k) })); }
+// Color de la categoría: los de siempre para las conocidas y uno estable derivado del nombre para
+// cualquier categoría nueva
+const _CAT_COLORES = { cat13:'#1D9E75', cat2014:'#D85A30', cat2015:'#7F77DD', cat16:'#D4537E', cat2017:'#BA7517',
+                       cat2018:'#378ADD', cat2019:'#639922', cat2020:'#E24B4A', escuelita:'#8fa3b8', coord:'#4aa3df' };
+function catColor(k){
+  if(_CAT_COLORES[k]) return _CAT_COLORES[k];
+  let h = 0; for(const ch of String(k)) h = (h*31 + ch.charCodeAt(0)) % 360;
+  return 'hsl('+h+',52%,52%)';
+}
+// Categorías de competencia (todas menos Escuelita) del club que se está mirando. Sale de
+// clubs/{club}/cats; si el club no la tiene cargada, se usan todas las del catálogo.
+window._catsDelClub = null;
+function catsCompetitivas(){
+  const propias = window._catsDelClub;
+  return (propias && propias.length ? propias : CATEGORIAS).filter(k => k !== 'escuelita');
+}
 
 function setSS(s) {
   const dot = document.getElementById('syncDot');
@@ -1702,7 +1749,7 @@ function setSS(s) {
     (() => { try { const d=Object.values((window._lastPresenceData)||{}); return d.filter(x=>x.cat==='super-admin').length; } catch(e){return 0;} })()
   );
   if(s==='live' && visibleCats.length>0){
-    const catNames = visibleCats.map(c=>_CAT_LABELS[c]||c).join(' · ');
+    const catNames = visibleCats.map(catCorta).join(' · ');
     label = 'en vivo · '+catNames;
   } else if(s==='live' && visibleCount>0){
     label = 'en vivo · '+visibleCount+(visibleCount===1?' usuario':' usuarios');
@@ -1836,13 +1883,10 @@ if(!window._usoListo){
 }
 
 // ── Lectura y resumen (los usan los tableros del coordinador y del super admin) ──
-const USO_COLOR = { cat13:'#1D9E75', cat2014:'#D85A30', cat2015:'#7F77DD', cat16:'#D4537E', cat2017:'#BA7517',
-                    cat2018:'#378ADD', cat2019:'#639922', cat2020:'#E24B4A', escuelita:'#8fa3b8', coord:'#4aa3df' };
 function usoEtiquetaCat(k){
   if(k === 'coord') return 'Coordinación';
   if(k === 'escuelita') return 'Escuelita';
-  const m = String(k).match(/(\d{2,4})$/);
-  return m ? (m[1].length === 2 ? '20'+m[1] : m[1]) : String(k);
+  return catCorta(k);                       // '2016'
 }
 function usoRango(periodo){
   const hoy = new Date(), hasta = _diaLocal(hoy);
@@ -1948,7 +1992,7 @@ function usoHtmlClub(res, cats){
   if(!conUso.length) h += '<div class="cvacio">Nadie usó la app en este período.</div>';
   else h += '<div class="ccard">'+conUso.map(k => {
     const c = res.cats[k], us = Object.keys(c.us).map(id => res.usuarios[id] && res.usuarios[id].email).filter(Boolean);
-    const col = USO_COLOR[k] || 'var(--muted)';
+    const col = catColor(k);
     return '<div class="uso-fila"><div class="uso-t"><b><span class="uso-pto" style="background:'+col+'"></span>'+usoEtiquetaCat(k)+'</b>'+
       '<span class="uso-sub">'+_usoEsc(us.map(e => e.split('@')[0]).join(', '))+'</span></div>'+
       '<div class="uso-n">'+c.k+'<small> ingr.</small></div><div class="uso-n">'+usoFmt(c.s)+'</div>'+
@@ -1959,7 +2003,7 @@ function usoHtmlClub(res, cats){
   const sinUso = (cats || []).filter(c => !res.cats[c.key] || (!res.cats[c.key].s && !res.cats[c.key].k));
   if(sinUso.length){
     h += '<div class="csec">Sin actividad<span class="cont">no entraron en el período</span></div><div class="ccard">'+
-      sinUso.map(c => '<div class="uso-fila"><div class="uso-t"><b><span class="uso-pto" style="background:'+(USO_COLOR[c.key]||'var(--muted)')+'"></span>'+
+      sinUso.map(c => '<div class="uso-fila"><div class="uso-t"><b><span class="uso-pto" style="background:'+catColor(c.key)+'"></span>'+
         usoEtiquetaCat(c.key)+'</b></div><span class="ccat falta">sin uso</span></div>').join('')+'</div>';
   }
 
@@ -2075,7 +2119,6 @@ function _catsDePerfil(p){
 // conCoord = el usuario es profe + coordinador: además de sus categorías se le
 // ofrece entrar al panel de coordinación.
 function _showCatSelector(cats, conCoord){
-  const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('loadingScreen').style.display='none';
 
@@ -2095,7 +2138,7 @@ function _showCatSelector(cats, conCoord){
     </button>` : '';
   const btns = coordBtn + cats.map(c => `
     <button onclick="window.${_handler}('${c}')" style="${_btnStyle}">
-      ⚽ ${catLabels[c]||c}
+      ⚽ ${catNombre(c)}
     </button>`).join('');
 
   sel.innerHTML = `
@@ -2159,7 +2202,6 @@ window._selectDestino = function(dest){
 };
 
 function _showCatSwitcher(cats, currentCat, conCoord){
-  const catLabels = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
   let btn = document.getElementById('catSwitchBtn');
   if(!btn){
     btn = document.createElement('button');
@@ -2168,7 +2210,7 @@ function _showCatSwitcher(cats, currentCat, conCoord){
     const logoutBtn = document.getElementById('logoutBtn');
     if(logoutBtn) logoutBtn.parentNode.insertBefore(btn, logoutBtn);
   }
-  btn.textContent = '⇄ ' + (currentCat === 'coord' ? 'Coordinación' : (catLabels[currentCat]||currentCat));
+  btn.textContent = '⇄ ' + (currentCat === 'coord' ? 'Coordinación' : catNombre(currentCat));
   btn.onclick = function(){
     _showCatSelector(cats, conCoord);
   };
@@ -2441,7 +2483,6 @@ window.clubSeed = clubSeed;
 // de teamResults (que trae a TODOS los equipos). 'scResults' es un bloque heredado
 // que pertenece a un club puntual: solo se usa si ese club es el que está mirando,
 // y por eso el dataset declara de quién es en 'scClub' en vez de tenerlo hardcodeado.
-const _CAT_NUM = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
 // Clave de comparación de nombres de equipo. Los nombres vienen escritos distinto
 // según la fuente ('CAP.CHICA' en el schedule, 'CAP CHICA' si se deriva del id del
 // club), así que se ignoran puntos, espacios y acentos antes de comparar.
@@ -2454,7 +2495,7 @@ window._claveEquipo = _claveEquipo;
 
 function resultadosDelClub(catNum){
   try{
-    const cat = catNum || _CAT_NUM[(typeof CFG !== 'undefined' && CFG.dbPath) || ''] || 16;
+    const cat = catNum || numDeCategoria((typeof CFG !== 'undefined' && CFG.dbPath) || '') || 16;
     // CLUB_LIGA_NOMBRE es una global: al saltar de club desde el panel SA se queda
     // con el nombre del club anterior hasta que termina de cargar la config nueva,
     // y en ese hueco un club leía los resultados de otro. Por eso solo se usa si
@@ -3090,8 +3131,7 @@ if(!catBadge){
   catBadge.style.cssText = 'background:rgba(34,85,238,0.15);color:var(--green);font-family:Bebas Neue,sans-serif;font-size:var(--f-md);letter-spacing:1px;padding:var(--sp-1) var(--sp-4);border-radius:var(--r-sm);margin-left:var(--sp-3);';
   logoutBtn.parentNode.insertBefore(catBadge, logoutBtn);
 }
-const _catLabels = {cat16:'CAT 2016',cat13:'CAT 2013',cat2015:'CAT 2015',cat2014:'CAT 2014',cat2017:'CAT 2017',cat2018:'CAT 2018',cat2019:'CAT 2019',cat2020:'CAT 2020',escuelita:'ESCUELITA'};
-catBadge.textContent = _catLabels[cat] || cat.toUpperCase();
+catBadge.textContent = catMayus(cat) || String(cat).toUpperCase();
 
 // Actualizar subtítulo del header con nombre del club
 (async()=>{
@@ -3170,10 +3210,13 @@ if(CFG.escuelita){
 }
 
 // ── FIXTURE ──
-// Default: LISFI Zona Campeonato 2026 (sagrado-corazon)
-// Fixture anterior (LISFI II Zona B 2026, 22 fechas) queda en el panel Super Admin como referencia histórica.
-// Otros clubes cargan su fixture desde Firebase: clubs/{clubId}/config/fixture
-let FIXTURE = [
+// NO hay fixture por defecto. Cada club carga el suyo desde Firebase (clubs/{club}/config/fixture
+// o el calendario de su liga). Antes FIXTURE arrancaba con el de Sagrado Corazón, y cualquier
+// club sin fixture propio veía los rivales y las localías de OTRO club. Un club sin fixture
+// muestra "todavía no hay fixture".
+// Este listado es solo la SEMILLA de Sagrado Corazón (LISFI Zona Campeonato 2026): se usa una
+// vez, para cargar la config de ese club si todavía no la tiene (ver CLUB_SEED).
+const FIXTURE_SEMILLA_SAGRADO = [
   { fecha:1,  rival:"CAMBACERES",      cond:"L" },
   { fecha:2,  rival:"CAP.CHICA",       cond:"V" },
   { fecha:3,  rival:"DEFENSA",         cond:"L" },
@@ -3202,7 +3245,8 @@ let _ordenPlantel = null;  // orden de la lista de Plantel, fijo mientras se est
 
 // ── CLUB CONFIG: fixture, horarios y dirección desde Firebase ──
 // Se lee de /clubs/{clubId}/config y sobreescribe los hardcodeados
-const FIXTURE_DEFAULT = [...FIXTURE]; // backup del hardcodeado
+const FIXTURE_DEFAULT = FIXTURE_SEMILLA_SAGRADO;   // solo lo usa _saveDefaultClubConfig para la semilla de Sagrado
+let FIXTURE = [];
 
 
 // ══════════════════════════════════════════════════════════════
@@ -3235,8 +3279,17 @@ const FIXTURE_DEFAULT = [...FIXTURE]; // backup del hardcodeado
 async function loadClubConfig(){
   if(window._isEscuelita){ _configCargada = true; return; }
   try {
-    const snap = await get(ref(db, CLUB_PATH+'/config'));
+    // La config y las categorías del club, a la vez. Las categorías (sin repetidos) alimentan a
+    // catsCompetitivas(): qué categorías mirar al calcular la fecha activa.
+    const [snap, catsSnap] = await Promise.all([
+      get(ref(db, CLUB_PATH+'/config')),
+      get(ref(db, CLUB_PATH+'/cats')).catch(() => null)
+    ]);
     const cfg = snap.exists() ? snap.val() : {};
+    {
+      const c = catsSnap && catsSnap.exists() ? catsSnap.val() : null;
+      window._catsDelClub = c ? [...new Set(Array.isArray(c) ? c : Object.values(c))] : null;
+    }
 
     aplicarColorDeClub(cfg);
 
@@ -3477,7 +3530,8 @@ let pitchPlayers={}, benchPlayers=[], selectedPlayer=null, pitchTapReady=false;
 // más abajo) — no 'cat14','cat15','cat17'... Con los nombres viejos solo cat13 y
 // cat16 coincidían de verdad, así que la detección de "qué categorías ya citaron"
 // quedaba ciega para cat2014/2015/2017/2018/2019/2020.
-const COMP_CAT_PATHS = ['cat13','cat16','cat2014','cat2015','cat2017','cat2018','cat2019','cat2020'];
+// Las categorías de competencia salen de catsCompetitivas() (las del club, o el catálogo si el club no las tiene
+// cargadas): ya no es una lista fija de 8, así que una categoría nueva entra sola.
 
 // ── POPULATE FIXTURE SELECTOR ──
 // antesDeLaConfig: la llamada del arranque, que corre ANTES de loadClubConfig. Ahí el
@@ -3543,7 +3597,7 @@ window._resetFechaElegida = function(){
 
 // ── FECHA ACTIVA GLOBAL ──
 // La fecha activa es la primera donde al menos UNA categoría competitiva no citó.
-// COMP_CAT_PATHS se define más arriba, antes de renderFechaSelector().
+// Las categorías salen de catsCompetitivas() (catálogo único).
 
 window._activeFechaCache = null;
 window._activeFechaTs = 0;
@@ -3560,11 +3614,12 @@ function _citacionesDeCategorias(){
   const clave = CLUB_PATH + '|' + TORNEO_ID;
   if(_citsCatsEnCurso && _citsCatsClave === clave) return _citsCatsEnCurso;
   const p = (async () => {
+    const CATS = catsCompetitivas();
     const snaps = await Promise.all(
-      COMP_CAT_PATHS.map(cat => get(ref(db, CLUB_PATH+'/'+cat+'/torneos/'+TORNEO_ID+'/citaciones')))
+      CATS.map(cat => get(ref(db, CLUB_PATH+'/'+cat+'/torneos/'+TORNEO_ID+'/citaciones')))
     );
     const all = {};
-    COMP_CAT_PATHS.forEach((cat, i) => { all[cat] = snaps[i].exists() ? snaps[i].val() : {}; });
+    CATS.forEach((cat, i) => { all[cat] = snaps[i].exists() ? snaps[i].val() : {}; });
     return all;
   })();
   _citsCatsEnCurso = p; _citsCatsClave = clave;
@@ -3592,8 +3647,9 @@ async function _getActiveFecha(fixture, suspensions){
     const allCits = await _citacionesDeCategorias();
 
     // Solo considerar categorías que tienen al menos UNA citación guardada (activas)
-    const activeCats = COMP_CAT_PATHS.filter(cat => Object.keys(allCits[cat]).length > 0);
-    const catsToCheck = activeCats.length > 0 ? activeCats : COMP_CAT_PATHS.slice(0,1);
+    const CATS = Object.keys(allCits);
+    const activeCats = CATS.filter(cat => Object.keys(allCits[cat]).length > 0);
+    const catsToCheck = activeCats.length > 0 ? activeCats : CATS.slice(0,1);
 
     // Helper: buscar citación por número de fecha (independiente del rival)
     // Porque cada cat puede tener distinto rival para la misma fecha
@@ -3615,7 +3671,7 @@ async function _getActiveFecha(fixture, suspensions){
     // Si no hay citaciones en ninguna categoría, usar teamResults para detectar la próxima fecha real
     let result = active;
     if(!active || activeCats.length === 0){
-      const catNum = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20}[CFG.dbPath]||16;
+      const catNum = NUM_DE_CATEGORIA[CFG.dbPath]||16;
       const playedFechas = fechasJugadasDelClub(catNum);
       if(playedFechas.size > 0){
         result = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && !playedFechas.has(f.fecha)) || active;
@@ -3642,7 +3698,7 @@ window._invalidateActiveFecha = function(){ window._activeFechaCache = null; win
 
 // Helper: conjunto de fechas ya jugadas según teamResults/scResults
 function _getPlayedFechas(){
-  const catNum={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20}[CFG.dbPath]||16;
+  const catNum=NUM_DE_CATEGORIA[CFG.dbPath]||16;
   const played = fechasJugadasDelClub(catNum);
   return played;
 }
@@ -5024,7 +5080,7 @@ function renderCitStats(){
   })||null;
 
   // Resultados desde LIGA_DATA — teamResults para cualquier club, scResults como fallback solo para sagcor
-  const _catNumMapTL={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+  const _catNumMapTL=NUM_DE_CATEGORIA;
   const _catKeyTL=CFG.dbPath;
   const _catNumTL=_catNumMapTL[_catKeyTL]||16;
   const _scResTL = resultadosDelClub(_catNumTL);
@@ -5480,7 +5536,7 @@ function _fmtRival(rival){
 function _getResultData(key){
   const cit = citaciones[key];
   if(!cit) return null;
-  const _catNumMap = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+  const _catNumMap = NUM_DE_CATEGORIA;
   const catNum = _catNumMap[CFG.dbPath] || 16;
   let gf=null, gc=null;
   const scRes = resultadosDelClub(catNum);
@@ -5989,7 +6045,7 @@ function _detalleJugo(nombre){
 
 function _ppResultData(key){
   const cit=citaciones[key]; if(!cit) return null;
-  const map={cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+  const map=NUM_DE_CATEGORIA;
   const catNum=map[CFG.dbPath]||16;
   const scRes = resultadosDelClub(catNum);
   const m=scRes.find(r=>Number(r.fecha)===Number(cit.fecha));
@@ -6353,7 +6409,7 @@ async function renderTablas(){
     el.innerHTML='<div class="empty-msg" style="padding:var(--sp-9) 0">Las tablas de posiciones de esta liga no están disponibles aún.</div>';
     return;
   }
-  const _catNumMap2 = {cat16:16,cat13:13,cat2014:14,cat2015:15,cat2017:17,cat2018:18,cat2019:19,cat2020:20};
+  const _catNumMap2 = NUM_DE_CATEGORIA;
   const _catKey2 = CFG.dbPath;
   const catNum = _catNumMap2[_catKey2] || 16;
   const myName = CLUB_LIGA_NOMBRE; // nombre del club en la liga
@@ -7910,13 +7966,11 @@ async function renderSAClubes(){
         <div style="font-size:var(--f-sm);color:var(--muted)">Agregá el primer club con el botón de arriba</div>
       </div>`;
     } else {
-      const _catLbl = {cat16:'Cat 2016',cat13:'Cat 2013',cat2015:'Cat 2015',cat2014:'Cat 2014',cat2017:'Cat 2017',cat2018:'Cat 2018',cat2019:'Cat 2019',cat2020:'Cat 2020',escuelita:'Escuelita'};
       ids.forEach(id => {
         const c = clubs[id];
-        const _knownCats = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020','escuelita'];
         const _catsFromMeta = c.cats ? Object.values(c.cats) : [];
-        const catKeys = _knownCats.filter(k => c[k] !== undefined || _catsFromMeta.includes(k));
-        const catBtns = catKeys.map(k => `<button onclick="window.saEntrarComo('${k}','${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-4);font-size:var(--f-sm);cursor:pointer">${_catLbl[k]||k}</button>`).join('');
+        const catKeys = CATEGORIAS.filter(k => c[k] !== undefined || _catsFromMeta.includes(k));
+        const catBtns = catKeys.map(k => `<button onclick="window.saEntrarComo('${k}','${id}')" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-4);font-size:var(--f-sm);cursor:pointer">${catNombre(k)}</button>`).join('');
         html += `
         <div class="prow" style="flex-direction:column;align-items:flex-start;gap:var(--sp-4);margin-bottom:var(--sp-4)">
           <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
@@ -8305,12 +8359,12 @@ window.saRenderStep = async function(step){
 
   } else if(step === 2){
     title.textContent = 'Categorías activas';
-    const allCats = ['2013','2014','2015','2016','2017','2018','2019','2020','Escuelita'];
+    const allCats = CATEGORIAS;
     const sel = window._saModal.cats;
     let catsHtml = '';
     allCats.forEach(function(c){
       const on = sel.includes(c);
-      catsHtml += `<div onclick="window.saToggleCat('${c}')" style="background:${on?'rgba(106,189,230,.15)':'var(--surface2)'};border:1px solid ${on?'var(--accent)':'var(--border)'};border-radius:var(--r-md);padding:var(--sp-5) var(--sp-2);text-align:center;cursor:pointer;"><div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);color:${on?'var(--accent)':'var(--text)'};">${c}</div><div style="font-size:var(--f-micro);color:${on?'var(--win)':'var(--muted)'};margin-top:var(--sp-1);">${on?'✓ activa':'inactiva'}</div></div>`;
+      catsHtml += `<div onclick="window.saToggleCat('${c}')" style="background:${on?'rgba(106,189,230,.15)':'var(--surface2)'};border:1px solid ${on?'var(--accent)':'var(--border)'};border-radius:var(--r-md);padding:var(--sp-5) var(--sp-2);text-align:center;cursor:pointer;"><div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);color:${on?'var(--accent)':'var(--text)'};">${catCorta(c)}</div><div style="font-size:var(--f-micro);color:${on?'var(--win)':'var(--muted)'};margin-top:var(--sp-1);">${on?'✓ activa':'inactiva'}</div></div>`;
     });
 
     body.innerHTML = stepperHtml(2)
@@ -8345,7 +8399,7 @@ window.saRenderStep = async function(step){
       const thumbSide = u.invitar!==false ? 'right' : 'left';
       uHtml += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5);margin-bottom:var(--sp-5);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5);">
-          <span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-sm);padding:var(--sp-1) var(--sp-4);border-radius:var(--r-sm);background:rgba(106,189,230,.15);color:var(--accent);border:1px solid rgba(106,189,230,.3);">CAT ${cat}</span>
+          <span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-sm);padding:var(--sp-1) var(--sp-4);border-radius:var(--r-sm);background:rgba(106,189,230,.15);color:var(--accent);border:1px solid rgba(106,189,230,.3);">${catMayus(cat)}</span>
         </div>
         <div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5);">${rolesHtml}</div>
         <input id="saEmail_${cat}" placeholder="email@club.com" value="${u.email||''}" oninput="window.saSetEmail('${cat}',this.value)" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);color:var(--text);font-size:var(--f-md);font-family:DM Sans,sans-serif;outline:none;margin-bottom:var(--sp-4);">
@@ -8481,9 +8535,18 @@ window.saCrearClubFinal = async function(){
           planStart: Date.now(),
           planEnd: Date.now() + (30*24*60*60*1000),
           createdAt: Date.now(),
+          cats: [...m.cats],
           config: { torneoActivo: m.torneoId || 'default' }
         });
       }
+    }
+    // Club que ya existe: se le suman las categorias elegidas sin repetir ni sacar las que tenia
+    if(!m.isNew && m.cats.length){
+      try{
+        const cs = await get(ref(db, 'clubs/'+m.clubId+'/cats'));
+        const previas = cs.exists() ? (Array.isArray(cs.val()) ? cs.val() : Object.values(cs.val())) : [];
+        await set(ref(db, 'clubs/'+m.clubId+'/cats'), [...new Set([...previas, ...m.cats])]);
+      }catch(e){ console.warn('alta de club: no se pudieron guardar las categorias', e); }
     }
 
     // Actualizar torneoActivo en config si se especificó
@@ -8506,7 +8569,10 @@ window.saCrearClubFinal = async function(){
       if(!u.email || !u.email.includes('@')) continue;
 
       // Determinar roles
-      const roles = u.rol === 'profe+coord' ? ['profe','coordinator'] : [u.rol || 'profe'];
+      // El asistente ofrece 'coordinador' (en español) pero el rol que entiende la app es
+      // 'coordinator': con el valor sin traducir, ese usuario quedaba sin acceso.
+      const roles = u.rol === 'profe+coord' ? ['profe','coordinator']
+                  : [u.rol === 'coordinador' ? 'coordinator' : (u.rol || 'profe')];
 
       try {
         // Cuenta de acceso: nueva, o la que ya tenía ese mail
@@ -8517,7 +8583,8 @@ window.saCrearClubFinal = async function(){
           email: u.email,
           clubId: m.clubId,
           role: roles.length > 1 ? 'coordinator' : roles[0],
-          cat: 'cat'+cat.toLowerCase().replace('escuelita','escuelita')
+          cats: [cat],
+          cat            // compatibilidad con perfiles viejos
         };
         if(roles.includes('coordinator')) perfil.role = 'coordinator';
         if(roles.length > 1) perfil.isProfeCoord = true;
@@ -9085,22 +9152,15 @@ window.saEditarClub = async function(clubId){
   const todosUsers = usersSnap.exists() ? usersSnap.val() : {};
   const clubUsers = Object.entries(todosUsers).filter(([,u])=>u.clubId===clubId).map(([uid,u])=>({uid,...u}));
 
-  const CAT_OPTS = [
-    {key:'cat13',label:'Cat 2013'},{key:'cat2014',label:'Cat 2014'},
-    {key:'cat2015',label:'Cat 2015'},{key:'cat16',label:'Cat 2016'},
-    {key:'cat2017',label:'Cat 2017'},{key:'cat2018',label:'Cat 2018'},
-    {key:'cat2019',label:'Cat 2019'},{key:'cat2020',label:'Cat 2020'},
-    {key:'escuelita',label:'Escuelita'}
-  ];
+  const CAT_OPTS = catOpciones();
 
   const overlay = document.createElement('div');
   overlay.id = 'saEditOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:var(--sp-6);overflow-y:auto';
 
-  const _catLabel = {cat16:'2016',cat13:'2013',cat2015:'2015',cat2014:'2014',cat2017:'2017',cat2018:'2018',cat2019:'2019',cat2020:'2020',escuelita:'Esc'};
   const usersHtml = clubUsers.length ? clubUsers.map(u=>{
     const uCats = u.cats ? Object.values(u.cats) : (u.cat ? [u.cat] : []);
-    const catsLabel = uCats.map(c=>_catLabel[c]||c).join(', ') || '—';
+    const catsLabel = uCats.map(catCorta).join(', ') || '—';
     return `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-5);margin-bottom:var(--sp-3);display:flex;justify-content:space-between;align-items:center">
       <div>
@@ -9277,7 +9337,7 @@ window._saDeleteUser = async function(uid, email, btn){
 };
 
 window._saEditUserCats = async function(uid, email, clubId){
-  const CAT_OPTS_EC = [{key:'cat13',label:'Cat 2013'},{key:'cat2014',label:'Cat 2014'},{key:'cat2015',label:'Cat 2015'},{key:'cat16',label:'Cat 2016'},{key:'cat2017',label:'Cat 2017'},{key:'cat2018',label:'Cat 2018'},{key:'cat2019',label:'Cat 2019'},{key:'cat2020',label:'Cat 2020'},{key:'escuelita',label:'Escuelita'}];
+  const CAT_OPTS_EC = catOpciones();
 
   // Leer cats actuales del usuario
   const snap = await get(ref(db, 'users/'+uid));
@@ -9345,13 +9405,7 @@ window._saEditUserCats = async function(uid, email, clubId){
 };
 
 window._saAbrirAddUser = function(clubId){
-  const CAT_OPTS = [
-    {key:'cat13',label:'Cat 2013'},{key:'cat2014',label:'Cat 2014'},
-    {key:'cat2015',label:'Cat 2015'},{key:'cat16',label:'Cat 2016'},
-    {key:'cat2017',label:'Cat 2017'},{key:'cat2018',label:'Cat 2018'},
-    {key:'cat2019',label:'Cat 2019'},{key:'cat2020',label:'Cat 2020'},
-    {key:'escuelita',label:'Escuelita'}
-  ];
+  const CAT_OPTS = catOpciones();
 
   const overlay2 = document.createElement('div');
   overlay2.id = 'saAddUserOverlay';
@@ -9566,23 +9620,12 @@ async function startCoordApp(){
   // ── CATEGORÍAS ──
   // Salen de club/cats y el nombre de nombreDeCategoria(), que deriva del key.
   // Sin mapa escrito a mano: una categoría nueva aparece sola.
-  const CAT_COLOR = {cat13:'#1D9E75',cat2014:'#D85A30',cat2015:'#7F77DD',cat16:'#D4537E',
-                     cat2017:'#BA7517',cat2018:'#378ADD',cat2019:'#639922',cat2020:'#E24B4A'};
-  function _numDeCat(k){
-    const m = String(k).match(/(\d{2,4})$/);
-    if(!m) return 0;
-    const n = +m[1];
-    return n > 2000 ? n - 2000 : n;      // cat2014 -> 14, cat16 -> 16
-  }
-  function _colorDeCat(k){
-    if(CAT_COLOR[k]) return CAT_COLOR[k];
-    // Categoría nueva sin color asignado: uno estable derivado del nombre
-    let h = 0; for(const ch of String(k)) h = (h*31 + ch.charCodeAt(0)) % 360;
-    return 'hsl('+h+',52%,52%)';
-  }
+  // Número, color y lista por defecto salen del catálogo único (CATEGORIAS y helpers del módulo)
+  const _numDeCat = numDeCategoria;
+  const _colorDeCat = catColor;
   // De la categoría más grande a la más chica: 2013, 2014, … 2021
   const _ordenCats = ks => ks.slice().sort((a,b)=> _numDeCat(a) - _numDeCat(b));
-  const _keysComp = _ordenCats((_catsActivas.length ? _catsActivas : Object.keys(CAT_COLOR))
+  const _keysComp = _ordenCats((_catsActivas.length ? _catsActivas : CATEGORIAS)
                       .filter(k => k !== 'escuelita'));
   const COMP_CATS = _keysComp.map(k => ({
     key:k, num:_numDeCat(k), label:nombreDeCategoria(k), color:_colorDeCat(k)
