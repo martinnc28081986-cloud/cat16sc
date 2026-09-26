@@ -52,6 +52,24 @@
       ".indexOn": ["t"],
       ".read": "auth != null",
       ".write": "auth != null"
+    },
+    "usage": {
+      "$clubId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'super-admin' || (root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('clubId').val() === $clubId))",
+        "$dia": {
+          ".validate": "$dia.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && (root.child('users').child(auth.uid).child('role').val() === 'profe' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('clubId').val() === $clubId",
+            "n": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" },
+            "s": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 86400" },
+            "u": { ".validate": "newData.isNumber()" },
+            "e": { ".validate": "newData.isString() && newData.val().length <= 120" },
+            "c": { "$cat": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 86400" } },
+            "k": { "$cat": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" } },
+            "$other": { ".validate": false }
+          }
+        }
+      }
     }
   }
 }
