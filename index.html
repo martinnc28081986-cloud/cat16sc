@@ -9084,16 +9084,6 @@ function renderSADatos(){
       </div>
 
       <div class="coord-ok-box" style="margin-bottom:var(--sp-5)">
-        <div style="font-weight:700;margin-bottom:var(--sp-2)">${icono('lista')} Fixture LAFIR 2026 — El Ciclón</div>
-        <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">
-          15 fechas → <code style="background:var(--surface2);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">ligas/lafir-torneo-general-2026/fixture</code><br>
-          Condiciones L/V → <code style="background:var(--surface2);padding:var(--sp-1) var(--sp-3);border-radius:var(--r-sm);font-size:var(--f-sm);color:var(--accent)">clubs/el-ciclon/config</code>
-        </div>
-        <button onclick="window.saSubirFixtureLAFIR(this)" class="btn btn-g" style="width:100%">Subir fixture</button>
-        <div id="lafirLog" style="margin-top:var(--sp-5);font-size:var(--f-sm);line-height:1.8;display:none"></div>
-      </div>
-
-      <div class="coord-ok-box" style="margin-bottom:var(--sp-5)">
         <div style="font-weight:700;margin-bottom:var(--sp-2)">${icono('plantel')} Jugadores — Sagrado Corazón</div>
         <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">
           Carga inicial de jugadores para cat13, cat2015, cat16, cat2017 y cat2018.<br>
@@ -9254,60 +9244,6 @@ window.saSubirFixtureLISFI = async function(btn){
   } catch(e) {
     log('❌ Error: ' + e.message, 'var(--red)');
     btn.disabled = false; btn.textContent = 'Subir fixture';
-  }
-};
-
-window.saSubirFixtureLAFIR = async function(btn){
-  btn.disabled = true;
-  btn.textContent = 'Subiendo...';
-  const logEl = document.getElementById('lafirLog');
-  logEl.style.display = 'block';
-  logEl.innerHTML = '';
-
-  const log = (msg, color='var(--muted)') => {
-    logEl.innerHTML += `<div style="color:${color}">${msg}</div>`;
-  };
-
-  const LIGA_ID = 'lafir-torneo-general-2026';
-
-  const LIGA_FIXTURE = {
-    "1": {rival:"UNIVERSITARIO DE BERISSO"}, "2": {rival:"SALADERO"},
-    "3": {rival:"VILLA ZULA"},               "4": {rival:"NUEVA VILLA ARGÜELLO"},
-    "5": {rival:"GUTIERRE"},                 "6": {rival:"ESTRELLA DE BERISSO"},
-    "7": {rival:"FILIAL LAURI"},             "8": {rival:"RACING DE BAVIO"},
-    "9": {rival:"TRABAJADORES"},             "10":{rival:"VILLA ESPAÑA"},
-    "11":{rival:"VILLA PAULA"},              "12":{rival:"SANTA TERESITA"},
-    "13":{rival:"DEP. GIMNASISTA"},          "14":{rival:"SANTIAGUEÑOS"},
-    "15":{rival:"VILLA ALBINO"},
-  };
-
-  const ELCICLON_CONDS = {
-    "1":{"cond":"L"}, "2":{"cond":"V"}, "3":{"cond":"L"}, "4":{"cond":"V"},
-    "5":{"cond":"L"}, "6":{"cond":"V"}, "7":{"cond":"L"}, "8":{"cond":"V"},
-    "9":{"cond":"L"}, "10":{"cond":"V"},"11":{"cond":"L"},"12":{"cond":"V"},
-    "13":{"cond":"L"},"14":{"cond":"V"},"15":{"cond":"V"},
-  };
-
-  try {
-    log('📤 Subiendo fixture compartido...');
-    await set(ref(db, `ligas/${LIGA_ID}/fixture`), LIGA_FIXTURE);
-    log('✓ 15 fechas subidas a la liga', 'var(--green)');
-
-    log('📤 Subiendo condiciones de El Ciclón...');
-    await update(ref(db, 'clubs/el-ciclon/config'), {
-      ligaId: LIGA_ID,
-      liga: 'LAFIR',
-      zona: 'Torneo General 2026',
-      fixture: ELCICLON_CONDS,
-      torneoActivo: 'default'
-    });
-    log('✓ Configuración de El Ciclón guardada', 'var(--green)');
-    log('✅ Listo.', 'var(--win)');
-    btn.textContent = '✓ Subido';
-  } catch(e) {
-    log('❌ Error: ' + e.message, 'var(--red)');
-    btn.disabled = false;
-    btn.textContent = 'Subir fixture';
   }
 };
 
