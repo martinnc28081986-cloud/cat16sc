@@ -8047,7 +8047,7 @@ async function renderSAUso(sinRecargar){
           get(ref(db, 'clubs/'+id+'/cats')).then(s => s.val()).catch(() => null),
           usoLeerClub(id, per).catch(e => ({ desde:r.desde, hasta:r.hasta, dias:{}, error:e && e.message }))
         ]);
-        const lista = Array.isArray(cats) ? cats : Object.values(cats || {});
+        const lista = [...new Set(Array.isArray(cats) ? cats : Object.values(cats || {}))];
         return { id, nombre: nom || id, registrados: reg[id], cats: lista.map(k => ({ key:k })), res: usoResumir(datos), error: datos.error };
       }));
       clubes.sort((a, b) => b.res.seg - a.res.seg || String(a.nombre).localeCompare(String(b.nombre)));
@@ -9078,7 +9078,7 @@ window.saEditarClub = async function(clubId){
   // a escribir en config.ligaId, pisando el correcto (pasó de verdad con
   // Hernandez — quedó apuntando a la zona anterior hasta que se detectó).
   const ligaActual = club.config?.ligaId || club.config?.liga_id || '';
-  const catsActivas = club.cats ? Object.values(club.cats) : [];
+  const catsActivas = club.cats ? [...new Set(Object.values(club.cats))] : [];
   const _KNOWN_ADDR = {'SAGRADO CORAZON':'Av. 13 y 610 Villa Elvira','SAGR. CORAZON':'Av. 13 y 610 Villa Elvira','HERNANDEZ':'Av 31 e/510 y 511 José Hernández','JOSE HERNANDEZ':'Av 31 e/510 y 511 José Hernández','NUESTRA SEÑORA DE LUJAN':'522 y 21 Ringuelet','NUEVA ALBA':'604 e/ 126 y 127 Villa Elvira','PEDRO BENOIT':'526 bis e/ 15 y 16 bis Ringuelet','REAL INFANTIL':'29 y 79 La Plata','SAN JUAN BAUTISTA':'146 y 515 Romero','SPORT CLUB':'Tapalque y Lavalle, Magdalena','TALLERES':'131 y 52 La Plata','UNIVERSITARIO':'Av. 60 y 126 Berisso','VILLA SAN CARLOS':'26 y 173 Berisso'};
   const _autoAddr = _KNOWN_ADDR[(club.config?.ligaNombre||'').toUpperCase().trim()] || club.config?.address || '';
   const ligas = ligasSnap.exists() ? Object.keys(ligasSnap.val()) : [];
@@ -9164,6 +9164,12 @@ window.saEditarClub = async function(clubId){
       <button onclick="document.getElementById('saEditOverlay').remove()" style="width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);cursor:pointer">Cancelar</button>
     </div>
   `;
+  // Una sola ventana de edición a la vez. Esta función se vuelve a llamar para refrescar la
+  // lista (por ejemplo después de agregar un usuario) y la ventana anterior quedaba debajo:
+  // "Guardar cambios" junta las casillas de TODAS las que hay en pantalla, y cada usuario
+  // agregado repetía las categorías y los días una vez más (Hernández llegó a tener 24
+  // categorías y 6 días guardados en lugar de 8 y 2).
+  document.querySelectorAll('#saEditOverlay').forEach(o => o.remove());
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
 };
@@ -9192,8 +9198,11 @@ window._saGuardarEdicion = async function(clubId){
   const liga = document.getElementById('editClubLiga').value;
   const ligaNombre = document.getElementById('editClubLigaNombre').value.trim().toUpperCase();
   const clubAddress = document.getElementById('editClubAddress')?.value.trim() || '';
-  const cats = [...document.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value);
-  const diasEntrenamiento = [...document.querySelectorAll('.editDiaCheck:checked')].map(cb=>cb.value);
+  // Solo las casillas de la ventana de edición, y sin repetidos (red de seguridad: aunque
+  // hubiera algo duplicado en pantalla, cada categoría y cada día se guarda una vez)
+  const _ov = document.getElementById('saEditOverlay') || document;
+  const cats = [...new Set([..._ov.querySelectorAll('.editCatCheck:checked')].map(cb=>cb.value))];
+  const diasEntrenamiento = [...new Set([..._ov.querySelectorAll('.editDiaCheck:checked')].map(cb=>cb.value))];
   const rsvpHabilitado = !!document.getElementById('editClubRsvp')?.checked;
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
@@ -9501,7 +9510,9 @@ async function startCoordApp(){
     if(nomSnap.exists())  _clubNombre = nomSnap.val() || _clubNombre;
     if(catsSnap.exists()){
       const c = catsSnap.val();
-      _catsActivas = Array.isArray(c) ? c : Object.values(c || {});
+      // Sin repetidos: un club con la lista duplicada mostraba cada categoría varias veces
+      // (y multiplicaba los pendientes)
+      _catsActivas = [...new Set(Array.isArray(c) ? c : Object.values(c || {}))];
     }
   } catch(e){ console.warn('coord: error leyendo config', e); }
 
