@@ -155,6 +155,26 @@
              letter-spacing:.5px; font-family:'DM Sans',sans-serif; cursor:pointer; white-space:nowrap; flex-shrink:0; }
   .pos-tag::after { content:' \21BB'; opacity:.6; }
   .pos-tag.sin { border-style:dashed; border-color:rgba(var(--draw-rgb),.6); color:var(--draw); }
+  /* Tablero de uso (coordinación y super admin) */
+  .uso-fila { display:flex; align-items:center; gap:var(--sp-4); padding:var(--sp-4) 0; border-bottom:1px solid rgba(255,255,255,.05); flex-wrap:wrap; }
+  .uso-fila:last-child { border-bottom:none; }
+  .uso-t { flex:1 1 130px; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .uso-t b { font-size:var(--f-md); font-weight:600; display:flex; align-items:center; gap:var(--sp-3); }
+  .uso-pto { width:9px; height:9px; border-radius:50%; flex:none; }
+  .uso-sub { font-size:var(--f-micro); color:var(--muted); font-weight:400; line-height:1.3; }
+  .uso-n { font-family:'Bebas Neue',sans-serif; font-size:var(--f-lg); text-align:right; min-width:58px; }
+  .uso-n small { font-family:'DM Sans',sans-serif; font-size:var(--f-micro); color:var(--muted); }
+  .uso-bar { flex:1 1 100%; margin:0; }
+  .uso-barras { display:flex; align-items:flex-end; gap:3px; height:84px; }
+  .uso-b { flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:3px; min-width:0; }
+  .uso-b i { display:block; width:100%; background:var(--accent); border-radius:3px 3px 0 0; }
+  .uso-b span { font-size:var(--f-micro); color:var(--muted); height:12px; line-height:12px; }
+  .uso-club { display:flex; align-items:center; gap:var(--sp-4); width:100%; background:transparent; border:none; color:var(--text);
+              padding:var(--sp-5); cursor:pointer; text-align:left; font-family:'DM Sans',sans-serif; }
+  .uso-club .uso-t { flex:1 1 0; min-width:0; }
+  .uso-club .uso-n { min-width:0; white-space:nowrap; }
+  .uso-club .ccat { white-space:nowrap; flex:none; }
+  .uso-flecha { color:var(--muted); font-size:var(--f-sm); }
   /* Motivo de no citación: rotación sin color, lo demás con tono para que se vea */
   .prow.con-motivo { flex-wrap:wrap; }
   .prow-top { display:flex; align-items:center; gap:var(--sp-4); flex:1 1 100%; min-width:0; }
@@ -1088,11 +1108,13 @@
     <div class="coord-tab cta" onclick="window.saTab('clubes')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="cancha"></span></span>Clubes<span style="width:5px;height:5px;border-radius:50%;background:var(--accent);display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('facturacion')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="tarjeta"></span></span>Factu&shy;ración<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('usuarios')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="plantel"></span></span>Usuarios<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
+    <div class="coord-tab" onclick="window.saTab('uso')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="reloj"></span></span>Uso<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
     <div class="coord-tab" onclick="window.saTab('datos')"><span style="font-size:var(--f-lg);line-height:1"><span class="ico" data-ico="subir"></span></span>Datos<span style="width:5px;height:5px;border-radius:50%;background:transparent;display:block"></span></div>
   </div>
   <div id="sa-clubes"      class="coord-view active"></div>
   <div id="sa-facturacion" class="coord-view"></div>
   <div id="sa-usuarios"    class="coord-view"></div>
+  <div id="sa-uso"         class="coord-view"></div>
   <div id="sa-datos"       class="coord-view"></div>
 </div>
 
@@ -1142,7 +1164,9 @@ var ICONOS = {
   // Liga: copa
   copa:      '<path d="M8 3.9h8v5.4a4 4 0 0 1-8 0V3.9Z"/><path d="M8 5.6H5.2v1.7a3.2 3.2 0 0 0 3.1 3.2"/><path d="M16 5.6h2.8v1.7a3.2 3.2 0 0 1-3.1 3.2"/><path d="M12 13.3v3.4"/><path d="M9.4 20.1c0-1.7 1.2-3 2.6-3s2.6 1.3 2.6 3"/><path d="M8.2 20.1h7.6"/>',
   // Suspensiones: prohibido
-  prohibido: '<circle cx="12" cy="12" r="8.6"/><path d="M6 6l12 12"/>'
+  prohibido: '<circle cx="12" cy="12" r="8.6"/><path d="M6 6l12 12"/>',
+  // Uso de la app: reloj
+  reloj:     '<circle cx="12" cy="12" r="8.6"/><path d="M12 7v5.2l3.4 2"/>'
 };
 
 // Devuelve el SVG de un ícono listo para insertar en un innerHTML.
@@ -1178,7 +1202,7 @@ else pintarIconos();
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, update, remove, get, onValue, push, onDisconnect, query, orderByChild, startAt, endAt } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, update, remove, get, onValue, push, onDisconnect, query, orderByChild, orderByKey, startAt, endAt, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const FC = {
@@ -1725,7 +1749,238 @@ window._limpiarPresenceViejo = async function(){
 window._updatePresenceCat = function(cat){
   _currentCat = cat;
   if(_myPresRef) set(_myPresRef, { t: Date.now(), cat });
+  usoCategoria(cat);
 };
+
+/* ══════════════════════════════════════════════════════════════════════
+   USO DE LA APP
+   Mide cuánto y cuántas veces entra cada usuario, y a qué categoría, para los tableros de
+   coordinación (por club) y de super admin (por club). Se guarda en
+     usage/{club}/{yyyy-mm-dd}/{uid} = { n: ingresos, s: segundos, c:{cat: segundos},
+                                         k:{cat: veces que entró a la categoría}, u: última vez, e: mail }
+   El día va antes que el usuario para poder leer un rango de fechas sin bajar todo el historial.
+   Reglas: cada usuario escribe solo lo suyo; el coordinador lee solo su club; el super admin todo.
+   Los profes NO ven su propio uso. Solo cuentan profes y coordinadores (no el super admin).
+   Igual para todos los clubes y categorías (Escuelita incluida).
+
+   El tiempo cuenta solo si la app está visible y hubo alguna acción en los últimos 2 minutos:
+   una pestaña olvidada abierta no suma. Se acumula en memoria y se escribe cada ~60 s. */
+const USO_TICK_MS = 10000, USO_FLUSH_S = 60, USO_INACTIVO_MS = 120000, USO_NUEVA_SESION_MS = 30 * 60000;
+const uso = { uid:null, club:null, email:'', cat:'', dia:'', buf:{ s:0, c:{} }, ultInt:0, ocultoDesde:0, ingresoUid:null };
+
+function _diaLocal(d){
+  d = d || new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function _usoEscribir(dia, cambios){
+  if(!uso.uid || !uso.club) return;
+  cambios.e = uso.email; cambios.u = Date.now();
+  // Si falla (sin conexión, reglas) no molesta al usuario: es una medición, no una función
+  update(ref(db, 'usage/'+uso.club+'/'+dia+'/'+uso.uid), cambios).catch(e => console.warn('uso:', e && e.message));
+}
+// Un ingreso = abrir la app (o volver a ella después de media hora)
+function _usoIngreso(){ _usoEscribir(_diaLocal(), { n: increment(1) }); }
+
+function usoIniciar(profile){
+  const rol = profile && profile.role;
+  const u = auth.currentUser;
+  if(!u || (rol !== 'profe' && rol !== 'coordinator') || !profile.clubId){ usoDetener(false); return; }
+  if(uso.uid !== u.uid){
+    usoFlush();
+    uso.uid = u.uid; uso.club = profile.clubId; uso.email = u.email || profile.email || '';
+    uso.cat = ''; uso.ultInt = Date.now();
+  }
+  if(uso.ingresoUid !== u.uid){ uso.ingresoUid = u.uid; _usoIngreso(); }
+}
+// escribir=false cuando ya no hay sesión (no se puede escribir sin usuario)
+function usoDetener(escribir){
+  if(escribir !== false) usoFlush();
+  uso.uid = null; uso.club = null; uso.ingresoUid = null; uso.cat = ''; uso.buf = { s:0, c:{} }; uso.dia = '';
+}
+function usoCategoria(cat){
+  if(!uso.uid || !cat || cat === 'super-admin') return;
+  usoFlush();                                   // el tiempo hasta acá es de la categoría anterior
+  if(cat !== uso.cat) _usoEscribir(_diaLocal(), { ['k/'+cat]: increment(1) });
+  uso.cat = cat;
+}
+function usoFlush(){
+  if(!uso.uid || !uso.buf.s) return;
+  const cambios = { s: increment(uso.buf.s) };
+  Object.entries(uso.buf.c).forEach(([c, s]) => { cambios['c/'+c] = increment(s); });
+  const dia = uso.dia || _diaLocal();
+  uso.buf = { s:0, c:{} }; uso.dia = '';
+  _usoEscribir(dia, cambios);
+}
+function _usoTick(){
+  if(!uso.uid || !uso.cat) return;
+  if(document.visibilityState !== 'visible') return;
+  if(Date.now() - uso.ultInt > USO_INACTIVO_MS) return;
+  const dia = _diaLocal();
+  if(uso.dia && uso.dia !== dia) usoFlush();    // pasó la medianoche: cada día lo suyo
+  uso.dia = dia;
+  const seg = USO_TICK_MS / 1000;
+  uso.buf.s += seg; uso.buf.c[uso.cat] = (uso.buf.c[uso.cat] || 0) + seg;
+  if(uso.buf.s >= USO_FLUSH_S) usoFlush();
+}
+if(!window._usoListo){
+  window._usoListo = true;
+  const _tocar = () => { uso.ultInt = Date.now(); };
+  ['pointerdown','keydown','touchstart','scroll'].forEach(t => window.addEventListener(t, _tocar, { passive:true, capture:true }));
+  setInterval(_usoTick, USO_TICK_MS);
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'hidden'){ uso.ocultoDesde = Date.now(); usoFlush(); }
+    else if(uso.uid && uso.ocultoDesde && Date.now() - uso.ocultoDesde > USO_NUEVA_SESION_MS){ uso.ocultoDesde = 0; uso.ultInt = Date.now(); _usoIngreso(); }
+    else uso.ocultoDesde = 0;
+  });
+  window.addEventListener('pagehide', () => usoFlush());
+}
+
+// ── Lectura y resumen (los usan los tableros del coordinador y del super admin) ──
+const USO_COLOR = { cat13:'#1D9E75', cat2014:'#D85A30', cat2015:'#7F77DD', cat16:'#D4537E', cat2017:'#BA7517',
+                    cat2018:'#378ADD', cat2019:'#639922', cat2020:'#E24B4A', escuelita:'#8fa3b8', coord:'#4aa3df' };
+function usoEtiquetaCat(k){
+  if(k === 'coord') return 'Coordinación';
+  if(k === 'escuelita') return 'Escuelita';
+  const m = String(k).match(/(\d{2,4})$/);
+  return m ? (m[1].length === 2 ? '20'+m[1] : m[1]) : String(k);
+}
+function usoRango(periodo){
+  const hoy = new Date(), hasta = _diaLocal(hoy);
+  if(periodo === 'anio') return { desde: hoy.getFullYear()+'-01-01', hasta };
+  const d = new Date(hoy); d.setDate(d.getDate() - (+periodo - 1));
+  return { desde: _diaLocal(d), hasta };
+}
+async function usoLeerClub(clubId, periodo){
+  const r = usoRango(periodo);
+  const snap = await get(query(ref(db, 'usage/'+clubId), orderByKey(), startAt(r.desde), endAt(r.hasta)));
+  return { desde:r.desde, hasta:r.hasta, dias: snap.exists() ? (snap.val() || {}) : {} };
+}
+function usoResumir(datos){
+  const out = { desde:datos.desde, hasta:datos.hasta, ingresos:0, seg:0, ultima:0, usuarios:{}, cats:{}, porDia:{} };
+  Object.entries(datos.dias || {}).forEach(([dia, us]) => {
+    Object.entries(us || {}).forEach(([uid, r]) => {
+      if(!r) return;
+      const s = +r.s || 0, n = +r.n || 0, ult = +r.u || 0;
+      out.ingresos += n; out.seg += s; out.ultima = Math.max(out.ultima, ult);
+      const u = out.usuarios[uid] || (out.usuarios[uid] = { email:'', n:0, s:0, dias:0, cats:{}, ult:0 });
+      u.email = r.e || u.email; u.n += n; u.s += s; u.dias++; u.ult = Math.max(u.ult, ult);
+      const cat = k => out.cats[k] || (out.cats[k] = { s:0, k:0, us:{}, ult:0 });
+      Object.entries(r.c || {}).forEach(([c, cs]) => {
+        u.cats[c] = (u.cats[c] || 0) + (+cs || 0);
+        const k = cat(c); k.s += +cs || 0; k.us[uid] = 1; k.ult = Math.max(k.ult, ult);
+      });
+      Object.entries(r.k || {}).forEach(([c, kk]) => {
+        const k = cat(c); k.k += +kk || 0; k.us[uid] = 1; k.ult = Math.max(k.ult, ult);
+        if(!(c in u.cats)) u.cats[c] = 0;
+      });
+      const pd = out.porDia[dia] || (out.porDia[dia] = { us:0, s:0 }); pd.us++; pd.s += s;
+    });
+  });
+  return out;
+}
+function usoFmt(seg){
+  const m = Math.round((+seg || 0) / 60);
+  if(m < 1) return seg > 0 ? '<1 min' : '0 min';
+  return m < 60 ? m+' min' : Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' m';
+}
+function usoHace(ts){
+  if(!ts) return 'nunca';
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const d = new Date(ts); d.setHours(0,0,0,0);
+  const dias = Math.round((hoy - d) / 86400000);
+  return dias <= 0 ? 'hoy' : dias === 1 ? 'ayer' : 'hace '+dias+' días';
+}
+// Tono según hace cuántos días no entra: 0-2 verde, 3-6 ámbar, 7 o más rojo
+function usoTono(ts){
+  if(!ts) return 'r';
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const d = new Date(ts); d.setHours(0,0,0,0);
+  const dias = Math.round((hoy - d) / 86400000);
+  return dias >= 7 ? 'r' : dias >= 3 ? 'w' : 'ok';
+}
+const _usoEsc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
+// Barras de actividad: por día (7 y 30 días) o por mes (el año). Cuenta usuarios distintos.
+function usoBarrasHtml(res){
+  const grupos = []; // {lbl, us, s}
+  const d0 = new Date(res.desde+'T12:00:00'), d1 = new Date(res.hasta+'T12:00:00');
+  const dias = Math.round((d1 - d0) / 86400000) + 1;
+  if(dias <= 31){
+    const DIA = ['D','L','M','X','J','V','S'];
+    for(let i = 0; i < dias; i++){
+      const d = new Date(d0); d.setDate(d0.getDate() + i);
+      const p = res.porDia[_diaLocal(d)] || { us:0, s:0 };
+      grupos.push({ lbl: dias <= 7 ? DIA[d.getDay()] : (i % 5 === 0 ? String(d.getDate()) : ''), us:p.us, s:p.s, tip:_diaLocal(d) });
+    }
+  } else {
+    const M = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+    for(let m = 0; m <= d1.getMonth(); m++){
+      const pref = d1.getFullYear()+'-'+String(m+1).padStart(2,'0');
+      let s = 0; const us = new Set();
+      Object.entries(res.porDia).forEach(([dia, p]) => { if(dia.startsWith(pref)){ s += p.s; us.add(dia); } });
+      grupos.push({ lbl:M[m], us:us.size, s, tip:pref, esMes:true });
+    }
+  }
+  const max = Math.max(1, ...grupos.map(g => g.s));
+  return '<div class="uso-barras">'+grupos.map(g =>
+    '<div class="uso-b" title="'+g.tip+': '+usoFmt(g.s)+(g.esMes ? ' · '+g.us+' días con uso' : ' · '+g.us+' usuario'+(g.us!==1?'s':''))+'">'+
+    '<i style="height:'+(g.s ? Math.max(4, Math.round(g.s / max * 100)) : 0)+'%"></i><span>'+g.lbl+'</span></div>').join('')+'</div>';
+}
+
+// Detalle de UN club: KPIs, actividad, categorías y usuarios. cats = categorías del club
+// [{key,label?}] para poder decir cuáles no entraron nada.
+function usoHtmlClub(res, cats){
+  const nUs = Object.keys(res.usuarios).length;
+  const porIngreso = res.ingresos ? usoFmt(res.seg / res.ingresos) : '—';
+  let h = '<div class="cgrid kpis fk cuatro">'+
+    '<div class="ckpi"><div class="n acc">'+res.ingresos+'</div><div class="l">ingresos</div></div>'+
+    '<div class="ckpi"><div class="n" style="font-size:var(--f-xl)">'+usoFmt(res.seg)+'</div><div class="l">tiempo de uso</div></div>'+
+    '<div class="ckpi"><div class="n">'+nUs+'</div><div class="l">usuarios activos</div></div>'+
+    '<div class="ckpi"><div class="n" style="font-size:var(--f-xl)">'+porIngreso+'</div><div class="l">por ingreso</div></div></div>';
+
+  h += '<div class="csec" style="margin-top:var(--sp-6)">Actividad</div><div class="ccard">'+usoBarrasHtml(res)+'</div>';
+
+  // Por categoría: las que tienen uso ordenadas por tiempo, y al final las que no entraron
+  const keys = Object.keys(res.cats);
+  const conUso = keys.sort((a,b) => res.cats[b].s - res.cats[a].s);
+  const maxS = Math.max(1, ...conUso.map(k => res.cats[k].s));
+  h += '<div class="csec">Por categoría<span class="cont">ordenado por tiempo</span></div>';
+  if(!conUso.length) h += '<div class="cvacio">Nadie usó la app en este período.</div>';
+  else h += '<div class="ccard">'+conUso.map(k => {
+    const c = res.cats[k], us = Object.keys(c.us).map(id => res.usuarios[id] && res.usuarios[id].email).filter(Boolean);
+    const col = USO_COLOR[k] || 'var(--muted)';
+    return '<div class="uso-fila"><div class="uso-t"><b><span class="uso-pto" style="background:'+col+'"></span>'+usoEtiquetaCat(k)+'</b>'+
+      '<span class="uso-sub">'+_usoEsc(us.map(e => e.split('@')[0]).join(', '))+'</span></div>'+
+      '<div class="uso-n">'+c.k+'<small> ingr.</small></div><div class="uso-n">'+usoFmt(c.s)+'</div>'+
+      '<span class="ccat '+(usoTono(c.ult)==='r'?'falta':usoTono(c.ult)==='w'?'medio':'ok')+'">'+usoHace(c.ult)+'</span>'+
+      '<div class="cbar uso-bar"><i style="width:'+Math.round(c.s / maxS * 100)+'%;background:'+col+'"></i></div></div>';
+  }).join('')+'</div>';
+
+  const sinUso = (cats || []).filter(c => !res.cats[c.key] || (!res.cats[c.key].s && !res.cats[c.key].k));
+  if(sinUso.length){
+    h += '<div class="csec">Sin actividad<span class="cont">no entraron en el período</span></div><div class="ccard">'+
+      sinUso.map(c => '<div class="uso-fila"><div class="uso-t"><b><span class="uso-pto" style="background:'+(USO_COLOR[c.key]||'var(--muted)')+'"></span>'+
+        usoEtiquetaCat(c.key)+'</b></div><span class="ccat falta">sin uso</span></div>').join('')+'</div>';
+  }
+
+  // Por usuario
+  const us = Object.entries(res.usuarios).sort((a,b) => b[1].s - a[1].s);
+  if(us.length){
+    h += '<div class="csec">Por usuario</div><div class="ccard">'+us.map(([id, u]) => {
+      const cs = Object.keys(u.cats).map(usoEtiquetaCat).join(', ');
+      return '<div class="uso-fila"><div class="uso-t"><b style="word-break:break-all">'+_usoEsc(u.email || id)+'</b>'+
+        '<span class="uso-sub">'+_usoEsc(cs)+' · '+u.dias+' día'+(u.dias!==1?'s':'')+' con uso</span></div>'+
+        '<div class="uso-n">'+u.n+'<small> ingr.</small></div><div class="uso-n">'+usoFmt(u.s)+'</div>'+
+        '<span class="ccat '+(usoTono(u.ult)==='r'?'falta':usoTono(u.ult)==='w'?'medio':'ok')+'">'+usoHace(u.ult)+'</span></div>';
+    }).join('')+'</div>';
+  }
+  return h;
+}
+const USO_PERIODOS = [['7','7 días'], ['30','30 días'], ['anio','Temporada '+new Date().getFullYear()]];
+function usoPeriodosHtml(actual, fn){
+  return '<div class="cfila">'+USO_PERIODOS.map(([k, l]) =>
+    '<button class="cbtn'+(actual===k?' on':'')+'" onclick="'+fn+'(\''+k+'\')">'+l+'</button>').join('')+'</div>';
+}
 
 // Refrescar timestamp cada 4 minutos para que no expire el filtro de 10min
 setInterval(() => {
@@ -1937,6 +2192,7 @@ window.doResetPass = async function(e){
 // ── LOGOUT ──
 window.doLogout = async function(){
   if(!confirm('¿Cerrar sesión?')) return;
+  usoFlush();               // lo que quedaba sin escribir, antes de perder el usuario
   await signOut(auth);
   // onAuthStateChanged limpia la UI
 };
@@ -1951,6 +2207,7 @@ function _launchByRole(profile){
   resetContextoTemporada();
   // Recién acá se sabe de qué club son las suspensiones
   suscribirSuspensiones();
+  usoIniciar(profile);      // medición de uso (profes y coordinadores)
   const { role, cat } = profile;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('resetPasswordScreen').style.display='none';
@@ -2078,6 +2335,7 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     // No autenticado — mostrar login
+    usoDetener(false);
     document.getElementById('loginScreen').style.display='flex';
     document.getElementById('loadingScreen').style.display='none';
     document.getElementById('logoutBtn').style.display='none';
@@ -7592,7 +7850,7 @@ async function startSuperAdminApp(){
   catBadge.textContent = 'SUPER ADMIN';
 
   window.saTab = function(tab){
-    const tabs = ['clubes','facturacion','usuarios','datos'];
+    const tabs = ['clubes','facturacion','usuarios','uso','datos'];
     document.querySelectorAll('#saTabsEl .coord-tab').forEach((t,i)=>{
       t.className = 'coord-tab' + (tabs[i]===tab ? ' cta' : '');
     });
@@ -7608,6 +7866,7 @@ async function renderSATab(tab){
   if(tab==='clubes')      await renderSAClubes();
   if(tab==='facturacion') await renderSAFacturacion();
   if(tab==='usuarios')    await renderSAUsuarios();
+  if(tab==='uso')         await renderSAUso();
   if(tab==='datos')       renderSADatos();
 }
 
@@ -7757,6 +8016,74 @@ async function renderSAFacturacion(){
   } catch(e){
     el.innerHTML = `<div class="coord-alert-box">Error: ${e.message}</div>`;
   }
+}
+
+// ── TAB USO (super admin): uso de la app por club ──
+let _saUsoPer = '7', _saUsoAbierto = null;
+const _saUsoCache = {};      // por período: { t, clubes:[...] }
+window.saUsoPer = function(k){ _saUsoPer = k; renderSAUso(); };
+window.saUsoClub = function(id){ _saUsoAbierto = (_saUsoAbierto === id) ? null : id; renderSAUso(true); };
+
+async function renderSAUso(sinRecargar){
+  const el = document.getElementById('sa-uso');
+  if(!el) return;
+  const per = _saUsoPer, r = usoRango(per), f = d => d.slice(8)+'/'+d.slice(5,7);
+  const cab = '<div class="csec" style="margin-top:0">'+icono('reloj')+'Uso por club<span class="cont">'+f(r.desde)+' al '+f(r.hasta)+'</span></div>'+
+              usoPeriodosHtml(per, 'window.saUsoPer');
+  let c = _saUsoCache[per];
+  if(!c || (!sinRecargar && Date.now() - c.t > 120000)){
+    el.innerHTML = cab + '<div style="color:var(--muted);text-align:center;padding:var(--sp-9)">Cargando...</div>';
+    try{
+      // Los clubes salen de los usuarios (un club sin usuarios no tiene quién use la app)
+      const uSnap = await get(ref(db, 'users'));
+      const users = uSnap.exists() ? uSnap.val() : {};
+      const reg = {};
+      Object.values(users).forEach(u => {
+        if(u && u.clubId && (u.role === 'profe' || u.role === 'coordinator')) reg[u.clubId] = (reg[u.clubId] || 0) + 1;
+      });
+      const clubes = await Promise.all(Object.keys(reg).map(async id => {
+        const [nom, cats, datos] = await Promise.all([
+          get(ref(db, 'clubs/'+id+'/nombre')).then(s => s.val()).catch(() => null),
+          get(ref(db, 'clubs/'+id+'/cats')).then(s => s.val()).catch(() => null),
+          usoLeerClub(id, per).catch(e => ({ desde:r.desde, hasta:r.hasta, dias:{}, error:e && e.message }))
+        ]);
+        const lista = Array.isArray(cats) ? cats : Object.values(cats || {});
+        return { id, nombre: nom || id, registrados: reg[id], cats: lista.map(k => ({ key:k })), res: usoResumir(datos), error: datos.error };
+      }));
+      clubes.sort((a, b) => b.res.seg - a.res.seg || String(a.nombre).localeCompare(String(b.nombre)));
+      c = _saUsoCache[per] = { t: Date.now(), clubes };
+    }catch(e){
+      el.innerHTML = cab + '<div class="coord-alert-box">Error: '+_usoEsc(e.message)+'</div>';
+      return;
+    }
+  }
+
+  // Totales de todos los clubes
+  const tot = c.clubes.reduce((a, k) => ({ n: a.n + k.res.ingresos, s: a.s + k.res.seg,
+    u: a.u + Object.keys(k.res.usuarios).length, reg: a.reg + k.registrados }), { n:0, s:0, u:0, reg:0 });
+  let h = cab + '<div class="cgrid kpis fk cuatro">'+
+    '<div class="ckpi"><div class="n acc">'+c.clubes.length+'</div><div class="l">clubes</div></div>'+
+    '<div class="ckpi"><div class="n acc">'+tot.n+'</div><div class="l">ingresos</div></div>'+
+    '<div class="ckpi"><div class="n" style="font-size:var(--f-xl)">'+usoFmt(tot.s)+'</div><div class="l">tiempo de uso</div></div>'+
+    '<div class="ckpi"><div class="n">'+tot.u+'<small> de '+tot.reg+'</small></div><div class="l">usuarios activos</div></div></div>';
+
+  h += '<div class="csec" style="margin-top:var(--sp-6)">Clubes<span class="cont">tocá uno para ver el detalle</span></div>';
+  h += c.clubes.map(k => {
+    const act = Object.keys(k.res.usuarios).length, abierto = _saUsoAbierto === k.id;
+    const tono = k.res.ultima ? usoTono(k.res.ultima) : 'r';
+    return '<div class="ccard" style="padding:0;overflow:hidden">'+
+      '<button class="uso-club" onclick="window.saUsoClub(\''+_usoEsc(k.id).replace(/\'/g,'')+'\')" aria-expanded="'+abierto+'">'+
+        '<div class="uso-t"><b>'+_usoEsc(k.nombre)+'</b><span class="uso-sub">'+act+' de '+k.registrados+' activos</span></div>'+
+        '<div class="uso-n">'+k.res.ingresos+'<small> ingr.</small></div><div class="uso-n">'+usoFmt(k.res.seg)+'</div>'+
+        '<span class="ccat '+(tono==='r'?'falta':tono==='w'?'medio':'ok')+'">'+(k.res.ultima ? usoHace(k.res.ultima) : 'sin uso')+'</span>'+
+        '<span class="uso-flecha">'+(abierto?'▴':'▾')+'</span></button>'+
+      (abierto ? '<div style="padding:var(--sp-5)">'+(k.error ? '<div class="cvacio">No se pudo leer: '+_usoEsc(k.error)+'</div>' : usoHtmlClub(k.res, k.cats))+'</div>' : '')+
+    '</div>';
+  }).join('');
+  h += '<div class="cnota">El tiempo cuenta solo con la app visible y alguna acción en los últimos 2 minutos. '+
+       'Solo se miden profes y coordinadores. Los datos empiezan el día que se activó la medición.</div>';
+  el.innerHTML = h;
+  pintarIconos(el);
 }
 
 /* ── ALTA Y BAJA DE CUENTAS ─────────────────────────────────────────────
@@ -10441,6 +10768,37 @@ async function startCoordApp(){
             'septiembre','octubre','noviembre','diciembre'][i] || '';
   }
 
+  /* ══════════ USO DE LA APP ══════════
+     Cuánto y cuántas veces entra cada profe de este club, por categoría y por usuario. La
+     lectura y el armado del detalle están a nivel de módulo (usoLeerClub, usoResumir,
+     usoHtmlClub) porque el tablero del super admin usa lo mismo. */
+  let usoPer = '7';
+  const usoCache = {}, usoCarga = {};
+  async function usoCargar(per){
+    const c = usoCache[per];
+    if(usoCarga[per] || (c && Date.now() - c._t < 120000)) return;   // se refresca cada 2 min
+    usoCarga[per] = true;
+    try{
+      const datos = await usoLeerClub(CLUB_PATH.split('/').pop(), per);
+      usoCache[per] = Object.assign(usoResumir(datos), { _t: Date.now() });
+    }catch(e){ usoCache[per] = { _t: Date.now(), _error: (e && e.message) || 'error' }; }
+    usoCarga[per] = false;
+    if(tabAct === 'uso') pintar();
+  }
+  function vistaUso(){
+    usoCargar(usoPer);
+    const r = usoRango(usoPer), f = d => d.slice(8)+'/'+d.slice(5,7);
+    let h = '<div class="csec">'+icono('reloj')+'Uso de la app<span class="cont">'+f(r.desde)+' al '+f(r.hasta)+'</span></div>'+
+            usoPeriodosHtml(usoPer, 'window.coordUsoPer');
+    const c = usoCache[usoPer];
+    if(!c) return h + spinner;
+    if(c._error) return h + '<div class="cvacio">No se pudo leer el uso.<br>'+esc(c._error)+'</div>';
+    return h + usoHtmlClub(c, ALL_CATS.map(x => ({ key:x.key }))) +
+      '<div class="cnota">El tiempo cuenta solo con la app visible y alguna acción en los últimos 2 minutos: '+
+      'una pestaña olvidada abierta no suma. Los datos empiezan el día que se activó la medición.</div>';
+  }
+  window.coordUsoPer = function(k){ usoPer = k; pintar(); };
+
   /* ══════════ ROUTER ══════════ */
   const TABS = [
     { id:'hoy',        lbl:'Hoy',        ico:'tabla',      render:vistaHoy },
@@ -10448,6 +10806,7 @@ async function startCoordApp(){
     { id:'jugadores',  lbl:'Jugadores',  ico:'presencia',  render:vistaJugadores },
     { id:'liga',       lbl:'Liga',       ico:'copa',       render:vistaLiga },
     { id:'calendario', lbl:'Calendario', ico:'calendario', render:vistaCalendario },
+    { id:'uso',        lbl:'Uso',        ico:'reloj',      render:vistaUso },
   ];
 
   function pintarTabs(){
