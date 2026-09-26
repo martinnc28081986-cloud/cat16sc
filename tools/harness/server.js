@@ -89,13 +89,17 @@ function seed() {
       clubB: { nombre: 'Club B', cats: ['cat16'], config: { torneoActivo: 'z9', ligaNombre: 'CLUB B', temporadas: { z9: { nombre: 'Torneo B 2026', orden: 1 } }, fixture: { 1: { rival: 'OTRO 1', cond: 'L' }, 2: { rival: 'OTRO 2', cond: 'V' } } },
         cat16: { players: { p0: { nombre: 'Bruno', activo: true }, p1: { nombre: 'Carlos', activo: true } }, torneos: { z9: { attendance: {}, citaciones: { fecha01_otro_1: { fecha: 1, rival: 'OTRO 1', citados: ['Bruno'], fecha_str: '2026-08-10', savedAt: '2026-08-10' } }, stats: {} } } } },
       clubA: {
-        nombre: 'Club A', cats: ['cat16'],
+        nombre: 'Club A', cats: ['cat16', 'cat2014'],
         config: {
           torneoActivo: 'z2', ligaNombre: 'CLUB A',
           temporadas: { z1: { nombre: 'Zona II B 2026', orden: 1 }, z2: { nombre: 'Zona Campeonato 2026', orden: 2 } },
           fixture: { 1: { rival: 'RIVAL D', cond: 'L' }, 2: { rival: 'RIVAL E', cond: 'V' }, 3: { rival: 'RIVAL F', cond: 'L' }, 4: { rival: 'RIVAL G', cond: 'V' } },
+          // Entrenamiento suspendido (formato plano AAAA-MM-DD, como lo guarda el panel de coordinación)
+          suspensionesEnt: { '2026-09-08': true },
         },
-        diasEntrenamiento: [1, 3],
+        // Los días van como TEXTO, como en producción. La 2014 entrena distinto del resto del club.
+        diasEntrenamiento: ['2', '4'],
+        diasPorCategoria: { cat2014: ['1', '3', '5'] },
         cat2014: { players: { q0: { nombre: 'Otro Uno', activo: true }, q1: { nombre: 'Otro Dos', activo: true } }, torneos: { z2: { attendance: {}, citaciones: {}, stats: {} } } },
         cat16: { players, torneos: { z1: { attendance: {}, citaciones: z1cit, stats: z1stats }, z2: { attendance: att, citaciones: z2cit, stats: z2stats } } },
       },
