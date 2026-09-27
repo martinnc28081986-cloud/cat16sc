@@ -1530,14 +1530,25 @@ window.etiquetaCorta = etiquetaCorta;
 function datosDelAnio(anio, todas){
   const zonas = todas || _todasLasZonas || {};
   const corte = _fechaDeCorte(todas);
+  const _enArchivo = (typeof esHistorico === 'function') && esHistorico();
   const out = { anio, sesiones:{}, citaciones:{}, stats:{}, zonas:[], corte };
 
   Object.keys(zonas).forEach(zonaId => {
     const z = zonas[zonaId] || {};
     let nSes = 0, nPart = 0;
+    // Mirando una temporada archivada, lo de OTRAS zonas solo se suma si hay un
+    // corte conocido (la última fecha propia de la zona archivada) y el registro
+    // cae antes de ese corte. Si la zona archivada no tiene ni una fecha propia
+    // (nunca se le citó ni se le tomó asistencia desde la app), _fechaDeCorte no
+    // tiene de dónde sacar un corte y devuelve null — y null NO significa "no hay
+    // que filtrar", significa que no hay forma de saber qué es "antes". Sin esto,
+    // una zona archivada vacía terminaba mostrando el 100% de lo de la zona en
+    // curso, como si fuera suyo.
+    const sinCorteConocido = _enArchivo && zonaId !== TORNEO_ID && !corte;
 
     Object.entries(z.attendance || {}).forEach(([fecha, val]) => {
       if(anioDeSesion(fecha, zonaId) !== anio) return;
+      if(sinCorteConocido) return;
       if(corte && fecha > corte) return;              // pasó después: no cuenta
       // La clave es la fecha, así que dos zonas nunca chocan en el mismo día.
       out.sesiones[fecha] = Object.assign({}, val, {_zona: zonaId});
@@ -1546,6 +1557,7 @@ function datosDelAnio(anio, todas){
 
     Object.entries(z.citaciones || {}).forEach(([key, val]) => {
       if(anioDeCitacion(val, zonaId) !== anio) return;
+      if(sinCorteConocido) return;
       // Un registro sin fecha propia solo se descarta si es de OTRA zona: los de
       // la zona archivada son suyos por definición y no pueden ser posteriores.
       if(corte && zonaId !== TORNEO_ID){
