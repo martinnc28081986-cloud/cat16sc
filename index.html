@@ -263,6 +263,12 @@
   .tab-icon-btn .tib-icon { font-size:var(--f-lg); line-height:1; }
   .tab-icon-btn .tib-lbl { font-size:var(--f-micro); text-align:center; line-height:1.2; }
   .tab-icon-btn.ay { color:var(--yellow); background:rgba(var(--draw-rgb),0.12); border-color:rgba(var(--draw-rgb),0.3); }
+  /* Historial de citaciones + Citaciones van agrupadas: comparten un mismo
+     recuadro celeste para que se lean como "las dos caras de lo mismo" en vez
+     de dos pestañas sueltas más. */
+  .tab-icon-group { grid-column:span 2; display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:2px; border-radius:var(--r-md); background:rgba(var(--accent-rgb),0.08); border:1px solid rgba(var(--accent-rgb),0.25); }
+  .tab-icon-group .tab-icon-btn { color:var(--accent); }
+  .tab-icon-group .tab-icon-btn.ay { color:var(--yellow); background:rgba(var(--draw-rgb),0.18); border-color:rgba(var(--draw-rgb),0.4); }
   .tab.ag { color:var(--accent); background:rgba(var(--accent-rgb),0.12); border-color:rgba(var(--accent-rgb),0.3); }
   .tab.ay { color:var(--draw); background:rgba(var(--draw-rgb),0.12); border-color:rgba(var(--draw-rgb),0.3); }
   .tab.agg { color:var(--win); background:rgba(var(--win-rgb),0.12); border-color:rgba(var(--win-rgb),0.3); }
@@ -867,8 +873,10 @@
   <div class="tab-section-label tsl-par" id="subtabLabelPar" style="display:none"><span class="tgl-dot tgl-dot-par"></span>Partido</div>
   <div class="tabs-par-grid" id="subtabsPar" style="display:none">
     <div class="tab-icon-btn" onclick="switchTab('tablas')"><span class="tib-icon"><span class="ico" data-ico="tabla"></span></span><span class="tib-lbl">Tablas</span></div>
-    <div class="tab-icon-btn" onclick="switchTab('cit-stats')"><span class="tib-icon"><span class="ico" data-ico="lista"></span></span><span class="tib-lbl">Historial</span></div>
-    <div class="tab-icon-btn" onclick="switchTab('citaciones')"><span class="tib-icon"><span class="ico" data-ico="estrella"></span></span><span class="tib-lbl">Citaciones</span></div>
+    <div class="tab-icon-group">
+      <div class="tab-icon-btn" onclick="switchTab('cit-stats')"><span class="tib-icon"><span class="ico" data-ico="lista"></span></span><span class="tib-lbl">Historial de<br>citaciones</span></div>
+      <div class="tab-icon-btn" onclick="switchTab('citaciones')"><span class="tib-icon"><span class="ico" data-ico="estrella"></span></span><span class="tib-lbl">Citaciones</span></div>
+    </div>
     <div class="tab-icon-btn" onclick="switchTab('formacion')"><span class="tib-icon"><span class="ico" data-ico="cancha"></span></span><span class="tib-lbl">Formación</span></div>
     <div class="tab-icon-btn" onclick="switchTab('pospartido')"><span class="tib-icon"><span class="ico" data-ico="pelota"></span></span><span class="tib-lbl">Pos partido</span></div>
   </div>
@@ -6674,8 +6682,8 @@ async function renderTablas(){
 
     // ── HISTORIAL ENFRENTADOS, DEL MÁS RECIENTE AL MÁS VIEJO ──
     // Antes se cortaba a los últimos 3 partidos de cada lado; ahora se muestra
-    // toda la temporada en curso, con el próximo (todavía sin jugar) arriba de
-    // todo — mismo criterio de "más reciente primero" que el resto de la app.
+    // toda la temporada en curso — mismo criterio de "más reciente primero"
+    // que el resto de la app.
     if(scRes.length || rRivRes.length){
       html+='<div class="stitle" style="margin-top:var(--sp-4)">Historial enfrentados</div>';
       html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-2)">';
@@ -6726,19 +6734,9 @@ async function renderTablas(){
           <div style="font-size:var(--f-sm);color:var(--muted)">Sin resultado</div></div>`;
       };
 
-      // Fila del próximo partido, siempre arriba de todo: todavía no tiene
-      // resultado (distinto de "Sin resultado", que es para uno que ya se jugó
-      // y falta cargar), así que se marca aparte en vez de mezclarla con las
-      // fechas ya jugadas.
-      const _proximoCard=align=>`<div style="background:var(--surface2);border:1px dashed var(--border);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-4);${align==='right'?'text-align:right':''}">
-        <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">F${nextF.fecha}</div>
-        <div style="font-size:var(--f-sm);color:var(--accent);font-weight:700">Próximo partido</div></div>`;
-      html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-3);padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)">'
-        +_proximoCard('left')
-        +'<div style="font-size:var(--f-micro);color:var(--muted);text-align:center;padding:0 var(--sp-1)">F'+nextF.fecha+'</div>'
-        +_proximoCard('right')
-        +'</div>';
-
+      // El próximo partido (F7) ya está arriba de todo, en el título "Próximo
+      // Rival — F7" y en el comparador cara a cara: repetirlo acá adentro era
+      // de más. Este historial arranca directo en la última fecha ya jugada.
       allFechas.forEach(f=>{
         html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-3)">';
         html+=scByFecha[f] ? _resCard(scByFecha[f],'left') : _sinDatoCard(myName,f,'left');
@@ -6748,36 +6746,6 @@ async function renderTablas(){
       });
     }
     html+='</div>'; // cierre compare-card
-  }
-
-  // ── NUESTROS RESULTADOS ──
-  html+='<div class="stitle">Nuestros Resultados</div>';
-  if(!scRes.length){
-    html+='<div class="empty-msg">Sin resultados cargados aún</div>';
-  } else {
-    const _mn5 = myName.toUpperCase().substring(0,5);
-    [...scRes].reverse()
-      .filter(r => {
-        // Descartar entradas donde el rival es el mismo equipo (error de datos)
-        if(!r.rival) return true;
-        const rn = r.rival.toUpperCase().trim();
-        return !(rn===myName.toUpperCase().trim() || rn.includes(_mn5) || myName.toUpperCase().includes(rn.substring(0,5)));
-      })
-      .forEach(r=>{
-      const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
-      const resLbl=r.gf>r.gc?'V':r.gf===r.gc?'E':'L';
-      const condLbl=r.cond==='L'?'Local':'Visita';
-      const condCls=r.cond==='L'?'local':'visita';
-      const scoreDisp=r.cond==='L'?r.gf+' - '+r.gc:r.gc+' - '+r.gf;
-      const localTeam=r.cond==='L'?myName:r.rival;
-      const visitTeam=r.cond==='L'?r.rival:myName;
-      html+='<div class="res-card"><div class="res-header">';
-      html+='<div><div class="res-rival">'+localTeam+' <span style="color:var(--muted);font-weight:400">vs</span> '+visitTeam+'</div>';
-      html+='<div style="margin-top:var(--sp-2)"><span class="res-fecha">Fecha '+r.fecha+'</span> <span class="res-cond '+condCls+'">'+condLbl+'</span></div></div>';
-      html+='<div style="text-align:right"><div class="res-score '+res+'">'+scoreDisp+'</div>';
-      html+='<div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-md);color:'+(res==='win'?'var(--win)':res==='draw'?'var(--yellow)':'var(--red)')+'">'+resLbl+'</div></div>';
-      html+='</div></div>';
-    });
   }
 
   // ── TABLA DE POSICIONES ──
