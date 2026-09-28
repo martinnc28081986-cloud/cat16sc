@@ -2641,6 +2641,28 @@ function deriveFixtureFromSchedule(schedule, ligaNombre){
   }).filter(f => !isNaN(f.fecha)).sort((a,b)=>a.fecha-b.fecha);
 }
 
+// A quién enfrentaba (o si tenía fecha libre de verdad) un equipo cualquiera en
+// una fecha del schedule de la zona. Se usa para no confundir "tenía partido
+// programado pero el resultado todavía no llegó al scraper" con "esa fecha le
+// tocaba descansar" — antes las dos cosas se mostraban igual, como "Libre".
+// Devuelve {libre:true}, {libre:false, rival} o null si no hay dato (zona sin
+// schedule cargado, o el equipo no aparece esa fecha).
+function _partidoDeSchedule(equipo, fecha, schedule){
+  const sched = schedule || (typeof LIGA_DATA !== 'undefined' && LIGA_DATA.schedule);
+  if(!sched) return null;
+  const arr = sched[fecha] ?? sched[String(fecha)];
+  if(!arr) return null;
+  const lista = Array.isArray(arr) ? arr : Object.values(arr);
+  const clave = _claveEquipo(equipo);
+  if(lista.some(m => m && m.libre && _claveEquipo(m.libre) === clave)) return {libre:true};
+  const _loc = m => m.h || m.local || '';
+  const _vis = m => m.a || m.visitante || '';
+  const game = lista.find(m => _loc(m) && _vis(m) && (_claveEquipo(_loc(m)) === clave || _claveEquipo(_vis(m)) === clave));
+  if(!game) return null;
+  const isHome = _claveEquipo(_loc(game)) === clave;
+  return {libre:false, rival: isHome ? _vis(game) : _loc(game)};
+}
+
 // Todos los equipos que aparecen en un schedule de liga
 function equiposDeSchedule(schedule){
   const eq = new Set();
@@ -2706,6 +2728,11 @@ function prepararTablasDeZona(ligaIdActivo, schedule){
 
     // Ya sabiendo cuál es la zona, reintentar el liga_data.json que haya llegado antes
     if(typeof aplicarLigaDataJson === 'function') aplicarLigaDataJson();
+    // Se guarda el fixture completo de la zona (quién jugaba contra quién en cada
+    // fecha) para poder distinguir, más adelante, un equipo que tuvo fecha libre
+    // de verdad de uno que tenía partido programado pero cuyo resultado todavía
+    // no llegó al scraper — sin esto, las dos cosas se veían igual ("Libre").
+    LIGA_DATA.schedule = schedule || null;
     return reiniciada;
   }catch(e){ console.warn('prepararTablasDeZona:', e); return false; }
 }
@@ -6677,15 +6704,30 @@ async function renderTablas(){
             <div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-sm);color:${resCol}">${resLbl}</div>
           </div></div>`;
       };
-      const _libreCard=(f,align)=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-4);${align==='right'?'text-align:right':''}">
-        <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">F${f}</div>
-        <div style="font-size:var(--f-sm);color:var(--muted)">Libre</div></div>`;
+      // Sin resultado guardado para esa fecha: puede ser porque de verdad tenía
+      // fecha libre (bye del fixture) o porque el partido estaba programado y su
+      // resultado todavía no llegó al scraper. Antes las dos se mostraban igual
+      // ("Libre"), y un partido pendiente terminaba pareciendo un descanso que
+      // nunca existió. Con el schedule de la zona se puede distinguir uno del otro.
+      const _sinDatoCard=(equipo,f,align)=>{
+        const info=_partidoDeSchedule(equipo,f);
+        const alinear=align==='right'?'text-align:right':'';
+        if(!info || info.libre){
+          return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-4);${alinear}">
+            <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">F${f}</div>
+            <div style="font-size:var(--f-sm);color:var(--muted)">Libre</div></div>`;
+        }
+        const rivalTxt=info.rival?(' vs '+String(info.rival).substring(0,8).replace(/&/g,'&amp;').replace(/</g,'&lt;')):'';
+        return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-4);${alinear}">
+          <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">F${f}${rivalTxt}</div>
+          <div style="font-size:var(--f-sm);color:var(--muted)">Sin resultado</div></div>`;
+      };
 
       allFechas.forEach(f=>{
         html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-3)">';
-        html+=scByFecha[f] ? _resCard(scByFecha[f],'left') : _libreCard(f,'left');
+        html+=scByFecha[f] ? _resCard(scByFecha[f],'left') : _sinDatoCard(myName,f,'left');
         html+='<div style="font-size:var(--f-micro);color:var(--muted);text-align:center;padding:0 var(--sp-1)">F'+f+'</div>';
-        html+=rByFecha[f] ? _resCard(rByFecha[f],'right') : _libreCard(f,'right');
+        html+=rByFecha[f] ? _resCard(rByFecha[f],'right') : _sinDatoCard(nextF.rival,f,'right');
         html+='</div>';
       });
     }
