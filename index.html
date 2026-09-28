@@ -6605,7 +6605,7 @@ async function renderTablas(){
       const kn=k.toUpperCase().trim();
       return kn===_rKey||(kn.length>=5&&_rKey.length>=5&&(kn.substring(0,5)===_rKey.substring(0,5)));
     });
-    const rRivRes=_rEntry?[..._rEntry[1]].slice(-3):[];
+    const rRivRes=_rEntry?[..._rEntry[1]]:[];
 
     html+='<div class="stitle">Próximo Rival — F'+nextF.fecha+'</div>';
     html+='<div class="compare-card">';
@@ -6672,9 +6672,12 @@ async function renderTablas(){
       </div>
     </div>`;
 
-    // ── ÚLTIMOS 3 RESULTADOS SIDE BY SIDE (alineados por fecha) ──
+    // ── HISTORIAL ENFRENTADOS, DEL MÁS RECIENTE AL MÁS VIEJO ──
+    // Antes se cortaba a los últimos 3 partidos de cada lado; ahora se muestra
+    // toda la temporada en curso, con el próximo (todavía sin jugar) arriba de
+    // todo — mismo criterio de "más reciente primero" que el resto de la app.
     if(scRes.length || rRivRes.length){
-      html+='<div class="stitle" style="margin-top:var(--sp-4)">Últimos resultados</div>';
+      html+='<div class="stitle" style="margin-top:var(--sp-4)">Historial enfrentados</div>';
       html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-2)">';
       html+='<div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">'+myName+'</div>';
       html+='<div></div>';
@@ -6684,7 +6687,7 @@ async function renderTablas(){
       // Alinear por fecha — tomar las últimas 3 fechas jugadas entre ambos equipos
       const scByFecha=Object.fromEntries(scRes.map(r=>[r.fecha,r]));
       const rByFecha=Object.fromEntries(rRivRes.map(r=>[r.fecha,r]));
-      const allFechas=[...new Set([...scRes.map(r=>r.fecha),...rRivRes.map(r=>r.fecha)])].sort((a,b)=>b-a).slice(0,3);
+      const allFechas=[...new Set([...scRes.map(r=>r.fecha),...rRivRes.map(r=>r.fecha)])].sort((a,b)=>b-a);
 
       const _resCard=(r,align)=>{
         const res=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss';
@@ -6722,6 +6725,19 @@ async function renderTablas(){
           <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">F${f}${rivalTxt}</div>
           <div style="font-size:var(--f-sm);color:var(--muted)">Sin resultado</div></div>`;
       };
+
+      // Fila del próximo partido, siempre arriba de todo: todavía no tiene
+      // resultado (distinto de "Sin resultado", que es para uno que ya se jugó
+      // y falta cargar), así que se marca aparte en vez de mezclarla con las
+      // fechas ya jugadas.
+      const _proximoCard=align=>`<div style="background:var(--surface2);border:1px dashed var(--border);border-radius:var(--r-sm);padding:var(--sp-4) var(--sp-4);${align==='right'?'text-align:right':''}">
+        <div style="font-size:var(--f-micro);color:var(--muted);margin-bottom:var(--sp-2)">F${nextF.fecha}</div>
+        <div style="font-size:var(--f-sm);color:var(--accent);font-weight:700">Próximo partido</div></div>`;
+      html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-3);padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)">'
+        +_proximoCard('left')
+        +'<div style="font-size:var(--f-micro);color:var(--muted);text-align:center;padding:0 var(--sp-1)">F'+nextF.fecha+'</div>'
+        +_proximoCard('right')
+        +'</div>';
 
       allFechas.forEach(f=>{
         html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:var(--sp-2);align-items:center;margin-bottom:var(--sp-3)">';
@@ -6765,16 +6781,61 @@ async function renderTablas(){
   }
 
   // ── TABLA DE POSICIONES ──
+  // Columna "Rival": a quién ya enfrentaste le queda un punto con el resultado
+  // (mismos colores que el resto de la app), a quién todavía te falta le queda
+  // la fecha en que le toca — nunca vacía, para poder usar la tabla como
+  // referencia de "quién falta y cuándo" sin cruzarla con el fixture aparte.
+  const _keyEq=s=>String(s||'').toLowerCase().replace(/\./g,'').replace(/\s+/g,' ').trim();
+  const _matchKeyEq=(a,b)=>{
+    if(!a||!b) return false;
+    if(a===b) return true;
+    const min=Math.min(a.length,b.length);
+    return min>=6 && (a.substring(0,7)===b.substring(0,7) || a.includes(b.substring(0,7)) || b.includes(a.substring(0,7)));
+  };
+  const resultadoVsRival={};
+  scRes.forEach(r=>{ if(r.rival) resultadoVsRival[_keyEq(r.rival)]=r.gf>r.gc?'win':r.gf===r.gc?'draw':'loss'; });
+  const _fechasJugadas=new Set(scRes.map(r=>r.fecha));
+  const proximaFechaVsRival={};
+  FIXTURE.filter(f=>f.cond!=='-' && !_fechasJugadas.has(f.fecha)).sort((a,b)=>a.fecha-b.fecha)
+    .forEach(f=>{ const k=_keyEq(f.rival); if(proximaFechaVsRival[k]===undefined) proximaFechaVsRival[k]=f.fecha; });
+  const _buscar=(mapa,pk)=>{
+    if(mapa[pk]!==undefined) return mapa[pk];
+    const k=Object.keys(mapa).find(k=>_matchKeyEq(k,pk));
+    return k!==undefined ? mapa[k] : undefined;
+  };
+
   html+='<div class="stitle">Tabla de Posiciones — Cat '+catNum+'</div>';
   html+='<div class="card" style="padding:var(--sp-5) var(--sp-4)"><table class="standings-table">';
-  html+='<thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th></tr></thead><tbody>';
+  html+='<thead><tr><th>#</th><th style="text-align:left">Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>PTS</th><th>Rival</th></tr></thead><tbody>';
   pos.forEach((p,i)=>{
     const isSC=p.eq&&(p.eq.toUpperCase().includes(myName.substring(0,5))||myName.toUpperCase().includes(p.eq.toUpperCase().substring(0,5)));
     const _normR=s=>s.toLowerCase().replace(/\./g,'').replace(/\s+/g,' ').trim();
     const _rn=rivalKey?_normR(rivalKey):''; const _pn=_normR(p.eq);
     const isRival=rivalKey&&(_rn===_pn||(Math.min(_rn.length,_pn.length)>=6&&(_pn.includes(_rn.substring(0,7))||_rn.includes(_pn.substring(0,7)))));
     const cls=isSC?'us-row':isRival?'rival-row':'';
-    html+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.eq+(isSC?' ⚽':'')+'</td><td>'+p.pj+'</td><td>'+p.pg+'</td><td>'+p.pe+'</td><td>'+p.pp+'</td><td>'+p.gf+'</td><td>'+p.gc+'</td><td><strong>'+p.pts+'</strong></td></tr>';
+    let rivalCol;
+    if(isSC){
+      rivalCol='<span style="font-size:var(--f-micro);color:var(--muted)">vos</span>';
+    } else {
+      const pk=_keyEq(p.eq);
+      const res=_buscar(resultadoVsRival,pk);
+      if(res){
+        const dotCol=res==='win'?'var(--win)':res==='draw'?'var(--yellow)':'var(--red)';
+        const dotTitle=res==='win'?'Ganamos':res==='draw'?'Empatamos':'Perdimos';
+        rivalCol='<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+dotCol+'" title="'+dotTitle+'"></span>';
+      } else {
+        const fFalta=_buscar(proximaFechaVsRival,pk);
+        if(fFalta!==undefined){
+          const esProximo=nextF && fFalta===nextF.fecha;
+          rivalCol=esProximo
+            ? '<span style="background:var(--accent);color:#fff;font-size:var(--f-micro);font-weight:700;padding:2px 7px;border-radius:var(--r-full)">F'+fFalta+'</span>'
+            : '<span style="background:rgba(var(--accent-rgb),0.15);color:var(--accent);font-size:var(--f-micro);font-weight:700;padding:2px 7px;border-radius:var(--r-full)">F'+fFalta+'</span>';
+        } else {
+          rivalCol='<span style="color:var(--muted)">—</span>';
+        }
+      }
+    }
+    html+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.eq+(isSC?' ⚽':'')+'</td><td>'+p.pj+'</td><td>'+p.pg+'</td><td>'+p.pe+'</td><td>'+p.pp+'</td><td>'+p.gf+'</td><td>'+p.gc+'</td><td><strong>'+p.pts+'</strong></td><td style="text-align:right">'+rivalCol+'</td></tr>';
   });
   html+='</tbody></table></div>';
 
