@@ -10203,6 +10203,7 @@ async function startCoordApp(){
   let DIAS_CAT = {};          // días de las categorías que entrenan distinto del resto del club (ver diasDeCategoria)
   let entFiltro = '';         // categoría elegida en el calendario de entrenamientos ('' = todas)
   let entBorrador = null;     // edición de días de entrenamiento en curso: { catKey: [0-6] } (null = sin editar)
+  let entMesOffset = 0;       // calendario de "sin entrenamiento": 0 = mes en curso, -1 = anterior, etc.
   const diasDe = catKey => diasDeCategoria(DIAS_ENT, DIAS_CAT, catKey);
 
   /* ── DÍA DE CITACIÓN ────────────────────────────────────────────
@@ -10604,6 +10605,9 @@ async function startCoordApp(){
     }catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
     if(!estaba){
       const d = new Date(iso+'T12:00:00');
+      // Un día YA pasado (p.ej. un feriado que no se canceló a tiempo y se marca
+      // ahora, semanas después) no necesita avisar a nadie por WhatsApp: ya pasó.
+      if(iso < _isoLocal(new Date())){ showToast('✓ Marcado sin entrenamiento'); pintar(); return; }
       const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
       abrirDlgWA('Sin entrenamiento el '+d.getDate()+'/'+(d.getMonth()+1),
         'Ese día deja de contar en la carga de los profes. Este es el mensaje para avisar.',
@@ -11404,10 +11408,12 @@ async function startCoordApp(){
         '</div>'; }).join('')+'</div>';
     }
 
-    // Días de entrenamiento del mes en curso. Cada categoría puede entrenar días distintos: se ve
-    // el conjunto de todas o la de una categoría (entFiltro), con un resumen de quién entrena cuándo.
+    // Días de entrenamiento del mes elegido (por defecto, el actual). Cada categoría puede
+    // entrenar días distintos: se ve el conjunto de todas o la de una categoría (entFiltro),
+    // con un resumen de quién entrena cuándo.
+    const _mesBase = new Date(); _mesBase.setDate(1); _mesBase.setMonth(_mesBase.getMonth()+entMesOffset);
     h += '<div class="csec">'+icono('cono')+'Entrenamientos<span class="cont">'+
-         _nombreMes(new Date().getMonth())+'</span></div>';
+         _nombreMes(_mesBase.getMonth())+' '+_mesBase.getFullYear()+'</span></div>';
     const catsEnt = ALL_CATS;                    // todas, Escuelita incluida
     const hayDias = catsEnt.some(c => diasDe(c.key).length);
     const _botonEditar = archivoBloqueado() ? '' :
@@ -11440,7 +11446,7 @@ async function startCoordApp(){
           catsEnt.map(c => '<button class="cbtn'+(entFiltro===c.key?' on':'')+'" onclick="window.coordEntCat(\''+c.key+'\')">'+esc(c.label.replace(/^Cat /,''))+'</button>').join('')+'</div>';
       }
       const diasVista = entFiltro ? diasDe(entFiltro) : [...new Set(catsEnt.flatMap(c => diasDe(c.key)))];
-      const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
+      const y = _mesBase.getFullYear(), m = _mesBase.getMonth();
       const ultimo = new Date(y, m+1, 0).getDate();
       const dias = [];
       for(let d=1; d<=ultimo; d++){
@@ -11448,9 +11454,16 @@ async function startCoordApp(){
         if(diasVista.includes(fecha.getDay())) dias.push(d);
       }
       const iso = d => y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const esMesActual = entMesOffset === 0;
       h += '<div class="ccard"><div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">'+
         (entFiltro ? '<b style="color:var(--text)">'+esc(catDe(entFiltro).label)+'</b>: '+dias.length+' entrenamientos este mes. ' : dias.length+' días con entrenamiento este mes. ')+
-        'Tocá un día para marcarlo como sin entrenamiento (feriado, lluvia, cancha ocupada): vale para todo el club y no cuenta en la carga de los profes.</div>'+
+        'Tocá un día para marcarlo como sin entrenamiento (feriado, lluvia, cancha ocupada): vale para todo el club y no cuenta en la carga de los profes. '+
+        'Si un feriado de un mes anterior no se canceló a tiempo, podés marcarlo ahora mismo con "'+_nombreMes(m)+' anterior".</div>'+
+        '<div class="cfila" style="margin-bottom:var(--sp-4)">'+
+          '<button class="cbtn" onclick="window.coordEntMes(-1)">&#8592; '+_nombreMes((m+11)%12)+' anterior</button>'+
+          (esMesActual ? '' : '<button class="cbtn" onclick="window.coordEntMes(1)">'+_nombreMes((m+1)%12)+' siguiente &#8594;</button>'+
+            '<button class="cbtn" onclick="window.coordEntMes(0)">Volver al mes actual</button>')+
+        '</div>'+
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:var(--sp-3)">'+
         dias.map(d=>'<button class="cbtn'+(entSuspendidoEn(SUSP_ENT, iso(d))?' peligro':'')+'" style="text-align:center"'+
           (archivoBloqueado()?' disabled':' onclick="window.coordSuspEnt(\''+iso(d)+'\')"')+'>'+d+'</button>').join('')+
@@ -11496,6 +11509,7 @@ async function startCoordApp(){
   }
   window.coordUsoPer = function(k){ usoPer = k; pintar(); };
   window.coordEntCat = function(k){ entFiltro = k; pintar(); };
+  window.coordEntMes = function(delta){ entMesOffset = delta === 0 ? 0 : entMesOffset + delta; pintar(); };
   window.coordEntEditar = function(){
     if(_roGuard()) return;
     entBorrador = {}; ALL_CATS.forEach(c => { entBorrador[c.key] = diasDe(c.key).slice(); });
