@@ -11093,6 +11093,54 @@ async function startCoordApp(){
         '<div class="val" style="color:'+(p<=3?'var(--win)':p>=7?'var(--loss)':'var(--text)')+'">'+p+'°</div></div>';
     }).join('')+'</div></div>';
 
+    /* ── RIVALES DEL CLUB ──────────────────────────────────────────
+       Mismo sistema que ya tiene la pantalla del profe (Tablas → próximo
+       rival): a cada rival del fixture le queda un punto de color si ya se
+       jugó, o la fecha si todavía falta, nunca vacío. Acá es a nivel CLUB, no
+       categoría: el resultado de cada fecha se arma sumando 2 puntos por
+       categoría ganada y 1 por empatada, en las mismas 6 categorías que
+       cuentan para la tabla general de la liga (las 2 más chicas no suman ahí,
+       así que tampoco acá — sería un criterio distinto para el mismo número).
+    */
+    h += '<div class="csec">'+icono('copa')+'Rivales del club<span class="cont">suman las '+CATS_EN_GENERAL+' categorías más grandes</span></div>';
+    if(!_hayFixture){
+      h += '<div class="cvacio">Todavía no hay fixture cargado para esta temporada.</div>';
+    } else {
+      const CATS_QUE_SUMAN = COMP_CATS.filter(c => (POS[c.num] || []).length)
+                                       .sort((a,b) => a.num - b.num)
+                                       .slice(0, CATS_EN_GENERAL);
+      const prox = proximaFecha();
+      h += '<div class="ccard">'+FIXTURE_C.filter(f=>f.cond!=='-').map(f=>{
+        let ptsUs=0, ptsThem=0, cargadas=0;
+        CATS_QUE_SUMAN.forEach(c=>{
+          const rd = resultadoDe(c.num, f.fecha);
+          if(!rd) return;
+          cargadas++;
+          if(rd.res==='V') ptsUs+=2; else if(rd.res==='E'){ ptsUs++; ptsThem++; } else ptsThem+=2;
+        });
+        const esProx = prox && +prox.fecha===+f.fecha;
+        let dotCol, valorHtml;
+        if(cargadas===0){
+          dotCol = esProx ? 'var(--accent)' : 'var(--muted)';
+          valorHtml = '<span style="color:'+dotCol+'">F'+f.fecha+'</span>';
+        } else {
+          dotCol = ptsUs>ptsThem?'var(--win)':ptsUs<ptsThem?'var(--loss)':'var(--draw)';
+          const parcial = cargadas<CATS_QUE_SUMAN.length
+            ? ' <span style="font-family:\'DM Sans\',sans-serif;font-size:var(--f-micro);color:var(--muted)">('+cargadas+'/'+CATS_QUE_SUMAN.length+')</span>'
+            : '';
+          valorHtml = '<span style="color:'+dotCol+'">'+ptsUs+' a '+ptsThem+'</span>'+parcial;
+        }
+        return '<div class="crow">'
+          +'<span style="width:9px;height:9px;border-radius:50%;flex:none;background:'+dotCol+'"></span>'
+          +'<div class="nom">'+esc(f.rival)+'</div>'
+          +'<div class="det">'+(f.cond==='L'?'Local':'Visita')+'</div>'
+          +'<div class="val">'+valorHtml+'</div>'
+          +'</div>';
+      }).join('')+'</div>';
+      h += '<div class="cnota">El resultado del club junta 2 puntos por categoría ganada y 1 por empatada, sumando las mismas '+
+           CATS_EN_GENERAL+' categorías que la tabla general de la liga. Si a un rival todavía le faltan categorías por cargar, queda marcado entre paréntesis.</div>';
+    }
+
     // Si todavía no se eligió categoría, arrancar en la primera que tenga tabla
     if(!catLiga){
       const conTabla = COMP_CATS.find(c => (POS[c.num]||[]).length);
