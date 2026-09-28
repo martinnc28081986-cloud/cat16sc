@@ -3438,6 +3438,12 @@ async function loadClubConfig(){
     // Si el usuario eligió una temporada a mano se respeta; si no, la vigente
     TORNEO_ID = window._viewTorneo || TORNEO_ACTIVO;
     DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath+'/torneos/'+TORNEO_ID;
+    // El subtítulo del header se pinta también desde un fetch aparte (más liviano,
+    // solo club+liga) que suele terminar ANTES que este loadClubConfig -- en ese
+    // momento TORNEO_ID todavía tiene su valor inicial ('default'), así que la
+    // "zona" del header sale mal (p.ej. "DEFAULT") hasta que se repinta acá, ya
+    // con TORNEO_ID resuelto.
+    renderHeaderSub();
     // Tablas y resultados de liga de la temporada que se está viendo
     aplicarLigaDataDeTemporada();
 
