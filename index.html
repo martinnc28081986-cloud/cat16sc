@@ -10367,6 +10367,33 @@ async function startCoordApp(){
     return { cargados:e.cargados, esperados:e.esperados };
   }
 
+  // Días de entrenamiento de semanas ANTERIORES (ventana acotada, no todo el
+  // año) que tenían que cargarse y nunca se cargaron. entrenosSemana() solo
+  // mira la semana en curso, así que un jueves/viernes sin cargar desaparecía
+  // del tablero apenas empezaba la semana siguiente, sin quedar en ningún
+  // lado -- mismo problema que ya se había resuelto para las citaciones (ver
+  // fechasSinCitar). Solo se chequean categorías que YA vienen usando la
+  // carga de entrenamientos (si nunca cargaron ninguno, no es un olvido
+  // puntual: ya se avisa aparte que la categoría no tiene datos).
+  const _SEMANAS_ATRAS_ENTRENO = 6;
+  function entrenosAtrasados(catKey){
+    const diasCat = diasDe(catKey);
+    const ses = datosDeCat(catKey).sesiones;
+    if(!diasCat.length || !Object.keys(ses).length) return [];
+    const s = _semanaActual(), out = [];
+    for(let w=1; w<=_SEMANAS_ATRAS_ENTRENO; w++){
+      const lunes = new Date(s.lunes); lunes.setDate(lunes.getDate() - 7*w);
+      for(let i=0;i<7;i++){
+        const d = new Date(lunes); d.setDate(lunes.getDate()+i);
+        const f = _isoLocal(d);
+        if(!diasCat.includes(d.getDay())) continue;
+        if(entSuspendidoEn(SUSP_ENT, f)) continue;
+        if(!ses[f]) out.push({ iso:f, dow:d.getDay() });
+      }
+    }
+    return out.sort((a,b)=> a.iso.localeCompare(b.iso));
+  }
+
   // Presencia del año por categoría, sobre el plantel REAL (no un 14 fijo)
   function presenciaDeCat(catKey){
     const plantel = (D[catKey] && D[catKey].plantel) || [];
@@ -10431,6 +10458,13 @@ async function startCoordApp(){
       if(e.esperados && e.cargados < e.esperados){
         out.push({ nivel:'media', cat:c, tipo:'entreno',
                    que:'Cargó '+e.cargados+' de '+e.esperados+' entrenamientos' });
+      }
+      const atrasados = entrenosAtrasados(c.key);
+      if(atrasados.length){
+        const nombres = atrasados.map(x => _NOMBRE_DIA[x.dow].toLowerCase()+' '+x.iso.slice(8,10)+'/'+x.iso.slice(5,7));
+        const lista = nombres.length > 6 ? nombres.slice(0,6).join(', ')+' +'+(nombres.length-6) : nombres.join(', ');
+        out.push({ nivel:'alta', cat:c, tipo:'entreno_atras', dias:atrasados,
+                   que: 'Nunca cargó entrenamiento de '+(nombres.length===1?'este día':'estos días')+': '+lista });
       }
     });
     const orden = {alta:0, media:1};
@@ -10656,6 +10690,13 @@ async function startCoordApp(){
       const e = entrenosSemana(c.key);
       if(e.esperados && e.cargados < e.esperados)
         por[c.key].push({ nivel:'media', cat:c, tipo:'entreno', que:'Cargó '+e.cargados+' de '+e.esperados+' entrenamientos' });
+      const atrasados = entrenosAtrasados(c.key);
+      if(atrasados.length){
+        const nombres = atrasados.map(x => _NOMBRE_DIA[x.dow].toLowerCase()+' '+x.iso.slice(8,10)+'/'+x.iso.slice(5,7));
+        const lista = nombres.length > 6 ? nombres.slice(0,6).join(', ')+' +'+(nombres.length-6) : nombres.join(', ');
+        por[c.key].push({ nivel:'alta', cat:c, tipo:'entreno_atras', dias:atrasados,
+                   que: 'Nunca cargó entrenamiento de '+(nombres.length===1?'este día':'estos días')+': '+lista });
+      }
     });
     return por;
   }
