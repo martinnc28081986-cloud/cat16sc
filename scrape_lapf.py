@@ -280,6 +280,11 @@ def main():
             print(f"   ❌ {z['liga_id']}: no se pudo scrapear (o quedó vacía) — se deja el archivo anterior como estaba")
             continue
         datos["meta"]["ligaId"] = z["liga_id"]
+        # "zona" tiene que ser el ligaId real, no el identificador interno de
+        # LAPF (torneo-categoria-rueda): es lo que compara _coincideZona() en
+        # index.html contra la zona que la app tiene abierta. Con cualquier
+        # otro valor, el archivo se descarga pero nunca se aplica.
+        datos["zona"] = z["liga_id"]
         fname = f"liga_data_{z['liga_id']}.json"
         with open(fname, "w", encoding="utf-8") as f:
             json.dump(datos, f, ensure_ascii=False, indent=2)
