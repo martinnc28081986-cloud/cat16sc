@@ -1753,7 +1753,18 @@ let _connectedCats = [];
    en unos doce lugares, y una categoría nueva quedaba sin resolver en algunos: por ejemplo
    la 2021 se tomaba por la 2016 al buscar resultados de liga.
    Para sumar una categoría nueva alcanza con agregar su clave a CATEGORIAS. */
-const CATEGORIAS = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020','escuelita'];
+// Segundo esquema de categorías: ligas que organizan por DIVISIÓN en vez de
+// por año de nacimiento (5ta la más grande, Pre-9na la más chica — mismo
+// sentido ascendente=más chica que ya usan los años). Se define acá, aparte
+// del año, porque una clave de división no tiene forma de año y cualquier
+// función que solo supiera parsear "cat(\d+)" les daría a todas el mismo
+// número (0) — chocarían entre sí al indexar tablas de posiciones.
+const DIVISION_CATS = {
+  div5ta:{num:101,label:'5ta'}, div6ta:{num:102,label:'6ta'}, div7ma:{num:103,label:'7ma'},
+  div8va:{num:104,label:'8va'}, div9na:{num:105,label:'9na'}, divpre9na:{num:106,label:'Pre-9na'}
+};
+const CATEGORIAS = ['cat13','cat2014','cat2015','cat16','cat2017','cat2018','cat2019','cat2020',
+                     'div5ta','div6ta','div7ma','div8va','div9na','divpre9na','escuelita'];
 // Año de la categoría: 'cat16' → 2016, 'cat13' → 2013, 'cat2014' → 2014. Escuelita y lo que no
 // tenga forma de categoría → 0.
 function anioDeCategoria(k){
@@ -1762,23 +1773,28 @@ function anioDeCategoria(k){
   const n = m[1];
   return n.length === 4 ? +n : +((+n <= 30 ? '20' : '19') + n);
 }
-// Número corto que usa la liga: 2016 → 16, 2013 → 13 (0 para Escuelita)
-function numDeCategoria(k){ const a = anioDeCategoria(k); return a ? a % 100 : 0; }
+// Número corto que usa la liga: 2016 → 16, 2013 → 13, división → 101-106 (0 para Escuelita)
+function numDeCategoria(k){
+  if(DIVISION_CATS[k]) return DIVISION_CATS[k].num;
+  const a = anioDeCategoria(k); return a ? a % 100 : 0;
+}
 // El mismo dato como "mapa" (NUM_DE_CATEGORIA['cat2014'] → 14), para el código que lo usa así.
 // No es una lista escrita a mano: cualquier clave con forma de categoría responde.
 const NUM_DE_CATEGORIA = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? (numDeCategoria(k) || undefined) : undefined) });
-// '2016' / 'ESC' (cartel de conexión, listas compactas)
-function catCorta(k){ return k === 'escuelita' ? 'ESC' : (anioDeCategoria(k) ? String(anioDeCategoria(k)) : String(k || '')); }
-// 'Cat 2016' / 'Escuelita'
-function catNombre(k){ return k === 'escuelita' ? 'Escuelita' : (anioDeCategoria(k) ? 'Cat '+anioDeCategoria(k) : String(k || '')); }
-// 'CAT 2016' / 'ESCUELITA' (insignia del encabezado)
+// '2016' / '5ta' / 'ESC' (cartel de conexión, listas compactas)
+function catCorta(k){ return k === 'escuelita' ? 'ESC' : DIVISION_CATS[k] ? DIVISION_CATS[k].label : (anioDeCategoria(k) ? String(anioDeCategoria(k)) : String(k || '')); }
+// 'Cat 2016' / '5ta' / 'Escuelita'
+function catNombre(k){ return k === 'escuelita' ? 'Escuelita' : DIVISION_CATS[k] ? DIVISION_CATS[k].label : (anioDeCategoria(k) ? 'Cat '+anioDeCategoria(k) : String(k || '')); }
+// 'CAT 2016' / '5TA' / 'ESCUELITA' (insignia del encabezado)
 function catMayus(k){ return catNombre(k).toUpperCase(); }
 // Opciones para armar un club o un usuario: [{key, label}]
 function catOpciones(){ return CATEGORIAS.map(k => ({ key:k, label:catNombre(k) })); }
 // Color de la categoría: los de siempre para las conocidas y uno estable derivado del nombre para
 // cualquier categoría nueva
 const _CAT_COLORES = { cat13:'#1D9E75', cat2014:'#D85A30', cat2015:'#7F77DD', cat16:'#D4537E', cat2017:'#BA7517',
-                       cat2018:'#378ADD', cat2019:'#639922', cat2020:'#E24B4A', escuelita:'#8fa3b8', coord:'#4aa3df' };
+                       cat2018:'#378ADD', cat2019:'#639922', cat2020:'#E24B4A',
+                       div5ta:'#c2410c', div6ta:'#b45309', div7ma:'#a16207', div8va:'#4d7c0f', div9na:'#0f766e', divpre9na:'#0e7490',
+                       escuelita:'#8fa3b8', coord:'#4aa3df' };
 function catColor(k){
   if(_CAT_COLORES[k]) return _CAT_COLORES[k];
   let h = 0; for(const ch of String(k)) h = (h*31 + ch.charCodeAt(0)) % 360;
@@ -8624,7 +8640,7 @@ window.saEntrarComo = function(cat, clubId){
 };
 
 window.saAltaClub = function(){
-  window._saModal = { step: 1, clubId: null, isNew: false, nombre: '', cats: [], usuarios: {}, torneoId: 'lisfi-zona-campeonato-2026' };
+  window._saModal = { step: 1, clubId: null, isNew: false, nombre: '', cats: [], usuarios: {}, torneoId: 'lisfi-zona-campeonato-2026', ligaFuente: '' };
   document.getElementById('saClubModal').style.display = 'block';
   window.saRenderStep(1);
 };
@@ -8680,6 +8696,24 @@ window.saRenderStep = async function(step){
       }
     } catch(e){ console.log('Error cargando clubs:', e); }
 
+    // Ligas ya dadas de alta (por este wizard o por una migración vieja):
+    // se listan al lado de las dos de LISFI, así una liga nueva creada para
+    // el primer club queda lista para el próximo club que se sume a ella,
+    // sin volver a escribir el ID a mano.
+    let ligasOpts = '';
+    try {
+      const ligasSnap = await get(ref(db, 'ligas'));
+      if(ligasSnap.exists()){
+        ligasSnap.forEach(function(child){
+          const id = child.key;
+          if(id === '_activa' || id === '_vigente' || id.startsWith('lisfi')) return;
+          const meta = child.val() && child.val().meta;
+          if(!meta) return;
+          ligasOpts += '<option value="'+id+'">'+(meta.nombre||id)+'</option>';
+        });
+      }
+    } catch(e){ console.log('Error cargando ligas:', e); }
+
     body.innerHTML = stepperHtml(1) + `
       <label style="font-size:var(--f-micro);font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:var(--sp-3);">Seleccioná o creá un club</label>
       <select id="saClubSelect" onchange="window.saOnClubSelect()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);color:var(--text);font-size:var(--f-md);font-family:DM Sans,sans-serif;margin-bottom:var(--sp-6);">
@@ -8696,9 +8730,11 @@ window.saRenderStep = async function(step){
         <select id="saTorneoSelect" onchange="window.saOnTorneoSelect()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);color:var(--text);font-size:var(--f-md);font-family:DM Sans,sans-serif;margin-bottom:var(--sp-4);">
           <option value="lisfi-zona-campeonato-2026">LISFI Zona Campeonato 2026</option>
           <option value="lisfi-2026-zona2b">LISFI 2026 Zona II B (temporada anterior)</option>
-          <option value="__nuevo__">+ Crear torneo nuevo</option>
+          ${ligasOpts}
+          <option value="__nuevo__">+ Crear torneo nuevo (liga nueva)</option>
         </select>
-        <input id="saTorneoNuevo" placeholder="ID del torneo (ej: lisfi-2026-zona2c)" style="display:none;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);color:var(--text);font-size:var(--f-md);font-family:DM Sans,sans-serif;outline:none;margin-bottom:var(--sp-4);">
+        <input id="saTorneoNuevo" placeholder="ID del torneo (ej: liga-nueva-2026)" style="display:none;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);color:var(--text);font-size:var(--f-md);font-family:DM Sans,sans-serif;outline:none;margin-bottom:var(--sp-4);">
+        <input id="saLigaFuente" placeholder="URL de la liga (opcional, para el scraper)" style="display:none;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);color:var(--text);font-size:var(--f-md);font-family:DM Sans,sans-serif;outline:none;margin-bottom:var(--sp-4);">
       </div>
       <div style="display:flex;gap:var(--sp-4);margin-top:var(--sp-4);">
         <button onclick="window.saCloseModal()" style="flex:1;padding:var(--sp-5);border-radius:var(--r-md);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:var(--f-sm);font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Cancelar</button>
@@ -8709,16 +8745,25 @@ window.saRenderStep = async function(step){
 
   } else if(step === 2){
     title.textContent = 'Categorías activas';
-    const allCats = CATEGORIAS;
     const sel = window._saModal.cats;
-    let catsHtml = '';
-    allCats.forEach(function(c){
+    const catBox = function(c){
       const on = sel.includes(c);
-      catsHtml += `<div onclick="window.saToggleCat('${c}')" style="background:${on?'rgba(106,189,230,.15)':'var(--surface2)'};border:1px solid ${on?'var(--accent)':'var(--border)'};border-radius:var(--r-md);padding:var(--sp-5) var(--sp-2);text-align:center;cursor:pointer;"><div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);color:${on?'var(--accent)':'var(--text)'};">${catCorta(c)}</div><div style="font-size:var(--f-micro);color:${on?'var(--win)':'var(--muted)'};margin-top:var(--sp-1);">${on?'✓ activa':'inactiva'}</div></div>`;
-    });
+      return `<div onclick="window.saToggleCat('${c}')" style="background:${on?'rgba(106,189,230,.15)':'var(--surface2)'};border:1px solid ${on?'var(--accent)':'var(--border)'};border-radius:var(--r-md);padding:var(--sp-5) var(--sp-2);text-align:center;cursor:pointer;"><div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-lg);color:${on?'var(--accent)':'var(--text)'};">${catCorta(c)}</div><div style="font-size:var(--f-micro);color:${on?'var(--win)':'var(--muted)'};margin-top:var(--sp-1);">${on?'✓ activa':'inactiva'}</div></div>`;
+    };
+    // Agrupadas por esquema: así no se mezclan por error categorías de años de
+    // nacimiento (infantiles) con las de división (juveniles) en un mismo club.
+    const infantiles = CATEGORIAS.filter(c => c !== 'escuelita' && !DIVISION_CATS[c]);
+    const juveniles = CATEGORIAS.filter(c => DIVISION_CATS[c]);
+    const grupoHtml = function(titulo, keys){
+      if(!keys.length) return '';
+      return '<div style="font-size:var(--f-micro);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:var(--sp-3);">'+titulo+'</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);margin-bottom:var(--sp-6);">' + keys.map(catBox).join('') + '</div>';
+    };
 
     body.innerHTML = stepperHtml(2)
-      + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);margin-bottom:var(--sp-6);">' + catsHtml + '</div>'
+      + grupoHtml('Infantiles (por año de nacimiento)', infantiles)
+      + grupoHtml('Juveniles (por división)', juveniles)
+      + grupoHtml('', ['escuelita'])
       + '<div style="display:flex;gap:var(--sp-4);">'
       + '<button onclick="window.saRenderStep(1)" style="flex:1;padding:var(--sp-5);border-radius:var(--r-md);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:var(--f-sm);font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">← Atrás</button>'
       + '<button onclick="window.saStep2Next()" style="flex:2;padding:var(--sp-5);border-radius:var(--r-md);border:none;background:var(--accent);color:#fff;font-size:var(--f-sm);font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif;">Siguiente →</button>'
@@ -8771,12 +8816,15 @@ window.saRenderStep = async function(step){
 window.saOnTorneoSelect = function(){
   const sel = document.getElementById('saTorneoSelect');
   const inp = document.getElementById('saTorneoNuevo');
+  const fuente = document.getElementById('saLigaFuente');
   if(!sel || !inp) return;
   if(sel.value === '__nuevo__'){
     inp.style.display = 'block';
+    if(fuente) fuente.style.display = 'block';
     window._saModal.torneoId = '';
   } else {
     inp.style.display = 'none';
+    if(fuente) fuente.style.display = 'none';
     window._saModal.torneoId = sel.value;
   }
 };
@@ -8821,6 +8869,21 @@ window.saStep1Next = function(){
     window._saModal.clubId = val;
     window._saModal.nombre = val;
   }
+  // El torneo hay que leerlo ACÁ, mientras el select y el input todavía están en
+  // pantalla (son del paso 1): antes se leía recién al tocar una categoría en el
+  // paso 2, pero ese HTML ya no existe ahí — el torneo elegido (o el ID del
+  // torneo nuevo) se perdía en silencio y el club quedaba sin liga asignada.
+  const tSel = document.getElementById('saTorneoSelect');
+  const tInp = document.getElementById('saTorneoNuevo');
+  if(tSel && tSel.value === '__nuevo__'){
+    const tid = (tInp && tInp.value || '').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    if(!tid){ showToast('Ingresá el ID del torneo nuevo'); return; }
+    window._saModal.torneoId = tid;
+    window._saModal.ligaFuente = (document.getElementById('saLigaFuente')?.value || '').trim();
+  } else if(tSel){
+    window._saModal.torneoId = tSel.value;
+    window._saModal.ligaFuente = '';
+  }
   window.saRenderStep(2);
 };
 
@@ -8829,18 +8892,6 @@ window.saToggleCat = function(cat){
   const idx = arr.indexOf(cat);
   if(idx >= 0) arr.splice(idx, 1);
   else arr.push(cat);
-  // Leer torneoId
-  const tSel = document.getElementById('saTorneoSelect');
-  const tInp = document.getElementById('saTorneoNuevo');
-  if(tSel && tInp){
-    if(tSel.value === '__nuevo__'){
-      const tid = tInp.value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-      if(!tid){ showToast('Ingresá el ID del torneo'); return; }
-      window._saModal.torneoId = tid;
-    } else {
-      window._saModal.torneoId = tSel.value;
-    }
-  }
   window.saRenderStep(2);
 };
 
@@ -8908,6 +8959,26 @@ window.saCrearClubFinal = async function(){
         cfgUpd.ligaNombre = (m.nombre||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
       }
       await update(ref(db, 'clubs/'+m.clubId+'/config'), cfgUpd);
+
+      // Liga nueva (no LISFI): dejarla registrada para que sea reutilizable
+      // por el próximo club que se sume, y visible para el scraper.
+      if(!m.torneoId.includes('lisfi')){
+        const hoy = new Date().toISOString().slice(0,10);
+        try{
+          await update(ref(db, 'ligas/'+m.torneoId+'/meta'), {
+            ligaId: m.torneoId, nombre: m.nombre, fuente: m.ligaFuente||'',
+            categorias: 'division', actualizadoEl: hoy
+          });
+        }catch(e){ console.warn('alta de club: no se pudo registrar ligas/{id}/meta', e); }
+        // ligas/_activa/{clubId} es el nodo publico que lee el scraper (sin login)
+        // para saber que zonas bajar -- sin esto, aunque exista un scraper para
+        // esta liga, nunca sabria que tiene que correr sobre ella.
+        try{
+          await update(ref(db, 'ligas/_activa/'+m.clubId), {
+            ligaId: m.torneoId, nombre: m.nombre, fuente: m.ligaFuente||'', actualizadoEl: hoy
+          });
+        }catch(e){ console.warn('alta de club: no se pudo registrar ligas/_activa', e); }
+      }
     }
 
     // 2. Crear usuarios (o reciclar la cuenta de un mail ya existente) y enviar invitaciones
