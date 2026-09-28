@@ -31,7 +31,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install --quiet requests beautifulsoup4 lxml
 
-      - name: Scrapear las zonas activas
+      - name: Scrapear las zonas activas (LISFI)
         # Lee ligas/_activa de Firebase y baja TODAS las zonas que juega algún
         # club, no una sola. Genera un liga_data_{zona}.json por zona, más
         # liga_data.json (la del club principal) y liga_data_index.json.
@@ -41,7 +41,17 @@ jobs:
         # no se toca liga_data.json, así la temporada en curso queda intacta.
         run: python scrape_lisfi.py
         # Una zona que no pasa la verificación no se escribe: su archivo queda
-        # como estaba. El job solo se corta si fallaron TODAS las zonas.
+        # como estaba. El job solo se corta si fallaron TODAS las zonas — y
+        # con continue-on-error, ni eso frena al scraper de LAPF que sigue.
+        continue-on-error: true
+
+      - name: Scrapear las zonas activas (LAPF)
+        # Mismo mecanismo (ligas/_activa), pero solo para zonas cuya fuente
+        # sea lapf.com.ar — estructura de página totalmente distinta a LISFI,
+        # por eso es un script aparte (ver scrape_lapf.py). Para recuperar una
+        # rueda vieja a mano: LAPF_ZONA_URL y LIGA_ID, correr, y sacarlo después.
+        run: python scrape_lapf.py
+        continue-on-error: true
 
       - name: Commitear si cambió
         run: |
