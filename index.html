@@ -2944,13 +2944,22 @@ async function subirZonaAFirebase(zonaDef, forzar){
 function nombreDeCategoria(cat){ return catNombre(cat); }
 window.nombreDeCategoria = nombreDeCategoria;
 
-// Liga y zona que se está mirando, para poner en el mensaje de WhatsApp.
-// Sale de lo mismo que el subtítulo del header, así los dos dicen igual.
-function nombreDelTorneoActual(){
+// Liga + zona sin repetir: si la "liga" (derivada de ligaId cuando no hay
+// nombre propio, ver window._clubLigaHeader) resulta ser el mismo texto que
+// la "zona" (nombre real del torneo) -- como pasa con LAPF, donde el nombre
+// scrapeado del torneo ya arranca con "LAPF" -- se muestra una sola vez.
+function _ligaZonaTexto(){
   const liga = window._clubLigaHeader || '';
   let zona = '';
   try{ zona = (torneoMeta(TORNEO_ID) || {}).nombre || ''; }catch(e){}
-  return [liga, zona].filter(Boolean).join(' · ');
+  if(liga && zona && liga.trim().toUpperCase() === zona.trim().toUpperCase()) return zona;
+  return [liga, zona].filter(Boolean).join(' ');
+}
+
+// Liga y zona que se está mirando, para poner en el mensaje de WhatsApp.
+// Sale de lo mismo que el subtítulo del header, así los dos dicen igual.
+function nombreDelTorneoActual(){
+  return _ligaZonaTexto();
 }
 window.nombreDelTorneoActual = nombreDelTorneoActual;
 
@@ -2961,10 +2970,7 @@ function renderHeaderSub(){
   const el = document.getElementById('headerSubEl');
   if(!el) return;
   const club = window._clubNombreHeader || '';
-  const liga = window._clubLigaHeader || '';
-  let zona = '';
-  try{ zona = (torneoMeta(TORNEO_ID) || {}).nombre || ''; }catch(e){}
-  const partes = [club, [liga, zona].filter(Boolean).join(' ')].filter(Boolean);
+  const partes = [club, _ligaZonaTexto()].filter(Boolean);
   el.textContent = partes.join(' · ').toUpperCase();
 }
 window.renderHeaderSub = renderHeaderSub;
