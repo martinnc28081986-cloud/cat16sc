@@ -5660,12 +5660,32 @@ const FORM7 = {
   '3-1-2':    [[38,150],[106,68],[112,150],[106,232],[183,150],[272,96],[272,204]],
   '2-1-2-1':  [[38,150],[96,96],[96,204],[160,150],[226,88],[226,212],[294,150]],
 };
+
+// Formaciones de 11 (juveniles: 5ta a Pre-9na, cancha reglamentaria) — mismo
+// viewBox 390x300 horizontal, ataque a la derecha, que FORM7.
+const FORM11 = {
+  '4-4-2':    [[30,150],[95,45],[95,120],[95,180],[95,255],[190,45],[190,120],[190,180],[190,255],[330,110],[330,190]],
+  '4-3-3':    [[30,150],[95,45],[95,120],[95,180],[95,255],[175,80],[175,150],[175,220],[330,60],[330,150],[330,240]],
+  '4-2-3-1':  [[30,150],[90,45],[90,120],[90,180],[90,255],[150,110],[150,190],[230,60],[230,150],[230,240],[335,150]],
+  '3-5-2':    [[30,150],[90,75],[90,150],[90,225],[190,35],[190,100],[190,150],[190,200],[190,265],[335,110],[335,190]],
+  '3-4-3':    [[30,150],[90,75],[90,150],[90,225],[180,45],[180,120],[180,180],[180,255],[330,60],[330,150],[330,240]],
+  '5-3-2':    [[30,150],[85,35],[85,95],[85,150],[85,205],[85,265],[190,80],[190,150],[190,220],[330,110],[330,190]],
+};
+
+// Categorías por división (ver DIVISION_CATS) juegan con cancha de 11; el
+// resto (por año de nacimiento, "infantiles") con la de 7.
+function _formacionesDeCategoria(){
+  return (typeof DIVISION_CATS !== 'undefined' && DIVISION_CATS[CFG.dbPath]) ? FORM11 : FORM7;
+}
+
 let _currentFormPreset = '2-3-1';
 
 window.renderFormPresetPills = function(){
   const el = document.getElementById('formPresetPills');
   if(!el) return;
-  const names = [...Object.keys(FORM7), 'Libre'];
+  const forms = _formacionesDeCategoria();
+  if(!forms[_currentFormPreset]) _currentFormPreset = Object.keys(forms)[0];
+  const names = [...Object.keys(forms), 'Libre'];
   el.innerHTML = '';
   names.forEach(function(name){
     const active = _currentFormPreset===name;
@@ -5685,7 +5705,7 @@ window.applyFormPreset = function(name){
     pitchPlayers={}; benchPlayers=[..._citados]; selectedPlayer=null;
     window.renderFormPresetPills(); drawPitch(); drawBench(); return;
   }
-  const coords = FORM7[name];
+  const coords = _formacionesDeCategoria()[name];
   if(!coords) return;
   pitchPlayers = {};
   benchPlayers = [..._citados];
@@ -5953,6 +5973,10 @@ function drawPitch(){
   const g = document.getElementById('pitchTokens');
   if(!g) return;
   g.innerHTML='';
+  // Con 11 en cancha (juveniles) hay menos lugar por jugador que con 7
+  // (infantiles): tokens más chicos para que no se pisen entre sí.
+  const nEnCancha = Object.keys(pitchPlayers).length;
+  const r = nEnCancha>9 ? '17' : nEnCancha>7 ? '19' : '22';
   Object.entries(pitchPlayers).forEach(([name, pos])=>{
     const display = getDisplayName(name);
     const isSelected = selectedPlayer===name;
@@ -5961,13 +5985,14 @@ function drawPitch(){
     // Sombra
     const sh = document.createElementNS('http://www.w3.org/2000/svg','circle');
     sh.setAttribute('cx',pos.x+1.2); sh.setAttribute('cy',pos.y+2);
-    sh.setAttribute('r','22'); sh.setAttribute('fill','rgba(0,0,0,0.32)');
+    sh.setAttribute('r',r); sh.setAttribute('fill','rgba(0,0,0,0.32)');
     g2.appendChild(sh);
-    // Círculo r=22 (antes 28: en la cancha horizontal, más chica, los tokens
+    // Círculo (r=22 con hasta 7 en cancha; más chico con más jugadores —
+    // ver nEnCancha arriba. En la cancha horizontal, más chica, los tokens
     // grandes se pisaban entre sí más fácil)
     const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
     c.setAttribute('cx', pos.x); c.setAttribute('cy', pos.y);
-    c.setAttribute('r','22');
+    c.setAttribute('r',r);
     c.setAttribute('fill', isSelected?'var(--draw)':_colorPuesto(name));
     c.setAttribute('stroke', isSelected?'white':'rgba(255,255,255,0.8)');
     c.setAttribute('stroke-width','2');
@@ -5977,7 +6002,7 @@ function drawPitch(){
     t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','central');
     t.setAttribute('fill', isSelected?'#000':'white');
     t.setAttribute('pointer-events','none');
-    t.setAttribute('font-size', display.length>6?'8.5':display.length>4?'10':'11.5');
+    t.setAttribute('font-size', nEnCancha>9 ? (display.length>6?'6.5':display.length>4?'7.5':'8.5') : display.length>6?'8.5':display.length>4?'10':'11.5');
     t.setAttribute('font-family','DM Sans,Arial,sans-serif');
     t.setAttribute('font-weight','700');
     t.textContent = display;
