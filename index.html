@@ -2937,18 +2937,11 @@ async function subirZonaAFirebase(zonaDef, forzar){
 }
 
 // 'LISFI' -> 'lisfi'.  Sirve de clave en ligas/_vigente/{liga}
-// Nombre lindo de una categoría a partir de su clave, sin mapa fijo:
-//   cat2017 -> 'Cat 2017'   ·   cat16 -> 'Cat 2016'   ·   escuelita -> 'Escuelita'
-// Las categorías son el año de nacimiento y cada año entra una nueva, así que
-// un mapa escrito a mano obligaría a editar el código todos los años.
-function nombreDeCategoria(cat){
-  const k = String(cat || '');
-  if(k === 'escuelita') return 'Escuelita';
-  const m = k.match(/^cat(\d{2,4})$/);
-  if(!m) return k;
-  const n = m[1];
-  return 'Cat ' + (n.length === 4 ? n : (+n <= 30 ? '20' : '19') + n);
-}
+// Nombre lindo de una categoría a partir de su clave: delega en catNombre()
+// (más arriba, junto a DIVISION_CATS) en vez de reimplementar el mismo
+// parseo — esta función existía como una segunda copia que solo sabía de
+// años de nacimiento y no reconocía las categorías por división.
+function nombreDeCategoria(cat){ return catNombre(cat); }
 window.nombreDeCategoria = nombreDeCategoria;
 
 // Liga y zona que se está mirando, para poner en el mensaje de WhatsApp.
@@ -3164,8 +3157,12 @@ function configDeCategoria(cat){
   const base  = CAT_CONFIG[clave];
   if(base) return Object.assign({}, base);
 
-  // ¿Tiene forma de categoría? cat2021, cat13, cat16...
-  if(/^cat\d{2,4}$/.test(clave)){
+  // ¿Tiene forma de categoría? cat2021, cat13, cat16... o una división
+  // (div5ta...divpre9na, ver DIVISION_CATS) — antes esta función solo conocía
+  // el esquema por año, así que a un club de división (como TRICOLORES) lo
+  // mandaba derecho al "fallback" de abajo y quedaba escribiendo sus datos
+  // en la ruta de cat16 de OTRO club, sin ningún aviso visible en pantalla.
+  if(/^cat\d{2,4}$/.test(clave) || DIVISION_CATS[clave]){
     console.log('[MI PLANTEL] Categoría', clave, 'sin config propia — se arma automática');
     return { label:'MI PLANTEL', dbPath: clave, matchTime:'', address:'' };
   }
