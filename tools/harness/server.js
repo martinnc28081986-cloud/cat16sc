@@ -82,6 +82,7 @@ function seed() {
       PROFEB:   { role: 'profe', clubId: 'clubB', cat: 'cat16', email: 'b@x.com' },
       PROFEC:   { role: 'profe', clubId: 'clubC', cat: 'cat2021', email: 'c@x.com' },                  // categoría nueva
       COORDC:   { role: 'coordinator', clubId: 'clubC', email: 'cc@x.com' },
+      PROFET:   { role: 'profe', clubId: 'tricolores', cats: ['div5ta'], email: 't@x.com' },            // club de LAPF (divisiones)
       SA:       { role: 'super-admin', email: 'sa@x.com' },
       BAJ1:     { email: 'baja@x.com', role: 'baja', bajaTs: 1 },                                        // usuario dado de baja
       BADROL:   { role: 'coordinador', clubId: 'clubA', email: 'bad@x.com' },                           // rol que la app no reconoce
@@ -89,8 +90,14 @@ function seed() {
       SINCAT:   { role: 'profe', clubId: 'clubA', email: 'sincat@x.com' },                              // profe sin categoría
     },
     // Fixture de la liga (para probar citaciones y pendientes en clubes que usan liga)
-    ligas: { 'lisfi-zona-campeonato-2026': { fixture: { 1: { rival: 'X1' }, 2: { rival: 'TALLERES B.' }, 3: { rival: 'DEFENSA' }, 4: { rival: 'V.S CARLOS BCO.' }, 30: { rival: 'PROXIMO FC' } } } },
+    ligas: { 'lisfi-zona-campeonato-2026': { fixture: { 1: { rival: 'X1' }, 2: { rival: 'TALLERES B.' }, 3: { rival: 'DEFENSA' }, 4: { rival: 'V.S CARLOS BCO.' }, 30: { rival: 'PROXIMO FC' } } },
+      // Zona de LAPF con su fixture real (lo necesita la app para aplicar el liga_data de esa zona)
+      'lapf-primerab-2026-rueda2': { schedule: JSON.parse(fs.readFileSync(path.join(ROOT, 'liga_data_lapf-primerab-2026-rueda2.json'), 'utf8')).schedule } },
     clubs: {
+      // Club de LAPF: lee liga_data_lapf-primerab-2026-rueda2.json (divisiones 101-106)
+      tricolores: { nombre: 'TRICOLORES', cats: ['div5ta', 'div6ta'],
+        config: { torneoActivo: 'lapf-primerab-2026-rueda2', ligaId: 'lapf-primerab-2026-rueda2', ligaNombre: 'TRICOLORES', liga: 'LAPF' },
+        div5ta: { players: { p0: { nombre: 'Juvenil Uno', activo: true } }, torneos: { 'lapf-primerab-2026-rueda2': { attendance: {}, citaciones: {}, stats: {} } } } },
       clubC: { nombre: 'Club C', cats: ['cat13', 'cat16', 'cat2021', 'cat13', 'cat16', 'cat2021'],
         config: { torneoActivo: 'zc', ligaNombre: 'CLUB C', temporadas: { zc: { nombre: 'Torneo C', orden: 1 } } },
         cat2021: { players: { p0: { nombre: 'Nene Uno', activo: true }, p1: { nombre: 'Nene Dos', activo: true } }, torneos: { zc: { attendance: {}, citaciones: {}, stats: {} } } } },

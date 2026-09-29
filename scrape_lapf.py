@@ -29,15 +29,15 @@ meta), para que el resto de la app (deriveFixtureFromSchedule,
 resultadosDelClub, etc.) lea exactamente igual sin importar de qué liga
 vino el dato.
 
-Varias divisiones por zona (TRICOLORES en 5ta y 6ta, por ejemplo): se
-comprobó a mano contra el sitio que TODAS las divisiones de un mismo torneo
-juegan el mismo fixture (misma fecha, mismo club rival — solo cambian los
-resultados y la tabla de cada una), así que el `schedule` es uno solo por
-zona, pero `teamResults`/`posiciones` se guardan por separado por división
-(mismo número que DIVISION_CATS en index.html), igual que ya hace
-scrape_lisfi.py con sus categorías. Qué divisiones scrapear de cada zona sale
-de sumar los `cats` de todos los clubes que la tienen como `ligas/_activa`
-(un club puede jugar más de una), no de adivinar ni de hardcodear una sola.
+Varias divisiones por zona: se comprobó a mano contra el sitio que TODAS
+las divisiones de un mismo torneo juegan el mismo fixture (misma fecha, mismo
+club rival — solo cambian los resultados y la tabla de cada una), así que el
+`schedule` es uno solo por zona, pero `teamResults`/`posiciones` se guardan
+por separado por división (mismo número que DIVISION_CATS en index.html),
+igual que ya hace scrape_lisfi.py con sus categorías. Se bajan TODAS las
+divisiones que ofrece el selector del torneo, no solo las que juega el club:
+la vista "Resultados" de la app muestra la fecha completa de la zona (como la
+página de la liga) con el total del club, y los clubes van sumando divisiones.
 """
 
 import requests
@@ -280,10 +280,11 @@ def scrape_una_division(torneo_id, cat_id, rueda, primera_soup=None):
 def scrape_zona(url, divisiones_extra):
     """
     url: la fuente con la que se dio de alta la zona — una división puntual
-    (torneoId/categoriaId/fecha/rueda). Su categoriaId SIEMPRE se scrapea.
-    divisiones_extra: nombres de división (ver DIVISION_NUM) de otros clubes
-    de la misma zona que juegan una división distinta — se agregan si el
-    propio selector de categorías del sitio las conoce para este torneo.
+    (torneoId/categoriaId/fecha/rueda). Su categoriaId SIEMPRE se scrapea, y
+    además todas las demás divisiones del selector del torneo.
+    divisiones_extra: divisiones que juegan los clubes de la app en esta zona
+    (ligas/_activa). Ya no deciden qué se baja — solo se avisa si alguna no
+    aparece en el torneo, porque ese club se quedaría sin datos.
     """
     m = re.search(r"/datos-torneo/(\d+)/(\d+)/\d+/(\d+)", url)
     if not m:
@@ -306,14 +307,12 @@ def scrape_zona(url, divisiones_extra):
                 cat_id_por_nombre[opt.get_text(strip=True).upper()] = om.group(1)
 
     a_scrapear = [(cat_id_base, primera)]  # la de la URL, ya bajada
+    for nombre_div, cid in sorted(cat_id_por_nombre.items()):
+        if cid != cat_id_base:
+            a_scrapear.append((cid, None))
     for nombre_div in sorted(divisiones_extra):
-        cid = cat_id_por_nombre.get(nombre_div)
-        if not cid:
-            print(f"   ⚠️  \"{nombre_div}\" no aparece en el selector de este torneo — se saltea")
-            continue
-        if cid == cat_id_base:
-            continue
-        a_scrapear.append((cid, None))
+        if nombre_div not in cat_id_por_nombre:
+            print(f"   ⚠️  \"{nombre_div}\" (la juega un club de la app) no aparece en el selector de este torneo")
 
     schedule_zona = None
     team_results_por_cat = {}
