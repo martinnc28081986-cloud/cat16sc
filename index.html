@@ -3863,7 +3863,13 @@ function _getPlayedFechas(){
 function _getProximoPartidoReal(fixture, suspensions){
   const playedFechas = _getPlayedFechas();
   if(playedFechas.size > 0){
-    const next = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && !playedFechas.has(f.fecha));
+    // Sigue al fixture: la fecha siguiente a la ÚLTIMA jugada, no "la primera
+    // sin resultado". Una fecha vieja que se suspendió y nunca se recuperó
+    // (nadie en la liga tiene resultado de esa fecha, no es solo este club)
+    // quedaba pegada ahí como "próximo partido" para siempre, aunque el
+    // campeonato ya hubiera seguido jugando fechas más adelante sin ella.
+    const ultima = Math.max(...playedFechas);
+    const next = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && f.fecha > ultima);
     if(next) return Promise.resolve(next);
     return Promise.resolve(null); // ya se jugaron todas las fechas reales
   }
@@ -5759,11 +5765,16 @@ function renderFormacion(){
   if(!PLAYERS.length){ mainEl.style.display='none'; noEl.style.display='block'; return; }
 
   const _playedF1=_getPlayedFechas();
+  // Sigue al fixture: una fecha vieja que se suspendió y nunca se jugó (nadie
+  // en la liga tiene resultado de ella) no cuenta como "próxima a citar" --
+  // si no, la Formación quedaba pegada en esa fecha para siempre en vez de
+  // pasar a la que realmente sigue.
+  const _ultimaF1 = _playedF1.size ? Math.max(..._playedF1) : -Infinity;
   let proximoKey = null, proximoF = null;
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
     if(_suspensions[f.fecha]) continue;
-    if(_playedF1.size>0 && _playedF1.has(f.fecha)) continue; // ya jugada
+    if(_playedF1.size>0 && (f.fecha <= _ultimaF1)) continue; // ya jugada o vieja sin jugar
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
     if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey=key; proximoF=f; break; }
@@ -10306,12 +10317,16 @@ async function startCoordApp(){
       +x.fecha === +f.fecha && x.citados && x.citados.length > 0);
   }
 
-  // La fecha que viene: la primera jugable, no suspendida y sin resultado
+  // La fecha que viene: sigue al fixture (la siguiente a la ÚLTIMA jugada),
+  // no "la primera sin resultado" -- una fecha vieja suspendida y nunca
+  // recuperada quedaría marcada para siempre como "la que viene" en el
+  // calendario, en vez de aparecer como "pendiente" (ver vistaCalendario) y
+  // dejar pasar a la fecha real que sigue.
   function proximaFecha(){
     if(!_hayFixture) return null;
-    const jugadas = new Set();
-    COMP_CATS.forEach(c => (RESULTADOS[c.num]||[]).forEach(r => jugadas.add(+r.f)));
-    return FIXTURE_C.find(f => f.cond !== '-' && !_suspensions[f.fecha] && !jugadas.has(+f.fecha)) || null;
+    const ult = ultimaJugada();
+    const desde = ult ? ult.fecha : -Infinity;
+    return FIXTURE_C.find(f => f.cond !== '-' && !_suspensions[f.fecha] && f.fecha > desde) || null;
   }
   // La última jugada, para mostrar los resultados del fin de semana
   function ultimaJugada(){
