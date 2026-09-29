@@ -39,6 +39,10 @@ function seed() {
   const z2cit = {
     fecha01_rival_d: mk(1, 'RIVAL D', ['Benja', 'Ciro', 'Feli', 'Santi'], '2026-08-15', { noCitados: { Mateo: 'lesion', Ramiro: 'rotacion' } }),
     fecha02_rival_e: mk(2, 'RIVAL E', ['Benja', 'Ciro', 'Mateo'], '2026-08-22'),
+    // Partidos fuera del torneo (sin número de fecha): un amistoso con fecha de partido y una copa solo con ts.
+    // Tienen que aparecer en su lugar en el tiempo, no al final de las listas.
+    extra_1: { tipo: 'amistoso', rival: 'AMISTOSO X', condicion: 'L', ts: Date.parse('2026-08-18T15:00:00'), fecha_str: '2026-08-18', citados: ['Benja', 'Ciro', 'Santi'] },
+    extra_2: { tipo: 'torneo', torneo_nombre: 'Copa Y', rival: 'COPA RIVAL', condicion: 'V', ts: Date.parse('2026-08-29T15:00:00'), citados: ['Benja', 'Feli', 'Mateo'] },
   };
   const z2stats = {};
   Object.keys(z2cit).forEach(k => { z2stats[k] = { jugadores: {} }; z2cit[k].citados.forEach(n => { z2stats[k].jugadores[n] = { jugo: 'todo' }; }); });

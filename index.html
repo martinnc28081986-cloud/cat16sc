@@ -3305,6 +3305,54 @@ function htmlResultadosZona(o){
   return h;
 }
 
+// ── ORDEN CRONOLÓGICO DE PARTIDOS ──
+// Fechas del torneo, amistosos y copas van en la misma lista, cada uno en su
+// lugar en el tiempo. Antes el historial de formaciones ordenaba por número de
+// fecha (un amistoso no tiene, así que caía al fondo, debajo de la fecha 1) y el
+// de citaciones confiaba en savedAt, que las citaciones viejas no tienen.
+// Momento de cada partido, en este orden: la fecha real del partido (fecha_str),
+// en un extra el momento en que se creó (ts), el día en que se citó (savedAt).
+// Una fecha del torneo sin ninguno de esos datos se ubica a partir de las otras
+// fechas del torneo que sí lo tienen (una semana por fecha).
+function _parseDia(v){
+  if(v == null || v === '') return NaN;
+  if(typeof v === 'number') return v;
+  const t = String(v).trim();
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return Date.UTC(+m[1], m[2] - 1, +m[3], 12);
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if(m) return Date.UTC(+m[3] < 100 ? 2000 + +m[3] : +m[3], m[2] - 1, +m[1], 12);
+  const d = Date.parse(t);
+  return isNaN(d) ? NaN : d;
+}
+function _momentoConocido(x){
+  for(const v of [x.fecha_str, x.tipo ? x.ts : null, x.savedAt, x.ts]){
+    const t = _parseDia(v);
+    if(!isNaN(t)) return t;
+  }
+  return NaN;
+}
+// entradas: [[key, citacion], ...]. Devuelve una copia, del más reciente al más viejo.
+function ordenarPartidosDesc(entradas){
+  const SEMANA = 7 * 86400000;
+  const conocidas = entradas.filter(([, x]) => x && !x.tipo && !isNaN(_momentoConocido(x)) && +x.fecha);
+  const momento = x => {
+    const t = _momentoConocido(x);
+    if(!isNaN(t)) return t;
+    const f = +x.fecha || 0;
+    if(!x.tipo && conocidas.length){
+      const ref = conocidas.reduce((a, b) => Math.abs(+b[1].fecha - f) < Math.abs(+a[1].fecha - f) ? b : a)[1];
+      return _momentoConocido(ref) + (f - +ref.fecha) * SEMANA;
+    }
+    return Date.UTC(2026, 2, 10) + f * SEMANA;   // sin ningún dato: estimación vieja
+  };
+  return entradas.map(e => [e, momento(e[1] || {})])
+    .sort((a, b) => (b[1] - a[1]) ||
+      // mismo momento: las del torneo por número de fecha, los extras por creación
+      ((b[0][1].tipo ? (b[0][1].ts || 0) : +(b[0][1].fecha || 0)) - (a[0][1].tipo ? (a[0][1].ts || 0) : +(a[0][1].fecha || 0))))
+    .map(([e]) => e);
+}
+
 function startApp(cat){
 // Puede venirse de "Entrar como" del panel de coordinación sin recargar la
 // página, así que hay que devolver el chrome del profe a su estado normal.
@@ -5510,45 +5558,9 @@ function renderCitStats(){
   const matchList=document.getElementById('citMatchList');
   if(matchList){
     matchList.innerHTML='';
-    // Ordenar mezclando regulares y extras cronológicamente.
-    // Clave comparable: extras usan fecha_str (YYYY-MM-DD), regulares usan número de fecha padded.
-    // Para mezclarlos: asumimos que cada fecha del torneo cae en semanas consecutivas desde F1.
-    // Si hay fecha_str en el extra, la comparamos directamente. Si no, usamos ts convertido a fecha.
-    const _FIXTURE_REF = (typeof FIXTURE_C !== 'undefined' ? FIXTURE_C : (window.FIXTURE||[])); const FIXTURE_C_SORTED = [..._FIXTURE_REF].sort((a,b)=>a.fecha-b.fecha);
-    const _fechaToDate = fn => {
-      const f = FIXTURE_C_SORTED.find(x=>x.fecha===+fn);
-      return f && f.dateStr ? f.dateStr : null; // dateStr si existe en el fixture
-    };
-    // Convertir todo a timestamp numérico para ordenar correctamente.
-    // Prioridad: savedAt (fecha real en que se guardó/citó ese partido, la
-    // pone el propio guardado) o fecha_str (fecha real del partido) — son
-    // datos reales, no una estimación. Antes las regulares SIEMPRE se
-    // aproximaban con una fecha de inicio de temporada hardcodeada
-    // (10/03/2026) + N semanas, y esa cuenta quedaba vieja cada vez que
-    // cambiaba de zona/temporada (la Zona Campeonato 2026 arranca meses
-    // después de esa fecha), así que un amistoso citado recién siempre
-    // terminaba pareciendo "más nuevo" que TODAS las fechas regulares,
-    // aunque se hubiera citado mucho después. Esa cuenta ahora es el último
-    // recurso, solo para citaciones viejas sin savedAt/fecha_str/ts.
-    const _TORNEO_T0 = Date.parse('2026-03-10'); // F1 ≈ 10 mar 2026 (solo fallback)
-    const _citTs = ([k,x]) => {
-      if(x.savedAt) return Date.parse(x.savedAt);
-      if(x.fecha_str) return Date.parse(x.fecha_str);
-      if(x.ts) return x.ts;
-      if(!x.tipo) return _TORNEO_T0 + (+(x.fecha||0)) * 7 * 86400000;
-      return 0;
-    };
-    const allDesc=Object.entries(citaciones)
-      .filter(([,m])=>m.citados&&m.citados.length>0)
-      .sort((a,b)=>{
-        const d = _citTs(b)-_citTs(a);
-        if(d) return d;
-        // savedAt solo tiene día (sin hora): si dos regulares se citaron el
-        // mismo día, desempata por número de fecha para no dejarlo al azar.
-        const ta = a[1].tipo ? (a[1].ts||0) : (+(a[1].fecha||0));
-        const tb = b[1].tipo ? (b[1].ts||0) : (+(b[1].fecha||0));
-        return tb - ta;
-      });
+    // Fechas del torneo, amistosos y copas mezclados en orden cronológico (ver ordenarPartidosDesc)
+    const allDesc=ordenarPartidosDesc(Object.entries(citaciones)
+      .filter(([,m])=>m.citados&&m.citados.length>0));
     if(!allDesc.length){ matchList.innerHTML='<div class="empty-msg">Sin citaciones guardadas aún</div>'; }
     allDesc.forEach(([key,saved])=>{
       const resCls=saved.result==='V'?'rV':saved.result==='L'?'rL':saved.result==='E'?'rE':'';
@@ -6092,13 +6104,14 @@ function renderFormacionHistorial(){
     if(!(cit && cit.citados && cit.citados.length>0)){ proximoKey2=key; proximoF2=f; break; }
   }
 
-  const todosCitados = Object.entries(citaciones)
-    .filter(function(_ref){ return _ref[1].citados && _ref[1].citados.length>0; })
-    .sort(function(a,b){ return (b[1].fecha||0)-(a[1].fecha||0); });
+  const todosCitados = ordenarPartidosDesc(Object.entries(citaciones)
+    .filter(function(_ref){ return _ref[1].citados && _ref[1].citados.length>0; }));
 
   dd.innerHTML = '';
 
   function makeItem(key, fecha, rival, condicion, citCount, tieneForm, rd, isActual, labelTop){
+    // fecha del torneo → "F3"; un amistoso o una copa llegan con su nombre ya armado
+    const fLbl = (fecha != null && /^\d+$/.test(String(fecha))) ? 'F'+fecha : (fecha || '');
     const div = document.createElement('div');
     div.style.cssText = 'padding:var(--sp-4) var(--sp-5);display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);background:'+(isActual?'rgba(106,189,230,.15)':'transparent')+';'+(isActual?'border-left:2px solid var(--green);':'');
     const condLabel = condicion==='L'?'Local':'Visita';
@@ -6106,8 +6119,8 @@ function renderFormacionHistorial(){
     const resHtml = rd ? '<span style="font-family:Bebas Neue,sans-serif;font-size:var(--f-sm);letter-spacing:1px;padding:var(--sp-1) var(--sp-4);border-radius:var(--r-sm);display:inline-block;margin-left:var(--sp-2);vertical-align:middle;background:'+rd.bg+';color:'+rd.color+';">'+rd.score+'</span>' : '';
     const tag = tieneForm ? '<span style="font-size:var(--f-micro);color:var(--win);font-weight:700;">&#10003; guardada</span>' : '<span style="font-size:var(--f-micro);color:var(--muted);">sin form.</span>';
     const left = document.createElement('div');
-    left.innerHTML = '<div style="font-size:var(--f-micro);font-weight:700;color:'+( labelTop?'var(--win)':'var(--muted)')+';margin-bottom:var(--sp-1);">'+(labelTop||'F'+fecha+' &middot; <span class="fixture-badge '+condCls+'" style="font-size:var(--f-micro);">'+condLabel+'</span>')+'</div>'
-      +'<div style="font-weight:600;font-size:var(--f-md);">'+(labelTop?'F'+fecha+' vs ':'' )+_fmtRival(rival||'?')+' '+(labelTop?'<span class="fixture-badge '+condCls+'" style="font-size:var(--f-micro);">'+condLabel+'</span>':'')+resHtml+'</div>'
+    left.innerHTML = '<div style="font-size:var(--f-micro);font-weight:700;color:'+( labelTop?'var(--win)':'var(--muted)')+';margin-bottom:var(--sp-1);">'+(labelTop||fLbl+' &middot; <span class="fixture-badge '+condCls+'" style="font-size:var(--f-micro);">'+condLabel+'</span>')+'</div>'
+      +'<div style="font-weight:600;font-size:var(--f-md);">'+(labelTop?fLbl+' vs ':'' )+_fmtRival(rival||'?')+' '+(labelTop?'<span class="fixture-badge '+condCls+'" style="font-size:var(--f-micro);">'+condLabel+'</span>':'')+resHtml+'</div>'
       +'<div style="font-size:var(--f-micro);color:var(--muted);margin-top:var(--sp-1);">'+(citCount!==null?citCount+' citados &middot; '+tag:'Sin citación aún')+'</div>';
     const right = document.createElement('div');
     right.style.cssText = 'font-size:var(--f-sm);color:'+(isActual?'var(--green)':'var(--win)')+';';
@@ -6141,7 +6154,8 @@ function renderFormacionHistorial(){
   todosCitados.forEach(function(_ref2){
     const key = _ref2[0], m = _ref2[1];
     const isActual = key===_formacionCurrentKey;
-    dd.appendChild(makeItem(key, m.fecha, m.rival, m.condicion, (m.citados||[]).length, !!m.formacion, _getResultData(key), isActual, null));
+    const fechaLbl = m.tipo ? (m.tipo==='torneo' ? (m.torneo_nombre||'Torneo') : 'Amistoso') : m.fecha;
+    dd.appendChild(makeItem(key, fechaLbl, m.rival, m.condicion, (m.citados||[]).length, !!m.formacion, _getResultData(key), isActual, null));
   });
 }
 
