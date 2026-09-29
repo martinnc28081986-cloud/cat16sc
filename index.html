@@ -3196,6 +3196,115 @@ async function migrarTemporadaSiHaceFalta(){
   }catch(e){ console.warn('migrarTemporadaSiHaceFalta:', e); return false; }
 }
 
+// ── RESULTADOS DE LA ZONA (compartido) ──
+// La misma grilla que publica la liga en su página de resultados: por fecha, cada
+// partido con el resultado de cada categoría y el total del club. Sale de
+// LIGA_DATA.teamResults (lo baja el scraper con los resultados de TODOS los
+// equipos), así que se actualiza solo junto con las tablas.
+// Por fecha: { partidos:[{l, v, c:{cat:[gl,gv]}}], libres:[...], conResultados }.
+// Los partidos salen del fixture de la zona (LIGA_DATA.schedule), así una fecha
+// que se está jugando muestra también los que todavía no tienen resultado, y el
+// libre es el que no juega de verdad (no el que todavía no cargó el resultado).
+// Sin fixture, se arma solo con los resultados.
+function _partidosPorFecha(schedule){
+  const res = {};   // fecha -> [{l, v, c}] desde los resultados
+  Object.entries(LIGA_DATA.teamResults || {}).forEach(([cat, equipos]) =>
+    Object.entries(equipos || {}).forEach(([eq, ps]) => (ps || []).forEach(p => {
+      if(!p || p.cond !== 'L' || p.fecha == null) return;   // cada partido una vez, desde el local
+      const lista = res[p.fecha] = res[p.fecha] || [];
+      let m = lista.find(x => x.l === eq && x.v === p.rival);
+      if(!m) lista.push(m = { l: eq, v: p.rival, c: {} });
+      m.c[cat] = [Number(p.gf) || 0, Number(p.gc) || 0];
+    })));
+  const mismo = (a, b) => _claveEquipo(a) === _claveEquipo(b) || _m5(a) === _m5(b);
+  const sched = schedule || LIGA_DATA.schedule || {};
+  const fechas = {};
+  new Set([...Object.keys(sched), ...Object.keys(res)].map(Number)).forEach(f => {
+    const conRes = (res[f] || []).slice();
+    const partidos = [], libres = [];
+    const prog = sched[f] ?? sched[String(f)];
+    (Array.isArray(prog) ? prog : Object.values(prog || {})).forEach(m => {
+      if(!m) return;
+      if(m.libre){ libres.push(m.libre); return; }
+      const l = m.h || m.local, v = m.a || m.visitante;
+      if(!l || !v) return;
+      const i = conRes.findIndex(x => mismo(x.l, l) && mismo(x.v, v));
+      partidos.push(i >= 0 ? conRes.splice(i, 1)[0] : { l, v, c: {} });
+    });
+    partidos.push(...conRes);   // resultados que no estaban en el fixture: igual se muestran
+    fechas[f] = { partidos, libres, conResultados: partidos.some(p => Object.keys(p.c).length) };
+  });
+  return fechas;
+}
+
+// o: { fecha, modo ('todas'|'mia'), catNum, catNombre, myName, minFechas,
+//      onFecha, onModo (nombres de funciones globales), schedule?, ligaId? }
+// Lo usan la pestaña Tablas del profe y la vista Liga de coordinación.
+function htmlResultadosZona(o){
+  const { catNum, myName } = o;
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const fechas = _partidosPorFecha(o.schedule);
+  const jugadas = Object.keys(fechas).map(Number).filter(f => fechas[f].conResultados).sort((a, b) => a - b);
+  if(!jugadas.length) return '<div class="empty-msg" style="padding:var(--sp-9) 0">Todavía no hay resultados de la zona.</div>';
+  const totalFechas = Math.max(...Object.keys(fechas).map(Number), o.minFechas || 0);
+  const fecha = (o.fecha && fechas[o.fecha]) ? o.fecha : jugadas[jugadas.length - 1];
+  const modo = o.catNombre ? (o.modo || 'todas') : 'todas';
+
+  // Categorías de la zona, de la más grande a la más chica, y las que suman al total
+  const cats = Object.keys(LIGA_DATA.teamResults || {}).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+  const suman = cats.slice(0, catsEnGeneral(o.ligaId));
+  const pv = puntosPorVictoria(o.ligaId);
+  const etiqueta = n => { const d = Object.values(DIVISION_CATS).find(x => x.num === n); return d ? d.label : String(n); };
+  const esMio = eq => _claveEquipo(eq) === _claveEquipo(myName || '') || (!!myName && _m5(eq) === _m5(myName));
+  const total = c => { let l = 0, v = 0; suman.forEach(n => { const r = c[n]; if(!r) return;
+    if(r[0] > r[1]) l += pv; else if(r[0] < r[1]) v += pv; else { l++; v++; } }); return [l, v]; };
+
+  // Primero el de tu club, después los que ya tienen resultado, al final los pendientes
+  const tieneRes = p => Object.keys(p.c).length > 0;
+  const partidos = fechas[fecha].partidos.slice().sort((a, b) =>
+    ((esMio(b.l) || esMio(b.v)) - (esMio(a.l) || esMio(a.v))) || (tieneRes(b) - tieneRes(a)));
+  // Libre: el que marca el fixture; si no lo marca, el equipo de la tabla que no
+  // aparece en ningún partido de la fecha (con fixture, la fecha está completa)
+  const juega = e => partidos.some(p => [p.l, p.v].some(x => _claveEquipo(x) === _claveEquipo(e) || _m5(x) === _m5(e)));
+  const libres = fechas[fecha].libres.length ? fechas[fecha].libres
+    : (LIGA_DATA.posiciones && LIGA_DATA.posiciones[cats[0]] || []).map(p => p.eq).filter(e => !juega(e));
+  const chip = (on, txt, click, extra) => '<button class="chip'+(on?' cg':'')+(extra||'')+'"'+(click?' onclick="'+click+'"':'')+'>'+txt+'</button>';
+
+  let h = '<div class="rz-fechas">' + Array.from({ length: totalFechas }, (_, i) => i + 1).map(n =>
+    fechas[n] ? chip(n === fecha, 'F'+n, o.onFecha+'('+n+')', fechas[n].conResultados ? '' : ' futura') : chip(false, 'F'+n, '', ' sin')).join('') + '</div>';
+  if(!fechas[fecha].conResultados) h += '<div class="rz-libre" style="margin:0 0 var(--sp-4)">Fecha sin resultados todavía: estos son los partidos programados.</div>';
+  if(o.catNombre) h += '<div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5)">' +
+    chip(modo === 'todas', 'Todas las categorías', o.onModo+"('todas')") +
+    chip(modo === 'mia', 'Solo '+esc(o.catNombre), o.onModo+"('mia')") + '</div>';
+
+  if(modo === 'mia'){
+    h += '<div class="card" style="padding:var(--sp-2) var(--sp-4)">' + partidos.map(p => {
+      const r = p.c[catNum], gl = r && r[0] > r[1], gv = r && r[1] > r[0];
+      return '<div class="rz-fila'+(esMio(p.l)||esMio(p.v)?' nos':'')+'"><div class="rz-eq '+(gl?'gana':gv?'pierde':'')+'">'+esc(p.l)+'</div>'+
+        '<div class="res">'+(r ? r[0]+' - '+r[1] : '–')+'</div><div class="rz-eq v '+(gv?'gana':gl?'pierde':'')+'">'+esc(p.v)+'</div></div>';
+    }).join('') + '</div>';
+  } else {
+    h += '<div class="rz-ref"><span><i style="background:var(--win)"></i>ganó local</span><span><i style="background:var(--yellow)"></i>ganó visitante</span>'+
+      '<span><i style="background:var(--muted)"></i>empate</span><span>Total: '+(suman.length === cats.length ? 'todas las categorías' : 'las '+suman.length+' más grandes')+'</span></div>';
+    partidos.forEach(p => {
+      const nos = esMio(p.l) || esMio(p.v);
+      // Sin ningún resultado cargado no hay total (ni ganador): se muestra "–", no 0-0
+      const [tl, tv] = tieneRes(p) ? total(p.c) : [null, null];
+      h += '<div class="card rz-card'+(nos?' nos':'')+'">'+(nos?'<div class="rz-tag">Tu club</div>':'')+
+        '<div class="rz-vs"><div class="rz-eq '+(tl>tv?'gana':tl<tv?'pierde':'')+'">'+esc(p.l)+'</div>'+
+        '<div class="rz-tot">'+(tl === null ? '–' : tl+' - '+tv)+'<small>'+(tl === null ? 'SIN RESULTADO' : 'TOTAL')+'</small></div>'+
+        '<div class="rz-eq v '+(tv>tl?'gana':tv<tl?'pierde':'')+'">'+esc(p.v)+'</div></div>'+
+        '<div class="rz-cats" style="grid-template-columns:repeat('+cats.length+',1fr)">'+cats.map(n => {
+          const r = p.c[n];
+          const cls = !r ? '' : r[0] > r[1] ? ' l' : r[0] < r[1] ? ' v' : ' e';
+          return '<div class="rz-c'+cls+(n === catNum ? ' mia' : '')+(suman.includes(n) ? '' : ' nosuma')+'"><div class="a">'+etiqueta(n)+'</div><div class="r">'+(r ? r[0]+'-'+r[1] : '–')+'</div></div>';
+        }).join('')+'</div></div>';
+    });
+  }
+  if(libres.length) h += '<div class="rz-libre">Libre: '+libres.map(esc).join(', ')+'</div>';
+  return h;
+}
+
 function startApp(cat){
 // Puede venirse de "Entrar como" del panel de coordinación sin recargar la
 // página, así que hay que devolver el chrome del profe a su estado normal.
@@ -6767,103 +6876,14 @@ window.setTablasVista = v => { _tablasVista = v; renderTablas(); };
 window.setResFecha   = f => { _resFecha = f; renderTablas(); };
 window.setResModo    = m => { _resModo = m; renderTablas(); };
 
-// Por fecha: { partidos:[{l, v, c:{cat:[gl,gv]}}], libres:[...], conResultados }.
-// Los partidos salen del fixture de la zona (LIGA_DATA.schedule), así una fecha
-// que se está jugando muestra también los que todavía no tienen resultado, y el
-// libre es el que no juega de verdad (no el que todavía no cargó el resultado).
-// Sin fixture, se arma solo con los resultados.
-function _partidosPorFecha(){
-  const res = {};   // fecha -> [{l, v, c}] desde los resultados
-  Object.entries(LIGA_DATA.teamResults || {}).forEach(([cat, equipos]) =>
-    Object.entries(equipos || {}).forEach(([eq, ps]) => (ps || []).forEach(p => {
-      if(!p || p.cond !== 'L' || p.fecha == null) return;   // cada partido una vez, desde el local
-      const lista = res[p.fecha] = res[p.fecha] || [];
-      let m = lista.find(x => x.l === eq && x.v === p.rival);
-      if(!m) lista.push(m = { l: eq, v: p.rival, c: {} });
-      m.c[cat] = [Number(p.gf) || 0, Number(p.gc) || 0];
-    })));
-  const mismo = (a, b) => _claveEquipo(a) === _claveEquipo(b) || _m5(a) === _m5(b);
-  const sched = LIGA_DATA.schedule || {};
-  const fechas = {};
-  new Set([...Object.keys(sched), ...Object.keys(res)].map(Number)).forEach(f => {
-    const conRes = (res[f] || []).slice();
-    const partidos = [], libres = [];
-    const prog = sched[f] ?? sched[String(f)];
-    (Array.isArray(prog) ? prog : Object.values(prog || {})).forEach(m => {
-      if(!m) return;
-      if(m.libre){ libres.push(m.libre); return; }
-      const l = m.h || m.local, v = m.a || m.visitante;
-      if(!l || !v) return;
-      const i = conRes.findIndex(x => mismo(x.l, l) && mismo(x.v, v));
-      partidos.push(i >= 0 ? conRes.splice(i, 1)[0] : { l, v, c: {} });
-    });
-    partidos.push(...conRes);   // resultados que no estaban en el fixture: igual se muestran
-    fechas[f] = { partidos, libres, conResultados: partidos.some(p => Object.keys(p.c).length) };
-  });
-  return fechas;
-}
-
+// Resultados de la zona en la pantalla del profe: usa el render compartido
+// (htmlResultadosZona, fuera de startApp) con el estado de esta pestaña.
 function _htmlResultadosZona(catNum, myName){
-  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  const fechas = _partidosPorFecha();
-  const jugadas = Object.keys(fechas).map(Number).filter(f => fechas[f].conResultados).sort((a, b) => a - b);
-  if(!jugadas.length) return '<div class="empty-msg" style="padding:var(--sp-9) 0">Todavía no hay resultados de la zona.</div>';
-  const totalFechas = Math.max(...Object.keys(fechas).map(Number), ...FIXTURE.map(f => +f.fecha || 0));
-  const fecha = (_resFecha && fechas[_resFecha]) ? _resFecha : jugadas[jugadas.length - 1];
-
-  // Categorías de la zona, de la más grande a la más chica, y las que suman al total
-  const cats = Object.keys(LIGA_DATA.teamResults || {}).map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
-  const suman = cats.slice(0, catsEnGeneral());
-  const pv = puntosPorVictoria();
-  const etiqueta = n => { const d = Object.values(DIVISION_CATS).find(x => x.num === n); return d ? d.label : String(n); };
-  const esMio = eq => _claveEquipo(eq) === _claveEquipo(myName || '') || (!!myName && _m5(eq) === _m5(myName));
-  const total = c => { let l = 0, v = 0; suman.forEach(n => { const r = c[n]; if(!r) return;
-    if(r[0] > r[1]) l += pv; else if(r[0] < r[1]) v += pv; else { l++; v++; } }); return [l, v]; };
-
-  // Primero el de tu club, después los que ya tienen resultado, al final los pendientes
-  const tieneRes = p => Object.keys(p.c).length > 0;
-  const partidos = fechas[fecha].partidos.slice().sort((a, b) =>
-    ((esMio(b.l) || esMio(b.v)) - (esMio(a.l) || esMio(a.v))) || (tieneRes(b) - tieneRes(a)));
-  // Libre: el que marca el fixture; si no lo marca, el equipo de la tabla que no
-  // aparece en ningún partido de la fecha (con fixture, la fecha está completa)
-  const juega = e => partidos.some(p => [p.l, p.v].some(x => _claveEquipo(x) === _claveEquipo(e) || _m5(x) === _m5(e)));
-  const libres = fechas[fecha].libres.length ? fechas[fecha].libres
-    : (LIGA_DATA.posiciones && LIGA_DATA.posiciones[cats[0]] || []).map(p => p.eq).filter(e => !juega(e));
-  const chip = (on, txt, click, extra) => '<button class="chip'+(on?' cg':'')+(extra||'')+'"'+(click?' onclick="'+click+'"':'')+'>'+txt+'</button>';
-
-  let h = '<div class="rz-fechas">' + Array.from({ length: totalFechas }, (_, i) => i + 1).map(n =>
-    fechas[n] ? chip(n === fecha, 'F'+n, 'window.setResFecha('+n+')', fechas[n].conResultados ? '' : ' futura') : chip(false, 'F'+n, '', ' sin')).join('') + '</div>';
-  if(!fechas[fecha].conResultados) h += '<div class="rz-libre" style="margin:0 0 var(--sp-4)">Fecha sin resultados todavía: estos son los partidos programados.</div>';
-  h += '<div style="display:flex;gap:var(--sp-3);margin-bottom:var(--sp-5)">' +
-    chip(_resModo === 'todas', 'Todas las categorías', "window.setResModo('todas')") +
-    chip(_resModo === 'mia', 'Solo '+esc(catNombre(CFG.dbPath)), "window.setResModo('mia')") + '</div>';
-
-  if(_resModo === 'mia'){
-    h += '<div class="card" style="padding:var(--sp-2) var(--sp-4)">' + partidos.map(p => {
-      const r = p.c[catNum], gl = r && r[0] > r[1], gv = r && r[1] > r[0];
-      return '<div class="rz-fila'+(esMio(p.l)||esMio(p.v)?' nos':'')+'"><div class="rz-eq '+(gl?'gana':gv?'pierde':'')+'">'+esc(p.l)+'</div>'+
-        '<div class="res">'+(r ? r[0]+' - '+r[1] : '–')+'</div><div class="rz-eq v '+(gv?'gana':gl?'pierde':'')+'">'+esc(p.v)+'</div></div>';
-    }).join('') + '</div>';
-  } else {
-    h += '<div class="rz-ref"><span><i style="background:var(--win)"></i>ganó local</span><span><i style="background:var(--yellow)"></i>ganó visitante</span>'+
-      '<span><i style="background:var(--muted)"></i>empate</span><span>Total: '+(suman.length === cats.length ? 'todas las categorías' : 'las '+suman.length+' más grandes')+'</span></div>';
-    partidos.forEach(p => {
-      const nos = esMio(p.l) || esMio(p.v);
-      // Sin ningún resultado cargado no hay total (ni ganador): se muestra "–", no 0-0
-      const [tl, tv] = tieneRes(p) ? total(p.c) : [null, null];
-      h += '<div class="card rz-card'+(nos?' nos':'')+'">'+(nos?'<div class="rz-tag">Tu club</div>':'')+
-        '<div class="rz-vs"><div class="rz-eq '+(tl>tv?'gana':tl<tv?'pierde':'')+'">'+esc(p.l)+'</div>'+
-        '<div class="rz-tot">'+(tl === null ? '–' : tl+' - '+tv)+'<small>'+(tl === null ? 'SIN RESULTADO' : 'TOTAL')+'</small></div>'+
-        '<div class="rz-eq v '+(tv>tl?'gana':tv<tl?'pierde':'')+'">'+esc(p.v)+'</div></div>'+
-        '<div class="rz-cats" style="grid-template-columns:repeat('+cats.length+',1fr)">'+cats.map(n => {
-          const r = p.c[n];
-          const cls = !r ? '' : r[0] > r[1] ? ' l' : r[0] < r[1] ? ' v' : ' e';
-          return '<div class="rz-c'+cls+(n === catNum ? ' mia' : '')+(suman.includes(n) ? '' : ' nosuma')+'"><div class="a">'+etiqueta(n)+'</div><div class="r">'+(r ? r[0]+'-'+r[1] : '–')+'</div></div>';
-        }).join('')+'</div></div>';
-    });
-  }
-  if(libres.length) h += '<div class="rz-libre">Libre: '+libres.map(esc).join(', ')+'</div>';
-  return h;
+  return htmlResultadosZona({
+    fecha: _resFecha, modo: _resModo, catNum, catNombre: catNombre(CFG.dbPath), myName,
+    minFechas: Math.max(0, ...FIXTURE.map(f => +f.fecha || 0)),
+    onFecha: 'window.setResFecha', onModo: 'window.setResModo'
+  });
 }
 
 async function renderTablas(){
@@ -10469,6 +10489,7 @@ async function startCoordApp(){
   ALL_CATS.forEach(c => { D[c.key] = {zonas:{}, plantel:[], hist:{}}; });
   let cargado = false, tabAct = 'hoy';
   let filtroJug = '', catJug = '', jugAbierto = null, catLiga = null;
+  let resFechaC = null, resModoC = 'todas';   // Liga → Resultados de la zona
   let AVISOS = {};       // clubs/{club}/config/avisos
   let DIAS_ENT = [], SUSP_ENT = {};
   let DIAS_CAT = {};          // días de las categorías que entrenan distinto del resto del club (ver diasDeCategoria)
@@ -11651,6 +11672,17 @@ async function startCoordApp(){
             '<td style="font-weight:700;color:var(--accent)">'+num(r.pts, r.puntos)+'</td></tr>';
         }).join('')+'</tbody></table></div>';
     }
+
+    // ── RESULTADOS DE LA ZONA ── (mismo render que Tablas → Resultados del profe;
+    // "Solo …" usa la categoría elegida arriba en "Tabla por categoría")
+    if(LIGA_DATA.teamResults && Object.keys(LIGA_DATA.teamResults).length){
+      h += '<div class="csec">'+icono('copa')+'Resultados de la zona</div>';
+      h += htmlResultadosZona({
+        fecha: resFechaC, modo: resModoC, catNum: cat.num, catNombre: cat.label, myName: _ligaNombre || CLUB_LIGA_NOMBRE,
+        minFechas: Math.max(0, ...FIXTURE_C.map(f => +f.fecha || 0)),
+        onFecha: 'window.coordResFecha', onModo: 'window.coordResModo', ligaId: _ligaId
+      });
+    }
     return h;
   }
 
@@ -11867,6 +11899,8 @@ async function startCoordApp(){
 
   window.coordTab = function(id){ tabAct = id; _dlg = null; pintar(); window.scrollTo(0,0); };
   window.coordCatLiga = function(k){ catLiga = k; pintar(); };
+  window.coordResFecha = function(f){ resFechaC = f; pintar(); };
+  window.coordResModo  = function(m){ resModoC = m; pintar(); };
   window.coordCatJug  = function(k){ catJug = k; jugAbierto = null; pintar(); };
   window.coordVerJug  = function(id){ jugAbierto = (jugAbierto === id) ? null : id; pintar(); };
   window.coordBuscar  = function(v){
