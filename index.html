@@ -5099,7 +5099,10 @@ window.shareCit = async function(key){
   const RIVAL_ADDRESSES = Object.assign({}, RIVAL_ADDRESSES_DEFAULT, window._ligaCanchas||{});
   const localAddr = CFG.address || 'Av. 13 y 610 Villa Elvira';
   const rivalKey = (cit.rival||'').toUpperCase().trim();
-  const visitaAddr = RIVAL_ADDRESSES[rivalKey] || '';
+  // Firebase no permite ".", "#", "$", "[", "]" en una clave: ligas/{id}/canchas
+  // guarda el nombre del rival SIN puntos (p.ej. "C. F. RINGUELET" -> "C F RINGUELET"),
+  // así que si no matchea tal cual se reintenta sin los puntos.
+  const visitaAddr = RIVAL_ADDRESSES[rivalKey] || RIVAL_ADDRESSES[rivalKey.replace(/\./g,'')] || '';
 
   // ── PARTIDO EXTRA: usar cancha y hora directamente ──
   const esExtra = !!cit.tipo;
