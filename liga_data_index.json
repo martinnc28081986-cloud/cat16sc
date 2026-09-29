@@ -1,5 +1,5 @@
 {
-  "generadoEl": "28/09/2026 06:17",
+  "generadoEl": "29/09/2026 06:34",
   "zonas": [
     {
       "ligaId": "lisfi-zona-campeonato-2026",
@@ -9,9 +9,11 @@
         "hernandez",
         "sagrado-corazon"
       ],
-      "updatedAt": "28/09/2026",
+      "updatedAt": "29/09/2026",
       "equipos": 15
     }
   ],
-  "fallidas": []
+  "fallidas": [
+    "lapf-primerab-2026-rueda2"
+  ]
 }

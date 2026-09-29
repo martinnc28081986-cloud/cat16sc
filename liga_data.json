@@ -1,5 +1,5 @@
 {
-  "updatedAt": "28/09/2026",
+  "updatedAt": "29/09/2026",
   "zona": "lisfi-zona-campeonato-2026",
   "fuente": "https://www.lisfi.com.ar/index.php/zona-camp-2026",
   "clubes": [
@@ -520,6 +520,12 @@
           "vs": "Hernandez",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Cap.Chica": [
@@ -718,6 +724,12 @@
           "vs": "Hernandez",
           "gf": 4,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Defensa": [
@@ -970,6 +982,12 @@
           "vs": "Hernandez",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -1168,6 +1186,12 @@
           "vs": "Hernandez",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -1420,6 +1444,12 @@
           "vs": "Hernandez",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 5,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -1618,6 +1648,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
+          "gf": 0,
+          "gc": 5
         }
       ],
       "Defensa": [
@@ -1870,6 +1906,12 @@
           "vs": "Hernandez",
           "gf": 2,
           "gc": 4
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Cap.Chica": [
@@ -2068,6 +2110,12 @@
           "vs": "Hernandez",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Defensa": [
@@ -2320,6 +2368,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -2518,6 +2572,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -2770,6 +2830,12 @@
           "vs": "Hernandez",
           "gf": 1,
           "gc": 4
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 4,
+          "gc": 1
         }
       ],
       "Cap.Chica": [
@@ -2968,6 +3034,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
+          "gf": 1,
+          "gc": 4
         }
       ],
       "Defensa": [
@@ -3220,6 +3292,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -3416,6 +3494,12 @@
         {
           "f": 4,
           "vs": "Hernandez",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
           "gf": 0,
           "gc": 2
         }
@@ -3670,6 +3754,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "f": 6,
+          "vs": "V.S Carlos Bco.",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -3868,6 +3958,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "f": 6,
+          "vs": "La Curva",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -4161,6 +4257,13 @@
           "cond": "L",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Cap.Chica": [
@@ -4485,6 +4588,13 @@
           "cond": "V",
           "gf": 4,
           "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Defensa": [
@@ -4767,6 +4877,13 @@
           "cond": "L",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -5091,6 +5208,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -5373,6 +5497,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 5,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -5697,6 +5828,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
+          "gf": 0,
+          "gc": 5
         }
       ],
       "Defensa": [
@@ -5979,6 +6117,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 4
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Cap.Chica": [
@@ -6303,6 +6448,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Defensa": [
@@ -6585,6 +6737,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -6909,6 +7068,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -7191,6 +7357,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 4
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 4,
+          "gc": 1
         }
       ],
       "Cap.Chica": [
@@ -7515,6 +7688,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
+          "gf": 1,
+          "gc": 4
         }
       ],
       "Defensa": [
@@ -7797,6 +7977,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -8119,6 +8306,13 @@
           "fecha": 4,
           "rival": "Hernandez",
           "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
           "gf": 0,
           "gc": 2
         }
@@ -8403,6 +8597,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Cap.Chica": [
@@ -8727,6 +8928,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "fecha": 6,
+          "rival": "La Curva",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -8875,13 +9083,23 @@
         "pts": 6
       },
       {
-        "eq": "La Curva",
+        "eq": "V.S Carlos Bco.",
         "pj": 5,
         "pg": 2,
         "pe": 1,
         "pp": 2,
+        "gf": 8,
+        "gc": 6,
+        "pts": 5
+      },
+      {
+        "eq": "La Curva",
+        "pj": 6,
+        "pg": 2,
+        "pe": 1,
+        "pp": 3,
         "gf": 5,
-        "gc": 2,
+        "gc": 3,
         "pts": 5
       },
       {
@@ -8933,16 +9151,6 @@
         "gf": 4,
         "gc": 6,
         "pts": 4
-      },
-      {
-        "eq": "V.S Carlos Bco.",
-        "pj": 4,
-        "pg": 1,
-        "pe": 1,
-        "pp": 2,
-        "gf": 7,
-        "gc": 6,
-        "pts": 3
       },
       {
         "eq": "FIE 25",
@@ -8997,6 +9205,16 @@
         "pts": 9
       },
       {
+        "eq": "La Curva",
+        "pj": 6,
+        "pg": 3,
+        "pe": 2,
+        "pp": 1,
+        "gf": 10,
+        "gc": 4,
+        "pts": 8
+      },
+      {
         "eq": "Defensa",
         "pj": 6,
         "pg": 4,
@@ -9025,16 +9243,6 @@
         "gf": 6,
         "gc": 3,
         "pts": 7
-      },
-      {
-        "eq": "La Curva",
-        "pj": 5,
-        "pg": 2,
-        "pe": 2,
-        "pp": 1,
-        "gf": 9,
-        "gc": 4,
-        "pts": 6
       },
       {
         "eq": "Estud. LH",
@@ -9108,16 +9316,26 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 4,
+        "pj": 5,
         "pg": 0,
         "pe": 0,
-        "pp": 4,
+        "pp": 5,
         "gf": 6,
-        "gc": 12,
+        "gc": 13,
         "pts": 0
       }
     ],
     "15": [
+      {
+        "eq": "La Curva",
+        "pj": 6,
+        "pg": 5,
+        "pe": 1,
+        "pp": 0,
+        "gf": 21,
+        "gc": 2,
+        "pts": 11
+      },
       {
         "eq": "FIE 25",
         "pj": 6,
@@ -9137,16 +9355,6 @@
         "gf": 14,
         "gc": 9,
         "pts": 10
-      },
-      {
-        "eq": "La Curva",
-        "pj": 5,
-        "pg": 4,
-        "pe": 1,
-        "pp": 0,
-        "gf": 16,
-        "gc": 2,
-        "pts": 9
       },
       {
         "eq": "Sagr. Corazón",
@@ -9200,12 +9408,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 4,
+        "pj": 5,
         "pg": 1,
         "pe": 2,
-        "pp": 1,
+        "pp": 2,
         "gf": 4,
-        "gc": 3,
+        "gc": 8,
         "pts": 4
       },
       {
@@ -9352,13 +9560,13 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 4,
-        "pg": 1,
+        "pj": 5,
+        "pg": 2,
         "pe": 2,
         "pp": 1,
-        "gf": 3,
+        "gf": 5,
         "gc": 5,
-        "pts": 4
+        "pts": 6
       },
       {
         "eq": "Everton",
@@ -9402,12 +9610,12 @@
       },
       {
         "eq": "La Curva",
-        "pj": 5,
+        "pj": 6,
         "pg": 0,
         "pe": 1,
-        "pp": 4,
+        "pp": 5,
         "gf": 4,
-        "gc": 19,
+        "gc": 21,
         "pts": 1
       },
       {
@@ -9463,6 +9671,16 @@
         "pts": 7
       },
       {
+        "eq": "La Curva",
+        "pj": 6,
+        "pg": 3,
+        "pe": 1,
+        "pp": 2,
+        "gf": 12,
+        "gc": 7,
+        "pts": 7
+      },
+      {
         "eq": "S.J.Bautista",
         "pj": 5,
         "pg": 3,
@@ -9494,23 +9712,13 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 4,
+        "pj": 5,
         "pg": 3,
         "pe": 0,
-        "pp": 1,
-        "gf": 10,
-        "gc": 5,
-        "pts": 6
-      },
-      {
-        "eq": "La Curva",
-        "pj": 5,
-        "pg": 2,
-        "pe": 1,
         "pp": 2,
-        "gf": 11,
-        "gc": 7,
-        "pts": 5
+        "gf": 10,
+        "gc": 6,
+        "pts": 6
       },
       {
         "eq": "FIE 25",
@@ -9625,6 +9833,16 @@
         "pts": 7
       },
       {
+        "eq": "La Curva",
+        "pj": 6,
+        "pg": 3,
+        "pe": 1,
+        "pp": 2,
+        "gf": 12,
+        "gc": 8,
+        "pts": 7
+      },
+      {
         "eq": "Cambaceres",
         "pj": 6,
         "pg": 3,
@@ -9655,16 +9873,6 @@
         "pts": 5
       },
       {
-        "eq": "La Curva",
-        "pj": 5,
-        "pg": 2,
-        "pe": 1,
-        "pp": 2,
-        "gf": 8,
-        "gc": 7,
-        "pts": 5
-      },
-      {
         "eq": "Sagr. Corazón",
         "pj": 6,
         "pg": 2,
@@ -9685,16 +9893,6 @@
         "pts": 3
       },
       {
-        "eq": "V.S Carlos Bco.",
-        "pj": 4,
-        "pg": 1,
-        "pe": 1,
-        "pp": 2,
-        "gf": 5,
-        "gc": 12,
-        "pts": 3
-      },
-      {
         "eq": "Defensa",
         "pj": 6,
         "pg": 1,
@@ -9702,6 +9900,16 @@
         "pp": 4,
         "gf": 9,
         "gc": 17,
+        "pts": 3
+      },
+      {
+        "eq": "V.S Carlos Bco.",
+        "pj": 5,
+        "pg": 1,
+        "pe": 1,
+        "pp": 3,
+        "gf": 6,
+        "gc": 16,
         "pts": 3
       },
       {
@@ -9737,6 +9945,16 @@
         "pts": 11
       },
       {
+        "eq": "La Curva",
+        "pj": 6,
+        "pg": 4,
+        "pe": 2,
+        "pp": 0,
+        "gf": 9,
+        "gc": 0,
+        "pts": 10
+      },
+      {
         "eq": "Sagr. Corazón",
         "pj": 6,
         "pg": 3,
@@ -9754,16 +9972,6 @@
         "pp": 1,
         "gf": 12,
         "gc": 5,
-        "pts": 8
-      },
-      {
-        "eq": "La Curva",
-        "pj": 5,
-        "pg": 3,
-        "pe": 2,
-        "pp": 0,
-        "gf": 7,
-        "gc": 0,
         "pts": 8
       },
       {
@@ -9868,12 +10076,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 4,
+        "pj": 5,
         "pg": 0,
         "pe": 0,
-        "pp": 4,
+        "pp": 5,
         "gf": 0,
-        "gc": 8,
+        "gc": 10,
         "pts": 0
       }
     ],
@@ -9960,13 +10168,13 @@
       },
       {
         "eq": "La Curva",
-        "pj": 5,
-        "pg": 2,
+        "pj": 6,
+        "pg": 3,
         "pe": 0,
         "pp": 3,
-        "gf": 4,
+        "gf": 5,
         "gc": 5,
-        "pts": 4
+        "pts": 6
       },
       {
         "eq": "Talleres B.",
@@ -9990,12 +10198,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 4,
+        "pj": 5,
         "pg": 1,
         "pe": 1,
-        "pp": 2,
+        "pp": 3,
         "gf": 3,
-        "gc": 17,
+        "gc": 18,
         "pts": 3
       },
       {
