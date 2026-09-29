@@ -4040,15 +4040,37 @@ document.getElementById('sessionDate').value=today();
 listenerUnico('fecha-entreno', document.getElementById('sessionDate'), 'change', function(){ loadAttMarks(this.value); renderAtt(); });
 
 // ── PRESENTES ──
+// Lista abierta desde el historial para editarla ({fecha, zona}). El historial
+// muestra el año entero, así que la sesión puede ser de otra zona: se carga de
+// ahí y se guarda ahí mismo, no en la zona actual.
+let _attEdit = null;
 function loadAttMarks(d){
   markedAtt={};
   markedReasons={};
-  if(attendance[d]){
-    (attendance[d].present||[]).forEach(p=>markedAtt[p]=true);
-    const r=attendance[d].reasons||{};
+  const ses = attendance[d] || (_attEdit && _attEdit.fecha === d ? ASIS()[d] : null);
+  if(ses){
+    (ses.present||[]).forEach(p=>markedAtt[p]=true);
+    const r=ses.reasons||{};
     Object.entries(r).forEach(([p,v])=>{ markedReasons[p]=v; });
   }
 }
+
+// Botón ✏️ del historial: lleva a Asistencia con la lista de ese día cargada,
+// igual que ✏️ en citaciones.
+window.editSess=function(date){
+  if(_roGuard()) return; // temporada archivada: solo lectura
+  const ses = ASIS()[date];
+  if(!ses) return;
+  _attEdit = { fecha: date, zona: ses._zona || TORNEO_ID };
+  document.getElementById('sessionDate').value = date;
+  switchTab('tomar', true);
+  // Cambiar de pestaña no vuelve a leer la lista: sin esto quedaban las marcas
+  // del día que estaba abierto antes (y al guardar se pisaba la lista editada).
+  loadAttMarks(date);
+  renderAtt();
+  window.scrollTo(0, 0);
+  showToast('Editando la lista del '+fmtD(date));
+};
 
 function renderAtt(){
   const el=document.getElementById('playerList'); el.innerHTML='';
@@ -4094,8 +4116,15 @@ window.saveSession=async function(){
   const btn=document.getElementById('saveBtn'); btn.disabled=true; btn.textContent='...';
   const reasons={};
   absent.forEach(p=>{ reasons[p]=markedReasons[p]||'sinaviso'; });
+  // Lista abierta desde el historial: va a la zona de ESA sesión
+  const zona = (_attEdit && _attEdit.fecha === date) ? _attEdit.zona : TORNEO_ID;
   try{
-    await set(ref(db,DB_PREFIX+'/attendance/'+date),{present,absent,reasons});
+    await set(ref(db, CAT_PREFIX()+'/torneos/'+zona+'/attendance/'+date),{present,absent,reasons});
+    if(zona !== TORNEO_ID && _todasLasZonas && _todasLasZonas[zona]){
+      _todasLasZonas[zona].attendance = _todasLasZonas[zona].attendance || {};
+      _todasLasZonas[zona].attendance[date] = {present,absent,reasons};
+    }
+    _attEdit = null;
     showToast('Lista guardada');
     const cb=document.querySelector('#view-tomar .count-bar');
     if(cb){ cb.classList.remove('flash'); void cb.offsetWidth; cb.classList.add('flash'); setTimeout(()=>cb.classList.remove('flash'),700); }
@@ -4274,7 +4303,7 @@ function appendSessCard(container,d){
     const label=REASON_LABELS[r]||r;
     return '<span class="pill pill-r" style="display:inline-flex;align-items:center;gap:var(--sp-2)">'+p+'<span class="pill-reason pr-'+r+'">'+icon+' '+label+'</span></span>';
   }).join('');
-  c.innerHTML=`<div class="ctop"><div><div class="ctitle">${fmtD(d)}</div><div class="cmeta">${(s.present||[]).length} presentes · ${pct}%</div></div><button class="btn btn-del" onclick="window.delSess('${d}')">Borrar</button></div><div class="pills">${presHtml}${absHtml}</div>`;
+  c.innerHTML=`<div class="ctop"><div><div class="ctitle">${fmtD(d)}</div><div class="cmeta">${(s.present||[]).length} presentes · ${pct}%</div></div><div style="flex-shrink:0;display:flex;gap:var(--sp-3);align-items:center"><button class="btn btn-ol" title="Editar la lista de este día" onclick="window.editSess('${d}')" style="font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#9999;&#65039;</button><button class="btn btn-del" onclick="window.delSess('${d}')">Borrar</button></div></div><div class="pills">${presHtml}${absHtml}</div>`;
   container.appendChild(c);
 }
 window.setHM=function(m){ histFilter=null; renderHistory(null,m); };
