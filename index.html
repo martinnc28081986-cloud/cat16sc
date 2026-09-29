@@ -8328,16 +8328,18 @@ function saSaludDeClubes(clubs, users){
     if(!cfg.torneoActivo) hay(id, 'error', nom+': no tiene torneo activo en la configuración.');
     if(!cfg.ligaId) hay(id, 'aviso', nom+': no tiene liga asignada en la configuración.');
     if(cfg.ligaId && !cfg.ligaNombre) hay(id, 'info', nom+': falta el nombre del club en la liga; se completa solo la primera vez que entra un coordinador.');
-    if(!cfg.temporadas){
+    // El registro de temporadas solo sirve para nombrar cada temporada en el
+    // selector (vigente / anteriores). Con una sola temporada con datos no se
+    // usa, así que solo se avisa si el club ya tiene datos en más de una.
+    const torneosConDatos = new Set();
+    CATEGORIAS.forEach(k => Object.keys((c[k] && c[k].torneos) || {}).forEach(t => torneosConDatos.add(t)));
+    if(!cfg.temporadas && torneosConDatos.size > 1){
       // El autocompletado (migrarTemporadaSiHaceFalta) solo sabe migrar entre
-      // zonas de LISFI -- para cualquier otro club (LAPF, etc.) nunca se va a
-      // disparar solo, así que decirle "se completa sola" es mentira: se
-      // queda así hasta que ese club tenga una temporada anterior de verdad
-      // que registrar, lo cual no es un problema mientras tanto.
+      // zonas de LISFI -- para cualquier otro club (LAPF, etc.) no se dispara solo.
       const esLisfi = String(cfg.ligaId||'').includes('lisfi') || cfg.liga === 'LISFI';
-      hay(id, 'info', nom+': falta el registro de temporadas'+(esLisfi
-        ? '; se completa sola la primera vez que entra un coordinador.'
-        : '; no es grave, recién tiene una temporada cargada -- se arma sola cuando haya una anterior que registrar.'));
+      hay(id, 'info', nom+': tiene datos de '+torneosConDatos.size+' temporadas pero falta el registro de temporadas (el selector las muestra sin nombre)'+(esLisfi
+        ? '; se completa solo la primera vez que entra un coordinador.'
+        : '; hay que cargarlo a mano.'));
     }
 
     // Jugadores repetidos dentro de una categoría
@@ -8349,8 +8351,6 @@ function saSaludDeClubes(clubs, users){
       if(rep.length) hay(id, 'aviso', nom+' · '+catNombre(k)+': jugadores repetidos ('+rep.slice(0,4).join(', ')+(rep.length>4?'…':'')+').');
     });
 
-    const us = Object.entries(users).filter(([, u]) => u && u.clubId === id && u.role !== 'baja');
-    if(us.length && !us.some(([, u]) => u.role === 'coordinator')) hay(id, 'info', nom+': no tiene ningún coordinador.');
   });
 
   Object.entries(users).forEach(([uid, u]) => {
