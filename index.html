@@ -4128,7 +4128,7 @@ window.saveSession=async function(){
     showToast('Lista guardada');
     const cb=document.querySelector('#view-tomar .count-bar');
     if(cb){ cb.classList.remove('flash'); void cb.offsetWidth; cb.classList.add('flash'); setTimeout(()=>cb.classList.remove('flash'),700); }
-    btn.textContent='&#10003; Guardado';
+    btn.textContent='✓ Guardado';
     setTimeout(()=>{ btn.disabled=false; btn.innerHTML='&#128190; Guardar'; },1500);
   }
   catch(e){ showToast('Error'); btn.disabled=false; btn.innerHTML='&#128190; Guardar'; }
@@ -5071,7 +5071,7 @@ window.saveCitacion=async function(){
     await update(ref(db,DB_PREFIX+'/citaciones/'+key),{fecha:f.fecha,rival:f.rival,condicion:f.cond,citados,noCitados:Object.keys(noCitados).length?noCitados:null,camisetero:selectedCamisetero||null,savedAt:_savedAt});
     window._invalidateActiveFecha();
     showToast('Partido guardado');
-    btn.textContent='&#10003; Guardado';
+    btn.textContent='✓ Guardado';
     setTimeout(()=>{ btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; },1500);
   } catch(e){ showToast('Error'); btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; }
 };
