@@ -42,8 +42,18 @@ de sumar los `cats` de todos los clubes que la tienen como `ligas/_activa`
 
 import requests
 from bs4 import BeautifulSoup
-import json, re, os, time
+import json, re, os, sys, time
 from datetime import datetime
+
+# GitHub Actions corre en Linux con UTF-8 y nunca lo notó, pero corriendo esto
+# a mano en Windows la consola por defecto usa cp1252, que no tiene los
+# emojis de los mensajes de abajo -- print() revienta con UnicodeEncodeError
+# antes de llegar a scrapear nada.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
 FIREBASE_DB = os.environ.get(
     "FIREBASE_DB",
@@ -57,12 +67,6 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ClubSC-Bot/1.0)"}
 DIVISION_NUM = {
     "5TA DIVISION": 101, "6TA DIVISION": 102, "7MA DIVISION": 103,
     "8VA DIVISION": 104, "9NA DIVISION": 105, "PRE-9NA DIVISION": 106,
-}
-# Clave de categoría del club (clubs/{id}/cats, ver DIVISION_CATS en
-# index.html) -> nombre de división tal como lo escribe el sitio de LAPF.
-CAT_KEY_A_DIVISION = {
-    "div5ta": "5TA DIVISION", "div6ta": "6TA DIVISION", "div7ma": "7MA DIVISION",
-    "div8va": "8VA DIVISION", "div9na": "9NA DIVISION", "divpre9na": "PRE-9NA DIVISION",
 }
 
 
@@ -98,8 +102,12 @@ def resolver_zonas_lapf():
     devuelve solo las que apuntan a lapf.com.ar, agrupadas por ligaId —
     varios clubes pueden compartir la misma división y no hace falta
     bajarla dos veces. De paso junta, para cada zona, las divisiones que
-    juega CUALQUIERA de sus clubes (clubs/{id}/cats), no solo la de la URL
-    con la que se dio de alta el primero.
+    juega CUALQUIERA de sus clubes.
+
+    Esas divisiones salen del propio campo "divisiones" de ligas/_activa/{id}
+    (lo escribe el wizard de Super Admin al dar de alta o ampliar un club) y
+    NO de clubs/{id}/cats: ese nodo no es público, las reglas de Firebase le
+    devuelven 401 a una lectura sin sesión como la de este script.
     """
     env_url = os.environ.get("LAPF_ZONA_URL")
     env_id = os.environ.get("LIGA_ID")
@@ -118,16 +126,12 @@ def resolver_zonas_lapf():
                 continue
             z = zonas.setdefault(liga_id, {"liga_id": liga_id, "url": str(fuente).rstrip("/"), "clubes": [], "divisiones": set()})
             z["clubes"].append(club_id)
-
-    for z in zonas.values():
-        for club_id in z["clubes"]:
-            cats = _fb(f"clubs/{club_id}/cats") or []
-            if isinstance(cats, dict):
-                cats = list(cats.values())
-            for c in cats:
-                nombre_div = CAT_KEY_A_DIVISION.get(c)
-                if nombre_div:
-                    z["divisiones"].add(nombre_div)
+            divisiones = info.get("divisiones") or []
+            if isinstance(divisiones, dict):
+                divisiones = list(divisiones.values())
+            for d in divisiones:
+                if d:
+                    z["divisiones"].add(str(d).upper())
 
     if zonas:
         print(f"🔗 {len(zonas)} zona(s) de LAPF activa(s):")

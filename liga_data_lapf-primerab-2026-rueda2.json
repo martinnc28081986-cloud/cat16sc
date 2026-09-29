@@ -1,5 +1,5 @@
 {
-  "updatedAt": "29/09/2026",
+  "updatedAt": "28/09/2026",
   "zona": "lapf-primerab-2026-rueda2",
   "schedule": {
     "1": [
@@ -514,796 +514,6 @@
     ]
   },
   "teamResults": {
-    "101": {
-      "LA PLATA F.C.": [
-        {
-          "fecha": 1,
-          "rival": "CURUZU CUATIA",
-          "cond": "L",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 3,
-          "rival": "ARG. JUVENL CLUB",
-          "cond": "L",
-          "gf": 0,
-          "gc": 4
-        },
-        {
-          "fecha": 4,
-          "rival": "VILLA MONTORO",
-          "cond": "V",
-          "gf": 0,
-          "gc": 2
-        },
-        {
-          "fecha": 5,
-          "rival": "EXPRESO ROJO",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "5 DE MAYO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 7,
-          "rival": "C. F. RINGUELET",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "C. RURAL",
-          "cond": "V",
-          "gf": 0,
-          "gc": 3
-        }
-      ],
-      "CURUZU CUATIA": [
-        {
-          "fecha": 1,
-          "rival": "LA PLATA F.C.",
-          "cond": "V",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 3,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 4,
-          "rival": "PORTEÑO",
-          "cond": "L",
-          "gf": 1,
-          "gc": 2
-        },
-        {
-          "fecha": 5,
-          "rival": "TRICOLORES",
-          "cond": "V",
-          "gf": 0,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "TALLERES F. PROV.",
-          "cond": "L",
-          "gf": 4,
-          "gc": 1
-        },
-        {
-          "fecha": 7,
-          "rival": "ROMERENSE",
-          "cond": "V",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 8,
-          "rival": "VILLA LENCI",
-          "cond": "V",
-          "gf": 0,
-          "gc": 4
-        }
-      ],
-      "ASOCIACION IRIS": [
-        {
-          "fecha": 1,
-          "rival": "VILLA LENCI",
-          "cond": "L",
-          "gf": 3,
-          "gc": 2
-        },
-        {
-          "fecha": 3,
-          "rival": "VILLA MONTORO",
-          "cond": "L",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 4,
-          "rival": "EXPRESO ROJO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 5,
-          "rival": "5 DE MAYO",
-          "cond": "L",
-          "gf": 0,
-          "gc": 2
-        },
-        {
-          "fecha": 6,
-          "rival": "C. F. RINGUELET",
-          "cond": "V",
-          "gf": 3,
-          "gc": 2
-        },
-        {
-          "fecha": 7,
-          "rival": "C. RURAL",
-          "cond": "L",
-          "gf": 1,
-          "gc": 0
-        },
-        {
-          "fecha": 8,
-          "rival": "ROMERENSE",
-          "cond": "L",
-          "gf": 1,
-          "gc": 4
-        }
-      ],
-      "VILLA LENCI": [
-        {
-          "fecha": 1,
-          "rival": "ASOCIACION IRIS",
-          "cond": "V",
-          "gf": 2,
-          "gc": 3
-        },
-        {
-          "fecha": 3,
-          "rival": "DEFENSORES DE CITY BELL",
-          "cond": "V",
-          "gf": 4,
-          "gc": 1
-        },
-        {
-          "fecha": 4,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "L",
-          "gf": 3,
-          "gc": 3
-        },
-        {
-          "fecha": 5,
-          "rival": "PORTEÑO",
-          "cond": "V",
-          "gf": 3,
-          "gc": 3
-        },
-        {
-          "fecha": 6,
-          "rival": "TRICOLORES",
-          "cond": "L",
-          "gf": 3,
-          "gc": 4
-        },
-        {
-          "fecha": 7,
-          "rival": "TALLERES F. PROV.",
-          "cond": "V",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "CURUZU CUATIA",
-          "cond": "L",
-          "gf": 4,
-          "gc": 0
-        }
-      ],
-      "C. RURAL": [
-        {
-          "fecha": 1,
-          "rival": "ARG. JUVENL CLUB",
-          "cond": "L",
-          "gf": 0,
-          "gc": 2
-        },
-        {
-          "fecha": 3,
-          "rival": "EXPRESO ROJO",
-          "cond": "L",
-          "gf": 1,
-          "gc": 2
-        },
-        {
-          "fecha": 4,
-          "rival": "5 DE MAYO",
-          "cond": "V",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 5,
-          "rival": "C. F. RINGUELET",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "ROMERENSE",
-          "cond": "L",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 7,
-          "rival": "ASOCIACION IRIS",
-          "cond": "V",
-          "gf": 0,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "LA PLATA F.C.",
-          "cond": "L",
-          "gf": 3,
-          "gc": 0
-        }
-      ],
-      "ARG. JUVENL CLUB": [
-        {
-          "fecha": 1,
-          "rival": "C. RURAL",
-          "cond": "V",
-          "gf": 2,
-          "gc": 0
-        },
-        {
-          "fecha": 3,
-          "rival": "LA PLATA F.C.",
-          "cond": "V",
-          "gf": 4,
-          "gc": 0
-        },
-        {
-          "fecha": 5,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "V",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "PORTEÑO",
-          "cond": "L",
-          "gf": 2,
-          "gc": 1
-        },
-        {
-          "fecha": 7,
-          "rival": "TRICOLORES",
-          "cond": "V",
-          "gf": 1,
-          "gc": 0
-        },
-        {
-          "fecha": 8,
-          "rival": "TALLERES F. PROV.",
-          "cond": "L",
-          "gf": 5,
-          "gc": 1
-        }
-      ],
-      "5 DE MAYO": [
-        {
-          "fecha": 1,
-          "rival": "EXPRESO ROJO",
-          "cond": "L",
-          "gf": 6,
-          "gc": 1
-        },
-        {
-          "fecha": 3,
-          "rival": "C. F. RINGUELET",
-          "cond": "V",
-          "gf": 2,
-          "gc": 1
-        },
-        {
-          "fecha": 4,
-          "rival": "C. RURAL",
-          "cond": "L",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 5,
-          "rival": "ASOCIACION IRIS",
-          "cond": "V",
-          "gf": 2,
-          "gc": 0
-        },
-        {
-          "fecha": 6,
-          "rival": "LA PLATA F.C.",
-          "cond": "L",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 7,
-          "rival": "DEFENSORES DE CITY BELL",
-          "cond": "V",
-          "gf": 1,
-          "gc": 2
-        },
-        {
-          "fecha": 8,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "L",
-          "gf": 2,
-          "gc": 1
-        }
-      ],
-      "EXPRESO ROJO": [
-        {
-          "fecha": 1,
-          "rival": "5 DE MAYO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 6
-        },
-        {
-          "fecha": 3,
-          "rival": "C. RURAL",
-          "cond": "V",
-          "gf": 2,
-          "gc": 1
-        },
-        {
-          "fecha": 4,
-          "rival": "ASOCIACION IRIS",
-          "cond": "L",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 5,
-          "rival": "LA PLATA F.C.",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "DEFENSORES DE CITY BELL",
-          "cond": "L",
-          "gf": 2,
-          "gc": 1
-        },
-        {
-          "fecha": 7,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "PORTEÑO",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        }
-      ],
-      "SAN MARTIN L.H.": [
-        {
-          "fecha": 1,
-          "rival": "TRICOLORES",
-          "cond": "L",
-          "gf": 3,
-          "gc": 3
-        },
-        {
-          "fecha": 3,
-          "rival": "CURUZU CUATIA",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 4,
-          "rival": "VILLA LENCI",
-          "cond": "V",
-          "gf": 3,
-          "gc": 3
-        },
-        {
-          "fecha": 5,
-          "rival": "ARG. JUVENL CLUB",
-          "cond": "L",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 6,
-          "rival": "VILLA MONTORO",
-          "cond": "V",
-          "gf": 0,
-          "gc": 1
-        },
-        {
-          "fecha": 7,
-          "rival": "EXPRESO ROJO",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "5 DE MAYO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 2
-        }
-      ],
-      "TRICOLORES": [
-        {
-          "fecha": 1,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "V",
-          "gf": 3,
-          "gc": 3
-        },
-        {
-          "fecha": 3,
-          "rival": "ROMERENSE",
-          "cond": "V",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 4,
-          "rival": "TALLERES F. PROV.",
-          "cond": "V",
-          "gf": 0,
-          "gc": 0
-        },
-        {
-          "fecha": 5,
-          "rival": "CURUZU CUATIA",
-          "cond": "L",
-          "gf": 1,
-          "gc": 0
-        },
-        {
-          "fecha": 6,
-          "rival": "VILLA LENCI",
-          "cond": "V",
-          "gf": 4,
-          "gc": 3
-        },
-        {
-          "fecha": 7,
-          "rival": "ARG. JUVENL CLUB",
-          "cond": "L",
-          "gf": 0,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "VILLA MONTORO",
-          "cond": "V",
-          "gf": 0,
-          "gc": 1
-        }
-      ],
-      "ROMERENSE": [
-        {
-          "fecha": 1,
-          "rival": "PORTEÑO",
-          "cond": "L",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 3,
-          "rival": "TRICOLORES",
-          "cond": "L",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 4,
-          "rival": "C. F. RINGUELET",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 5,
-          "rival": "TALLERES F. PROV.",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "C. RURAL",
-          "cond": "V",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 7,
-          "rival": "CURUZU CUATIA",
-          "cond": "L",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "ASOCIACION IRIS",
-          "cond": "V",
-          "gf": 4,
-          "gc": 1
-        }
-      ],
-      "PORTEÑO": [
-        {
-          "fecha": 1,
-          "rival": "ROMERENSE",
-          "cond": "V",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 3,
-          "rival": "TALLERES F. PROV.",
-          "cond": "L",
-          "gf": 3,
-          "gc": 1
-        },
-        {
-          "fecha": 4,
-          "rival": "CURUZU CUATIA",
-          "cond": "V",
-          "gf": 2,
-          "gc": 1
-        },
-        {
-          "fecha": 5,
-          "rival": "VILLA LENCI",
-          "cond": "L",
-          "gf": 3,
-          "gc": 3
-        },
-        {
-          "fecha": 6,
-          "rival": "ARG. JUVENL CLUB",
-          "cond": "V",
-          "gf": 1,
-          "gc": 2
-        },
-        {
-          "fecha": 7,
-          "rival": "VILLA MONTORO",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "EXPRESO ROJO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        }
-      ],
-      "DEFENSORES DE CITY BELL": [
-        {
-          "fecha": 1,
-          "rival": "TALLERES F. PROV.",
-          "cond": "L",
-          "gf": 0,
-          "gc": 1
-        },
-        {
-          "fecha": 3,
-          "rival": "VILLA LENCI",
-          "cond": "L",
-          "gf": 1,
-          "gc": 4
-        },
-        {
-          "fecha": 5,
-          "rival": "VILLA MONTORO",
-          "cond": "L",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 6,
-          "rival": "EXPRESO ROJO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 2
-        },
-        {
-          "fecha": 7,
-          "rival": "5 DE MAYO",
-          "cond": "L",
-          "gf": 2,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "C. F. RINGUELET",
-          "cond": "V",
-          "gf": 1,
-          "gc": 2
-        }
-      ],
-      "TALLERES F. PROV.": [
-        {
-          "fecha": 1,
-          "rival": "DEFENSORES DE CITY BELL",
-          "cond": "V",
-          "gf": 1,
-          "gc": 0
-        },
-        {
-          "fecha": 3,
-          "rival": "PORTEÑO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 4,
-          "rival": "TRICOLORES",
-          "cond": "L",
-          "gf": 0,
-          "gc": 0
-        },
-        {
-          "fecha": 5,
-          "rival": "ROMERENSE",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "CURUZU CUATIA",
-          "cond": "V",
-          "gf": 1,
-          "gc": 4
-        },
-        {
-          "fecha": 7,
-          "rival": "VILLA LENCI",
-          "cond": "L",
-          "gf": 1,
-          "gc": 3
-        },
-        {
-          "fecha": 8,
-          "rival": "ARG. JUVENL CLUB",
-          "cond": "V",
-          "gf": 1,
-          "gc": 5
-        }
-      ],
-      "C. F. RINGUELET": [
-        {
-          "fecha": 3,
-          "rival": "5 DE MAYO",
-          "cond": "L",
-          "gf": 1,
-          "gc": 2
-        },
-        {
-          "fecha": 4,
-          "rival": "ROMERENSE",
-          "cond": "L",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 5,
-          "rival": "C. RURAL",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 6,
-          "rival": "ASOCIACION IRIS",
-          "cond": "L",
-          "gf": 2,
-          "gc": 3
-        },
-        {
-          "fecha": 7,
-          "rival": "LA PLATA F.C.",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "DEFENSORES DE CITY BELL",
-          "cond": "L",
-          "gf": 2,
-          "gc": 1
-        }
-      ],
-      "VILLA MONTORO": [
-        {
-          "fecha": 3,
-          "rival": "ASOCIACION IRIS",
-          "cond": "V",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 4,
-          "rival": "LA PLATA F.C.",
-          "cond": "L",
-          "gf": 2,
-          "gc": 0
-        },
-        {
-          "fecha": 5,
-          "rival": "DEFENSORES DE CITY BELL",
-          "cond": "V",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 6,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "L",
-          "gf": 1,
-          "gc": 0
-        },
-        {
-          "fecha": 7,
-          "rival": "PORTEÑO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "TRICOLORES",
-          "cond": "L",
-          "gf": 1,
-          "gc": 0
-        }
-      ]
-    },
     "102": {
       "LA PLATA F.C.": [
         {
@@ -2205,171 +1415,799 @@
           "gc": 0
         }
       ]
+    },
+    "101": {
+      "LA PLATA F.C.": [
+        {
+          "fecha": 1,
+          "rival": "CURUZU CUATIA",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 3,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "L",
+          "gf": 0,
+          "gc": 4
+        },
+        {
+          "fecha": 4,
+          "rival": "VILLA MONTORO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 5,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "5 DE MAYO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 7,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "C. RURAL",
+          "cond": "V",
+          "gf": 0,
+          "gc": 3
+        }
+      ],
+      "CURUZU CUATIA": [
+        {
+          "fecha": 1,
+          "rival": "LA PLATA F.C.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 3,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 4,
+          "rival": "PORTEÑO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "fecha": 5,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "TALLERES F. PROV.",
+          "cond": "L",
+          "gf": 4,
+          "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "ROMERENSE",
+          "cond": "V",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 8,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 0,
+          "gc": 4
+        }
+      ],
+      "ASOCIACION IRIS": [
+        {
+          "fecha": 1,
+          "rival": "VILLA LENCI",
+          "cond": "L",
+          "gf": 3,
+          "gc": 2
+        },
+        {
+          "fecha": 3,
+          "rival": "VILLA MONTORO",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 4,
+          "rival": "EXPRESO ROJO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 5,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 6,
+          "rival": "C. F. RINGUELET",
+          "cond": "V",
+          "gf": 3,
+          "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 8,
+          "rival": "ROMERENSE",
+          "cond": "L",
+          "gf": 1,
+          "gc": 4
+        }
+      ],
+      "VILLA LENCI": [
+        {
+          "fecha": 1,
+          "rival": "ASOCIACION IRIS",
+          "cond": "V",
+          "gf": 2,
+          "gc": 3
+        },
+        {
+          "fecha": 3,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "V",
+          "gf": 4,
+          "gc": 1
+        },
+        {
+          "fecha": 4,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "L",
+          "gf": 3,
+          "gc": 3
+        },
+        {
+          "fecha": 5,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 3,
+          "gc": 3
+        },
+        {
+          "fecha": 6,
+          "rival": "TRICOLORES",
+          "cond": "L",
+          "gf": 3,
+          "gc": 4
+        },
+        {
+          "fecha": 7,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "CURUZU CUATIA",
+          "cond": "L",
+          "gf": 4,
+          "gc": 0
+        }
+      ],
+      "C. RURAL": [
+        {
+          "fecha": 1,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "L",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 3,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "fecha": 4,
+          "rival": "5 DE MAYO",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 5,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "ROMERENSE",
+          "cond": "L",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "ASOCIACION IRIS",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 3,
+          "gc": 0
+        }
+      ],
+      "ARG. JUVENL CLUB": [
+        {
+          "fecha": 1,
+          "rival": "C. RURAL",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 3,
+          "rival": "LA PLATA F.C.",
+          "cond": "V",
+          "gf": 4,
+          "gc": 0
+        },
+        {
+          "fecha": 5,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "PORTEÑO",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 8,
+          "rival": "TALLERES F. PROV.",
+          "cond": "L",
+          "gf": 5,
+          "gc": 1
+        }
+      ],
+      "5 DE MAYO": [
+        {
+          "fecha": 1,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 6,
+          "gc": 1
+        },
+        {
+          "fecha": 3,
+          "rival": "C. F. RINGUELET",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 4,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 5,
+          "rival": "ASOCIACION IRIS",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 6,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "fecha": 8,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        }
+      ],
+      "EXPRESO ROJO": [
+        {
+          "fecha": 1,
+          "rival": "5 DE MAYO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 6
+        },
+        {
+          "fecha": 3,
+          "rival": "C. RURAL",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 4,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 5,
+          "rival": "LA PLATA F.C.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "PORTEÑO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        }
+      ],
+      "SAN MARTIN L.H.": [
+        {
+          "fecha": 1,
+          "rival": "TRICOLORES",
+          "cond": "L",
+          "gf": 3,
+          "gc": 3
+        },
+        {
+          "fecha": 3,
+          "rival": "CURUZU CUATIA",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 4,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 3,
+          "gc": 3
+        },
+        {
+          "fecha": 5,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 6,
+          "rival": "VILLA MONTORO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "5 DE MAYO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        }
+      ],
+      "TRICOLORES": [
+        {
+          "fecha": 1,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 3
+        },
+        {
+          "fecha": 3,
+          "rival": "ROMERENSE",
+          "cond": "V",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 4,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 0
+        },
+        {
+          "fecha": 5,
+          "rival": "CURUZU CUATIA",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 6,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 4,
+          "gc": 3
+        },
+        {
+          "fecha": 7,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "VILLA MONTORO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
+        }
+      ],
+      "ROMERENSE": [
+        {
+          "fecha": 1,
+          "rival": "PORTEÑO",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 3,
+          "rival": "TRICOLORES",
+          "cond": "L",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 4,
+          "rival": "C. F. RINGUELET",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 5,
+          "rival": "TALLERES F. PROV.",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "C. RURAL",
+          "cond": "V",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 7,
+          "rival": "CURUZU CUATIA",
+          "cond": "L",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "ASOCIACION IRIS",
+          "cond": "V",
+          "gf": 4,
+          "gc": 1
+        }
+      ],
+      "PORTEÑO": [
+        {
+          "fecha": 1,
+          "rival": "ROMERENSE",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 3,
+          "rival": "TALLERES F. PROV.",
+          "cond": "L",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 4,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 5,
+          "rival": "VILLA LENCI",
+          "cond": "L",
+          "gf": 3,
+          "gc": 3
+        },
+        {
+          "fecha": 6,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "VILLA MONTORO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "EXPRESO ROJO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        }
+      ],
+      "DEFENSORES DE CITY BELL": [
+        {
+          "fecha": 1,
+          "rival": "TALLERES F. PROV.",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
+        },
+        {
+          "fecha": 3,
+          "rival": "VILLA LENCI",
+          "cond": "L",
+          "gf": 1,
+          "gc": 4
+        },
+        {
+          "fecha": 5,
+          "rival": "VILLA MONTORO",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 6,
+          "rival": "EXPRESO ROJO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "C. F. RINGUELET",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        }
+      ],
+      "TALLERES F. PROV.": [
+        {
+          "fecha": 1,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 3,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 4,
+          "rival": "TRICOLORES",
+          "cond": "L",
+          "gf": 0,
+          "gc": 0
+        },
+        {
+          "fecha": 5,
+          "rival": "ROMERENSE",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 1,
+          "gc": 4
+        },
+        {
+          "fecha": 7,
+          "rival": "VILLA LENCI",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
+        },
+        {
+          "fecha": 8,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 1,
+          "gc": 5
+        }
+      ],
+      "C. F. RINGUELET": [
+        {
+          "fecha": 3,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "fecha": 4,
+          "rival": "ROMERENSE",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 5,
+          "rival": "C. RURAL",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 6,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 2,
+          "gc": 3
+        },
+        {
+          "fecha": 7,
+          "rival": "LA PLATA F.C.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        }
+      ],
+      "VILLA MONTORO": [
+        {
+          "fecha": 3,
+          "rival": "ASOCIACION IRIS",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 4,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 5,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 6,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 7,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "TRICOLORES",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
+        }
+      ]
     }
   },
   "posiciones": {
-    "101": [
-      {
-        "eq": "ARG. JUVENL CLUB",
-        "pts": 18,
-        "pj": 6,
-        "pg": 6,
-        "pe": 0,
-        "pp": 0,
-        "gf": 17,
-        "gc": 3
-      },
-      {
-        "eq": "5 DE MAYO",
-        "pts": 16,
-        "pj": 7,
-        "pg": 5,
-        "pe": 1,
-        "pp": 1,
-        "gf": 18,
-        "gc": 8
-      },
-      {
-        "eq": "ROMERENSE",
-        "pts": 12,
-        "pj": 7,
-        "pg": 3,
-        "pe": 3,
-        "pp": 1,
-        "gf": 15,
-        "gc": 10
-      },
-      {
-        "eq": "VILLA MONTORO",
-        "pts": 12,
-        "pj": 6,
-        "pg": 3,
-        "pe": 3,
-        "pp": 0,
-        "gf": 9,
-        "gc": 5
-      },
-      {
-        "eq": "EXPRESO ROJO",
-        "pts": 12,
-        "pj": 7,
-        "pg": 3,
-        "pe": 3,
-        "pp": 1,
-        "gf": 11,
-        "gc": 12
-      },
-      {
-        "eq": "VILLA LENCI",
-        "pts": 11,
-        "pj": 7,
-        "pg": 3,
-        "pe": 2,
-        "pp": 2,
-        "gf": 22,
-        "gc": 15
-      },
-      {
-        "eq": "PORTEÑO",
-        "pts": 10,
-        "pj": 7,
-        "pg": 2,
-        "pe": 4,
-        "pp": 1,
-        "gf": 13,
-        "gc": 11
-      },
-      {
-        "eq": "ASOCIACION IRIS",
-        "pts": 10,
-        "pj": 7,
-        "pg": 3,
-        "pe": 1,
-        "pp": 3,
-        "gf": 11,
-        "gc": 15
-      },
-      {
-        "eq": "C. RURAL",
-        "pts": 8,
-        "pj": 7,
-        "pg": 2,
-        "pe": 2,
-        "pp": 3,
-        "gf": 10,
-        "gc": 9
-      },
-      {
-        "eq": "TRICOLORES",
-        "pts": 8,
-        "pj": 7,
-        "pg": 2,
-        "pe": 2,
-        "pp": 3,
-        "gf": 9,
-        "gc": 11
-      },
-      {
-        "eq": "C. F. RINGUELET",
-        "pts": 6,
-        "pj": 6,
-        "pg": 1,
-        "pe": 3,
-        "pp": 2,
-        "gf": 8,
-        "gc": 9
-      },
-      {
-        "eq": "CURUZU CUATIA",
-        "pts": 5,
-        "pj": 7,
-        "pg": 1,
-        "pe": 2,
-        "pp": 4,
-        "gf": 9,
-        "gc": 14
-      },
-      {
-        "eq": "TALLERES F. PROV.",
-        "pts": 5,
-        "pj": 7,
-        "pg": 1,
-        "pe": 2,
-        "pp": 4,
-        "gf": 6,
-        "gc": 16
-      },
-      {
-        "eq": "SAN MARTIN L.H.",
-        "pts": 4,
-        "pj": 7,
-        "pg": 0,
-        "pe": 4,
-        "pp": 3,
-        "gf": 10,
-        "gc": 14
-      },
-      {
-        "eq": "DEFENSORES DE CITY BELL",
-        "pts": 4,
-        "pj": 6,
-        "pg": 1,
-        "pe": 1,
-        "pp": 4,
-        "gf": 7,
-        "gc": 12
-      },
-      {
-        "eq": "LA PLATA F.C.",
-        "pts": 3,
-        "pj": 7,
-        "pg": 0,
-        "pe": 3,
-        "pp": 4,
-        "gf": 5,
-        "gc": 16
-      }
-    ],
     "102": [
       {
         "eq": "TALLERES F. PROV.",
@@ -2531,13 +2369,174 @@
         "gf": 1,
         "gc": 29
       }
+    ],
+    "101": [
+      {
+        "eq": "ARG. JUVENL CLUB",
+        "pts": 18,
+        "pj": 6,
+        "pg": 6,
+        "pe": 0,
+        "pp": 0,
+        "gf": 17,
+        "gc": 3
+      },
+      {
+        "eq": "5 DE MAYO",
+        "pts": 16,
+        "pj": 7,
+        "pg": 5,
+        "pe": 1,
+        "pp": 1,
+        "gf": 18,
+        "gc": 8
+      },
+      {
+        "eq": "ROMERENSE",
+        "pts": 12,
+        "pj": 7,
+        "pg": 3,
+        "pe": 3,
+        "pp": 1,
+        "gf": 15,
+        "gc": 10
+      },
+      {
+        "eq": "VILLA MONTORO",
+        "pts": 12,
+        "pj": 6,
+        "pg": 3,
+        "pe": 3,
+        "pp": 0,
+        "gf": 9,
+        "gc": 5
+      },
+      {
+        "eq": "EXPRESO ROJO",
+        "pts": 12,
+        "pj": 7,
+        "pg": 3,
+        "pe": 3,
+        "pp": 1,
+        "gf": 11,
+        "gc": 12
+      },
+      {
+        "eq": "VILLA LENCI",
+        "pts": 11,
+        "pj": 7,
+        "pg": 3,
+        "pe": 2,
+        "pp": 2,
+        "gf": 22,
+        "gc": 15
+      },
+      {
+        "eq": "PORTEÑO",
+        "pts": 10,
+        "pj": 7,
+        "pg": 2,
+        "pe": 4,
+        "pp": 1,
+        "gf": 13,
+        "gc": 11
+      },
+      {
+        "eq": "ASOCIACION IRIS",
+        "pts": 10,
+        "pj": 7,
+        "pg": 3,
+        "pe": 1,
+        "pp": 3,
+        "gf": 11,
+        "gc": 15
+      },
+      {
+        "eq": "C. RURAL",
+        "pts": 8,
+        "pj": 7,
+        "pg": 2,
+        "pe": 2,
+        "pp": 3,
+        "gf": 10,
+        "gc": 9
+      },
+      {
+        "eq": "TRICOLORES",
+        "pts": 8,
+        "pj": 7,
+        "pg": 2,
+        "pe": 2,
+        "pp": 3,
+        "gf": 9,
+        "gc": 11
+      },
+      {
+        "eq": "C. F. RINGUELET",
+        "pts": 6,
+        "pj": 6,
+        "pg": 1,
+        "pe": 3,
+        "pp": 2,
+        "gf": 8,
+        "gc": 9
+      },
+      {
+        "eq": "CURUZU CUATIA",
+        "pts": 5,
+        "pj": 7,
+        "pg": 1,
+        "pe": 2,
+        "pp": 4,
+        "gf": 9,
+        "gc": 14
+      },
+      {
+        "eq": "TALLERES F. PROV.",
+        "pts": 5,
+        "pj": 7,
+        "pg": 1,
+        "pe": 2,
+        "pp": 4,
+        "gf": 6,
+        "gc": 16
+      },
+      {
+        "eq": "SAN MARTIN L.H.",
+        "pts": 4,
+        "pj": 7,
+        "pg": 0,
+        "pe": 4,
+        "pp": 3,
+        "gf": 10,
+        "gc": 14
+      },
+      {
+        "eq": "DEFENSORES DE CITY BELL",
+        "pts": 4,
+        "pj": 6,
+        "pg": 1,
+        "pe": 1,
+        "pp": 4,
+        "gf": 7,
+        "gc": 12
+      },
+      {
+        "eq": "LA PLATA F.C.",
+        "pts": 3,
+        "pj": 7,
+        "pg": 0,
+        "pe": 3,
+        "pp": 4,
+        "gf": 5,
+        "gc": 16
+      }
     ]
   },
   "meta": {
     "ligaId": "lapf-primerab-2026-rueda2",
-    "nombre": "Torneo Primera \"B\" - 2026 - Juveniles",
+    "nombre": "Torneo Primera \"B\" -  2026 - Juveniles",
     "liga": "LAPF",
-    "zona": "6TA DIVISION",
     "fechas": 15,
     "equipos": [
       "5 DE MAYO",

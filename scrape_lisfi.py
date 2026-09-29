@@ -30,6 +30,16 @@ from bs4 import BeautifulSoup
 import json, re, sys, time, os
 from datetime import datetime
 
+# GitHub Actions corre en Linux con UTF-8 y nunca lo notó, pero corriendo esto
+# a mano en Windows la consola por defecto usa cp1252, que no tiene los
+# emojis de los mensajes de abajo -- print() revienta con UnicodeEncodeError
+# antes de llegar a scrapear nada.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 # ── CONFIG ────────────────────────────────────────────────────────────────────
 FIREBASE_DB = os.environ.get(
     "FIREBASE_DB",

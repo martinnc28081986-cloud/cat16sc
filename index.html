@@ -8959,6 +8959,7 @@ window.saCrearClubFinal = async function(){
   const btnCrear = document.querySelector('#saModalBody button:last-child');
   if(btnCrear){ btnCrear.disabled = true; btnCrear.textContent = 'Creando...'; }
 
+  let catsFinal = [...m.cats]; // categorías del club DESPUÉS de este alta (nuevas + las que ya tenía)
   try {
     // 1. Crear/actualizar el club en Firebase
     if(m.isNew){
@@ -8980,7 +8981,8 @@ window.saCrearClubFinal = async function(){
       try{
         const cs = await get(ref(db, 'clubs/'+m.clubId+'/cats'));
         const previas = cs.exists() ? (Array.isArray(cs.val()) ? cs.val() : Object.values(cs.val())) : [];
-        await set(ref(db, 'clubs/'+m.clubId+'/cats'), [...new Set([...previas, ...m.cats])]);
+        catsFinal = [...new Set([...previas, ...m.cats])];
+        await set(ref(db, 'clubs/'+m.clubId+'/cats'), catsFinal);
       }catch(e){ console.warn('alta de club: no se pudieron guardar las categorias', e); }
     }
 
@@ -9007,9 +9009,17 @@ window.saCrearClubFinal = async function(){
         // ligas/_activa/{clubId} es el nodo publico que lee el scraper (sin login)
         // para saber que zonas bajar -- sin esto, aunque exista un scraper para
         // esta liga, nunca sabria que tiene que correr sobre ella.
+        // "divisiones": el scraper de LAPF no puede leer clubs/{id}/cats (las
+        // reglas de Firebase no dejan leerlo sin sesión), así que se publica
+        // acá -- mismo nodo público que ya lee -- para que sepa, sin login,
+        // qué divisiones de la zona tiene que bajar además de la de "fuente".
+        const divisionesDelClub = catsFinal
+          .filter(c => DIVISION_CATS[c])
+          .map(c => DIVISION_CATS[c].label.toUpperCase()+' DIVISION');
         try{
           await update(ref(db, 'ligas/_activa/'+m.clubId), {
-            ligaId: m.torneoId, nombre: m.nombre, fuente: m.ligaFuente||'', actualizadoEl: hoy
+            ligaId: m.torneoId, nombre: m.nombre, fuente: m.ligaFuente||'', actualizadoEl: hoy,
+            divisiones: divisionesDelClub.length ? divisionesDelClub : null
           });
         }catch(e){ console.warn('alta de club: no se pudo registrar ligas/_activa', e); }
       }
