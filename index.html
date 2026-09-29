@@ -498,8 +498,12 @@
   .standings-table { width:100%; border-collapse:collapse; font-size:var(--f-sm); margin-top:var(--sp-2); }
   .standings-table th { color:var(--muted); font-weight:600; text-transform:uppercase; font-size:var(--f-micro); letter-spacing:0.5px; padding:var(--sp-2) var(--sp-3); text-align:center; border-bottom:1px solid var(--border); }
   .standings-table th:first-child { text-align:left; }
-  .standings-table td { padding:var(--sp-3) var(--sp-3); text-align:center; border-bottom:1px solid rgba(255,255,255,0.04); }
+  /* vertical-align:middle a propósito: un nombre de equipo largo ocupa dos
+     líneas y sube la altura de la fila -- sin esto, el punto/etiqueta de la
+     columna "Rival" (una sola línea) quedaba pegado arriba en vez de centrado. */
+  .standings-table td { padding:var(--sp-3) var(--sp-3); text-align:center; vertical-align:middle; border-bottom:1px solid rgba(255,255,255,0.04); }
   .standings-table td:first-child { text-align:left; font-weight:500; }
+  .standings-table td:nth-child(2) { text-align:left; }
   .standings-table tr.us-row td { color:var(--green); font-weight:700; background:rgba(34,85,238,0.08); }
   .standings-table tr.rival-row td { color:var(--yellow); font-weight:600; background:rgba(255,171,64,0.06); }
   .upd-lbl { font-size:var(--f-micro); color:var(--muted); text-align:right; margin-bottom:var(--sp-5); letter-spacing:0.5px; }
@@ -6896,9 +6900,18 @@ async function renderTablas(){
         }
       }
     }
-    html+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.eq+(isSC?' ⚽':'')+'</td><td>'+p.pj+'</td><td>'+p.pg+'</td><td>'+p.pe+'</td><td>'+p.pp+'</td><td>'+p.gf+'</td><td>'+p.gc+'</td><td><strong>'+p.pts+'</strong></td><td style="text-align:right">'+rivalCol+'</td></tr>';
+    html+='<tr class="'+cls+'"><td>'+(i+1)+'</td><td>'+p.eq+(isSC?' ⚽':'')+'</td><td>'+p.pj+'</td><td>'+p.pg+'</td><td>'+p.pe+'</td><td>'+p.pp+'</td><td>'+p.gf+'</td><td>'+p.gc+'</td><td><strong>'+p.pts+'</strong></td><td>'+rivalCol+'</td></tr>';
   });
-  html+='</tbody></table></div>';
+  html+='</tbody></table>';
+  // Referencia de la columna "Rival": qué significan los puntos de color y la
+  // fecha, para no tener que adivinarlo ni cruzarlo con el fixture aparte.
+  html+='<div style="display:flex;flex-wrap:wrap;gap:var(--sp-5);margin-top:var(--sp-5);padding-top:var(--sp-4);border-top:1px solid var(--border);font-size:var(--f-micro);color:var(--muted)">'+
+    '<span style="display:flex;align-items:center;gap:var(--sp-2)"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--win)"></span>Ganamos</span>'+
+    '<span style="display:flex;align-items:center;gap:var(--sp-2)"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--yellow)"></span>Empatamos</span>'+
+    '<span style="display:flex;align-items:center;gap:var(--sp-2)"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--red)"></span>Perdimos</span>'+
+    '<span style="display:flex;align-items:center;gap:var(--sp-2)"><span style="background:var(--accent);color:#fff;font-size:var(--f-micro);font-weight:700;padding:1px 6px;border-radius:var(--r-full)">F#</span>Próximo partido</span>'+
+    '<span style="display:flex;align-items:center;gap:var(--sp-2)"><span style="background:rgba(var(--accent-rgb),0.15);color:var(--accent);font-size:var(--f-micro);font-weight:700;padding:1px 6px;border-radius:var(--r-full)">F#</span>Todavía no le toca</span>'+
+  '</div></div>';
 
   el.innerHTML=html;
 }
