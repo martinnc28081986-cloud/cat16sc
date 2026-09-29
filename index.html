@@ -8298,7 +8298,17 @@ function saSaludDeClubes(clubs, users){
     if(!cfg.torneoActivo) hay(id, 'error', nom+': no tiene torneo activo en la configuración.');
     if(!cfg.ligaId) hay(id, 'aviso', nom+': no tiene liga asignada en la configuración.');
     if(cfg.ligaId && !cfg.ligaNombre) hay(id, 'info', nom+': falta el nombre del club en la liga; se completa solo la primera vez que entra un coordinador.');
-    if(!cfg.temporadas) hay(id, 'info', nom+': falta el registro de temporadas; se completa solo la primera vez que entra un coordinador.');
+    if(!cfg.temporadas){
+      // El autocompletado (migrarTemporadaSiHaceFalta) solo sabe migrar entre
+      // zonas de LISFI -- para cualquier otro club (LAPF, etc.) nunca se va a
+      // disparar solo, así que decirle "se completa sola" es mentira: se
+      // queda así hasta que ese club tenga una temporada anterior de verdad
+      // que registrar, lo cual no es un problema mientras tanto.
+      const esLisfi = String(cfg.ligaId||'').includes('lisfi') || cfg.liga === 'LISFI';
+      hay(id, 'info', nom+': falta el registro de temporadas'+(esLisfi
+        ? '; se completa sola la primera vez que entra un coordinador.'
+        : '; no es grave, recién tiene una temporada cargada -- se arma sola cuando haya una anterior que registrar.'));
+    }
 
     // Jugadores repetidos dentro de una categoría
     CATEGORIAS.forEach(k => {
