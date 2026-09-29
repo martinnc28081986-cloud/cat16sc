@@ -2700,9 +2700,32 @@ function equiposDeSchedule(schedule){
   return [...eq].sort((a,b)=>a.localeCompare(b));
 }
 
-// Arma la tabla desde los resultados cargados (2 puntos por victoria, 1 por empate).
+// Puntos que da una victoria según la liga del club (el empate siempre suma 1).
+// LISFI da 2 y LAPF da 3. La liga se toma del header del club (cfg.liga) o,
+// si no está, del prefijo del id de la zona (p.ej. "lapf-primerab-2026-rueda2").
+// Una liga que no esté en la lista sigue con 2, como hasta ahora.
+// Se le puede pasar el ligaId a mano (el tablero de coordinación tiene el suyo).
+const PUNTOS_POR_VICTORIA = { lisfi: 2, lapf: 3 };
+function puntosPorVictoria(ligaId){
+  const fuentes = [
+    ligaId,
+    window._clubLigaHeader,
+    window._ligaIdActivo,
+    (typeof LIGA_DATA !== 'undefined' && LIGA_DATA) ? LIGA_DATA.zona : ''
+  ];
+  for(const f of fuentes){
+    const slug = String(f || '').toLowerCase();
+    const liga = Object.keys(PUNTOS_POR_VICTORIA).find(l => slug === l || slug.startsWith(l + '-') || slug.startsWith(l + ' '));
+    if(liga) return PUNTOS_POR_VICTORIA[liga];
+  }
+  return 2;
+}
+window.puntosPorVictoria = puntosPorVictoria;
+
+// Arma la tabla desde los resultados cargados (victoria según la liga, 1 por empate).
 // Los equipos sin partidos quedan igual en la tabla, en cero.
 function calcularPosicionesDesdeResultados(teamResultsCat, equipos){
+  const ptsVictoria = puntosPorVictoria();
   const filas = {};
   (equipos||[]).forEach(eq=>{ filas[eq] = {eq, pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0}; });
   Object.entries(teamResultsCat||{}).forEach(([eq, partidos])=>{
@@ -2710,7 +2733,7 @@ function calcularPosicionesDesdeResultados(teamResultsCat, equipos){
     (partidos||[]).forEach(p=>{
       const gf = Number(p.gf)||0, gc = Number(p.gc)||0;
       f.pj++; f.gf += gf; f.gc += gc;
-      if(gf > gc){ f.pg++; f.pts += 2; }
+      if(gf > gc){ f.pg++; f.pts += ptsVictoria; }
       else if(gf === gc){ f.pe++; f.pts += 1; }
       else f.pp++;
     });
@@ -6683,10 +6706,18 @@ async function renderTablas(){
   const nextF = await _getProximoPartidoReal(FIXTURE, _suspensions);
   const rivalKey = nextF ? nextF.rival : null;
 
-  const scW=scRes.filter(r=>r.gf>r.gc).length;
-  const scE=scRes.filter(r=>r.gf===r.gc).length;
-  const scL=scRes.filter(r=>r.gf<r.gc).length;
-  const scPts=scW*2+scE;
+  // Los números del tablero salen de la tabla de posiciones, igual para los dos
+  // equipos, así puntos/PJ/goles coinciden con lo que muestra la tabla de la liga.
+  // Si el club todavía no figura en la tabla, se calculan con sus resultados.
+  const _miClave = _claveEquipo(myName||'');
+  const miFila = _miClave ? (pos.find(p=>_claveEquipo(p.eq)===_miClave) || pos.find(p=>_m5(p.eq)===_m5(myName))) : null;
+  const scW = miFila ? miFila.pg : scRes.filter(r=>r.gf>r.gc).length;
+  const scE = miFila ? miFila.pe : scRes.filter(r=>r.gf===r.gc).length;
+  const scL = miFila ? miFila.pp : scRes.filter(r=>r.gf<r.gc).length;
+  const scPts = miFila ? miFila.pts : scW*puntosPorVictoria()+scE;
+  const scPJ  = miFila ? miFila.pj  : scRes.length;
+  const scGF  = miFila ? miFila.gf  : scRes.reduce((s,r)=>s+r.gf,0);
+  const scGC  = miFila ? miFila.gc  : scRes.reduce((s,r)=>s+r.gc,0);
 
   let rivalData=null;
   if(rivalKey){
@@ -6727,7 +6758,7 @@ async function renderTablas(){
       </div>`;
     };
     html+=_statRow(scPts,'Puntos',rPts);
-    html+=_statRow(scRes.length,'PJ',rivalData.pj);
+    html+=_statRow(scPJ,'PJ',rivalData.pj);
 
     // Forma G/E/P
     html+=`<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:var(--sp-4);padding:var(--sp-4) 0;border-bottom:1px solid rgba(255,255,255,0.05)">
@@ -6745,8 +6776,7 @@ async function renderTablas(){
     </div>`;
 
     // Goles — opción 3: barras proporcionales con ⚽ y 🧤
-    const scGF=rivalData?scRes.reduce((s,r)=>s+r.gf,0):0;
-    const rGF=rivalData.gf; const scGC=scRes.reduce((s,r)=>s+r.gc,0); const rGC=rivalData.gc;
+    const rGF=rivalData.gf; const rGC=rivalData.gc;
     const maxGF=Math.max(scGF,rGF)||1; const maxGC=Math.max(scGC,rGC)||1;
     const pctScGF=Math.round(scGF/maxGF*100); const pctRGF=Math.round(rGF/maxGF*100);
     const pctScGC=Math.round(scGC/maxGC*100); const pctRGC=Math.round(rGC/maxGC*100);
@@ -10138,45 +10168,6 @@ async function startCoordApp(){
 
   // ── POSICIONES Y RESULTADOS ──
   let _POS = LIGA_DATA.posiciones, _SCR = {};
-  /* ── TABLA GENERAL ──────────────────────────────────────────────
-     LISFI la publica en la página de la zona, pero la carga con JavaScript:
-     el scraper baja el HTML crudo y ahí esa tabla no existe (lo confirma su
-     propio diagnóstico — ve 2 tablas y ninguna es esa). Así que se calcula.
-
-     El criterio se verificó contra la tabla publicada, fila por fila: suman las
-     SEIS CATEGORÍAS MÁS GRANDES y dejan afuera las dos más chicas. Hoy eso es
-     de la 2013 a la 2018; para Sagrado da 18 PJ · 8 PG · 1 PE · 9 PP · 22 GF ·
-     28 GC · 17 PTS, idéntico a lo que muestra la liga. Sumando las ocho daría
-     24 PJ y 28 PTS, que es lo que estaba mal antes.
-
-     Se toman "las 6 más grandes" y no los años 2013-2018 escritos a mano porque
-     todos los años entra una categoría y sale otra: en 2027 serían la 2014 a la
-     2019 y esto sigue dando bien solo.
-
-     Si algún día el scraper logra bajar la tabla, esa manda: es la fuente. */
-  const CATS_EN_GENERAL = 6;
-  const GENERAL = (() => {
-    const deLaLiga = Array.isArray(LIGA_DATA.general) ? LIGA_DATA.general : [];
-    if(deLaLiga.length) return deLaLiga;          // la de la liga, si se pudo leer
-
-    const conTabla = COMP_CATS.filter(c => (_POS[c.num] || []).length)
-                              .sort((a,b) => a.num - b.num)   // más grandes primero
-                              .slice(0, CATS_EN_GENERAL);
-    if(!conTabla.length) return [];
-    const acum = {};
-    conTabla.forEach(c => (_POS[c.num] || []).forEach(r => {
-      const eq = (r.equipo || r.eq || '').trim();
-      if(!eq) return;
-      const k = eq.toUpperCase();
-      if(!acum[k]) acum[k] = {eq, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, pts:0};
-      ['pj','pg','pe','pp','gf','gc'].forEach(x => { acum[k][x] += (r[x] || 0); });
-      acum[k].pts += (r.pts != null ? r.pts : (r.puntos || 0));
-    }));
-    // Mismo desempate que usa la liga: puntos, después diferencia de gol, después
-    // goles a favor. Verificado contra el orden real de su tabla.
-    return Object.values(acum).sort((a,b) =>
-      b.pts - a.pts || (b.gf-b.gc) - (a.gf-a.gc) || b.gf - a.gf);
-  })();
   const _isLisfi = !_ligaId || _ligaId.includes('lisfi');
   if(!_isLisfi){
     try {
@@ -10214,6 +10205,56 @@ async function startCoordApp(){
     } catch(e){ console.warn('coord: error leyendo posiciones', e); }
   }
   const POS = _POS;
+  /* ── TABLA GENERAL ──────────────────────────────────────────────
+     LISFI la publica en la página de la zona, pero la carga con JavaScript:
+     el scraper baja el HTML crudo y ahí esa tabla no existe (lo confirma su
+     propio diagnóstico — ve 2 tablas y ninguna es esa). Así que se calcula.
+
+     El criterio se verificó contra la tabla publicada, fila por fila: suman las
+     SEIS CATEGORÍAS MÁS GRANDES y dejan afuera las dos más chicas. Hoy eso es
+     de la 2013 a la 2018; para Sagrado da 18 PJ · 8 PG · 1 PE · 9 PP · 22 GF ·
+     28 GC · 17 PTS, idéntico a lo que muestra la liga. Sumando las ocho daría
+     24 PJ y 28 PTS, que es lo que estaba mal antes.
+
+     Se toman "las 6 más grandes" y no los años 2013-2018 escritos a mano porque
+     todos los años entra una categoría y sale otra: en 2027 serían la 2014 a la
+     2019 y esto sigue dando bien solo.
+
+     Si algún día el scraper logra bajar la tabla, esa manda: es la fuente. */
+  // Cuántas categorías suman para la tabla general y para "Rivales del club".
+  // LISFI: las 6 más grandes (verificado contra su tabla, ver arriba).
+  // LAPF: todas las categorías. Una liga que no esté acá sigue con el criterio de LISFI.
+  const CATS_GENERAL_POR_LIGA = { lisfi: 6, lapf: Infinity };
+  const CATS_EN_GENERAL = (() => {
+    const slug = String(_ligaId || window._clubLigaHeader || '').toLowerCase();
+    const liga = Object.keys(CATS_GENERAL_POR_LIGA).find(l => slug === l || slug.startsWith(l + '-') || slug.startsWith(l + ' '));
+    return liga ? CATS_GENERAL_POR_LIGA[liga] : 6;
+  })();
+  const SUMAN_TODAS = !isFinite(CATS_EN_GENERAL);
+  // Texto para las etiquetas: "las 6 categorías más grandes" o "todas las categorías"
+  const TXT_CATS_GENERAL = SUMAN_TODAS ? 'todas las categorías' : 'las '+CATS_EN_GENERAL+' categorías más grandes';
+  const GENERAL = (() => {
+    const deLaLiga = Array.isArray(LIGA_DATA.general) ? LIGA_DATA.general : [];
+    if(deLaLiga.length) return deLaLiga;          // la de la liga, si se pudo leer
+
+    const conTabla = COMP_CATS.filter(c => (POS[c.num] || []).length)
+                              .sort((a,b) => a.num - b.num)   // más grandes primero
+                              .slice(0, CATS_EN_GENERAL);
+    if(!conTabla.length) return [];
+    const acum = {};
+    conTabla.forEach(c => (POS[c.num] || []).forEach(r => {
+      const eq = (r.equipo || r.eq || '').trim();
+      if(!eq) return;
+      const k = eq.toUpperCase();
+      if(!acum[k]) acum[k] = {eq, pj:0, pg:0, pe:0, pp:0, gf:0, gc:0, pts:0};
+      ['pj','pg','pe','pp','gf','gc'].forEach(x => { acum[k][x] += (r[x] || 0); });
+      acum[k].pts += (r.pts != null ? r.pts : (r.puntos || 0));
+    }));
+    // Mismo desempate que usa la liga: puntos, después diferencia de gol, después
+    // goles a favor. Verificado contra el orden real de su tabla.
+    return Object.values(acum).sort((a,b) =>
+      b.pts - a.pts || (b.gf-b.gc) - (a.gf-a.gc) || b.gf - a.gf);
+  })();
 
   // ¿Esta fila de la tabla es nuestro club? Los nombres varían entre la liga y
   // el club ("Sagrado Corazón" vs "SAGR. CORAZON"), así que se comparan los
@@ -11327,12 +11368,12 @@ async function startCoordApp(){
        Mismo sistema que ya tiene la pantalla del profe (Tablas → próximo
        rival): a cada rival del fixture le queda un punto de color si ya se
        jugó, o la fecha si todavía falta, nunca vacío. Acá es a nivel CLUB, no
-       categoría: el resultado de cada fecha se arma sumando 2 puntos por
-       categoría ganada y 1 por empatada, en las mismas 6 categorías que
+       categoría: el resultado de cada fecha se arma sumando los puntos por
+       victoria de la liga (LISFI 2, LAPF 3) por categoría ganada y 1 por empatada, en las mismas 6 categorías que
        cuentan para la tabla general de la liga (las 2 más chicas no suman ahí,
        así que tampoco acá — sería un criterio distinto para el mismo número).
     */
-    h += '<div class="csec">'+icono('copa')+'Rivales del club<span class="cont">suman las '+CATS_EN_GENERAL+' categorías más grandes</span></div>';
+    h += '<div class="csec">'+icono('copa')+'Rivales del club<span class="cont">suman '+TXT_CATS_GENERAL+'</span></div>';
     if(!_hayFixture){
       h += '<div class="cvacio">Todavía no hay fixture cargado para esta temporada.</div>';
     } else {
@@ -11340,13 +11381,14 @@ async function startCoordApp(){
                                        .sort((a,b) => a.num - b.num)
                                        .slice(0, CATS_EN_GENERAL);
       const prox = proximaFecha();
+      const ptsV = puntosPorVictoria(_ligaId);
       h += '<div class="ccard">'+FIXTURE_C.filter(f=>f.cond!=='-').map(f=>{
         let ptsUs=0, ptsThem=0, cargadas=0;
         CATS_QUE_SUMAN.forEach(c=>{
           const rd = resultadoDe(c.num, f.fecha);
           if(!rd) return;
           cargadas++;
-          if(rd.res==='V') ptsUs+=2; else if(rd.res==='E'){ ptsUs++; ptsThem++; } else ptsThem+=2;
+          if(rd.res==='V') ptsUs+=ptsV; else if(rd.res==='E'){ ptsUs++; ptsThem++; } else ptsThem+=ptsV;
         });
         const esProx = prox && +prox.fecha===+f.fecha;
         let dotCol, valorHtml;
@@ -11367,8 +11409,8 @@ async function startCoordApp(){
           +'<div class="val">'+valorHtml+'</div>'
           +'</div>';
       }).join('')+'</div>';
-      h += '<div class="cnota">El resultado del club junta 2 puntos por categoría ganada y 1 por empatada, sumando las mismas '+
-           CATS_EN_GENERAL+' categorías que la tabla general de la liga. Si a un rival todavía le faltan categorías por cargar, queda marcado entre paréntesis.</div>';
+      h += '<div class="cnota">El resultado del club junta '+ptsV+' puntos por categoría ganada y 1 por empatada, sumando '+
+           (SUMAN_TODAS ? 'todas las categorías, igual' : 'las mismas '+CATS_EN_GENERAL+' categorías')+' que la tabla general de la liga. Si a un rival todavía le faltan categorías por cargar, queda marcado entre paréntesis.</div>';
     }
 
     // Si todavía no se eligió categoría, arrancar en la primera que tenga tabla
@@ -11383,7 +11425,7 @@ async function startCoordApp(){
        cuenta el número no coincidiría con el que ven todos los clubes. */
     if(GENERAL.length){
       h += '<div class="csec">'+icono('copa')+'Posiciones general'+
-           '<span class="cont">las '+CATS_EN_GENERAL+' categorías más grandes</span></div>';
+           '<span class="cont">'+TXT_CATS_GENERAL+'</span></div>';
       h += '<div class="ccard cscroll"><table class="ctbl"><thead><tr>'+
         '<th>#</th><th class="izq">Club</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th>'+
         '<th>GF</th><th>GC</th><th>Pts</th></tr></thead><tbody>'+
@@ -11395,9 +11437,11 @@ async function startCoordApp(){
             '<td>'+n(g.pe)+'</td><td>'+n(g.pp)+'</td><td>'+n(g.gf)+'</td><td>'+n(g.gc)+'</td>'+
             '<td style="font-weight:700;color:var(--accent)">'+n(g.pts)+'</td></tr>';
         }).join('')+'</tbody></table></div>';
-      h += '<div class="cnota">Mismo criterio que la tabla general de la liga: suma las '+
-           CATS_EN_GENERAL+' categorías más grandes y deja afuera las dos más chicas. '+
-           'Verificado contra la tabla publicada, fila por fila.</div>';
+      h += '<div class="cnota">Mismo criterio que la tabla general de la liga: '+
+           (SUMAN_TODAS
+             ? 'suma todas las categorías.'
+             : 'suma las '+CATS_EN_GENERAL+' categorías más grandes y deja afuera las dos más chicas. '+
+               'Verificado contra la tabla publicada, fila por fila.')+'</div>';
     }
 
     h += '<div class="csec">'+icono('tabla')+'Tabla por categoría</div>';
