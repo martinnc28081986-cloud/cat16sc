@@ -4519,12 +4519,18 @@ function renderHistory(filter,mode){
   if(histMode==='mes'){
     const {y,m}=_mesDeHistorial();
     const esMesActual = histMonthOffset===0;
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);'+
-      'border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4)">'+
-      '<button class="chip" style="border:none;background:none;font-size:var(--f-lg)" onclick="window.histMes(-1)">&#8592;</button>'+
-      '<span style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">'+MONTHS_ES[m]+' '+y+'</span>'+
-      '<button class="chip" style="border:none;background:none;font-size:var(--f-lg);'+(esMesActual?'opacity:.3':'')+'" '+
-        (esMesActual?'disabled':'onclick="window.histMes(1)"')+'>&#8594;</button>'+
+    // Flechas grandes y marcadas (botón circular con fondo), no una flechita de
+    // texto perdida en el borde -- tienen que notarse a simple vista que se
+    // puede navegar, sobre todo en el celular.
+    const flecha=(dir,activa)=>'<button '+(activa?'onclick="window.histMes('+dir+')"':'disabled')+
+      ' style="width:40px;height:40px;flex:none;border-radius:50%;border:1px solid var(--border);'+
+      'background:var(--surface3,var(--surface2));color:var(--accent);font-size:20px;font-weight:700;'+
+      'display:flex;align-items:center;justify-content:center;cursor:'+(activa?'pointer':'default')+';'+
+      (activa?'':'opacity:.3')+'">'+(dir<0?'&#8592;':'&#8594;')+'</button>';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);width:100%">'+
+      flecha(-1,true)+
+      '<span style="flex:1;text-align:center;font-weight:700;font-size:var(--f-md);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">'+MONTHS_ES[m]+' '+y+'</span>'+
+      flecha(1,!esMesActual)+
     '</div>';
   }
   html+='</div>';
@@ -4566,15 +4572,31 @@ function renderHistory(filter,mode){
     const totalSemanas=Math.ceil(_diasEnMes(y,m)/7);
     const porSemana=[];
     for(let s=1;s<=totalSemanas;s++) porSemana.push(_statsSemanaDelMesPorJugador(y,m,s));
+    // De mayor a menor asistencia del mes (asistidos/esperados sumando las
+    // semanas) -- así el profe ve primero a quién le está yendo mejor, no el
+    // orden fijo del plantel. Un jugador sin ningún día esperado ese mes
+    // (por ej. se sumó recién) queda al final, no mezclado con los de 0%.
+    const totAs={}, totEs={};
+    PLAYERS.forEach(name=>{ totAs[name]=0; totEs[name]=0; });
+    porSemana.forEach(sem=>PLAYERS.forEach(name=>{ totAs[name]+=sem[name].asistidos; totEs[name]+=sem[name].esperados; }));
+    const jugadoresOrden=[...PLAYERS].sort((a,b)=>{
+      const pa=totEs[a]?totAs[a]/totEs[a]:-1, pb=totEs[b]?totAs[b]/totEs[b]:-1;
+      return pb-pa;
+    });
     const grid=document.createElement('div');
     grid.className='card';
     grid.style.cssText='overflow-x:auto';
-    let t='<div style="font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:var(--sp-4)">Asistencia por semana</div>';
-    t+='<table class="standings-table" style="min-width:'+(120+totalSemanas*54)+'px"><thead><tr><th style="text-align:left">Jugador</th>';
-    for(let s=1;s<=totalSemanas;s++) t+='<th>Sem '+s+'</th>';
+    let t='<div style="font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:var(--sp-4)">Asistencia por semana, de mayor a menor</div>';
+    // table-layout:fixed con anchos propios (no .standings-table, cuyo padding
+    // de sobra no deja entrar las 5 columnas en una pantalla de celular) --
+    // así Sem 5 entra sin scroll en vez de quedar afuera.
+    t+='<table style="table-layout:fixed;width:100%;border-collapse:collapse;font-size:var(--f-micro)">'+
+      '<colgroup><col style="width:72px">'+'<col>'.repeat(totalSemanas)+'</colgroup>'+
+      '<thead><tr><th style="text-align:left;padding:2px 4px 6px 0;color:var(--muted);font-weight:600">Jugador</th>';
+    for(let s=1;s<=totalSemanas;s++) t+='<th style="padding:2px 2px 6px;color:var(--muted);font-weight:600">Sem '+s+'</th>';
     t+='</tr></thead><tbody>';
-    PLAYERS.forEach(name=>{
-      t+='<tr><td style="text-align:left">'+name+'</td>';
+    jugadoresOrden.forEach(name=>{
+      t+='<tr><td style="text-align:left;padding:3px 4px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+name+'">'+name+'</td>';
       porSemana.forEach(sem=>{
         const st=sem[name];
         let celda='<span style="color:var(--muted)">—</span>';
@@ -4583,11 +4605,11 @@ function renderHistory(filter,mode){
           const cero=st.asistidos===0;
           const bg=full?'rgba(var(--win-rgb),.15)':cero?'rgba(var(--loss-rgb),.15)':'rgba(var(--draw-rgb),.15)';
           const fg=full?'var(--win)':cero?'var(--loss)':'var(--draw)';
-          celda='<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;'+
-            'border-radius:6px;background:'+bg+';color:'+fg+';font-weight:700;font-size:var(--f-sm)" '+
+          celda='<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;'+
+            'border-radius:5px;background:'+bg+';color:'+fg+';font-weight:700;font-size:11px" '+
             'title="'+st.asistidos+' de '+st.esperados+' días entrenados">'+st.asistidos+'</span>';
         }
-        t+='<td>'+celda+'</td>';
+        t+='<td style="text-align:center;padding:3px 2px">'+celda+'</td>';
       });
       t+='</tr>';
     });
