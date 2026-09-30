@@ -3932,6 +3932,11 @@ function _motivosParaGuardar(){
   return out;
 }
 let selHistMonth=null, selStatsMonth=null;
+let histMode='day';
+let histFilter=null;           // ya no filtra nada (ver histMonthOffset/histWeekSel); queda solo por selHistMonth
+let histMonthOffset=0;         // navegador de "Semana y mes": 0 = mes actual, -1 = anterior, etc. (nunca futuro)
+let histWeekSel=null;          // semana del mes elegida (1-5); null = todo el mes
+let _histExpandidos=new Set(); // fechas con el detalle de jugadores desplegado, en modo "Semana y mes"
 let activeTab='tomar';
 let currentFecha = null;
 let currentPartidoExtra = null;
@@ -4180,6 +4185,7 @@ markedMotivo={};
 markedReasons={};
 selHistMonth=null;
 selStatsMonth=null;
+histMode='day'; histMonthOffset=0; histWeekSel=null; _histExpandidos=new Set();
 activeTab='tomar';
 currentFecha=null;
 currentPartidoExtra=null;
@@ -4380,23 +4386,42 @@ window.saveSession=async function(){
 };
 
 // ── HISTORIAL ──
-// get ISO week string
-function getWeek(d){
-  const dt=new Date(d+'T12:00:00');
-  const thu=new Date(dt); thu.setDate(dt.getDate()-(dt.getDay()+6)%7+3);
-  const wk=Math.ceil(((thu-new Date(thu.getFullYear(),0,1))/864e5+1)/7);
-  return thu.getFullYear()+'-W'+String(wk).padStart(2,'0');
+// "Semana y mes" navega por MES (anterior/siguiente, como el resto de la app)
+// y, dentro del mes, por semana del mes (1 a 5, días 1-7/8-14/.../29-31) --
+// nunca una fila de chips que crece con la temporada, a diferencia de antes.
+function _diasEnMes(y,m){ return new Date(y,m+1,0).getDate(); }
+function _semanaDelMes(dia){ return Math.ceil(dia/7); }
+function _rangoSemanaDelMes(y,m,sem){
+  const ultimo=_diasEnMes(y,m);
+  const desdeN=(sem-1)*7+1, hastaN=Math.min(sem*7,ultimo);
+  const iso=d=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  return { desde:iso(desdeN), hasta:iso(hastaN), desdeN, hastaN };
 }
-function fmtWeek(w){
-  const [y,wn]=w.split('-W');
-  const jan4=new Date(parseInt(y),0,4);
-  const mon=new Date(jan4); mon.setDate(jan4.getDate()-(jan4.getDay()||7)+1+(parseInt(wn)-1)*7);
-  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-  return mon.getDate()+'/'+String(mon.getMonth()+1).padStart(2,'0')+' al '+sun.getDate()+'/'+String(sun.getMonth()+1).padStart(2,'0')+'/'+sun.getFullYear().toString().slice(2);
+function _mesDeHistorial(){
+  const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+histMonthOffset);
+  return { y:base.getFullYear(), m:base.getMonth() };
 }
-
-let histMode='day';
-let histFilter=null;
+// Entrenamientos, % de asistencia promedio, mejor asistencia y más faltas de
+// un conjunto de fechas -- el resumen que hoy no existe en ningún lado y que
+// obligaba a sumar tarjeta por tarjeta a mano.
+function _statsDeRango(dates){
+  const attendance=ASIS();
+  const conteoPres={}, conteoAus={};
+  let sumaPct=0, n=0;
+  dates.forEach(d=>{
+    const s=attendance[d]; if(!s) return;
+    n++;
+    sumaPct += Math.round((s.present||[]).length/(PLAYERS.length||1)*100);
+    (s.present||[]).forEach(p=>{ conteoPres[p]=(conteoPres[p]||0)+1; });
+    (s.absent||[]).forEach(p=>{ conteoAus[p]=(conteoAus[p]||0)+1; });
+  });
+  const top=(conteo)=>{
+    const max=Object.values(conteo).reduce((a,b)=>Math.max(a,b),0);
+    if(max===0) return [];
+    return Object.keys(conteo).filter(p=>conteo[p]===max).map(p=>({nombre:p,veces:max}));
+  };
+  return { n, pctProm: n?Math.round(sumaPct/n):0, mejores:top(conteoPres), peores:top(conteoAus) };
+}
 
 
 // ── Vistas del año, para las pantallas ─────────────────────────
@@ -4471,68 +4496,107 @@ function renderHistory(filter,mode){
   const attendance = ASIS();          // año completo, no solo la zona
   asegurarZonas('hist');
   if(mode!==undefined) histMode=mode;
-  if(filter!==undefined) histFilter=filter;
   selHistMonth=histFilter;
   const fEl=document.getElementById('histFilters'),lEl=document.getElementById('histList');
   const allDates=Object.keys(attendance).sort().reverse();
 
   const modeBtn=(m,lbl)=>'<button class="chip '+(histMode===m?'cg':'')+'" onclick="window.setHM(`'+m+'`)">'+lbl+'</button>';
-  let html=barraDeAnios('hist')+modeBtn('day','Dia')+modeBtn('week','Semana')+modeBtn('month','Mes');
-  html+='<span style="color:var(--border);padding:0 var(--sp-1)">|</span>';
+  // Todo en un único hijo flex (con su propio flex-wrap): el contenedor
+  // #histFilters no tiene wrap (scrollea horizontal en otras pantallas que
+  // también lo usan), así que el navegador de mes y las semanas necesitan su
+  // propia fila para no desaparecer scrolleados hacia la derecha.
+  let html='<div style="display:flex;flex-direction:column;gap:var(--sp-4);width:100%">';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center">'+
+    barraDeAnios('hist')+modeBtn('day','Día')+modeBtn('semanaMes','Semana y mes')+'</div>';
 
-  if(histMode==='month'){
-    const months=[...new Set(allDates.map(d=>d.slice(0,7)))].sort().reverse();
-    html+='<button class="chip '+((!histFilter)?'cg':'')+'" onclick="window.fH(null)">Todos</button>';
-    months.forEach(m=>{ const [y,mo]=m.split('-'); html+='<button class="chip '+(histFilter===m?'cg':'')+'" onclick="window.fH(`'+m+'`)">'+MONTHS_ES[parseInt(mo)-1]+' '+y+'</button>'; });
-  } else if(histMode==='week'){
-    const weeks=[...new Set(allDates.map(d=>getWeek(d)))].sort().reverse();
-    html+='<button class="chip '+((!histFilter)?'cg':'')+'" onclick="window.fH(null)">Todas</button>';
-    weeks.forEach(w=>{ html+='<button class="chip '+(histFilter===w?'cg':'')+'" onclick="window.fH(`'+w+'`)">Sem '+fmtWeek(w)+'</button>'; });
+  if(histMode==='semanaMes'){
+    const {y,m}=_mesDeHistorial();
+    const esMesActual = histMonthOffset===0;
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface2);'+
+      'border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4)">'+
+      '<button class="chip" style="border:none;background:none;font-size:var(--f-lg)" onclick="window.histMes(-1)">&#8592;</button>'+
+      '<span style="font-weight:700;text-transform:uppercase;letter-spacing:.5px">'+MONTHS_ES[m]+' '+y+'</span>'+
+      '<button class="chip" style="border:none;background:none;font-size:var(--f-lg);'+(esMesActual?'opacity:.3':'')+'" '+
+        (esMesActual?'disabled':'onclick="window.histMes(1)"')+'>&#8594;</button>'+
+    '</div>';
+    const totalSemanas=Math.ceil(_diasEnMes(y,m)/7);
+    let semHtml='<button class="chip '+(histWeekSel===null?'cg':'')+'" onclick="window.histSemana(null)">Todo el mes</button>';
+    for(let s=1;s<=totalSemanas;s++){
+      semHtml+='<button class="chip '+(histWeekSel===s?'cg':'')+'" onclick="window.histSemana('+s+')">Sem '+s+'</button>';
+    }
+    html+='<div style="display:flex;flex-wrap:wrap;gap:var(--sp-3)">'+semHtml+'</div>';
   }
+  html+='</div>';
   fEl.innerHTML=html;
 
-  let dates=allDates;
-  if(histMode==='month'&&histFilter) dates=dates.filter(d=>d.startsWith(histFilter));
-  else if(histMode==='week'&&histFilter) dates=dates.filter(d=>getWeek(d)===histFilter);
-
-  if(!dates.length){lEl.innerHTML='<div class="empty-msg">Todavia no hay sesiones</div>';return;}
-
-  lEl.innerHTML='';
-
-  // Separador cuando el año tiene sesiones de más de una zona, para que se
-  // entienda de dónde sale cada bloque.
-  const _zonasDelAnio = [...new Set(dates.map(d=>(attendance[d]||{})._zona).filter(Boolean))];
-  let _zonaAnterior = null;
-  const _sepZona = (cont, d) => {
-    if(_zonasDelAnio.length < 2) return;
-    const z = (attendance[d]||{})._zona;
-    if(!z || z === _zonaAnterior) return;
-    _zonaAnterior = z;
-    let nombre = z;
-    try{ nombre = (torneoMeta(z)||{}).nombre || z; }catch(e){}
-    const sep = document.createElement('div');
-    sep.style.cssText = 'font-size:var(--f-micro);text-transform:uppercase;letter-spacing:1.2px;'+
-      'color:var(--muted);font-weight:700;margin:var(--sp-6) 0 var(--sp-4);'+
-      'padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)';
-    sep.textContent = nombre;
-    cont.appendChild(sep);
-  };
-
-  if((histMode==='week'||histMode==='month')&&!histFilter){
-    const keyFn = histMode==='week'?getWeek:d=>d.slice(0,7);
-    const groups={};
-    dates.forEach(d=>{ const k=keyFn(d); if(!groups[k])groups[k]=[]; groups[k].push(d); });
-    Object.keys(groups).sort().reverse().forEach(k=>{
-      let label = histMode==='week'?'Semana '+fmtWeek(k):fmtM(k);
-      const header=document.createElement('div');
-      header.style.cssText='font-family:Bebas Neue,sans-serif;font-size:var(--f-md);letter-spacing:2px;color:var(--muted);margin:var(--sp-6) 0 var(--sp-4);text-transform:uppercase';
-      header.textContent=label+' - '+groups[k].length+' entrename.';
-      lEl.appendChild(header);
-      groups[k].forEach(d=>appendSessCard(lEl,d));
+  // ── MODO DÍA: lista completa, sin agrupar, como siempre ──
+  if(histMode==='day'){
+    lEl.innerHTML='';
+    if(!allDates.length){ lEl.innerHTML='<div class="empty-msg">Todavia no hay sesiones</div>'; return; }
+    const _zonasDelAnio = [...new Set(allDates.map(d=>(attendance[d]||{})._zona).filter(Boolean))];
+    let _zonaAnterior = null;
+    allDates.forEach(d=>{
+      if(_zonasDelAnio.length >= 2){
+        const z = (attendance[d]||{})._zona;
+        if(z && z !== _zonaAnterior){
+          _zonaAnterior = z;
+          let nombre = z;
+          try{ nombre = (torneoMeta(z)||{}).nombre || z; }catch(e){}
+          const sep = document.createElement('div');
+          sep.style.cssText = 'font-size:var(--f-micro);text-transform:uppercase;letter-spacing:1.2px;'+
+            'color:var(--muted);font-weight:700;margin:var(--sp-6) 0 var(--sp-4);'+
+            'padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)';
+          sep.textContent = nombre;
+          lEl.appendChild(sep);
+        }
+      }
+      appendSessCard(lEl,d);
     });
-  } else {
-    dates.forEach(d=>{ _sepZona(lEl,d); appendSessCard(lEl,d); });
+    return;
   }
+
+  // ── MODO SEMANA Y MES: resumen del período elegido + detalle compacto ──
+  const {y,m}=_mesDeHistorial();
+  let dates, tituloRango;
+  if(histWeekSel===null){
+    const ym=y+'-'+String(m+1).padStart(2,'0');
+    dates=allDates.filter(d=>d.startsWith(ym));
+    tituloRango=MONTHS_ES[m]+' '+y;
+  } else {
+    const r=_rangoSemanaDelMes(y,m,histWeekSel);
+    dates=allDates.filter(d=>d>=r.desde && d<=r.hasta);
+    tituloRango='Semana '+histWeekSel+' · '+r.desdeN+' al '+r.hastaN+' de '+MONTHS_ES[m];
+  }
+  const stats=_statsDeRango(dates);
+  lEl.innerHTML='';
+  if(stats.n===0){
+    lEl.innerHTML='<div class="empty-msg">No hay entrenamientos cargados en este período.</div>';
+    return;
+  }
+  const nombres = arr => arr.map(x=>x.nombre).join(', ');
+  const resumen=document.createElement('div');
+  resumen.className='card';
+  resumen.innerHTML =
+    '<div style="font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:var(--sp-4)">'+tituloRango+'</div>'+
+    '<div style="display:flex;gap:var(--sp-7);margin-bottom:var(--sp-4)">'+
+      '<div><div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-xl)">'+stats.n+'</div>'+
+        '<div style="font-size:var(--f-micro);color:var(--muted)">entrenamiento'+(stats.n===1?'':'s')+'</div></div>'+
+      '<div><div style="font-family:Bebas Neue,sans-serif;font-size:var(--f-xl);color:var(--win)">'+stats.pctProm+'%</div>'+
+        '<div style="font-size:var(--f-micro);color:var(--muted)">asistencia promedio</div></div>'+
+    '</div>'+
+    (stats.mejores.length||stats.peores.length ?
+      '<div style="border-top:1px solid var(--border);padding-top:var(--sp-4);font-size:var(--f-sm);color:var(--muted);line-height:1.8">'+
+        (stats.mejores.length?'<div>Mejor asistencia: <b style="color:var(--win)">'+nombres(stats.mejores)+'</b> ('+stats.mejores[0].veces+'/'+stats.n+')</div>':'')+
+        (stats.peores.length?'<div>Más faltas: <b style="color:var(--loss)">'+nombres(stats.peores)+'</b> ('+stats.peores[0].veces+')</div>':'')+
+      '</div>' : '');
+  lEl.appendChild(resumen);
+
+  const detTitle=document.createElement('div');
+  detTitle.style.cssText='font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:var(--sp-5) 0 var(--sp-3)';
+  detTitle.textContent='Detalle por día';
+  lEl.appendChild(detTitle);
+
+  dates.forEach(d=>{ if(attendance[d]) appendSessCardCompact(lEl,d); });
 }
 
 function appendSessCard(container,d){
@@ -4551,8 +4615,56 @@ function appendSessCard(container,d){
   c.innerHTML=`<div class="ctop"><div><div class="ctitle">${fmtD(d)}</div><div class="cmeta">${(s.present||[]).length} presentes · ${pct}%</div></div><div style="flex-shrink:0;display:flex;gap:var(--sp-3);align-items:center"><button class="btn btn-ol" title="Editar la lista de este día" onclick="window.editSess('${d}')" style="font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)">&#9999;&#65039;</button><button class="btn btn-del" onclick="window.delSess('${d}')">Borrar</button></div></div><div class="pills">${presHtml}${absHtml}</div>`;
   container.appendChild(c);
 }
-window.setHM=function(m){ histFilter=null; renderHistory(null,m); };
-window.fH=function(f){ renderHistory(f,histMode); };
+
+// Tarjeta compacta del modo "Semana y mes": fecha + presentes + %, con el
+// detalle completo (pills de cada jugador) oculto hasta que se toca -- así
+// "Detalle por día" no repite la misma lista larga que ya se ve completa en
+// "Día", solo sirve para ubicar un día puntual y, si hace falta, editarlo.
+function appendSessCardCompact(container,d){
+  const attendance = ASIS();
+  const s=attendance[d]; if(!s) return;
+  const pct=Math.round((s.present||[]).length/PLAYERS.length*100);
+  const expandido=_histExpandidos.has(d);
+  const c=document.createElement('div'); c.className='card'; c.style.cursor='pointer';
+  let inner='<div class="ctop"><div><div class="ctitle" style="font-size:var(--f-sm)">'+fmtD(d)+'</div>'+
+    '<div class="cmeta">'+(s.present||[]).length+' presentes · '+pct+'%</div></div>'+
+    '<span style="color:var(--muted);flex-shrink:0">'+(expandido?'&#9650;':'&#9660;')+'</span></div>';
+  if(expandido){
+    const presHtml=(s.present||[]).map(p=>`<span class="pill pill-g">${p}</span>`).join('');
+    const reasonMap=s.reasons||{};
+    const absHtml=(s.absent||[]).map(p=>{
+      const r=reasonMap[p]||'sinaviso';
+      const icon=REASON_ICONS[r]||''; const label=REASON_LABELS[r]||r;
+      return '<span class="pill pill-r" style="display:inline-flex;align-items:center;gap:var(--sp-2)">'+p+'<span class="pill-reason pr-'+r+'">'+icon+' '+label+'</span></span>';
+    }).join('');
+    inner+='<div class="pills" style="margin-top:var(--sp-3)">'+presHtml+absHtml+'</div>'+
+      '<div style="display:flex;gap:var(--sp-3);margin-top:var(--sp-4)">'+
+        '<button class="btn btn-ol" style="font-size:var(--f-sm);padding:var(--sp-3) var(--sp-5)" onclick="event.stopPropagation();window.editSess(\''+d+'\')">&#9999;&#65039; Editar</button>'+
+        '<button class="btn btn-del" onclick="event.stopPropagation();window.delSess(\''+d+'\')">Borrar</button>'+
+      '</div>';
+  }
+  c.innerHTML=inner;
+  c.onclick=()=>{
+    if(_histExpandidos.has(d)) _histExpandidos.delete(d); else _histExpandidos.add(d);
+    renderHistory();
+  };
+  container.appendChild(c);
+}
+
+window.setHM=function(m){
+  histMode=m;
+  if(m==='semanaMes' && histMonthOffset===0 && histWeekSel===null){
+    // Primera vez que se entra: arrancar en la semana en curso, no "todo el mes"
+    histWeekSel=_semanaDelMes(new Date().getDate());
+  }
+  renderHistory();
+};
+window.histMes=function(delta){
+  histMonthOffset=Math.min(0, histMonthOffset+delta); // nunca a futuro
+  histWeekSel=null; // "todo el mes" es el default seguro al cambiar de mes
+  renderHistory();
+};
+window.histSemana=function(n){ histWeekSel=n; renderHistory(); };
 // Al mostrar el año entero, una sesión puede pertenecer a otra zona. Hay que
 // borrarla de SU zona, no de la actual, o el borrado no hace nada.
 window.delSess=async function(date){
