@@ -1754,16 +1754,34 @@ window.resetContextoTemporada = resetContextoTemporada;
 // Coordinadores y super admin pueden corregir temporadas archivadas; los profes no.
 function puedeEditarArchivo(){
   const prof = window._userProfile || {};
+  if(prof.soloLectura) return false;
   return !!window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
 }
 window.puedeEditarArchivo = puedeEditarArchivo;
 
+// Cartel fijo abajo de todo mientras se usa la demo de solo lectura
+function _cartelSoloLectura(){
+  let c = document.getElementById('cartelSoloLectura');
+  if(!window._soloLectura){ if(c) c.remove(); return; }
+  if(c) return;
+  c = document.createElement('div');
+  c.id = 'cartelSoloLectura';
+  c.textContent = '👁 Modo demo · solo lectura';
+  c.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:9998;background:var(--yellow);color:#1a1300;'+
+    'font-size:var(--f-micro);font-weight:800;letter-spacing:.5px;padding:3px 12px;border-radius:0 0 var(--r-sm) var(--r-sm);pointer-events:none';
+  document.body.appendChild(c);
+}
+
 // true cuando hay que bloquear la escritura: temporada archivada y sin permisos de admin
-function archivoBloqueado(){ return esHistorico() && !puedeEditarArchivo(); }
+// Usuario de solo lectura (users/{uid}/soloLectura, p. ej. una demo para mostrar
+// el club a un tercero): ve todo, no escribe nada. Las reglas de Firebase también
+// le rechazan cualquier escritura; esto es para que la app no lo intente.
+function archivoBloqueado(){ return !!window._soloLectura || (esHistorico() && !puedeEditarArchivo()); }
 window.archivoBloqueado = archivoBloqueado;
 
 // Guarda para toda función que escribe
 function _roGuard(){
+  if(window._soloLectura){ showToast('👁 Modo demo · solo lectura'); return true; }
   if(archivoBloqueado()){ showToast('🔒 Temporada archivada · solo lectura'); return true; }
   return false;
 }
@@ -1968,7 +1986,8 @@ function _usoIngreso(){ _usoEscribir(_diaLocal(), { n: increment(1) }); }
 function usoIniciar(profile){
   const rol = profile && profile.role;
   const u = auth.currentUser;
-  if(!u || (rol !== 'profe' && rol !== 'coordinator') || !profile.clubId){ usoDetener(false); return; }
+  // La demo de solo lectura no cuenta como uso del club
+  if(!u || (rol !== 'profe' && rol !== 'coordinator') || !profile.clubId || profile.soloLectura){ usoDetener(false); return; }
   if(uso.uid !== u.uid){
     usoFlush();
     uso.uid = u.uid; uso.club = profile.clubId; uso.email = u.email || profile.email || '';
@@ -2373,6 +2392,7 @@ window.doResetPass = async function(e){
 window.doLogout = async function(){
   if(!confirm('¿Cerrar sesión?')) return;
   usoFlush();               // lo que quedaba sin escribir, antes de perder el usuario
+  window._soloLectura = false; _cartelSoloLectura();
   await signOut(auth);
   // onAuthStateChanged limpia la UI
 };
@@ -2380,6 +2400,8 @@ window.doLogout = async function(){
 // ── MANEJO DE ESTADO DE AUTH ──
 function _launchByRole(profile){
   console.log('[MI PLANTEL] Role:', profile.role, 'Cat:', profile.cat, 'Club:', profile.clubId);
+  window._soloLectura = !!profile.soloLectura && profile.role !== 'super-admin';
+  _cartelSoloLectura();
   // Actualizar CLUB_PATH dinámicamente según el club del usuario
   if(profile.role !== 'super-admin' && profile.clubId){
     CLUB_PATH = 'clubs/' + profile.clubId;
@@ -3165,7 +3187,7 @@ window.migrarTodosLosClubes = migrarTodosLosClubes;
 async function migrarTemporadaSiHaceFalta(){
   try{
     const prof = window._userProfile || {};
-    const puedeEscribir = window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
+    const puedeEscribir = !prof.soloLectura && (window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin');
     if(!puedeEscribir) return false;
 
     const clubId = CLUB_PATH.split('/').pop();
@@ -5160,6 +5182,7 @@ function renderPlantelMgr(){
 }
 
 window._addPlayer=async function(){
+  if(_roGuard()) return;
   const nombre=(document.getElementById('newPlayerNombre').value||'').trim();
   const apellido=(document.getElementById('newPlayerApellido').value||'').trim();
   const cat=parseInt(document.getElementById('newPlayerCat').value)||0;
@@ -5177,6 +5200,7 @@ window._addPlayer=async function(){
 };
 
 window._removePlayer=async function(key){
+  if(_roGuard()) return;
   const p=(window._escuelitaPlayerKeys||{})[key];
   if(!p) return;
   if(!confirm('¿Dar de baja a '+p.name+'?\nSu historial de asistencia se conserva.')) return;
@@ -5796,6 +5820,7 @@ window.elegirPuestoAlta = function(k){
 // Un toque pasa al puesto siguiente (arquero → defensor → mediocampista → delantero →
 // arquero), como el botón de motivos de Citaciones. Sin puesto arranca por arquero.
 window.cambiarPuesto = async function(nombre){
+  if(_roGuard()) return;
   const orden = Object.keys(POSICIONES);
   const antes = PLAYER_POS[nombre];
   PLAYER_POS[nombre] = orden[(orden.indexOf(antes)+1) % orden.length];
@@ -5811,6 +5836,7 @@ window.cambiarPuesto = async function(nombre){
 };
 
 window.addPlayer = async function(){
+  if(_roGuard()) return;
   const input = document.getElementById('newPlayerName');
   const nombre = input.value.trim();
   if(!nombre){ showToast('Ingresá el nombre del jugador'); return; }
@@ -5838,6 +5864,7 @@ window.addPlayer = async function(){
 };
 
 window.deactivatePlayer = async function(nombre){
+  if(_roGuard()) return;
   if(!confirm('¿Dar de baja a '+nombre+'? Su historial queda guardado.')) return;
   PLAYERS = PLAYERS.filter(p=>p!==nombre);
   PLAYERS_INACTIVE.push(nombre);
@@ -5850,6 +5877,7 @@ window.deactivatePlayer = async function(nombre){
 };
 
 window.reactivatePlayer = async function(nombre){
+  if(_roGuard()) return;
   PLAYERS_INACTIVE = PLAYERS_INACTIVE.filter(p=>p!==nombre);
   PLAYERS.push(nombre);
   try {
@@ -5866,6 +5894,7 @@ window.reactivatePlayer = async function(nombre){
 // intactas en Historial. Solo deja de aparecer en Plantel y en Estadísticas
 // (ahí ya no aparecía desde que se dio de baja).
 window.deletePlayer = async function(nombre){
+  if(_roGuard()) return;
   if(!confirm('¿Eliminar a '+nombre+' definitivamente de la lista? Su historial de asistencia queda guardado, pero no vas a poder reactivarlo después.')) return;
   PLAYERS_INACTIVE = PLAYERS_INACTIVE.filter(p=>p!==nombre);
   try {
@@ -7937,6 +7966,7 @@ window.LIGA_RESULTADOS_FB = LIGA_RESULTADOS_FB;
 // ¿Este usuario puede escribir el archivo compartido de la liga?
 function puedeGuardarArchivoDeLiga(){
   const prof = window._userProfile || {};
+  if(prof.soloLectura) return false;
   return !!window._isSuperAdmin || prof.role === 'coordinator' || prof.role === 'super-admin';
 }
 
@@ -9855,7 +9885,7 @@ window.saEditarClub = async function(clubId){
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-5) var(--sp-5);margin-bottom:var(--sp-3);display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:var(--f-md);font-weight:600">${u.email||u.uid}</div>
-        <div style="font-size:var(--f-micro);color:var(--muted)">${u.role==='coordinator'&&u.isProfeCoord?'profe + coord':(u.role||'profe')} · Cat ${catsLabel}</div>
+        <div style="font-size:var(--f-micro);color:var(--muted)">${u.role==='coordinator'&&u.isProfeCoord?'profe + coord':(u.role||'profe')}${u.soloLectura?' · 👁 solo lectura':''} · Cat ${catsLabel}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:var(--sp-2);flex-shrink:0">
         <button onclick="window._saEditUserCats('${u.uid}','${u.email||''}','${clubId}')" style="background:rgba(77,115,245,0.12);color:var(--accent);border:1px solid rgba(77,115,245,0.3);border-radius:var(--r-sm);padding:var(--sp-2) var(--sp-5);font-size:var(--f-micro);font-weight:700;cursor:pointer">✏️ Editar</button>
@@ -10074,6 +10104,10 @@ window._saEditUserCats = async function(uid, email, clubId){
       <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);letter-spacing:2px;color:var(--accent);margin-bottom:var(--sp-2)">✏️ EDITAR USUARIO</div>
       <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-6)">${email}</div>
       ${rolHtml}
+      ${puedeCambiarRol ? `<label style="display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-6);cursor:pointer">
+        <input type="checkbox" id="editUserSoloLectura" ${uData.soloLectura?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
+        <span style="font-size:var(--f-md)">Solo lectura (demo)</span>
+      </label>` : ''}
       <div style="font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-3)">Categorías</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);margin-bottom:var(--sp-7)">
         ${CAT_OPTS_EC.map(c=>`
@@ -10102,6 +10136,7 @@ window._saEditUserCats = async function(uid, email, clubId){
       if(rolSel){
         cambios.role = (rolSel === 'profe') ? 'profe' : 'coordinator';
         cambios.isProfeCoord = (rolSel === 'profe+coord') ? true : null;
+        cambios.soloLectura = document.getElementById('editUserSoloLectura')?.checked ? true : null;
       }
       await update(ref(db, 'users/'+uid), cambios);
       showToast('✓ Usuario actualizado');
@@ -10147,6 +10182,11 @@ window._saAbrirAddUser = function(clubId){
         </label>
       </div>
 
+      <label style="display:flex;align-items:center;gap:var(--sp-5);margin-bottom:var(--sp-3);cursor:pointer">
+        <input type="checkbox" id="addUserSoloLectura" style="accent-color:var(--accent);width:18px;height:18px">
+        <span style="font-size:var(--f-md)">Solo lectura (demo)</span>
+      </label>
+      <div style="font-size:var(--f-micro);color:var(--muted);margin:0 0 var(--sp-6);line-height:1.5">Ve todo lo de sus categorías (y coordinación si es coordinador) pero no puede guardar ni borrar nada.</div>
       <label style="display:flex;align-items:center;gap:var(--sp-5);margin-bottom:var(--sp-6);cursor:pointer">
         <input type="checkbox" id="addUserInvitar" checked style="accent-color:var(--accent);width:18px;height:18px">
         <span style="font-size:var(--f-md)">Enviar email de invitación</span>
@@ -10196,6 +10236,7 @@ window._saCrearUsuario = async function(clubId){
     };
     if(selectedCats.length === 1) perfil.cat = selectedCats[0]; // compatibilidad retroactiva
     if(rol==='profe+coord') perfil.isProfeCoord = true;
+    if(document.getElementById('addUserSoloLectura')?.checked) perfil.soloLectura = true;
     await set(ref(db,'users/'+uid), perfil);
 
     // Enviar email de invitación (reset de contraseña)
@@ -10265,7 +10306,7 @@ async function startCoordApp(){
       window._clubLigaNombreDe = CLUB_PATH.split('/').pop();
       if(cfg.ligaId && !cfg.ligaNombre && CLUB_LIGA_NOMBRE){
         _ligaNombre = CLUB_LIGA_NOMBRE;
-        update(ref(db, CLUB_PATH+'/config'), {ligaNombre: CLUB_LIGA_NOMBRE}).catch(()=>{});
+        if(!window._soloLectura) update(ref(db, CLUB_PATH+'/config'), {ligaNombre: CLUB_LIGA_NOMBRE}).catch(()=>{});
       }
     }
     if(nomSnap.exists())  _clubNombre = nomSnap.val() || _clubNombre;
@@ -11106,6 +11147,7 @@ async function startCoordApp(){
   }
 
   window.coordSemAvisar = async function(catKey){
+    if(_roGuard()) return;
     const c = catDe(catKey);
     const pends = _pendientesPorCat()[catKey] || [];
     const lineas = _lineasSemana(c, pends);

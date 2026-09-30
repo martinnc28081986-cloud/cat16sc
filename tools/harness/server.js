@@ -88,6 +88,7 @@ function seed() {
       COORDC:   { role: 'coordinator', clubId: 'clubC', email: 'cc@x.com' },
       PROFET:   { role: 'profe', clubId: 'tricolores', cats: ['div5ta'], email: 't@x.com' },            // club de LAPF (divisiones)
       COORDT:   { role: 'coordinator', clubId: 'tricolores', email: 'ct@x.com' },                       // coordinador de LAPF
+      DEMO:     { role: 'coordinator', isProfeCoord: true, clubId: 'sagrado-corazon', cats: ['cat16'], soloLectura: true, email: 'demo@x.com' }, // demo: ve cat16 y coordinación, no escribe
       SA:       { role: 'super-admin', email: 'sa@x.com' },
       BAJ1:     { email: 'baja@x.com', role: 'baja', bajaTs: 1 },                                        // usuario dado de baja
       BADROL:   { role: 'coordinador', clubId: 'clubA', email: 'bad@x.com' },                           // rol que la app no reconoce
