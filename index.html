@@ -4414,11 +4414,16 @@ function _mesDeHistorial(){
 function _statsSemanaDelMesPorJugador(y,m,sem){
   const r=_rangoSemanaDelMes(y,m,sem);
   const attendance=ASIS(); // ya excluye los días suspendidos de las sesiones
+  const hoyIso=today();
   const diasValidos=[];
   for(let dd=r.desdeN; dd<=r.hastaN; dd++){
     const d=new Date(y,m,dd);
     if(!DIAS_ENT_CAT.includes(d.getDay())) continue;
     const iso=y+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+    // Un día que todavía no llegó (la semana en curso, con días por delante)
+    // no cuenta como "esperado sin cumplir" -- si no, la semana actual se
+    // mostraría amarilla o roja solo porque el jueves todavía no pasó.
+    if(iso>hoyIso) continue;
     if(entSuspendidoEn(_suspensionesEnt, iso)) continue;
     diasValidos.push(iso);
   }
