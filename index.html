@@ -5449,7 +5449,9 @@ window.shareCit = async function(key){
   lines.push('');
   // El link de confirmación solo se manda si el club lo tiene activado en su config
   // (CFG.rsvpHabilitado). Es una opción de cada club, no de un club en particular.
-  if(CFG.rsvpHabilitado){
+  // En la demo de solo lectura no va: el link es público y cualquiera que lo abra
+  // podría anotar confirmaciones en la citación real del club.
+  if(CFG.rsvpHabilitado && !window._soloLectura){
     const clubIdWA = CLUB_PATH.split('/')[1] || '';
     // Link corto: en vez de mandar club+categoría+torneo+clave en la URL (largo,
     // ocupa varias líneas en WhatsApp), se manda solo un código de 6-7

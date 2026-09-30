@@ -88,7 +88,7 @@ function seed() {
       COORDC:   { role: 'coordinator', clubId: 'clubC', email: 'cc@x.com' },
       PROFET:   { role: 'profe', clubId: 'tricolores', cats: ['div5ta'], email: 't@x.com' },            // club de LAPF (divisiones)
       COORDT:   { role: 'coordinator', clubId: 'tricolores', email: 'ct@x.com' },                       // coordinador de LAPF
-      DEMO:     { role: 'coordinator', isProfeCoord: true, clubId: 'sagrado-corazon', cats: ['cat16'], soloLectura: true, email: 'demo@x.com' }, // demo: ve cat16 y coordinación, no escribe
+      DEMO:     { role: 'coordinator', isProfeCoord: true, clubId: 'clubA', cats: ['cat16'], soloLectura: true, email: 'demo@x.com' },      // demo: ve cat16 y coordinación, no escribe
       SA:       { role: 'super-admin', email: 'sa@x.com' },
       BAJ1:     { email: 'baja@x.com', role: 'baja', bajaTs: 1 },                                        // usuario dado de baja
       BADROL:   { role: 'coordinador', clubId: 'clubA', email: 'bad@x.com' },                           // rol que la app no reconoce
@@ -114,7 +114,7 @@ function seed() {
       clubA: {
         nombre: 'Club A', cats: ['cat16', 'cat2014'],
         config: {
-          torneoActivo: 'z2', ligaNombre: 'CLUB A',
+          torneoActivo: 'z2', ligaNombre: 'CLUB A', rsvpHabilitado: true,   // con link de confirmación (la demo no lo manda)
           temporadas: { z1: { nombre: 'Zona II B 2026', orden: 1 }, z2: { nombre: 'Zona Campeonato 2026', orden: 2 } },
           fixture: { 1: { rival: 'RIVAL D', cond: 'L' }, 2: { rival: 'RIVAL E', cond: 'V' }, 3: { rival: 'RIVAL F', cond: 'L' }, 4: { rival: 'RIVAL G', cond: 'V' } },
           // Entrenamiento suspendido (formato plano AAAA-MM-DD, como lo guarda el panel de coordinación)
