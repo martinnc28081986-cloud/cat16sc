@@ -4392,40 +4392,51 @@ window.saveSession=async function(){
 // El modo "Mes" navega por mes (anterior/siguiente, como el resto de la app)
 // en vez de listar todos los meses con datos -- nunca una fila de chips que
 // crece con la temporada, a diferencia de antes. Las semanas DENTRO del mes
-// (1 a 5, días 1-7/8-14/.../29-31) se ven todas juntas como columnas de la
-// grilla de abajo, no hay que elegir una por vez.
-function _diasEnMes(y,m){ return new Date(y,m+1,0).getDate(); }
-function _rangoSemanaDelMes(y,m,sem){
-  const ultimo=_diasEnMes(y,m);
-  const desdeN=(sem-1)*7+1, hastaN=Math.min(sem*7,ultimo);
-  const iso=d=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-  return { desde:iso(desdeN), hasta:iso(hastaN), desdeN, hastaN };
-}
+// se ven todas juntas como columnas de la grilla de abajo, no hay que elegir
+// una por vez.
 function _mesDeHistorial(){
   const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+histMonthOffset);
   return { y:base.getFullYear(), m:base.getMonth() };
 }
-// Para UNA semana del mes: cuántos días de entrenamiento de ESTA categoría
-// caen ahí (sin contar los que el coordinador suspendió -- ni a favor ni en
-// contra de nadie) y, de esos, cuántos entrenó cada jugador. El número "lleno"
-// (verde) no es fijo: es justo la cantidad de días que esta categoría entrena
-// en este club esa semana, así una categoría de 2 días y una de 3 usan cada
-// una su propia escala.
-function _statsSemanaDelMesPorJugador(y,m,sem){
-  const r=_rangoSemanaDelMes(y,m,sem);
+// Semanas de VERDAD (lunes a domingo, no un corte de 7 días fijo por
+// número de día) que le tocan a este mes -- una semana es "de este mes" si
+// su LUNES cae acá, aunque termine en el mes que viene. Así la semana del
+// 28/09 al 4/10 aparece completa en septiembre (incluye el jueves 1/10 si
+// esa categoría entrena jueves) y octubre arranca de cero el lunes siguiente,
+// en vez de partir esa semana real en dos "Sem" de meses distintos.
+function _semanasDelMes(y,m){
+  const primero=new Date(y,m,1);
+  const lunes=new Date(primero); lunes.setDate(primero.getDate()-((primero.getDay()+6)%7));
+  if(lunes.getMonth()!==m || lunes.getFullYear()!==y) lunes.setDate(lunes.getDate()+7);
+  const semanas=[];
+  while(lunes.getMonth()===m && lunes.getFullYear()===y){
+    const domingo=new Date(lunes); domingo.setDate(lunes.getDate()+6);
+    semanas.push({ lunes:new Date(lunes), domingo });
+    lunes.setDate(lunes.getDate()+7);
+  }
+  return semanas;
+}
+const _isoDeFecha=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+// Para UNA semana real: cuántos días de entrenamiento de ESTA categoría caen
+// ahí (sin contar los que el coordinador suspendió -- ni a favor ni en contra
+// de nadie, ni los que todavía no llegaron) y, de esos, cuántos entrenó cada
+// jugador. El número "lleno" (verde) no es fijo: es justo la cantidad de días
+// que esta categoría entrena en este club esa semana, así una categoría de 2
+// días y una de 3 usan cada una su propia escala.
+function _statsSemanaPorJugador(semana){
   const attendance=ASIS(); // ya excluye los días suspendidos de las sesiones
   const hoyIso=today();
   const diasValidos=[];
-  for(let dd=r.desdeN; dd<=r.hastaN; dd++){
-    const d=new Date(y,m,dd);
-    if(!DIAS_ENT_CAT.includes(d.getDay())) continue;
-    const iso=y+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+  const d=new Date(semana.lunes);
+  for(let i=0;i<7;i++){
+    if(!DIAS_ENT_CAT.includes(d.getDay())){ d.setDate(d.getDate()+1); continue; }
+    const iso=_isoDeFecha(d);
     // Un día que todavía no llegó (la semana en curso, con días por delante)
     // no cuenta como "esperado sin cumplir" -- si no, la semana actual se
     // mostraría amarilla o roja solo porque el jueves todavía no pasó.
-    if(iso>hoyIso) continue;
-    if(entSuspendidoEn(_suspensionesEnt, iso)) continue;
-    diasValidos.push(iso);
+    if(iso>hoyIso){ d.setDate(d.getDate()+1); continue; }
+    if(!entSuspendidoEn(_suspensionesEnt, iso)) diasValidos.push(iso);
+    d.setDate(d.getDate()+1);
   }
   const esperados=diasValidos.length;
   const out={};
@@ -4574,9 +4585,9 @@ function renderHistory(filter,mode){
   lEl.innerHTML='';
 
   if(DIAS_ENT_CAT.length && PLAYERS.length){
-    const totalSemanas=Math.ceil(_diasEnMes(y,m)/7);
-    const porSemana=[];
-    for(let s=1;s<=totalSemanas;s++) porSemana.push(_statsSemanaDelMesPorJugador(y,m,s));
+    const semanasDelMes=_semanasDelMes(y,m);
+    const totalSemanas=semanasDelMes.length;
+    const porSemana=semanasDelMes.map(_statsSemanaPorJugador);
     // De mayor a menor asistencia del mes (asistidos/esperados sumando las
     // semanas) -- así el profe ve primero a quién le está yendo mejor, no el
     // orden fijo del plantel. Un jugador sin ningún día esperado ese mes
@@ -4597,11 +4608,13 @@ function renderHistory(filter,mode){
     // parejo bajo fixed y la tabla se pasa del ancho de la pantalla) -- así
     // entra completa en cualquier celular, no solo en el que se probó.
     const colJugador=28, colSemana=((100-colJugador)/totalSemanas).toFixed(2);
+    const fmtDia=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
     t+='<table style="table-layout:fixed;width:100%;border-collapse:collapse;font-size:11px">'+
       '<colgroup><col style="width:'+colJugador+'%">'+
       ('<col style="width:'+colSemana+'%">').repeat(totalSemanas)+'</colgroup>'+
       '<thead><tr><th style="text-align:left;padding:2px 2px 6px 0;color:var(--muted);font-weight:600;overflow:hidden">Jugador</th>';
-    for(let s=1;s<=totalSemanas;s++) t+='<th style="padding:2px 0 6px;color:var(--muted);font-weight:600">S'+s+'</th>';
+    semanasDelMes.forEach((sem,i)=>t+='<th style="padding:2px 0 6px;color:var(--muted);font-weight:600" '+
+      'title="lunes a domingo, '+fmtDia(sem.lunes)+' al '+fmtDia(sem.domingo)+'">S'+(i+1)+'</th>');
     t+='</tr></thead><tbody>';
     jugadoresOrden.forEach(name=>{
       t+='<tr><td style="text-align:left;padding:3px 2px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0" title="'+name+'">'+name+'</td>';
