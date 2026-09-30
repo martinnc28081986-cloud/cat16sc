@@ -4027,47 +4027,49 @@ function _citacionesDeCategorias(){
 
 async function _getActiveFecha(fixture, suspensions){
   // Cache de 60 segundos para no consultar Firebase en cada render. Va atada a
-  // CLUB_PATH+TORNEO_ID: un render que arranca ANTES de que loadClubConfig termine
-  // de resolver el club (o un listener viejo de un club anterior que todavía no se
-  // desuscribió) puede calcular y cachear el resultado de OTRO club. Sin la clave,
-  // ese valor quedaba pegado 60s y el club nuevo mostraba el próximo partido de
-  // otro club (con Sagrado no se notaba porque su fixture default coincide con el
-  // real; con cualquier otro club se veía mal).
-  const _cacheKey = CLUB_PATH + '|' + TORNEO_ID;
+  // CLUB_PATH+TORNEO_ID+categoría: un render que arranca ANTES de que
+  // loadClubConfig termine de resolver el club (o un listener viejo de un
+  // club anterior que todavía no se desuscribió) puede calcular y cachear el
+  // resultado de OTRO club. Sin la clave, ese valor quedaba pegado 60s y el
+  // club nuevo mostraba el próximo partido de otro club. La categoría se
+  // sumó a la clave por el mismo motivo: el resultado ahora es propio de
+  // CADA categoría (ver abajo), así que compartir el caché entre categorías
+  // del mismo club mostraría la fecha de otra.
+  const _cacheKey = CLUB_PATH + '|' + TORNEO_ID + '|' + CFG.dbPath;
   // Vale también cuando el resultado es null ("no hay fecha activa"): antes ese caso no se
   // cacheaba, y cada llamada volvía a bajar las citaciones de las 8 categorías.
   if(window._activeFechaKey === _cacheKey && Date.now() - window._activeFechaTs < 60000){
     return window._activeFechaCache;
   }
   try {
-    // Citaciones de todas las cats competitivas (una sola lectura compartida, ver abajo)
+    // Antes esto miraba TODAS las categorías competitivas del club y se quedaba
+    // pegado en la primera fecha que CUALQUIERA de ellas no hubiera citado --
+    // así, la categoría 2016 (al día) mostraba como "activa" una fecha vieja
+    // solo porque otra categoría del club (otro profe) todavía no la citó. La
+    // fecha a citar tiene que salir de ESTA categoría sola, igual que el
+    // "próximo partido" del encabezado (_getProximoPartidoReal).
     const allCits = await _citacionesDeCategorias();
+    const misCits = allCits[CFG.dbPath] || {};
+    const yaCito = Object.keys(misCits).length > 0;
 
-    // Solo considerar categorías que tienen al menos UNA citación guardada (activas)
-    const CATS = Object.keys(allCits);
-    const activeCats = CATS.filter(cat => Object.keys(allCits[cat]).length > 0);
-    const catsToCheck = activeCats.length > 0 ? activeCats : CATS.slice(0,1);
-
-    // Helper: buscar citación por número de fecha (independiente del rival)
-    // Porque cada cat puede tener distinto rival para la misma fecha
-    function catCitedFechaNum(cat, fechaNum){
-      const cits = allCits[cat];
-      return Object.values(cits).some(cit =>
+    function citeEstaFecha(fechaNum){
+      return Object.values(misCits).some(cit =>
         cit.fecha === fechaNum && cit.citados && cit.citados.length > 0
       );
     }
 
-    // Encontrar la primera fecha donde alguna cat activa no citó
+    // Primera fecha que esta categoría no citó
     const active = fixture.find(f => {
       if(f.cond === '-') return false;
       if(suspensions[f.fecha]) return false;
-      // La fecha es "activa" si al menos una cat ACTIVA no citó aún
-      return catsToCheck.some(cat => !catCitedFechaNum(cat, f.fecha));
+      return !citeEstaFecha(f.fecha);
     });
 
-    // Si no hay citaciones en ninguna categoría, usar teamResults para detectar la próxima fecha real
+    // Si esta categoría nunca citó nada todavía, "la primera sin citar" sería
+    // la fecha 1 -- aunque el campeonato ya vaya por la 6. Se salta a la fecha
+    // real que sigue (según resultados ya jugados), igual que el encabezado.
     let result = active;
-    if(!active || activeCats.length === 0){
+    if(!yaCito){
       const catNum = NUM_DE_CATEGORIA[CFG.dbPath]||16;
       const playedFechas = fechasJugadasDelClub(catNum);
       if(playedFechas.size > 0){
