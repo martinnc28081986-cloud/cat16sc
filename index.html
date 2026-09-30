@@ -4602,7 +4602,8 @@ function renderHistory(filter,mode){
     const grid=document.createElement('div');
     grid.className='card';
     grid.style.cssText='overflow-x:auto';
-    let t='<div style="font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:var(--sp-4)">Asistencia por semana, de mayor a menor</div>';
+    let t='<div style="font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">Asistencia por semana, de mayor a menor</div>'+
+      '<div style="font-size:var(--f-micro);color:var(--muted);opacity:.75;margin-bottom:var(--sp-4)">Cada semana va de lunes a domingo. Si una semana queda repartida entre dos meses, se muestra completa en el mes de su lunes.</div>';
     // table-layout:fixed con PORCENTAJE explícito en cada columna (no alcanza
     // con dejar las de semana "sin ancho": algunos navegadores no las reparte
     // parejo bajo fixed y la tabla se pasa del ancho de la pantalla) -- así
