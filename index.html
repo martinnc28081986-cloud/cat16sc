@@ -233,6 +233,10 @@
   .st.ok { background:var(--win); }
   .st.no { background:var(--loss); }
   .st.pend { background:var(--punto-vacio); }
+  /* Suspendido (feriado, lluvia, cancha ocupada): hueco, no relleno -- para que
+     se note a simple vista que ES DISTINTO de "sin cargar" (pend), no cuenta
+     ni a favor ni en contra. */
+  .st.susp { background:transparent; border:1px solid var(--border); }
   .racha-leyenda .st { vertical-align:middle; margin-right:3px; }
   .racha-leyenda { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap;
                    font-size:var(--f-micro); color:var(--muted); background:var(--surface2);
@@ -5110,15 +5114,20 @@ function _entrenosDeEstaSemana(){
     const d = new Date(lunes); d.setDate(lunes.getDate()+i);
     if(!DIAS_ENT_CAT.includes(d.getDay())) continue;
     const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    dias.push({ iso, dow:d.getDay(), futuro: iso > hoyIso, sesion: attendance[iso] || null });
+    // Un día que el coordinador suspendió (feriado, lluvia, cancha ocupada) no
+    // cuenta como entrenamiento -- ni a favor ni en contra del jugador.
+    dias.push({ iso, dow:d.getDay(), futuro: iso > hoyIso, sesion: attendance[iso] || null,
+                suspendido: entSuspendidoEn(_suspensionesEnt, iso) });
   }
   return dias;
 }
 // Estado de UN jugador en un día de _entrenosDeEstaSemana(): 'ok' (vino),
-// 'no' (faltó) o 'pend' (todavía no pasó ese día, o pasó pero nadie cargó la
-// asistencia -- no hay forma de distinguir "no entrenó" de "no se cargó", así
-// que no se lo castiga con rojo por algo que puede ser solo un olvido).
+// 'no' (faltó), 'susp' (el coordinador suspendió ese día, no cuenta) o
+// 'pend' (todavía no pasó ese día, o pasó pero nadie cargó la asistencia --
+// no hay forma de distinguir "no entrenó" de "no se cargó", así que no se lo
+// castiga con rojo por algo que puede ser solo un olvido).
 function _estadoEntrenoDia(dia, nombre){
+  if(dia.suspendido) return 'susp';
   if(!dia.sesion) return 'pend';
   if((dia.sesion.present||[]).includes(nombre)) return 'ok';
   if((dia.sesion.absent||[]).includes(nombre)) return 'no';
@@ -5160,7 +5169,8 @@ function renderCitList(){
         '<span><b>Días de entrenamiento de esta semana</b>:</span>'+
         '<span><span class="st ok"></span> entrenó</span>'+
         '<span><span class="st no"></span> faltó</span>'+
-        '<span><span class="st pend"></span> todavía no le tocó</span>' : '');
+        '<span><span class="st pend"></span> todavía no le tocó</span>'+
+        '<span><span class="st susp"></span> suspendido</span>' : '');
     }
   }
 
@@ -5252,9 +5262,10 @@ function renderCitList(){
         diasSemana.forEach(dia=>{
           const estado=_estadoEntrenoDia(dia,name);
           const span=document.createElement('span');
-          span.className='st '+(estado==='ok'?'ok':estado==='no'?'no':'pend');
+          span.className='st '+(estado==='ok'?'ok':estado==='no'?'no':estado==='susp'?'susp':'pend');
           span.title=_CORTO_DIA[dia.dow]+' '+dia.iso.slice(8,10)+'/'+dia.iso.slice(5,7)+': '+
-            (estado==='ok'?'entrenó':estado==='no'?'faltó':(dia.futuro?'todavía no llegó ese día':'sin cargar'));
+            (estado==='ok'?'entrenó':estado==='no'?'faltó':estado==='susp'?'suspendido, no cuenta':
+             (dia.futuro?'todavía no llegó ese día':'sin cargar'));
           st.appendChild(span);
         });
         motRow.appendChild(st);
