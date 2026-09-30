@@ -209,17 +209,31 @@
   #citPlayerList .racha { gap:4px; }
   #citPlayerList .pt-chip { width:26px; height:26px; font-size:10px; }
   #citPlayerList .tbtn { width:28px; height:28px; font-size:var(--f-sm); }
-  .mot-nc { display:block; flex:1 1 100%; width:100%; min-width:0; margin-top:calc(-1 * var(--sp-2));
+  /* Motivo + entrenos de la semana, en la misma línea al pie de la fila */
+  .mot-row { display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3);
+             flex:1 1 100%; width:100%; min-width:0; margin-top:calc(-1 * var(--sp-2)); }
+  .mot-nc { display:block; flex:0 1 auto; min-width:0;
             background:transparent; color:var(--muted); border:1px dashed var(--border);
             border-radius:var(--r-sm); padding:var(--sp-2) var(--sp-4); font:inherit;
-            font-size:var(--f-micro); font-weight:600; text-transform:uppercase;
+            font-size:10px; font-weight:600; text-transform:uppercase;
             letter-spacing:.5px; cursor:pointer; text-align:left; line-height:1.3;
             -webkit-tap-highlight-color:transparent; }
   /* El ↻ avisa que un toque cambia el motivo (como el botón de ausencias en Entreno) */
-  .mot-nc::after { content:'\21BB'; float:right; opacity:.6; }
+  .mot-nc::after { content:'\21BB'; margin-left:var(--sp-2); opacity:.6; }
   .mot-nc.o { color:var(--draw); border:1px solid rgba(var(--draw-rgb),.5); }
   .mot-nc.r { color:var(--loss); border:1px solid rgba(var(--loss-rgb),.5); }
   .mot-nc.sd { font-style:italic; }
+  /* Palitos de entrenamiento de esta semana: uno por día que le toca entrenar
+     a esta categoría. Forma de barrita (no punto) para no confundirse con los
+     círculos de partidos de la racha, que ya usan color con el mismo criterio.
+     El color va suelto (no dentro de .semana-ent), como .pt: lo usa también
+     la leyenda de abajo, si no ahí salía invisible. */
+  .semana-ent { display:flex; align-items:center; gap:3px; flex:none; }
+  .st { width:4px; height:14px; border-radius:2px; background:var(--border); display:inline-block; }
+  .st.ok { background:var(--win); }
+  .st.no { background:var(--loss); }
+  .st.pend { background:var(--punto-vacio); }
+  .racha-leyenda .st { vertical-align:middle; margin-right:3px; }
   .racha-leyenda { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap;
                    font-size:var(--f-micro); color:var(--muted); background:var(--surface2);
                    border:1px solid var(--border); border-radius:var(--r-md);
@@ -1004,8 +1018,8 @@
     <button class="btn btn-oly" onclick="markAll('cit',false)">Ninguno</button>
   </div>
 
-  <div class="racha-leyenda" id="rachaLeyenda"></div>
   <div class="pgrid" id="citPlayerList"></div>
+  <div class="racha-leyenda" id="rachaLeyenda"></div>
 
   <div class="cam-section">
     <div class="cam-title">&#128085; ¿Quién se lleva las camisetas?</div>
@@ -3624,6 +3638,7 @@ const FIXTURE_SEMILLA_SAGRADO = [
 let PLAYERS = [];
 let PLAYERS_INACTIVE = []; // jugadores dados de baja
 let PLAYER_POS = {};       // nombre -> puesto ('arq'|'def'|'med'|'del'); sin entrada = sin puesto
+let DIAS_ENT_CAT = [];     // días de entrenamiento (0-6) de ESTA categoría — para el indicador semanal de Citaciones
 let _altaPos = null;       // puesto elegido en el formulario de alta de Plantel (null = todavía no eligió)
 let _ordenPlantel = null;  // orden de la lista de Plantel, fijo mientras se está en la pestaña
 
@@ -3666,16 +3681,24 @@ async function loadClubConfig(){
   if(window._isEscuelita){ _configCargada = true; return; }
   try {
     // La config y las categorías del club, a la vez. Las categorías (sin repetidos) alimentan a
-    // catsCompetitivas(): qué categorías mirar al calcular la fecha activa.
-    const [snap, catsSnap] = await Promise.all([
+    // catsCompetitivas(): qué categorías mirar al calcular la fecha activa. Los días de
+    // entrenamiento son para el indicador de "entrenó esta semana" de Citaciones.
+    const [snap, catsSnap, diasSnap, diasCatSnap] = await Promise.all([
       get(ref(db, CLUB_PATH+'/config')),
-      get(ref(db, CLUB_PATH+'/cats')).catch(() => null)
+      get(ref(db, CLUB_PATH+'/cats')).catch(() => null),
+      get(ref(db, CLUB_PATH+'/diasEntrenamiento')).catch(() => null),
+      get(ref(db, CLUB_PATH+'/diasPorCategoria')).catch(() => null)
     ]);
     const cfg = snap.exists() ? snap.val() : {};
     {
       const c = catsSnap && catsSnap.exists() ? catsSnap.val() : null;
       window._catsDelClub = c ? [...new Set(Array.isArray(c) ? c : Object.values(c))] : null;
     }
+    DIAS_ENT_CAT = diasDeCategoria(
+      diasSnap && diasSnap.exists() ? numsDeDias(diasSnap.val()) : [],
+      diasCatSnap && diasCatSnap.exists() ? diasCatSnap.val() : {},
+      CFG.dbPath
+    );
 
     aplicarColorDeClub(cfg);
 
@@ -4959,6 +4982,37 @@ function ultimosPartidosDelAnio(n){
     .map(([k,c]) => ({ cit:c, stats: d.stats[k] || null }));
 }
 
+// Días de entrenamiento (lunes a hoy) de ESTA semana para la categoría actual,
+// con quién vino y quién faltó cada uno -- lo que se ve en Citaciones al lado
+// de "Rotación". Los días de la semana que todavía no llegaron también se
+// devuelven (estado 'pend'), para que el jugador que entrena bien no muestre
+// un palito de menos solo porque el viernes todavía no pasó.
+function _entrenosDeEstaSemana(){
+  if(!DIAS_ENT_CAT.length) return [];
+  const attendance = ASIS();
+  const hoyIso = today();
+  const hoy = new Date(); hoy.setHours(12,0,0,0);
+  const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay()+6)%7));
+  const dias = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
+    if(!DIAS_ENT_CAT.includes(d.getDay())) continue;
+    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    dias.push({ iso, dow:d.getDay(), futuro: iso > hoyIso, sesion: attendance[iso] || null });
+  }
+  return dias;
+}
+// Estado de UN jugador en un día de _entrenosDeEstaSemana(): 'ok' (vino),
+// 'no' (faltó) o 'pend' (todavía no pasó ese día, o pasó pero nadie cargó la
+// asistencia -- no hay forma de distinguir "no entrenó" de "no se cargó", así
+// que no se lo castiga con rojo por algo que puede ser solo un olvido).
+function _estadoEntrenoDia(dia, nombre){
+  if(!dia.sesion) return 'pend';
+  if((dia.sesion.present||[]).includes(nombre)) return 'ok';
+  if((dia.sesion.absent||[]).includes(nombre)) return 'no';
+  return 'pend';
+}
+
 function renderCitList(){
   const el=document.getElementById('citPlayerList'); el.innerHTML='';
 
@@ -4971,13 +5025,16 @@ function renderCitList(){
     (c && c.citados || []).forEach(p => { totales[p] = (totales[p]||0) + 1; });
   });
 
-  // Leyenda: sin esto los puntitos no se entienden solos
+  // Leyenda: sin esto los puntitos no se entienden solos. Va al pie de la
+  // lista (no arriba de todo) para no ensuciar la vista de quien ya sabe qué
+  // significan y solo quiere citar.
   const leyenda = document.getElementById('rachaLeyenda');
+  const diasSemana = _entrenosDeEstaSemana();
   if(leyenda){
-    if(ultimos.length === 0){ leyenda.style.display='none'; }
+    if(ultimos.length === 0 && !diasSemana.length){ leyenda.style.display='none'; }
     else {
       leyenda.style.display='flex';
-      leyenda.innerHTML =
+      leyenda.innerHTML = (ultimos.length ?
         '<span><b>Últimos '+ultimos.length+' partidos</b> de '+anioVista()+
           ((typeof esHistorico==='function' && esHistorico())
             ? ' hasta el cierre de esta temporada' : '')+
@@ -4985,9 +5042,13 @@ function renderCitList(){
         '<span><span class="pt pc"></span> jugó todo</span>'+
         '<span><span class="pt pm"></span> entró o salió</span>'+
         '<span><span class="pt pf"></span> faltó</span>'+
-        '<span><span class="pt pn"></span> no citado</span>'+
-        '<span style="color:var(--muted)">·</span>'+
-        '<span>el número es el <b>total de citaciones del año</b></span>';
+        '<span><span class="pt pn"></span> no citado</span>' : '') +
+        (diasSemana.length ?
+        '<span style="flex-basis:100%;height:0"></span>'+
+        '<span><b>Días de entrenamiento de esta semana</b>:</span>'+
+        '<span><span class="st ok"></span> entrenó</span>'+
+        '<span><span class="st no"></span> faltó</span>'+
+        '<span><span class="st pend"></span> todavía no le tocó</span>' : '');
     }
   }
 
@@ -5066,7 +5127,27 @@ function renderCitList(){
       while(row.firstChild) arriba.appendChild(row.firstChild);
       row.classList.add('con-motivo');
       row.appendChild(arriba);
-      row.appendChild(btn);
+
+      // Motivo (izquierda) + entrenos de esta semana (derecha), en la misma
+      // línea al pie de la fila. Ayuda a decidir a quién citar: un jugador que
+      // no entrenó esta semana es un dato más que el "rotación" solo no dice.
+      const motRow=document.createElement('div');
+      motRow.className='mot-row';
+      motRow.appendChild(btn);
+      if(diasSemana.length){
+        const st=document.createElement('div');
+        st.className='semana-ent';
+        diasSemana.forEach(dia=>{
+          const estado=_estadoEntrenoDia(dia,name);
+          const span=document.createElement('span');
+          span.className='st '+(estado==='ok'?'ok':estado==='no'?'no':'pend');
+          span.title=_CORTO_DIA[dia.dow]+' '+dia.iso.slice(8,10)+'/'+dia.iso.slice(5,7)+': '+
+            (estado==='ok'?'entrenó':estado==='no'?'faltó':(dia.futuro?'todavía no llegó ese día':'sin cargar'));
+          st.appendChild(span);
+        });
+        motRow.appendChild(st);
+      }
+      row.appendChild(motRow);
     }
     filas[name]=row;
   });
