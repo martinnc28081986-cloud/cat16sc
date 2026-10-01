@@ -3788,6 +3788,24 @@ async function loadClubConfig(){
     if(cfg.horarios && cfg.horarios[catKey]){
       CFG.matchTime = cfg.horarios[catKey]; // club sobreescribe liga
     }
+    // Horario de citación explícito (opcional): si el club no cargó uno para esta
+    // categoría, el mensaje de WhatsApp lo calcula solo (40 min antes del partido,
+    // ver shareWhatsapp). Algunas ligas citan con otro margen (p.ej. 1 hora antes).
+    if(ligaData && ligaData.horariosCitacion && ligaData.horariosCitacion[catKey]){
+      CFG.citacionTime = ligaData.horariosCitacion[catKey];
+    }
+    if(cfg.horariosCitacion && cfg.horariosCitacion[catKey]){
+      CFG.citacionTime = cfg.horariosCitacion[catKey];
+    }
+    // Día de partido (0=Dom...6=Sáb, igual que Date.getDay()): dato informativo de
+    // configuración, igual que horario y horario de citación -- la fecha real de cada
+    // partido sigue viniendo del fixture, esto es solo "qué día de la semana juega".
+    if(ligaData && ligaData.diaPartido && ligaData.diaPartido[catKey] !== undefined){
+      CFG.diaPartido = ligaData.diaPartido[catKey];
+    }
+    if(cfg.diaPartido && cfg.diaPartido[catKey] !== undefined){
+      CFG.diaPartido = cfg.diaPartido[catKey];
+    }
 
     // ── DIRECCIÓN ──
     if(cfg.address) CFG.address = cfg.address;
@@ -5648,9 +5666,15 @@ window.shareCit = async function(key){
   const matchTime = esExtra ? (cit.hora||'') : (CFG.matchTime||'');
   const address   = esExtra ? (cit.cancha||'') : (cit.condicion==='L' ? localAddr : visitaAddr);
 
-  // Horario de citación = 40 min antes del partido
+  // Horario de citación: si el club cargó uno explícito para esta categoría (Super
+  // Admin > Editar club > Horarios por categoría) se usa ese -- hay categorías que
+  // citan con más o menos margen que las demás. Si no, se calcula el criterio de
+  // siempre: 40 min antes del partido. Los partidos extra (amistosos/torneos aparte)
+  // ya traen su propio horario cargado a mano, así que no usan ninguno de los dos.
   let citTime = '';
-  if(matchTime){
+  if(!esExtra && CFG.citacionTime){
+    citTime = CFG.citacionTime;
+  } else if(matchTime){
     const [hh,mm] = matchTime.split(':').map(Number);
     const total = hh*60+mm-40;
     citTime = String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
@@ -10172,6 +10196,26 @@ window.saEditarClub = async function(clubId){
     return '<div class="dcat-fila"><span class="dcat-nom">'+catCorta(c.key)+'</span>'+
       _diasSemana.map(d => '<label class="dcat-dia'+(propios.includes(d.v)?' on':'')+'"><input type="checkbox" class="editDiaCat" data-cat="'+c.key+'" value="'+d.v+'"'+(propios.includes(d.v)?' checked':'')+'><span>'+d.l+'</span></label>').join('')+'</div>';
   }).join('');
+  // Día, horario y horario de citación de partido por categoría (clubs/{club}/config
+  // .diaPartido, .horarios y .horariosCitacion). Sin esto solo se podían cargar a mano
+  // en Firebase -- no había forma de hacerlo desde la app para un club nuevo con
+  // categorías propias (p.ej. de división, como TRICOLORES), que no tiene ningún
+  // horario por defecto. El día usa semana completa (incluye domingo, a diferencia de
+  // los días de entrenamiento de arriba) porque los partidos se juegan cualquier día.
+  const _diasPartidoClub = club.config?.diaPartido || {};
+  const _horariosClub = club.config?.horarios || {};
+  const _horariosCitClub = club.config?.horariosCitacion || {};
+  const _diasSemanaPartido = [{v:'',l:'—'},{v:'1',l:'Lun'},{v:'2',l:'Mar'},{v:'3',l:'Mié'},{v:'4',l:'Jue'},{v:'5',l:'Vie'},{v:'6',l:'Sáb'},{v:'0',l:'Dom'}];
+  const _diaSelect = (cat, val) => '<select class="editDiaPartido" data-cat="'+cat+'" style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-sm);font-size:var(--f-sm)">'+
+    _diasSemanaPartido.map(d=>'<option value="'+d.v+'"'+(String(val||'')===d.v?' selected':'')+'>'+d.l+'</option>').join('')+'</select>';
+  const _timeInput = (cls, cat, val) => '<input type="time" class="'+cls+'" data-cat="'+cat+'" value="'+(val||'')+'" style="flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:var(--sp-2) var(--sp-3);border-radius:var(--r-sm);font-size:var(--f-sm)">';
+  const horariosCatHtml = CAT_OPTS.map(c =>
+    '<div class="dcat-fila"><span class="dcat-nom">'+catCorta(c.key)+'</span>'+
+      _diaSelect(c.key, _diasPartidoClub[c.key])+
+      _timeInput('editHorarioPartido', c.key, _horariosClub[c.key])+
+      _timeInput('editHorarioCit', c.key, _horariosCitClub[c.key])+
+    '</div>'
+  ).join('');
 
   overlay.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-8);width:100%;max-width:420px;margin:auto">
@@ -10199,6 +10243,12 @@ window.saEditarClub = async function(clubId){
         <summary>Días distintos por categoría</summary>
         <div class="dcat-ayuda">Marcá los días solo de la categoría que entrena distinto del resto del club (por ejemplo, la 2013 un día menos). Las que no marques usan los días de arriba.</div>
         ${diasCatHtml}
+      </details>
+      <details class="dcat-caja" ${(Object.keys(_diasPartidoClub).length||Object.keys(_horariosClub).length||Object.keys(_horariosCitClub).length)?'open':''}>
+        <summary>Horarios por categoría</summary>
+        <div class="dcat-ayuda">Día, horario y citación de cada categoría, para el mensaje de WhatsApp. Si dejás la citación vacía, se calcula sola: 40 minutos antes del partido.</div>
+        <div class="dcat-fila"><span class="dcat-nom"></span><span style="flex:1;text-align:center;font-size:var(--f-micro);color:var(--muted)">Día</span><span style="flex:1;text-align:center;font-size:var(--f-micro);color:var(--muted)">Partido</span><span style="flex:1;text-align:center;font-size:var(--f-micro);color:var(--muted)">Citación</span></div>
+        ${horariosCatHtml}
       </details>
       <label style="display:flex;align-items:center;gap:var(--sp-4);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--sp-4) var(--sp-5);margin-bottom:var(--sp-6);cursor:pointer">
         <input type="checkbox" id="editClubRsvp" ${club.config?.rsvpHabilitado?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
@@ -10256,6 +10306,12 @@ window._saGuardarEdicion = async function(clubId){
   // Solo se guardan las categorías con días propios; el resto usa los del club
   const diasPorCategoria = {};
   _ov.querySelectorAll('.editDiaCat:checked').forEach(cb => { (diasPorCategoria[cb.dataset.cat] = diasPorCategoria[cb.dataset.cat] || []).push(cb.value); });
+  const diaPartido = {};
+  _ov.querySelectorAll('.editDiaPartido').forEach(sel => { if(sel.value !== '') diaPartido[sel.dataset.cat] = sel.value; });
+  const horarios = {};
+  _ov.querySelectorAll('.editHorarioPartido').forEach(inp => { if(inp.value) horarios[inp.dataset.cat] = inp.value; });
+  const horariosCitacion = {};
+  _ov.querySelectorAll('.editHorarioCit').forEach(inp => { if(inp.value) horariosCitacion[inp.dataset.cat] = inp.value; });
   const rsvpHabilitado = !!document.getElementById('editClubRsvp')?.checked;
   if(!nombre){ showToast('El nombre no puede estar vacío'); return; }
   const snap = await get(ref(db,'clubs/'+clubId));
@@ -10287,6 +10343,9 @@ window._saGuardarEdicion = async function(clubId){
   if(ligaNombre) updates.config.ligaNombre = ligaNombre;
   if(clubAddress) updates.config.address = clubAddress;
   updates.config.rsvpHabilitado = rsvpHabilitado;
+  if(Object.keys(diaPartido).length) updates.config.diaPartido = diaPartido; else delete updates.config.diaPartido;
+  if(Object.keys(horarios).length) updates.config.horarios = horarios; else delete updates.config.horarios;
+  if(Object.keys(horariosCitacion).length) updates.config.horariosCitacion = horariosCitacion; else delete updates.config.horariosCitacion;
   // torneoActivo se preserva tal cual estaba
   await set(ref(db,'clubs/'+clubId), updates);
   document.getElementById('saEditOverlay')?.remove();
