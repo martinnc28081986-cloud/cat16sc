@@ -5680,19 +5680,23 @@ window.shareCit = async function(key){
     citTime = String(Math.floor(total/60)).padStart(2,'0')+':'+String(total%60).padStart(2,'0');
   }
 
-  // Fecha del partido formateada
-  const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  const MESES_S = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  // Fecha del partido formateada como "Este sábado 10/10/2026" -- antes decía solo
+  // "Sáb 10/10/2026" y no quedaba claro de un vistazo que ese es también el día en
+  // que hay que estar citado (la citación es más temprano el mismo día del partido).
+  const DIAS_COMPLETOS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const _fechaCitStr = d => 'Este '+DIAS_COMPLETOS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
   let fechaStr = '';
   if(esExtra && cit.fecha_str){
-    const d = new Date(cit.fecha_str+'T12:00:00');
-    fechaStr = DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+    fechaStr = _fechaCitStr(new Date(cit.fecha_str+'T12:00:00'));
   } else {
     const dateStr = FIXTURE_DATES[cit.fecha];
-    if(dateStr){
-      const d = new Date(dateStr+'T12:00:00');
-      fechaStr = DIAS[d.getDay()]+' '+d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
-    }
+    if(dateStr) fechaStr = _fechaCitStr(new Date(dateStr+'T12:00:00'));
+    // FIXTURE_DATES casi nunca tiene la fecha real (la liga no la publica, ver su
+    // comentario de arriba) -- sin esto el mensaje no decía NUNCA qué día es, para
+    // ningún club. Si el club cargó el día de partido de esta categoría (Super Admin
+    // > Editar club > Horarios por categoría), se usa ESE día de la semana como
+    // respaldo: "Este sábado", sin fecha concreta porque no se sabe el número.
+    else if(CFG.diaPartido !== undefined && CFG.diaPartido !== '') fechaStr = 'Este '+DIAS_COMPLETOS[Number(CFG.diaPartido)];
   }
 
   // Categoría. Se deriva de la clave en vez de un mapa fijo: todos los años
