@@ -4445,6 +4445,34 @@ function _semanasDelMes(y,m){
   return semanas;
 }
 const _isoDeFecha=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+// Días de entrenamiento EFECTIVOS de una semana (lunes a domingo) para la categoría
+// actual: los días que el club declaró, pero si un entrenamiento se corrió de día
+// (en vez del martes se entrenó el lunes) el día nuevo ocupa el lugar de un día
+// declarado que no se hizo, y no suma uno de más. Un día sin sesión que NO se
+// corrió a otro sigue contando como declarado (no vino nadie). Los suspendidos
+// por el coordinador quedan marcados y no pueden recibir un entrenamiento movido.
+// Cada elemento: { iso, dow, futuro, sesion|null, suspendido }.
+function _entrenosEfectivosSemana(lunes, domingo){
+  const attendance=ASIS();
+  const hoyIso=today();
+  const declarados=[], extras=[];
+  const d=new Date(lunes);
+  while(d<=domingo){
+    const iso=_isoDeFecha(d), dow=d.getDay();
+    d.setDate(d.getDate()+1);
+    const suspendido=entSuspendidoEn(_suspensionesEnt, iso);
+    const sesion=(!suspendido && iso<=hoyIso && attendance[iso]) || null;
+    if(DIAS_ENT_CAT.includes(dow)) declarados.push({ iso, dow, suspendido, sesion });
+    else if(sesion) extras.push({ iso, dow, suspendido:false, sesion });
+  }
+  const libres=declarados.filter(x=>!x.suspendido && !x.sesion);
+  const movidos=Math.min(extras.length, libres.length);
+  const reemplazados=new Set(libres.slice(0,movidos).map(x=>x.iso));
+  const out=declarados.filter(x=>!reemplazados.has(x.iso)).concat(extras.slice(0,movidos));
+  out.sort((a,b)=>a.iso<b.iso?-1:a.iso>b.iso?1:0);
+  out.forEach(x=>{ x.futuro=x.iso>hoyIso; });
+  return out;
+}
 // Para UNA semana real: cuántos días de entrenamiento de ESTA categoría caen
 // ahí (sin contar los que el coordinador suspendió -- ni a favor ni en contra
 // de nadie, ni los que todavía no llegaron) y, de esos, cuántos entrenó cada
@@ -4453,21 +4481,14 @@ const _isoDeFecha=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+
 // días y una de 3 usan cada una su propia escala.
 function _statsSemanaPorJugador(semana){
   const attendance=ASIS(); // ya excluye los días suspendidos de las sesiones
-  const hoyIso=today();
-  const diasValidos=[];
-  const d=new Date(semana.lunes);
-  while(d<=semana.domingo){
-    const iso=_isoDeFecha(d);
-    const dow=d.getDay();
-    d.setDate(d.getDate()+1);
-    if(!DIAS_ENT_CAT.includes(dow)) continue;
-    // Un día que todavía no llegó (la semana en curso, con días por delante)
-    // no cuenta como "esperado sin cumplir" -- si no, la semana actual se
-    // mostraría amarilla o roja solo porque el jueves todavía no pasó. Hoy SÍ
-    // cuenta: si el coordinador no lo suspendió, el entrenamiento está en pie.
-    if(iso>hoyIso) continue;
-    if(!entSuspendidoEn(_suspensionesEnt, iso)) diasValidos.push(iso);
-  }
+  // Un día que todavía no llegó (la semana en curso, con días por delante) no
+  // cuenta como "esperado sin cumplir" -- si no, la semana actual se mostraría
+  // amarilla o roja solo porque el jueves todavía no pasó. Hoy SÍ cuenta: si el
+  // coordinador no lo suspendió, el entrenamiento está en pie. Un entrenamiento
+  // que se corrió de día (martes -> lunes) cuenta una sola vez, ver
+  // _entrenosEfectivosSemana.
+  const diasValidos=_entrenosEfectivosSemana(semana.lunes, semana.domingo)
+    .filter(x=>!x.suspendido && !x.futuro).map(x=>x.iso);
   const esperados=diasValidos.length;
   const out={};
   PLAYERS.forEach(name=>{
@@ -5198,21 +5219,13 @@ function ultimosPartidosDelAnio(n){
 // un palito de menos solo porque el viernes todavía no pasó.
 function _entrenosDeEstaSemana(){
   if(!DIAS_ENT_CAT.length) return [];
-  const attendance = ASIS();
-  const hoyIso = today();
   const hoy = new Date(); hoy.setHours(12,0,0,0);
   const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - ((hoy.getDay()+6)%7));
-  const dias = [];
-  for(let i=0;i<7;i++){
-    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
-    if(!DIAS_ENT_CAT.includes(d.getDay())) continue;
-    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    // Un día que el coordinador suspendió (feriado, lluvia, cancha ocupada) no
-    // cuenta como entrenamiento -- ni a favor ni en contra del jugador.
-    dias.push({ iso, dow:d.getDay(), futuro: iso > hoyIso, sesion: attendance[iso] || null,
-                suspendido: entSuspendidoEn(_suspensionesEnt, iso) });
-  }
-  return dias;
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate()+6);
+  // Un día que el coordinador suspendió (feriado, lluvia, cancha ocupada) no
+  // cuenta como entrenamiento -- ni a favor ni en contra del jugador. Y un
+  // entrenamiento que se corrió de día (martes -> lunes) aparece en su día real.
+  return _entrenosEfectivosSemana(lunes, domingo);
 }
 // Estado de UN jugador en un día de _entrenosDeEstaSemana(): 'ok' (vino),
 // 'no' (faltó), 'susp' (el coordinador suspendió ese día, no cuenta) o
