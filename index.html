@@ -4420,21 +4420,23 @@ function _mesDeHistorial(){
   const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+histMonthOffset);
   return { y:base.getFullYear(), m:base.getMonth() };
 }
-// Semanas de VERDAD (lunes a domingo, no un corte de 7 días fijo por
-// número de día) que le tocan a este mes -- una semana es "de este mes" si
-// su LUNES cae acá, aunque termine en el mes que viene. Así la semana del
-// 28/09 al 4/10 aparece completa en septiembre (incluye el jueves 1/10 si
-// esa categoría entrena jueves) y octubre arranca de cero el lunes siguiente,
-// en vez de partir esa semana real en dos "Sem" de meses distintos.
+// Semanas reales (lunes a domingo) del mes, RECORTADAS al mes: una semana que
+// cruza dos meses aparece en los dos, cada uno con solo sus días. Así los
+// días de cada mes de "Detalle por día" son exactamente los que cuenta la
+// grilla de ese mes (antes la semana 28/09-4/10 se mostraba entera en
+// septiembre y el jueves 1/10 figuraba en octubre en el detalle pero no en la
+// grilla). La primera semana puede traer pocos días (por ejemplo 1/10-4/10).
+// lunes/domingo son el primer y último día de ESE tramo dentro del mes.
 function _semanasDelMes(y,m){
-  const primero=new Date(y,m,1);
-  const lunes=new Date(primero); lunes.setDate(primero.getDate()-((primero.getDay()+6)%7));
-  if(lunes.getMonth()!==m || lunes.getFullYear()!==y) lunes.setDate(lunes.getDate()+7);
+  const ultimoDia=new Date(y,m+1,0).getDate();
   const semanas=[];
-  while(lunes.getMonth()===m && lunes.getFullYear()===y){
-    const domingo=new Date(lunes); domingo.setDate(lunes.getDate()+6);
-    semanas.push({ lunes:new Date(lunes), domingo });
-    lunes.setDate(lunes.getDate()+7);
+  let ini=1;
+  while(ini<=ultimoDia){
+    const d=new Date(y,m,ini);
+    const hastaDomingo=7-((d.getDay()+6)%7); // días que quedan de la semana, contando este
+    const fin=Math.min(ultimoDia, ini+hastaDomingo-1);
+    semanas.push({ lunes:new Date(y,m,ini), domingo:new Date(y,m,fin) });
+    ini=fin+1;
   }
   return semanas;
 }
@@ -4450,15 +4452,18 @@ function _statsSemanaPorJugador(semana){
   const hoyIso=today();
   const diasValidos=[];
   const d=new Date(semana.lunes);
-  for(let i=0;i<7;i++){
-    if(!DIAS_ENT_CAT.includes(d.getDay())){ d.setDate(d.getDate()+1); continue; }
+  while(d<=semana.domingo){
     const iso=_isoDeFecha(d);
+    const dow=d.getDay();
+    d.setDate(d.getDate()+1);
+    if(!DIAS_ENT_CAT.includes(dow)) continue;
     // Un día que todavía no llegó (la semana en curso, con días por delante)
     // no cuenta como "esperado sin cumplir" -- si no, la semana actual se
-    // mostraría amarilla o roja solo porque el jueves todavía no pasó.
-    if(iso>hoyIso){ d.setDate(d.getDate()+1); continue; }
+    // mostraría amarilla o roja solo porque el jueves todavía no pasó. Hoy
+    // tampoco cuenta hasta que haya asistencia cargada: el entrenamiento
+    // puede no haberse hecho todavía.
+    if(iso>hoyIso || (iso===hoyIso && !attendance[iso])) continue;
     if(!entSuspendidoEn(_suspensionesEnt, iso)) diasValidos.push(iso);
-    d.setDate(d.getDate()+1);
   }
   const esperados=diasValidos.length;
   const out={};
@@ -4625,7 +4630,7 @@ function renderHistory(filter,mode){
     grid.className='card';
     grid.style.cssText='overflow-x:auto';
     let t='<div style="font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">Asistencia por semana, de mayor a menor</div>'+
-      '<div style="font-size:var(--f-micro);color:var(--muted);opacity:.75;margin-bottom:var(--sp-4)">Cada semana va de lunes a domingo. Si una semana queda repartida entre dos meses, se muestra completa en el mes de su lunes.</div>';
+      '<div style="font-size:var(--f-micro);color:var(--muted);opacity:.75;margin-bottom:var(--sp-4)">Cada semana va de lunes a domingo. Si una semana queda repartida entre dos meses, cada mes cuenta solo sus propios días. Los días suspendidos o que todavía no pasaron no cuentan.</div>';
     // table-layout:fixed con PORCENTAJE explícito en cada columna (no alcanza
     // con dejar las de semana "sin ancho": algunos navegadores no las reparte
     // parejo bajo fixed y la tabla se pasa del ancho de la pantalla) -- así
@@ -4637,7 +4642,7 @@ function renderHistory(filter,mode){
       ('<col style="width:'+colSemana+'%">').repeat(totalSemanas)+'</colgroup>'+
       '<thead><tr><th style="text-align:left;padding:2px 2px 6px 0;color:var(--muted);font-weight:600;overflow:hidden">Jugador</th>';
     semanasDelMes.forEach((sem,i)=>t+='<th style="padding:2px 0 6px;color:var(--muted);font-weight:600" '+
-      'title="lunes a domingo, '+fmtDia(sem.lunes)+' al '+fmtDia(sem.domingo)+'">S'+(i+1)+'</th>');
+      'title="'+fmtDia(sem.lunes)+' al '+fmtDia(sem.domingo)+'">S'+(i+1)+'</th>');
     t+='</tr></thead><tbody>';
     jugadoresOrden.forEach(name=>{
       t+='<tr><td style="text-align:left;padding:3px 2px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0" title="'+name+'">'+name+'</td>';
