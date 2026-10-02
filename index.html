@@ -4416,27 +4416,31 @@ window.saveSession=async function(){
 // crece con la temporada, a diferencia de antes. Las semanas DENTRO del mes
 // se ven todas juntas como columnas de la grilla de abajo, no hay que elegir
 // una por vez.
+// El mes "actual" es el del LUNES de la semana en curso: así, si hoy es viernes
+// 2/10, se abre septiembre, donde está la semana 28/9, y no octubre, que todavía
+// no tiene ninguna semana arrancada.
+function _lunesDeFecha(d){
+  const l=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  l.setDate(l.getDate()-((l.getDay()+6)%7));
+  return l;
+}
 function _mesDeHistorial(){
-  const base=new Date(); base.setDate(1); base.setMonth(base.getMonth()+histMonthOffset);
+  const lun=_lunesDeFecha(new Date());
+  const base=new Date(lun.getFullYear(), lun.getMonth()+histMonthOffset, 1);
   return { y:base.getFullYear(), m:base.getMonth() };
 }
-// Semanas reales (lunes a domingo) del mes, RECORTADAS al mes: una semana que
-// cruza dos meses aparece en los dos, cada uno con solo sus días. Así los
-// días de cada mes de "Detalle por día" son exactamente los que cuenta la
-// grilla de ese mes (antes la semana 28/09-4/10 se mostraba entera en
-// septiembre y el jueves 1/10 figuraba en octubre en el detalle pero no en la
-// grilla). La primera semana puede traer pocos días (por ejemplo 1/10-4/10).
-// lunes/domingo son el primer y último día de ESE tramo dentro del mes.
+// Semanas completas de lunes a domingo, sin recortar por mes: a quien mira la
+// grilla no le importa que la semana cruce de mes, quiere ver quién vino esa
+// semana. Cada semana es del mes de su LUNES (la primera de un mes es su primer
+// lunes), así cada semana aparece en un solo mes y no se repite ni se pierde.
 function _semanasDelMes(y,m){
-  const ultimoDia=new Date(y,m+1,0).getDate();
   const semanas=[];
-  let ini=1;
-  while(ini<=ultimoDia){
-    const d=new Date(y,m,ini);
-    const hastaDomingo=7-((d.getDay()+6)%7); // días que quedan de la semana, contando este
-    const fin=Math.min(ultimoDia, ini+hastaDomingo-1);
-    semanas.push({ lunes:new Date(y,m,ini), domingo:new Date(y,m,fin) });
-    ini=fin+1;
+  const l=new Date(y,m,1);
+  l.setDate(l.getDate()+((8-l.getDay())%7)); // primer lunes del mes
+  while(l.getMonth()===m){
+    const domingo=new Date(l.getFullYear(), l.getMonth(), l.getDate()+6);
+    semanas.push({ lunes:new Date(l), domingo });
+    l.setDate(l.getDate()+7);
   }
   return semanas;
 }
@@ -4606,13 +4610,18 @@ function renderHistory(filter,mode){
 
   // ── MODO MES: grilla de asistencia por semana + detalle día por día ──
   const {y,m}=_mesDeHistorial();
-  const ym=y+'-'+String(m+1).padStart(2,'0');
-  const dates=allDates.filter(d=>d.startsWith(ym));
+  const semanasDelMes=_semanasDelMes(y,m);
+  // El detalle por día lista exactamente los días de las semanas de la grilla
+  // (del lunes de la primera al domingo de la última), no el mes calendario:
+  // una semana que cruza de mes se ve entera, con sus sesiones de abajo.
+  const _desde=_isoDeFecha(semanasDelMes[0].lunes), _hasta=_isoDeFecha(semanasDelMes[semanasDelMes.length-1].domingo);
+  const dates=allDates.filter(d=>d>=_desde && d<=_hasta);
   lEl.innerHTML='';
 
   if(DIAS_ENT_CAT.length && PLAYERS.length){
-    const semanasDelMes=_semanasDelMes(y,m);
     const totalSemanas=semanasDelMes.length;
+    const hoyIsoGrilla=today();
+    const idxActual=semanasDelMes.findIndex(s=>hoyIsoGrilla>=_isoDeFecha(s.lunes) && hoyIsoGrilla<=_isoDeFecha(s.domingo));
     const porSemana=semanasDelMes.map(_statsSemanaPorJugador);
     // De mayor a menor asistencia del mes (asistidos/esperados sumando las
     // semanas) -- así el profe ve primero a quién le está yendo mejor, no el
@@ -4629,23 +4638,31 @@ function renderHistory(filter,mode){
     grid.className='card';
     grid.style.cssText='overflow-x:auto';
     let t='<div style="font-size:var(--f-micro);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">Asistencia por semana, de mayor a menor</div>'+
-      '<div style="font-size:var(--f-micro);color:var(--muted);opacity:.75;margin-bottom:var(--sp-4)">Cada semana va de lunes a domingo. Si una semana queda repartida entre dos meses, cada mes cuenta solo sus propios días. Los días suspendidos o que todavía no pasaron no cuentan.</div>';
+      '<div style="font-size:var(--f-micro);color:var(--muted);opacity:.75;margin-bottom:var(--sp-4)">Cada columna es una semana de lunes a domingo y muestra la fecha de su lunes. El número es cuántos días vino sobre los que había entrenamiento esa semana: no cuentan los días suspendidos ni los que todavía no llegaron.</div>';
     // table-layout:fixed con PORCENTAJE explícito en cada columna (no alcanza
     // con dejar las de semana "sin ancho": algunos navegadores no las reparte
     // parejo bajo fixed y la tabla se pasa del ancho de la pantalla) -- así
     // entra completa en cualquier celular, no solo en el que se probó.
     const colJugador=28, colSemana=((100-colJugador)/totalSemanas).toFixed(2);
-    const fmtDia=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+    const fmtDia=d=>d.getDate()+'/'+(d.getMonth()+1);
+    // La semana en curso va sombreada y con recuadro, para ubicarse de un vistazo.
+    const ACT_BG='rgba(77,115,245,.12)', ACT_BORDE='1px solid var(--accent)';
+    const estiloActual=(i,esPrimera,esUltima)=>i!==idxActual?'':
+      'background:'+ACT_BG+';border-left:'+ACT_BORDE+';border-right:'+ACT_BORDE+';'+
+      (esPrimera?'border-top:'+ACT_BORDE+';':'')+(esUltima?'border-bottom:'+ACT_BORDE+';':'');
     t+='<table style="table-layout:fixed;width:100%;border-collapse:collapse;font-size:11px">'+
       '<colgroup><col style="width:'+colJugador+'%">'+
       ('<col style="width:'+colSemana+'%">').repeat(totalSemanas)+'</colgroup>'+
-      '<thead><tr><th style="text-align:left;padding:2px 2px 6px 0;color:var(--muted);font-weight:600;overflow:hidden">Jugador</th>';
-    semanasDelMes.forEach((sem,i)=>t+='<th style="padding:2px 0 6px;color:var(--muted);font-weight:600" '+
-      'title="'+fmtDia(sem.lunes)+' al '+fmtDia(sem.domingo)+'">S'+(i+1)+'</th>');
+      '<thead><tr><th style="text-align:left;padding:2px 2px 6px 0;color:var(--muted);font-weight:600;overflow:hidden;vertical-align:bottom">Jugador</th>';
+    semanasDelMes.forEach((sem,i)=>t+='<th style="padding:3px 0 6px;color:'+(i===idxActual?'var(--text)':'var(--muted)')+';font-weight:600;vertical-align:bottom;'+estiloActual(i,true,false)+'" '+
+      'title="Semana del '+fmtDia(sem.lunes)+' al '+fmtDia(sem.domingo)+'">'+
+      (i===idxActual?'<div style="font-size:8px;line-height:1.1;letter-spacing:.3px;text-transform:uppercase;color:var(--accent);margin-bottom:2px">Semana<br>actual</div>':'')+
+      fmtDia(sem.lunes)+'</th>');
     t+='</tr></thead><tbody>';
-    jugadoresOrden.forEach(name=>{
+    jugadoresOrden.forEach((name,fila)=>{
+      const ultimaFila=fila===jugadoresOrden.length-1;
       t+='<tr><td style="text-align:left;padding:3px 2px 3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0" title="'+name+'">'+name+'</td>';
-      porSemana.forEach(sem=>{
+      porSemana.forEach((sem,iSem)=>{
         const st=sem[name];
         let celda='<span style="color:var(--muted)">—</span>';
         if(st.esperados>0){
@@ -4657,7 +4674,7 @@ function renderHistory(filter,mode){
             'border-radius:5px;background:'+bg+';color:'+fg+';font-weight:700;font-size:10px" '+
             'title="'+st.asistidos+' de '+st.esperados+' días entrenados">'+st.asistidos+'</span>';
         }
-        t+='<td style="text-align:center;padding:3px 0">'+celda+'</td>';
+        t+='<td style="text-align:center;padding:3px 0;'+estiloActual(iSem,false,ultimaFila)+'">'+celda+'</td>';
       });
       t+='</tr>';
     });
@@ -4667,6 +4684,7 @@ function renderHistory(filter,mode){
       '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(var(--win-rgb),.3);vertical-align:middle;margin-right:4px"></span>entrenó todos los días que le tocaban</span>'+
       '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(var(--draw-rgb),.3);vertical-align:middle;margin-right:4px"></span>entrenó alguno, no todos</span>'+
       '<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(var(--loss-rgb),.3);vertical-align:middle;margin-right:4px"></span>no entrenó ningún día</span>'+
+      (idxActual>=0?'<span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(77,115,245,.12);border:1px solid var(--accent);box-sizing:border-box;vertical-align:middle;margin-right:4px"></span>semana actual</span>':'')+
     '</div>';
     grid.innerHTML=t;
     lEl.appendChild(grid);
