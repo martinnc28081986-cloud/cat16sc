@@ -4459,10 +4459,9 @@ function _statsSemanaPorJugador(semana){
     if(!DIAS_ENT_CAT.includes(dow)) continue;
     // Un día que todavía no llegó (la semana en curso, con días por delante)
     // no cuenta como "esperado sin cumplir" -- si no, la semana actual se
-    // mostraría amarilla o roja solo porque el jueves todavía no pasó. Hoy
-    // tampoco cuenta hasta que haya asistencia cargada: el entrenamiento
-    // puede no haberse hecho todavía.
-    if(iso>hoyIso || (iso===hoyIso && !attendance[iso])) continue;
+    // mostraría amarilla o roja solo porque el jueves todavía no pasó. Hoy SÍ
+    // cuenta: si el coordinador no lo suspendió, el entrenamiento está en pie.
+    if(iso>hoyIso) continue;
     if(!entSuspendidoEn(_suspensionesEnt, iso)) diasValidos.push(iso);
   }
   const esperados=diasValidos.length;
