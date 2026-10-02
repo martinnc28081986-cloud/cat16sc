@@ -4099,7 +4099,6 @@ async function _getActiveFecha(fixture, suspensions){
     // "próximo partido" del encabezado (_getProximoPartidoReal).
     const allCits = await _citacionesDeCategorias();
     const misCits = allCits[CFG.dbPath] || {};
-    const yaCito = Object.keys(misCits).length > 0;
 
     function citeEstaFecha(fechaNum){
       return Object.values(misCits).some(cit =>
@@ -4107,23 +4106,28 @@ async function _getActiveFecha(fixture, suspensions){
       );
     }
 
-    // Primera fecha que esta categoría no citó
+    // Primera fecha que esta categoría no citó (solo se usa de respaldo, cuando
+    // todavía no hay ningún resultado jugado de donde sacar el próximo partido)
     const active = fixture.find(f => {
       if(f.cond === '-') return false;
       if(suspensions[f.fecha]) return false;
       return !citeEstaFecha(f.fecha);
     });
 
-    // Si esta categoría nunca citó nada todavía, "la primera sin citar" sería
-    // la fecha 1 -- aunque el campeonato ya vaya por la 6. Se salta a la fecha
-    // real que sigue (según resultados ya jugados), igual que el encabezado.
+    // La fecha a citar sale del PRÓXIMO partido real (la que sigue a la última
+    // jugada, igual que el encabezado), NO de "la primera sin citar": esa se quedaba
+    // pegada en una fecha vieja que nunca se jugó o se pospuso (en TRICOLORES, la
+    // Fecha 2 postergada) o que el profe nunca cargó, aunque el campeonato ya fuera
+    // por la 9. Antes esto solo se corregía si la categoría no había citado nada;
+    // alcanzaba con haber citado UNA fecha para volver al problema. Entre las
+    // próximas, se prefiere la primera que todavía no tiene citación.
     let result = active;
-    if(!yaCito){
-      const catNum = NUM_DE_CATEGORIA[CFG.dbPath]||16;
-      const playedFechas = fechasJugadasDelClub(catNum);
-      if(playedFechas.size > 0){
-        result = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && !playedFechas.has(f.fecha)) || active;
-      }
+    const catNum = NUM_DE_CATEGORIA[CFG.dbPath]||16;
+    const playedFechas = fechasJugadasDelClub(catNum);
+    if(playedFechas.size > 0){
+      const ultima = Math.max(...playedFechas);
+      const proximas = fixture.filter(f => f.cond!=='-' && !suspensions[f.fecha] && f.fecha > ultima);
+      result = proximas.find(f => !citeEstaFecha(f.fecha)) || proximas[0] || null;
     }
 
     // Si mientras se calculaba esto ya se lanzó un startApp() más nuevo (cambio
