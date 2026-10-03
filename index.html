@@ -5211,8 +5211,11 @@ window.loadFecha=function(val){
   } else {
     document.getElementById('fixtureSubEl').textContent='Marcá los jugadores citados para este partido';
   }
-  // Si ya hay una citación guardada para la fecha, no tiene sentido marcarla "sin partido"
-  if(_spEl) _spEl.innerHTML=(citaciones[key] || archivoBloqueado()) ? '' :
+  // Si ya hay citados guardados para la fecha, no tiene sentido marcarla "sin partido".
+  // Ojo: alcanza con que exista el nodo para ocultarlo mal -- una citación sin citados
+  // (por ejemplo la que se crea al tocar Formación) NO cuenta como citada.
+  const _yaCitada = !!(citaciones[key] && citaciones[key].citados && citaciones[key].citados.length > 0);
+  if(_spEl) _spEl.innerHTML=(_yaCitada || archivoBloqueado()) ? '' :
     '<button class="btn btn-oly" onclick="window.sinPartidoPedir('+f.fecha+')" style="width:100%;border-style:dashed">Esta categoría no juega esta fecha</button>';
   renderCitList();
   renderCamSelector();
