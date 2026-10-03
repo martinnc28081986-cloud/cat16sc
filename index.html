@@ -1006,7 +1006,7 @@
     <div class="fixture-info" id="fixtureInfo">
       <div class="fixture-title" id="fixtureTitleEl"></div>
       <div class="fixture-sub" id="fixtureSubEl"></div>
-
+      <div id="fixtureSinPartidoEl" style="margin-top:var(--sp-4)"></div>
     </div>
   </div>
 
@@ -3927,6 +3927,11 @@ const DAYS_ES = ["Dom","Lun","Mar","Mie","Jue","Vie","Sab"];
 const FIXTURE_DATES = {}; // Fechas no disponibles en LISFI
 
 let attendance={}, citaciones={};
+// Fechas en que ESTA categoría no juega (el rival no presenta la categoría, fecha
+// libre propia...): {numeroDeFecha: {motivo, ts}}. A diferencia de las suspensiones
+// (de todo el club), es por categoría y torneo: clubs/{club}/{cat}/torneos/{torneo}/sinPartido.
+let _sinPartido={};
+const SIN_PARTIDO_MOTIVOS={ rival:'El rival no presenta la categoría', libre:'Fecha libre de la categoría', otro:'Otro motivo' };
 let markedAtt={}, markedCit={}, markedReasons={};
 // Motivo de no citación de cada jugador en la citación que se está editando.
 // Una citación nueva arranca todo en rotación. Una ya guardada trae lo que tenía:
@@ -3994,7 +3999,7 @@ function renderFechaSelector(antesDeLaConfig){
     const susp=!!_suspensions[f.fecha];
     const opt=document.createElement('option');
     opt.value=f.fecha;
-    opt.textContent='Fecha '+f.fecha+' - '+f.rival+' ('+condLabel+')'+(susp?' — SUSPENDIDA':'');
+    opt.textContent='Fecha '+f.fecha+' - '+f.rival+' ('+condLabel+')'+(susp?' — SUSPENDIDA':_sinPartido[f.fecha]?' — SIN PARTIDO':'');
     opt.disabled=susp;
     if(susp) opt.style.color='#ff5555';
     sel.appendChild(opt);
@@ -4110,7 +4115,7 @@ async function _getActiveFecha(fixture, suspensions){
     // todavía no hay ningún resultado jugado de donde sacar el próximo partido)
     const active = fixture.find(f => {
       if(f.cond === '-') return false;
-      if(suspensions[f.fecha]) return false;
+      if(suspensions[f.fecha] || _sinPartido[f.fecha]) return false;
       return !citeEstaFecha(f.fecha);
     });
 
@@ -4126,7 +4131,7 @@ async function _getActiveFecha(fixture, suspensions){
     const playedFechas = fechasJugadasDelClub(catNum);
     if(playedFechas.size > 0){
       const ultima = Math.max(...playedFechas);
-      const proximas = fixture.filter(f => f.cond!=='-' && !suspensions[f.fecha] && f.fecha > ultima);
+      const proximas = fixture.filter(f => f.cond!=='-' && !suspensions[f.fecha] && !_sinPartido[f.fecha] && f.fecha > ultima);
       result = proximas.find(f => !citeEstaFecha(f.fecha)) || proximas[0] || null;
     }
 
@@ -4171,7 +4176,7 @@ function _getProximoPartidoReal(fixture, suspensions){
     // quedaba pegada ahí como "próximo partido" para siempre, aunque el
     // campeonato ya hubiera seguido jugando fechas más adelante sin ella.
     const ultima = Math.max(...playedFechas);
-    const next = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && f.fecha > ultima);
+    const next = fixture.find(f => f.cond!=='-' && !suspensions[f.fecha] && !_sinPartido[f.fecha] && f.fecha > ultima);
     if(next) return Promise.resolve(next);
     return Promise.resolve(null); // ya se jugaron todas las fechas reales
   }
@@ -4204,6 +4209,7 @@ function renderNextMatch(){
 // Limpiar TODOS los datos anteriores antes de cargar los nuevos
 attendance={};
 citaciones={};
+_sinPartido={};
 markedAtt={};
 markedCit={};
 markedMotivo={};
@@ -4258,9 +4264,22 @@ function _startFirebaseListeners(){
     }, ()=>{});
     // Guardado en _unsub3 para poder soltarlo: antes quedaba suscripto para siempre y cada
     // cambio de categoría sumaba otro listener.
-    window._unsub3 = onValue(ref(db,DB_PREFIX+'/torneos_extra_nombres'), snap => {
+    const _u3a = onValue(ref(db,DB_PREFIX+'/torneos_extra_nombres'), snap => {
       _torneosExtraNombres = snap.val() ? Object.values(snap.val()) : [];
     }, ()=>{});
+    // Fechas sin partido de esta categoría: se suelta junto con el de arriba (_unsub3).
+    // Al cambiar el dato hay que repintar lo que depende de él: el selector, el cartel
+    // de la fecha elegida y el "próximo partido".
+    const _u3b = onValue(ref(db,DB_PREFIX+'/sinPartido'), snap => {
+      const _estabaMarcada = currentFecha ? !!_sinPartido[currentFecha] : false;
+      _sinPartido = snap.val() || {};
+      if(typeof window._invalidateActiveFecha === 'function') window._invalidateActiveFecha();
+      if(typeof renderFechaSelector === 'function') renderFechaSelector();
+      // Solo se repinta la fecha abierta si cambió SU estado: no pisar lo que el profe está marcando.
+      if(currentFecha && _estabaMarcada !== !!_sinPartido[currentFecha]) loadFecha(String(currentFecha));
+      renderNextMatch();
+    }, ()=>{});
+    window._unsub3 = () => { try{_u3a();}catch(e){} try{_u3b();}catch(e){} };
   } catch(e) {
     clearTimeout(_loadTimeout);
     document.getElementById('loadingScreen').style.display='none';
@@ -5114,6 +5133,7 @@ window.loadPartidoExtra = function(key){
 
   const info = document.getElementById('fixtureInfo');
   info.style.display = 'block';
+  const _spExtra = document.getElementById('fixtureSinPartidoEl'); if(_spExtra) _spExtra.innerHTML = '';
   document.getElementById('fixtureTitleEl').innerHTML =
     '<span style="background:rgba(77,115,245,0.15);color:#7a9af7;font-size:var(--f-micro);padding:var(--sp-1) var(--sp-4);border-radius:var(--r-full);margin-right:var(--sp-3);font-weight:700;text-transform:uppercase">'+tipoLabel+'</span>'+
     'vs '+cit.rival+' <span class="fixture-badge '+condCls+'">'+condLabel+'</span>';
@@ -5146,6 +5166,24 @@ window.loadFecha=function(val){
     markedCit={}; selectedCamisetero=null; _cargarMotivos(null);
     renderCitList(); renderCamSelector();
     if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='Fecha suspendida'; }
+    const _spSusp=document.getElementById('fixtureSinPartidoEl'); if(_spSusp) _spSusp.innerHTML='';
+    return;
+  }
+
+  // ── SIN PARTIDO (solo esta categoría) ──
+  // El rival no presenta la categoría, fecha libre propia, etc. No se cita y no
+  // figura como falta; se puede deshacer.
+  const _spEl=document.getElementById('fixtureSinPartidoEl');
+  if(_sinPartido[f.fecha]){
+    info.style.display='block';
+    const _mot=(_sinPartido[f.fecha]||{}).motivo;
+    document.getElementById('fixtureTitleEl').innerHTML='Fecha '+f.fecha+' &mdash; vs '+_fmtRival(f.rival)+' <span class="fixture-badge fb-libre">SIN PARTIDO</span>';
+    document.getElementById('fixtureSubEl').innerHTML='<span style="color:var(--muted);font-weight:600">'+((_mot && _mot!=='otro' && SIN_PARTIDO_MOTIVOS[_mot]) || 'Sin partido')+'. No se cita.</span>';
+    markedCit={}; selectedCamisetero=null; _cargarMotivos(null);
+    renderCitList(); renderCamSelector();
+    if(saveBtn){ saveBtn.disabled=true; saveBtn.textContent='Fecha sin partido'; }
+    if(_spEl) _spEl.innerHTML=archivoBloqueado() ? '' :
+      '<button class="btn btn-oly" onclick="window.sinPartidoQuitar('+f.fecha+')" style="width:100%">Deshacer: sí juega esta fecha</button>';
     return;
   }
 
@@ -5173,8 +5211,47 @@ window.loadFecha=function(val){
   } else {
     document.getElementById('fixtureSubEl').textContent='Marcá los jugadores citados para este partido';
   }
+  // Si ya hay una citación guardada para la fecha, no tiene sentido marcarla "sin partido"
+  if(_spEl) _spEl.innerHTML=(citaciones[key] || archivoBloqueado()) ? '' :
+    '<button class="btn btn-oly" onclick="window.sinPartidoPedir('+f.fecha+')" style="width:100%;border-style:dashed">Esta categoría no juega esta fecha</button>';
   renderCitList();
   renderCamSelector();
+};
+
+// Marcar / desmarcar que ESTA categoría no juega una fecha (ver _sinPartido).
+window.sinPartidoPedir=function(n){
+  const el=document.getElementById('fixtureSinPartidoEl'); if(!el) return;
+  el.innerHTML='<div style="font-size:var(--f-sm);font-weight:600;margin-bottom:var(--sp-3)">¿Por qué no juega?</div>'+
+    Object.keys(SIN_PARTIDO_MOTIVOS).map(k=>'<button class="btn btn-oly" onclick="window.sinPartidoMarcar('+n+',\''+k+'\')" style="width:100%;margin-bottom:var(--sp-2);text-align:left">'+SIN_PARTIDO_MOTIVOS[k]+'</button>').join('')+
+    '<div style="font-size:var(--f-micro);color:var(--muted);margin:var(--sp-2) 0 var(--sp-3)">No se podrá citar esta fecha para la categoría y deja de figurar como falta. Se puede deshacer.</div>'+
+    '<button class="btn btn-oly" onclick="loadFecha(\''+n+'\')" style="width:100%">Cancelar</button>';
+};
+window.sinPartidoMarcar=async function(n,motivo){
+  if(_roGuard()) return;
+  const dato={ motivo, ts:Date.now() };
+  try{ await set(ref(db,DB_PREFIX+'/sinPartido/'+n), dato); }
+  catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
+  _sinPartido[n]=dato;
+  window._invalidateActiveFecha();
+  showToast('✓ Fecha '+n+' marcada sin partido');
+  renderFechaSelector();
+  const sel=document.getElementById('citFechaSelect');
+  const next=await _getActiveFecha(FIXTURE,_suspensions);
+  if(next){ sel.value=String(next.fecha); loadFecha(String(next.fecha)); }
+  else { sel.value=String(n); loadFecha(String(n)); }
+  renderNextMatch();
+};
+window.sinPartidoQuitar=async function(n){
+  if(_roGuard()) return;
+  try{ await remove(ref(db,DB_PREFIX+'/sinPartido/'+n)); }
+  catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
+  delete _sinPartido[n];
+  window._invalidateActiveFecha();
+  renderFechaSelector();
+  const sel=document.getElementById('citFechaSelect'); sel.value=String(n);
+  loadFecha(String(n));
+  renderNextMatch();
+  showToast('Fecha '+n+': vuelve a contar para citar');
 };
 
 // Cuántos partidos hacia atrás se muestran al lado de cada nombre.
@@ -5594,6 +5671,7 @@ window.saveCitacion=async function(){
   const f=FIXTURE.find(x=>x.fecha===currentFecha);
   if(!f){ btn.disabled=false; return; }
   if(_suspensions[f.fecha]){showToast('⛔ Fecha suspendida — no se puede guardar'); btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; return;}
+  if(_sinPartido[f.fecha]){showToast('Esta fecha está marcada sin partido — deshacé eso para citar'); btn.disabled=false; btn.innerHTML='&#128190; Guardar partido'; return;}
   const citados=PLAYERS.filter(p=>markedCit[p]===true);
 
   const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
@@ -5831,14 +5909,14 @@ function renderCitStats(){
   const allE=Object.entries(citaciones).sort((a,b)=>(a[1].fecha||0)-(b[1].fecha||0));
   const tot=allE.filter(([,m])=>m.citados&&m.citados.length>0).length;
 
-  const totalFechas=FIXTURE.filter(f=>f.cond!=='-').length;
+  const totalFechas=FIXTURE.filter(f=>f.cond!=='-' && !_sinPartido[f.fecha]).length;
   const jugadas=tot;
   const pct=totalFechas?Math.round(jugadas/totalFechas*100):0;
 
   // Primera fecha sin citar y sin suspender (no libre)
   const proximaFecha = FIXTURE.find(f=>{
     if(f.cond==='-') return false;
-    if(_suspensions[f.fecha]) return false;
+    if(_suspensions[f.fecha] || _sinPartido[f.fecha]) return false;
     const k='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const c=citaciones[k];
     return !c||!c.citados||c.citados.length===0;
@@ -5867,7 +5945,7 @@ function renderCitStats(){
     else if(res==='L'){bg='var(--loss)';col='#fff';}
     else if(res==='E'){bg='var(--draw)';col='#000';}
     else if(isSusp){bg='rgba(255,23,68,0.2)';col='#ff5555';}
-    else if(isLibre){bg='#2a3a5e';col='#5a7aae';}
+    else if(isLibre || _sinPartido[f.fecha]){bg='#2a3a5e';col='#5a7aae';}
     else if(_esArchivo){
       // Temporada terminada: no existe "próximo". Si citamos pero no hay
       // resultado cargado, se marca con un borde en vez de pintarla de azul.
@@ -6344,7 +6422,7 @@ function renderFormacion(){
   let proximoKey = null, proximoF = null;
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
-    if(_suspensions[f.fecha]) continue;
+    if(_suspensions[f.fecha] || _sinPartido[f.fecha]) continue;
     if(_playedF1.size>0 && (f.fecha <= _ultimaF1)) continue; // ya jugada o vieja sin jugar
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
@@ -6450,7 +6528,7 @@ function renderFormacionHistorial(){
   let proximoKey2 = null, proximoF2 = null;
   for(const f of FIXTURE){
     if(f.cond==='-') continue;
-    if(_suspensions[f.fecha]) continue;
+    if(_suspensions[f.fecha] || _sinPartido[f.fecha]) continue;
     if(_playedF2.size>0 && _playedF2.has(f.fecha)) continue; // ya jugada
     const key='fecha'+String(f.fecha).padStart(2,'0')+'_'+f.rival.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
     const cit = citaciones[key];
@@ -10993,8 +11071,17 @@ async function startCoordApp(){
     return 'fecha'+String(f.fecha).padStart(2,'0')+'_'+
            String(f.rival||'').replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
   }
+  // ¿Esta categoría tiene marcada la fecha como "sin partido"? (el rival no presenta
+  // la categoría, fecha libre propia...). Vive en .../torneos/{torneo}/sinPartido/{fecha}.
+  function sinPartidoEn(catKey, f){
+    const z = (D[catKey] && D[catKey].zonas) ? D[catKey].zonas[TORNEO_ID] : null;
+    return !!(f && z && z.sinPartido && z.sinPartido[f.fecha]);
+  }
+  // Cumple con la fecha si citó, o si no tenía que citar porque no juega: así no salta
+  // como "no citó" ni como "fecha ya jugada sin citación".
   function citoLaFecha(catKey, f){
     if(!f) return false;
+    if(sinPartidoEn(catKey, f)) return true;
     return Object.values(citsDeZona(catKey)).some(x =>
       +x.fecha === +f.fecha && x.citados && x.citados.length > 0);
   }
@@ -11230,6 +11317,33 @@ async function startCoordApp(){
     }catch(e){ showToast('No se pudo guardar el aviso'); }
   };
 
+  /* ── SIN PARTIDO por categoría ──
+     Cuando una categoría no juega una fecha (el rival no presenta la categoría y se
+     le dan los puntos, fecha libre propia...), no tiene nada que citar: deja de
+     figurar como pendiente. A diferencia de coordSuspFecha, afecta SOLO a esa categoría. */
+  window.coordSinPartido = async function(catKey, fechaN){
+    if(_roGuard()) return;
+    const c = catDe(catKey);
+    if(!confirm('¿Marcar la fecha '+fechaN+' como "sin partido" para '+c.label+'?\n\n'+
+                'No se le va a pedir la citación de esa fecha. Se puede deshacer desde Citaciones.')) return;
+    const dato = { motivo:'otro', ts:Date.now() };
+    try{ await set(ref(db, CLUB_PATH+'/'+catKey+'/torneos/'+TORNEO_ID+'/sinPartido/'+fechaN), dato); }
+    catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
+    D[catKey].zonas = D[catKey].zonas || {};
+    D[catKey].zonas[TORNEO_ID] = D[catKey].zonas[TORNEO_ID] || {};
+    D[catKey].zonas[TORNEO_ID].sinPartido = Object.assign({}, D[catKey].zonas[TORNEO_ID].sinPartido, { [fechaN]: dato });
+    showToast('✓ '+c.label+': fecha '+fechaN+' sin partido');
+    pintar();
+  };
+  window.coordQuitarSinPartido = async function(catKey, fechaN){
+    if(_roGuard()) return;
+    try{ await remove(ref(db, CLUB_PATH+'/'+catKey+'/torneos/'+TORNEO_ID+'/sinPartido/'+fechaN)); }
+    catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
+    const z = D[catKey] && D[catKey].zonas ? D[catKey].zonas[TORNEO_ID] : null;
+    if(z && z.sinPartido) delete z.sinPartido[fechaN];
+    pintar();
+  };
+
   /* ── DIÁLOGO DE WHATSAPP ──
      El mensaje se ve ANTES de mandarse. Nada sale sin que el coordinador lo lea. */
   let _dlg = null;
@@ -11348,18 +11462,25 @@ async function startCoordApp(){
 
     // Próxima fecha
     if(prox){
-      const citaron = COMP_CATS.filter(c => citoLaFecha(c.key, prox)).length;
+      // Las que no juegan esta fecha no cuentan ni a favor ni en contra: salen del total
+      const juegan = COMP_CATS.filter(c => !sinPartidoEn(c.key, prox));
+      const citaron = juegan.filter(c => citoLaFecha(c.key, prox)).length;
       h += '<div class="ccard acento">'+
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--sp-5);flex-wrap:wrap">'+
           '<div><div class="cet">Próxima fecha</div>'+
           '<div class="cbig">F'+prox.fecha+' &middot; vs '+esc(prox.rival)+'</div>'+
           '<div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-1)">'+
             (prox.cond==='L'?'Local':'Visitante')+'</div></div>'+
-          '<div class="ckpi" style="padding:0"><div class="n '+(citaron===COMP_CATS.length?'win':'draw')+'">'+
-            citaron+'/'+COMP_CATS.length+'</div><div class="l">categorías citaron</div></div>'+
+          '<div class="ckpi" style="padding:0"><div class="n '+(citaron===juegan.length?'win':'draw')+'">'+
+            citaron+'/'+juegan.length+'</div><div class="l">categorías citaron</div></div>'+
         '</div>'+
         '<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-5)">'+
-          COMP_CATS.map(c=>{ const ok = citoLaFecha(c.key, prox);
+          COMP_CATS.map(c=>{
+            if(sinPartidoEn(c.key, prox))
+              return '<span class="ccat" style="border:1px dashed var(--border);color:var(--muted)">'+
+                '<span class="punto" style="background:'+c.color+'"></span>'+
+                esc(c.label.replace(/^Cat /,''))+' sin partido</span>';
+            const ok = citoLaFecha(c.key, prox);
             return '<span class="ccat '+(ok?'ok':'falta')+'">'+
               '<span class="punto" style="background:'+c.color+'"></span>'+
               esc(c.label.replace(/^Cat /,''))+' '+(ok?'&#10003;':'&#8212;')+'</span>'; }).join('')+
@@ -11484,6 +11605,8 @@ async function startCoordApp(){
           (av ? '<div class="sem-lin">Avisado '+_haceCuanto(av.ts)+' &middot; '+
             (av.visto ? '<span style="color:var(--draw)">lo vio '+_haceCuanto(av.visto)+' y no citó</span>' : 'todavía no entró a la app')+'</div>' : '')+
           '<div class="sem-acc"><button class="cbtn on" onclick="window.coordSemAvisar(\''+c.key+'\')">Avisar al profe</button>'+
+            (pc && pc.fecha && !archivoBloqueado()
+              ? '<button class="cbtn" onclick="window.coordSinPartido(\''+c.key+'\','+pc.fecha.fecha+')">No juega esta fecha</button>' : '')+
             '<button class="cbtn" onclick="window.coordSemVer(\''+c.key+'\')">Ver</button></div>'+
         '</div>';
       });
@@ -11494,8 +11617,11 @@ async function startCoordApp(){
         const e = entrenosSemana(c.key);
         const partes = [];
         partes.push(e.esperados ? e.cargados+' de '+e.esperados+' entrenos' : 'sin entrenamientos esta semana');
-        if(prox && !c.escuelita && citoLaFecha(c.key, prox)) partes.push('citó F'+prox.fecha);
-        return '<div class="crow">'+chipCat(c)+'<div class="nom"></div><div class="det" style="color:var(--win)">'+esc(partes.join(' · '))+'</div></div>';
+        const sinP = prox && !c.escuelita && sinPartidoEn(c.key, prox);
+        if(sinP) partes.push('sin partido F'+prox.fecha);
+        else if(prox && !c.escuelita && citoLaFecha(c.key, prox)) partes.push('citó F'+prox.fecha);
+        return '<div class="crow">'+chipCat(c)+'<div class="nom"></div><div class="det" style="color:var(--win)">'+esc(partes.join(' · '))+'</div>'+
+          (sinP && !archivoBloqueado() ? '<button class="cbtn" style="margin-left:var(--sp-3)" onclick="window.coordQuitarSinPartido(\''+c.key+'\','+prox.fecha+')">Deshacer</button>' : '')+'</div>';
       }).join('')+'</div>';
     }
 
@@ -11579,8 +11705,10 @@ async function startCoordApp(){
             '<div class="val" style="color:var(--'+pctCls(pres)+')">'+pres+'%</div></div>'+
             '<div class="cbar"><i class="'+pctCls(pres)+'" style="width:'+pres+'%"></i></div>')+
         '<div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;margin-top:var(--sp-5)">'+
-          (prox ? '<span class="ccat '+(citoLaFecha(c.key,prox)?'ok':'falta')+'">'+
-            (citoLaFecha(c.key,prox)?'citó F'+prox.fecha:'falta citar F'+prox.fecha)+'</span>' : '')+
+          (prox ? (sinPartidoEn(c.key,prox)
+            ? '<span class="ccat" style="border:1px dashed var(--border);color:var(--muted)">sin partido F'+prox.fecha+'</span>'
+            : '<span class="ccat '+(citoLaFecha(c.key,prox)?'ok':'falta')+'">'+
+              (citoLaFecha(c.key,prox)?'citó F'+prox.fecha:'falta citar F'+prox.fecha)+'</span>') : '')+
           (e.esperados ? '<span class="ccat '+(e.cargados>=e.esperados?'ok':'medio')+'">'+
             e.cargados+'/'+e.esperados+' entrenos</span>' : '')+
         '</div></div>';
@@ -12365,6 +12493,14 @@ async function startCoordApp(){
         if(cargado) pintar();
       }, ()=>{});
       window._coordUnsubs.push(unsub);
+      // Fechas "sin partido" de la categoría: si el profe la marca con el panel abierto, se actualiza.
+      let primeraSP = true;
+      window._coordUnsubs.push(onValue(ref(db, CLUB_PATH+'/'+cat.key+'/torneos/'+TORNEO_ID+'/sinPartido'), s=>{
+        if(primeraSP){ primeraSP = false; return; }
+        if(!D[cat.key].zonas[TORNEO_ID]) D[cat.key].zonas[TORNEO_ID] = {};
+        D[cat.key].zonas[TORNEO_ID].sinPartido = s.val() || {};
+        if(cargado) pintar();
+      }, ()=>{}));
     });
     let primeraAv = true;
     window._coordUnsubs.push(onValue(ref(db, AVISOS_PATH), s=>{
