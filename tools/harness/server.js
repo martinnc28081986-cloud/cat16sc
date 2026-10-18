@@ -156,13 +156,32 @@ function agrandar(d) {
   return d;
 }
 
+
+/* Cumpleaños de ejemplo para clubA: fechas RELATIVAS a hoy, así el aviso y la semana siempre tienen algo que mostrar.
+   Benja (cat16) y Otro Dos (cat2014) cumplen hoy; Ciro, Feli y Otro Uno caen esta semana o la próxima. */
+function conCumples(d) {
+  const A = d.clubs && d.clubs.clubA; if (!A) return d;
+  const pad = n => String(n).padStart(2, '0');
+  const en = (dias, anio) => { const x = new Date(); x.setDate(x.getDate() + dias); return (anio ? anio + '-' : '') + pad(x.getMonth() + 1) + '-' + pad(x.getDate()); };
+  const poner = (cat, id, f) => { if (A[cat] && A[cat].players && A[cat].players[id]) A[cat].players[id].cumple = f; };
+  poner('cat16', 'p0', en(0, 2016)); poner('cat16', 'p1', en(-3, 2016)); poner('cat16', 'p2', en(-1));
+  poner('cat2014', 'q1', en(0)); poner('cat2014', 'q0', en(-5, 2014));
+  A.cumples = {};
+  ['cat16', 'cat2014'].forEach(cat => {
+    const ps = (A[cat] && A[cat].players) || {}; const idx = {};
+    Object.keys(ps).forEach(id => { if (ps[id].cumple && ps[id].activo !== false) idx[id] = { n: ps[id].nombre, f: ps[id].cumple }; });
+    if (Object.keys(idx).length) A.cumples[cat] = idx;
+  });
+  return d;
+}
+
 http.createServer((q, r) => {
   const u = new URL(q.url, 'http://x');
   const p = u.pathname === '/' ? '/index.html' : u.pathname;
   try {
     if (p === '/seed.json') {
       r.setHeader('content-type', types['.json']);
-      return r.end(JSON.stringify(u.searchParams.get('big') ? agrandar(seed()) : seed()));
+      return r.end(JSON.stringify(conCumples(u.searchParams.get('big') ? agrandar(seed()) : seed())));
     }
     const f = path.resolve(ROOT, '.' + p);
     if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { r.statusCode = 404; return r.end('no encontrado'); }
