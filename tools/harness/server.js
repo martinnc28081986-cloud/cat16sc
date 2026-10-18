@@ -166,6 +166,8 @@ function conCumples(d) {
   const poner = (cat, id, f) => { if (A[cat] && A[cat].players && A[cat].players[id]) A[cat].players[id].cumple = f; };
   poner('cat16', 'p0', en(0, 2016)); poner('cat16', 'p1', en(-3, 2016)); poner('cat16', 'p2', en(-1));
   poner('cat2014', 'q1', en(0)); poner('cat2014', 'q0', en(-5, 2014));
+  // Profes del club: la ficha que cada uno deja al entrar (PROFE y PROFE2 son usuarios de Club A). PROFE2 todavía no cargó nombre ni cumpleaños.
+  A.staff = { PROFE: { r: 'profe', c: ['cat16'], n: 'Pablo', f: en(-2) }, PROFEX: { r: 'profe', c: ['cat2014'], n: 'Lucía', f: en(0) }, PROFE2: { r: 'profe', c: ['cat16', 'cat2014'] } };
   A.cumples = {};
   ['cat16', 'cat2014'].forEach(cat => {
     const ps = (A[cat] && A[cat].players) || {}; const idx = {};

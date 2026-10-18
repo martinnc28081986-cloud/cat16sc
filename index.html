@@ -172,6 +172,24 @@
               padding:1px var(--sp-4); font-size:var(--f-micro); font-weight:600; font-family:'DM Sans',sans-serif; cursor:pointer; white-space:nowrap; margin-top:var(--sp-2); }
   .cum-chip.sin { border-style:dashed; border-color:rgba(var(--draw-rgb),.6); color:var(--draw); }
   .cum-chip.hoy { background:var(--draw); border-color:var(--draw); color:#1a1200; font-weight:700; }
+  .cum-cat.staff { color:#b48cff; }
+  .staff-box { margin-bottom:var(--sp-6); }
+  .staff-tit { font-size:var(--f-micro); color:#b48cff; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:var(--sp-4); }
+  .staff-nom { font-size:var(--f-md); font-weight:600; }
+  .staff-nom.sin { color:var(--draw); font-weight:500; }
+  .staff-yo { font-size:var(--f-sm); color:var(--muted); font-weight:400; }
+  .staff-rol { font-size:var(--f-micro); color:var(--muted); letter-spacing:.5px; text-transform:uppercase; }
+  /* Resumen de cumpleaños mes a mes (panel del coordinador) */
+  .cum-mes { width:100%; display:flex; align-items:center; gap:var(--sp-4); background:var(--surface); border:1px solid var(--border);
+             border-radius:var(--r-md); padding:var(--sp-4) var(--sp-5); color:var(--text); font-family:'DM Sans',sans-serif; font-size:var(--f-md); cursor:pointer; text-align:left; }
+  .cum-mes .m { width:96px; flex:none; }
+  .cum-mes .b { flex:1; height:10px; background:var(--surface2); border-radius:5px; overflow:hidden; }
+  .cum-mes .b i { display:block; height:10px; background:var(--accent); border-radius:5px; }
+  .cum-mes .n { width:28px; text-align:right; font-weight:700; flex:none; }
+  .cum-mes.actual { border-color:var(--draw); }
+  .cum-mes.actual .b i { background:var(--draw); }
+  .cum-mes-det { margin:calc(-1 * var(--sp-2)) 0 0; background:rgba(var(--draw-rgb),.07); border:1px solid var(--border); border-top:none;
+                 border-radius:0 0 var(--r-md) var(--r-md); padding:var(--sp-4) var(--sp-5); display:flex; flex-direction:column; gap:var(--sp-3); }
   .alta-cum { margin-top:var(--sp-4); }
   .alta-cum label { display:block; font-size:var(--f-sm); color:var(--muted); margin-bottom:var(--sp-2); }
   .alta-cum .fila, .cum-modal .fila { display:flex; gap:var(--sp-3); }
@@ -1198,6 +1216,10 @@
 <div id="cumpleModal" class="cum-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10002;align-items:flex-end;justify-content:center;">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:var(--sp-7) var(--sp-7) var(--sp-8);width:100%;max-width:480px;">
     <div id="cumpleModalTit" style="font-size:var(--f-lg);font-weight:700;margin-bottom:var(--sp-5)">Cumpleaños</div>
+    <div id="cmNombreBox" style="display:none;margin-bottom:var(--sp-4)">
+      <label for="cmNombre" style="display:block;font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-2)">Tu nombre (lo ven tus compañeros)</label>
+      <input type="text" id="cmNombre" autocomplete="given-name" maxlength="40" style="width:100%;box-sizing:border-box;padding:var(--sp-4) var(--sp-5);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:var(--f-md);font-family:'DM Sans',sans-serif">
+    </div>
     <div class="fila">
       <select id="cmDia" aria-label="Día"></select>
       <select id="cmMes" aria-label="Mes"></select>
@@ -1320,7 +1342,9 @@ var ICONOS = {
   // Suspensiones: prohibido
   prohibido: '<circle cx="12" cy="12" r="8.6"/><path d="M6 6l12 12"/>',
   // Uso de la app: reloj
-  reloj:     '<circle cx="12" cy="12" r="8.6"/><path d="M12 7v5.2l3.4 2"/>'
+  reloj:     '<circle cx="12" cy="12" r="8.6"/><path d="M12 7v5.2l3.4 2"/>',
+  // Cumpleaños: torta con una vela
+  torta:     '<path d="M4 21h16v-7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7z"/><path d="M4 17c2 1.4 3.2 1.4 5 0s3-1.4 5 0 3 1.4 6 0"/><path d="M12 12V8"/><path d="M12 3c1 1 1.4 1.8 0 3-1.4-1.2-1-2 0-3z"/>'
 };
 
 // Devuelve el SVG de un ícono listo para insertar en un innerHTML.
@@ -2490,6 +2514,8 @@ function _launchByRole(profile){
   window._cumpleVerTodo = (role === 'coordinator');
   window._cumpleCatsPropias = role === 'profe' ? (profile.cats || (cat ? [cat] : []))
     : (role === 'coordinator' && profile.isProfeCoord ? _catsDePerfil(profile) : []);
+  // Quién deja su ficha en la lista de profes del club (el coordinador que no da clases, no)
+  window._cumpleStaffRol = role === 'profe' ? 'profe' : (role === 'coordinator' && profile.isProfeCoord ? 'coord' : '');
   if(role === 'profe' || role === 'coordinator') cargarCumples();
   else { CUMPLES = {}; _cumplesCargados = false; cumpleAvisoOcultar(); }
   document.getElementById('loginScreen').style.display='none';
@@ -3467,6 +3493,7 @@ function ordenarPartidosDesc(entradas){
      · el coordinador ve todo, con edad si hay año;
      · un profe ve la edad y puede saludar SOLO en sus categorías. */
 let CUMPLES = {};              // índice del club {cat: {id: {n, f}}}
+let STAFF = {};                // profes del club {uid: {n: nombre, r: 'profe'|'coord', c: [categorías], f: cumpleaños}}
 let _cumplesCargados = false;
 const _pad2 = n => String(n).padStart(2, '0');
 const _cumEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -3497,9 +3524,19 @@ function cumpleFechaEn(p, anio){
   return new Date(anio, p.m - 1, d, 12);
 }
 function cumpleVerAnio(cat){ return !!window._cumpleVerTodo || (window._cumpleCatsPropias || []).includes(cat); }
+// Nombre de un profe en pantalla: el que cargó, o "Profe de <categoría>" mientras no lo haya cargado.
+function staffNombre(s){
+  const n = String((s && s.n) || '').trim();
+  if(n) return n;
+  const c = s && Array.isArray(s.c) && s.c[0];
+  return c ? 'Profe de ' + catCorta(c) : 'Profe';
+}
 // Cumpleaños entre dos fechas (inclusive, ambas a las 12:00), de todo el club, ordenados.
+// Los profes están ligados a sus categorías: se agrupan en la primera categoría que comparten con
+// quien mira (si no comparte ninguna, en la primera de las suyas). Nunca se muestra su edad.
 function cumplesEntre(desde, hasta){
   const out = [], a0 = desde.getFullYear(), a1 = hasta.getFullYear();
+  const yo = auth.currentUser ? auth.currentUser.uid : null;
   Object.entries(CUMPLES).forEach(([cat, jug]) => {
     Object.values(jug || {}).forEach(j => {
       const p = cumpleParse(j && j.f);
@@ -3508,12 +3545,47 @@ function cumplesEntre(desde, hasta){
         const f = cumpleFechaEn(p, y);
         if(f >= desde && f <= hasta){
           const edad = p.a && cumpleVerAnio(cat) && y - p.a > 0 ? y - p.a : null;
-          out.push({ fecha: f, iso: _isoLocal(f), nombre: j.n || '', cat, edad });
+          out.push({ fecha: f, iso: _isoLocal(f), nombre: j.n || '', cat, edad, staff: false });
         }
       }
     });
   });
+  const mias = window._cumpleCatsPropias || [];
+  Object.entries(STAFF).forEach(([uid, s]) => {
+    const p = cumpleParse(s && s.f);
+    if(!p || !cumpleValido(p.m, p.d, p.a)) return;
+    const cats = Array.isArray(s.c) ? s.c : [];
+    const cat = cats.find(c => mias.includes(c)) || cats[0] || '';
+    for(let y = a0; y <= a1; y++){
+      const f = cumpleFechaEn(p, y);
+      if(f >= desde && f <= hasta) out.push({ fecha: f, iso: _isoLocal(f), nombre: staffNombre(s), cat, edad: null, staff: true, uid, esYo: uid === yo });
+    }
+  });
   return out.sort((a, b) => a.iso.localeCompare(b.iso) || a.cat.localeCompare(b.cat) || a.nombre.localeCompare(b.nombre, 'es'));
+}
+// Cumpleaños de TODO el año agrupados por mes (para el resumen del coordinador).
+// filtro: 'todos' | 'profes' | clave de categoría.
+function cumplesPorMes(filtro){
+  const meses = Array.from({ length: 12 }, () => []);
+  const anio = new Date().getFullYear();
+  if(filtro !== 'profes'){
+    Object.entries(CUMPLES).forEach(([cat, jug]) => {
+      if(filtro !== 'todos' && filtro !== cat) return;
+      Object.values(jug || {}).forEach(j => {
+        const p = cumpleParse(j && j.f);
+        if(p && cumpleValido(p.m, p.d, p.a)) meses[p.m - 1].push({ d: p.d, nombre: j.n || '', cat, staff: false, edad: p.a && anio - p.a > 0 ? anio - p.a : null });
+      });
+    });
+  }
+  Object.values(STAFF).forEach(s => {
+    const p = cumpleParse(s && s.f);
+    if(!p || !cumpleValido(p.m, p.d, p.a)) return;
+    const cats = Array.isArray(s.c) ? s.c : [];
+    if(filtro === 'todos' || filtro === 'profes' || cats.includes(filtro))
+      meses[p.m - 1].push({ d: p.d, nombre: staffNombre(s), cat: cats[0] || '', staff: true, edad: null });
+  });
+  meses.forEach(m => m.sort((a, b) => a.d - b.d || a.nombre.localeCompare(b.nombre, 'es')));
+  return meses;
 }
 function cumplesSemana(){
   const h = new Date(); h.setHours(12, 0, 0, 0);
@@ -3526,7 +3598,7 @@ function cumplesSemanaHtml(invitar){
   if(!_cumplesCargados) return '';
   // Mientras ningún jugador del club tenga fecha, "esta semana no cumple nadie" engañaría:
   // al profe se le explica cómo cargarlas y el coordinador no ve nada.
-  if(!Object.values(CUMPLES).some(j => j && Object.keys(j).length))
+  if(!Object.values(CUMPLES).some(j => j && Object.keys(j).length) && !Object.values(STAFF).some(s => s && s.f))
     return invitar ? '<div class="cum-card"><div class="cum-head"><span class="cum-tit">🎂 Cumpleaños</span></div>' +
       '<div class="cum-nota">Cargá la fecha de cumpleaños de tus jugadores (tocá “+ Cumple” en cada uno) y acá vas a ver los de la semana de todo el club.</div></div>' : '';
   const s = cumplesSemana();
@@ -3538,8 +3610,9 @@ function cumplesSemanaHtml(invitar){
   s.lista.forEach(c => {
     const hoy = c.iso === s.hoyIso;
     h += '<div class="cum-fila"><span class="cum-dia' + (hoy ? ' hoy' : '') + '">' + (hoy ? 'HOY' : _CUM_DIA3[c.fecha.getDay()] + ' ' + c.fecha.getDate()) + '</span>' +
-         '<span>' + _cumEsc(c.nombre) + '</span>' + (c.edad ? '<span class="cum-edad">cumple ' + c.edad + '</span>' : '') +
-         '<span class="cum-cat" style="color:' + catColor(c.cat) + '">' + _cumEsc(catCorta(c.cat)) + '</span></div>';
+         '<span>' + _cumEsc(c.nombre) + (c.esYo ? ' <span class="cum-edad">(vos)</span>' : '') + '</span>' + (c.edad ? '<span class="cum-edad">cumple ' + c.edad + '</span>' : '') +
+         (c.staff ? '<span class="cum-cat staff">Profe' + (c.cat ? ' · ' + _cumEsc(catCorta(c.cat)) : '') + '</span>'
+                  : '<span class="cum-cat" style="color:' + catColor(c.cat) + '">' + _cumEsc(catCorta(c.cat)) + '</span>') + '</div>';
   });
   return h + '</div>';
 }
@@ -3571,16 +3644,39 @@ function cumpleLeerSelects(idDia, idMes, idAnio){
 
 async function cargarCumples(){
   const club = CLUB_PATH;
-  CUMPLES = {}; _cumplesCargados = false; cumpleAvisoOcultar();
+  CUMPLES = {}; STAFF = {}; _cumplesCargados = false; cumpleAvisoOcultar();
   if(!club) return;
   try {
-    const s = await get(ref(db, club + '/cumples'));
+    const [s1, s2] = await Promise.all([get(ref(db, club + '/cumples')), get(ref(db, club + '/staff'))]);
     if(club !== CLUB_PATH) return;       // mientras tanto se cambió de club
-    CUMPLES = s.val() || {};
+    CUMPLES = s1.val() || {};
+    STAFF = s2.val() || {};
   } catch(e){ console.warn('cargarCumples:', e); }
   _cumplesCargados = true;
   cumpleAvisoRender();
   cumpleRefrescarVistas();
+  registrarStaff();
+}
+// Cada profe (y cada profe-coordinador) deja en el club una ficha mínima {rol, categorías} la primera
+// vez que entra, y se actualiza sola si le cambian las categorías. De ahí sale la lista de "Profes de
+// esta categoría": las reglas no dejan leer los usuarios de otros, y esta ficha no lleva el mail.
+// El coordinador que no da clases no figura, y los usuarios de solo lectura no escriben.
+async function registrarStaff(){
+  const u = auth.currentUser;
+  const r = window._cumpleStaffRol;
+  const cats = (window._cumpleCatsPropias || []).filter(Boolean);
+  if(!u || window._soloLectura || !r || !cats.length) return;
+  const ya = STAFF[u.uid] || {};
+  const igual = ya.r === r && JSON.stringify((ya.c || []).slice().sort()) === JSON.stringify(cats.slice().sort());
+  if(igual) return;
+  const club = CLUB_PATH;
+  try {
+    await update(ref(db, club + '/staff/' + u.uid), { r, c: cats });
+    if(club !== CLUB_PATH) return;
+    STAFF[u.uid] = Object.assign({}, ya, { r, c: cats });
+    cumpleAvisoRender();
+    cumpleRefrescarVistas();
+  } catch(e){ console.warn('registrarStaff:', e); }
 }
 function cumpleRefrescarVistas(){
   try { if(window._cumplesRefrescar) window._cumplesRefrescar(); } catch(e){}
@@ -3605,15 +3701,20 @@ function cumpleAvisoRender(){
   const propias = lista.filter(c => mias.includes(c.cat));
   const otras = lista.filter(c => !mias.includes(c.cat));
   const cats = [...new Set(propias.map(c => c.cat))];
+  const chipCat = c => c.staff
+    ? '<span class="cum-cat staff">Profe' + (c.cat ? ' · ' + _cumEsc(catCorta(c.cat)) : '') + '</span>'
+    : '<span class="cum-cat" style="color:' + catColor(c.cat) + '">' + _cumEsc(catCorta(c.cat)) + '</span>';
   let h = '<div class="ca-top"><div><div class="ca-tit">🎂 Cumpleaños de hoy · ' + lista.length + '</div></div>' +
           '<button class="ca-x" aria-label="Cerrar aviso" onclick="window.cumpleAvisoCerrar()">✕</button></div>';
   cats.forEach(cat => {
     const js = propias.filter(c => c.cat === cat);
+    const saludables = js.filter(c => !c.esYo);       // a uno mismo no se le ofrece "saludar"
     h += '<div class="ca-grupo"><div class="ca-gt" style="color:var(--accent)">Tu categoría · ' + _cumEsc(catCorta(cat)) + '</div>';
     js.forEach((c, i) => {
+      const sub = c.staff ? (c.esYo ? '¡Feliz cumple! 🎉' : 'profe') : (c.edad ? 'cumple ' + c.edad + ' años' : '');
       h += '<div class="ca-fila"><div><div class="ca-nom">' + _cumEsc(c.nombre) + '</div>' +
-           (c.edad ? '<div class="ca-sub">cumple ' + c.edad + ' años</div>' : '') + '</div>' +
-           (i === 0 ? '<button class="ca-btn" onclick="window.cumpleSaludar(\'' + cat + '\')">Saludar' + (js.length > 1 ? ' a todos' : '') + '</button>' : '') + '</div>';
+           (sub ? '<div class="ca-sub">' + sub + '</div>' : '') + '</div>' +
+           (i === 0 && saludables.length ? '<button class="ca-btn" onclick="window.cumpleSaludar(\'' + cat + '\')">Saludar' + (saludables.length > 1 ? ' a todos' : '') + '</button>' : '') + '</div>';
     });
     h += '</div>';
   });
@@ -3621,8 +3722,7 @@ function cumpleAvisoRender(){
     h += '<div class="ca-grupo"><div class="ca-gt" style="color:var(--draw)">' + (propias.length || !window._cumpleVerTodo ? 'Otras categorías' : 'En el club') + '</div>';
     otras.forEach(c => {
       h += '<div class="ca-fila"><div class="ca-nom">' + _cumEsc(c.nombre) + '</div>' +
-           (c.edad ? '<div class="ca-sub">cumple ' + c.edad + '</div>' : '') +
-           '<span class="cum-cat" style="color:' + catColor(c.cat) + '">' + _cumEsc(catCorta(c.cat)) + '</span></div>';
+           (c.edad ? '<div class="ca-sub">cumple ' + c.edad + '</div>' : '') + chipCat(c) + '</div>';
     });
     h += '</div>';
   }
@@ -3633,13 +3733,13 @@ window.cumpleAvisoCerrar = function(){
   try { localStorage.setItem(_cumpleAvisoKey(), _isoLocal(new Date())); } catch(e){}
   cumpleAvisoOcultar();
 };
-// Mensaje para el grupo de familias de esa categoría. Se abre WhatsApp con el texto armado
-// (igual que la citación): el profe elige el grupo y lo puede editar antes de mandarlo.
+// Mensaje para el grupo de familias de esa categoría (jugadores y profes que cumplen hoy). Se abre
+// WhatsApp con el texto armado, igual que la citación: el profe elige el grupo y lo puede editar.
 window.cumpleSaludar = function(cat){
   const hoy = new Date(); hoy.setHours(12, 0, 0, 0);
-  const l = cumplesEntre(hoy, hoy).filter(c => c.cat === cat);
+  const l = cumplesEntre(hoy, hoy).filter(c => c.cat === cat && !c.esYo);
   if(!l.length) return;
-  const nom = l.map(c => '*' + c.nombre + '*');
+  const nom = l.map(c => (c.staff ? 'el profe *' : '*') + c.nombre + '*');
   const quienes = nom.length > 1 ? nom.slice(0, -1).join(', ') + ' y ' + nom[nom.length - 1] : nom[0];
   const club = String(window._clubNombreCumple || 'MI PLANTEL').toUpperCase();
   const lineas = ['🎂 *' + club + ' — ' + catNombre(cat) + '*',
@@ -3648,6 +3748,29 @@ window.cumpleSaludar = function(cat){
   lineas.push('¡Feliz cumpleaños de parte de todo el plantel! ⚽');
   window.open('https://wa.me/?text=' + encodeURIComponent(lineas.join('\n')), '_blank');
 };
+// Bloque "Profes de esta categoría" de Plantel: los usuarios registrados para la categoría, cada uno con
+// su fecha (o "+ Cumple"). Cualquier profe de la categoría puede cargar la de otro; el nombre solo
+// lo carga cada uno en su propia fila.
+function staffPlantelHtml(catKey){
+  const yo = auth.currentUser ? auth.currentUser.uid : null;
+  const lista = Object.entries(STAFF).filter(([, s]) => s && Array.isArray(s.c) && s.c.includes(catKey))
+    .sort((a, b) => (a[0] === yo ? -1 : b[0] === yo ? 1 : 0) || staffNombre(a[1]).localeCompare(staffNombre(b[1]), 'es'));
+  if(!lista.length) return '';
+  const hoyIso = _isoLocal(new Date());
+  let h = '<div class="staff-box"><div class="staff-tit">Profes de esta categoría</div>';
+  lista.forEach(([uid, s]) => {
+    const p = cumpleParse(s.f), esYo = uid === yo;
+    const hoy = !!p && _isoLocal(cumpleFechaEn(p, new Date().getFullYear())) === hoyIso;
+    const txt = !p ? '+ Cumple' : _pad2(p.d) + '/' + _pad2(p.m) + (hoy ? ' · hoy' : '');
+    const nom = s.n ? _cumEsc(s.n) : (esYo ? 'Poné tu nombre' : 'Profe sin nombre');
+    h += '<div class="prow" style="justify-content:space-between;gap:var(--sp-3);margin-bottom:var(--sp-3)">' +
+         '<div style="flex:1;min-width:0"><div class="staff-nom' + (s.n ? '' : ' sin') + '">' + nom + (esYo ? ' <span class="staff-yo">(vos)</span>' : '') + '</div>' +
+         '<div class="staff-rol">' + (s.r === 'coord' ? 'Profe y coordinador' : 'Profe') + '</div></div>' +
+         (esYo && !s.n ? '<button class="cum-chip sin" style="margin-top:0" onclick="window.cumpleEditarStaff(\'' + uid + '\')">Poner mi nombre</button>' : '') +
+         '<button class="cum-chip' + (!p ? ' sin' : '') + (hoy ? ' hoy' : '') + '" style="margin-top:0" onclick="window.cumpleEditarStaff(\'' + uid + '\')" aria-label="Cumpleaños de ' + _cumEsc(staffNombre(s)) + ': ' + (p ? txt : 'sin fecha') + '. Tocar para ' + (p ? 'cambiar' : 'cargar') + '">' + txt + '</button></div>';
+  });
+  return h + '</div>';
+}
 
 function startApp(cat){
 // Puede venirse de "Entrar como" del panel de coordinación sin recargar la
@@ -6441,7 +6564,7 @@ function renderPlantel(reordenar){
   const _cumSel = { d: _cumEscrito('altaCumDia'), m: _cumEscrito('altaCumMes'), a: _cumEscrito('altaCumAnio') };
   const _hoyIso = _isoLocal(new Date());
 
-  let html = cumplesSemanaHtml(true) + `
+  let html = cumplesSemanaHtml(true) + staffPlantelHtml(CAT_PREFIX().split('/').pop()) + `
     <div style="margin-bottom:var(--sp-6)">
       <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-5)">${activeCount} jugador${activeCount!==1?'es':''} activo${activeCount!==1?'s':''} · ${inactiveCount} inactivo${inactiveCount!==1?'s':''}</div>
       <div style="display:flex;gap:var(--sp-4)">
@@ -6571,18 +6694,30 @@ window.addPlayer = async function(){
   } catch(e){ showToast('Error al guardar'); PLAYERS.pop(); delete PLAYER_POS[nombre]; delete PLAYER_CUMPLE[nombre]; _altaPos = puestoAlta; renderPlantel(); }
 };
 
-// ── CUMPLEAÑOS de un jugador existente (Plantel → toque en la fecha) ──
+// ── CUMPLEAÑOS de un jugador o de un profe (Plantel → toque en la fecha) ──
+// _cumpleEditando: {tipo:'jug', id: nombre} | {tipo:'staff', id: uid}
 let _cumpleEditando = null;
-window.cumpleEditar = function(nombre){
-  if(_roGuard()) return;
-  _cumpleEditando = nombre;
-  const p = cumpleParse(PLAYER_CUMPLE[nombre]);
-  document.getElementById('cumpleModalTit').textContent = 'Cumpleaños de ' + nombre;
+function _cumpleAbrirModal(titulo, p, conNombre, nombre){
+  document.getElementById('cumpleModalTit').textContent = titulo;
   document.getElementById('cmDia').innerHTML  = cumpleOptDia(p ? p.d : '');
   document.getElementById('cmMes').innerHTML  = cumpleOptMes(p ? p.m : '');
   document.getElementById('cmAnio').innerHTML = cumpleOptAnio(p && p.a ? p.a : '');
   document.getElementById('cmQuitar').style.display = p ? '' : 'none';
+  document.getElementById('cmNombreBox').style.display = conNombre ? '' : 'none';
+  document.getElementById('cmNombre').value = nombre || '';
   document.getElementById('cumpleModal').style.display = 'flex';
+}
+window.cumpleEditar = function(nombre){
+  if(_roGuard()) return;
+  _cumpleEditando = { tipo: 'jug', id: nombre };
+  _cumpleAbrirModal('Cumpleaños de ' + nombre, cumpleParse(PLAYER_CUMPLE[nombre]), false, '');
+};
+window.cumpleEditarStaff = function(uid){
+  if(_roGuard()) return;
+  const s = STAFF[uid]; if(!s) return;
+  const esYo = !!auth.currentUser && auth.currentUser.uid === uid;
+  _cumpleEditando = { tipo: 'staff', id: uid };
+  _cumpleAbrirModal(esYo && !s.n ? 'Tu nombre y tu cumpleaños' : 'Cumpleaños de ' + staffNombre(s), cumpleParse(s.f), esYo, s.n || '');
 };
 window.cumpleCerrarModal = function(){
   document.getElementById('cumpleModal').style.display = 'none';
@@ -6603,16 +6738,45 @@ async function _cumpleAplicar(nombre, codigo){
     renderPlantel();
   }
 }
+// cambios: {n?: nombre, f?: fecha | null para quitarla}
+async function _staffAplicar(uid, cambios){
+  const antes = Object.assign({}, STAFF[uid]);
+  STAFF[uid] = Object.assign({}, STAFF[uid], cambios);
+  if(cambios.f === null) delete STAFF[uid].f;
+  window.cumpleCerrarModal();
+  renderPlantel();
+  try {
+    await update(ref(db, CLUB_PATH + '/staff/' + uid), cambios);
+    showToast(cambios.f === null ? '✓ Fecha quitada' : '✓ Guardado');
+    cumpleAvisoRender();
+    cumpleRefrescarVistas();
+  } catch(e){
+    showToast('Error al guardar');
+    STAFF[uid] = antes;
+    renderPlantel();
+  }
+}
 window.cumpleGuardar = function(){
-  const nombre = _cumpleEditando; if(!nombre) return;
+  const ed = _cumpleEditando; if(!ed) return;
   const r = cumpleLeerSelects('cmDia', 'cmMes', 'cmAnio');
   if(!r.ok){ showToast(r.msg); return; }
-  if(!r.codigo){ showToast('Elegí el día y el mes'); return; }
-  _cumpleAplicar(nombre, r.codigo);
+  if(ed.tipo === 'jug'){
+    if(!r.codigo){ showToast('Elegí el día y el mes'); return; }
+    _cumpleAplicar(ed.id, r.codigo);
+    return;
+  }
+  const cambios = {};
+  const esYo = !!auth.currentUser && auth.currentUser.uid === ed.id;
+  const nombre = esYo ? document.getElementById('cmNombre').value.trim() : '';
+  if(esYo && nombre) cambios.n = nombre;
+  if(r.codigo) cambios.f = r.codigo;
+  if(esYo && !nombre && !(STAFF[ed.id] && STAFF[ed.id].n)){ showToast('Escribí tu nombre'); return; }
+  if(!Object.keys(cambios).length){ showToast('Elegí el día y el mes'); return; }
+  _staffAplicar(ed.id, cambios);
 };
 window.cumpleQuitar = function(){
-  const nombre = _cumpleEditando; if(!nombre) return;
-  _cumpleAplicar(nombre, null);
+  const ed = _cumpleEditando; if(!ed) return;
+  if(ed.tipo === 'jug') _cumpleAplicar(ed.id, null); else _staffAplicar(ed.id, { f: null });
 };
 // Cuando termina de llegar el índice del club, la tarjeta de la semana se redibuja sola
 window._cumplesRefrescar = function(){
@@ -12357,6 +12521,63 @@ async function startCoordApp(){
     return h + '</div>';
   }
 
+  /* ══════════ CUMPLEAÑOS: resumen mes a mes ══════════
+     Total del año por mes (jugadores y profes), filtrable por categoría o solo profes. El mes en curso
+     arranca abierto con el detalle por día. Abajo, los profes que todavía no cargaron su cumpleaños:
+     el coordinador no carga nada, solo ve a quién le falta. */
+  let cumFiltro = 'todos';
+  let cumMesAbierto = new Date().getMonth() + 1;
+  window.coordCumFiltro = function(k){ cumFiltro = k; pintar(); };
+  window.coordCumMes = function(m){ cumMesAbierto = (cumMesAbierto === m ? 0 : m); pintar(); };
+  function vistaCumples(){
+    if(!cargado || !_cumplesCargados) return spinner;
+    const meses = cumplesPorMes(cumFiltro);
+    const total = meses.reduce((s, m) => s + m.length, 0);
+    const max = Math.max(1, ...meses.map(m => m.length));
+    const mesHoy = new Date().getMonth() + 1;
+    // Jugadores con y sin fecha (de todo el club, sin importar el filtro)
+    let conFecha = 0, sinFecha = 0;
+    ALL_CATS.forEach(c => {
+      const cargados = Object.values(CUMPLES[c.key] || {}).map(j => j.n);
+      (D[c.key].plantel || []).forEach(n => { if(cargados.includes(n)) conFecha++; else sinFecha++; });
+    });
+    const sinCumple = Object.values(STAFF).filter(s => s && !s.f);
+
+    let h = '<div class="csec">'+icono('torta')+'Cumpleaños del año<span class="cont">'+total+' en la vista</span></div>';
+    h += '<div class="cgrid kpis">'+
+      '<div class="ckpi"><div class="n">'+conFecha+'</div><div class="l">jugadores con fecha</div></div>'+
+      '<div class="ckpi"><div class="n '+(sinFecha?'loss':'cero')+'">'+sinFecha+'</div><div class="l">jugadores sin fecha</div></div></div>';
+    h += '<div class="cfila" style="margin-top:var(--sp-5)">'+
+      '<button class="cbtn'+(cumFiltro==='todos'?' on':'')+'" onclick="window.coordCumFiltro(\'todos\')">Todos</button>'+
+      ALL_CATS.map(c => '<button class="cbtn'+(cumFiltro===c.key?' on':'')+'" onclick="window.coordCumFiltro(\''+c.key+'\')">'+esc(c.label.replace(/^Cat /,''))+'</button>').join('')+
+      '<button class="cbtn'+(cumFiltro==='profes'?' on':'')+'" onclick="window.coordCumFiltro(\'profes\')">Profes</button></div>';
+
+    h += '<div style="display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-5)">';
+    meses.forEach((lista, i) => {
+      const m = i + 1, abierto = cumMesAbierto === m;
+      h += '<button class="cum-mes'+(m===mesHoy?' actual':'')+'" onclick="window.coordCumMes('+m+')" aria-expanded="'+abierto+'">'+
+        '<span class="m">'+_CUM_MESES[i]+'</span><span class="b"><i style="width:'+Math.round(lista.length/max*100)+'%"></i></span>'+
+        '<span class="n">'+lista.length+'</span></button>';
+      if(abierto){
+        h += '<div class="cum-mes-det">'+(lista.length ? lista.map(x =>
+          '<div class="cum-fila"><span class="cum-dia">'+x.d+'</span><span>'+esc(x.nombre)+'</span>'+
+          (x.edad ? '<span class="cum-edad">cumple '+x.edad+'</span>' : '')+
+          (x.staff ? '<span class="cum-cat staff">Profe'+(x.cat ? ' · '+esc(catCorta(x.cat)) : '')+'</span>'
+                   : '<span class="cum-cat" style="color:'+catColor(x.cat)+'">'+esc(catCorta(x.cat))+'</span>')+'</div>').join('')
+          : '<div class="cum-nota">Nadie cumple años este mes.</div>')+'</div>';
+      }
+    });
+    h += '</div>';
+
+    if(sinCumple.length){
+      h += '<div class="cum-card" style="margin-top:var(--sp-6)"><div class="cum-head"><span class="cum-tit">Profes que todavía no cargaron su cumpleaños</span></div>'+
+        sinCumple.map(s => '<div class="cum-fila"><span>'+esc(staffNombre(s))+'</span>'+
+          (s.c || []).map(c => '<span class="cum-cat" style="color:'+catColor(c)+'">'+esc(catCorta(c))+'</span>').join('')+'</div>').join('')+
+        '<div class="cum-nota">Lo puede cargar cualquier profe de su categoría, desde Plantel.</div></div>';
+    }
+    return h;
+  }
+
   function vistaJugadores(){
     if(!cargado) return spinner;
     const todos = todosLosJugadores();
@@ -12765,6 +12986,7 @@ async function startCoordApp(){
     { id:'jugadores',  lbl:'Jugadores',  ico:'presencia',  render:vistaJugadores },
     { id:'liga',       lbl:'Liga',       ico:'copa',       render:vistaLiga },
     { id:'calendario', lbl:'Calendario', ico:'calendario', render:vistaCalendario },
+    { id:'cumples',    lbl:'Cumpleaños', ico:'torta',      render:vistaCumples },
     { id:'uso',        lbl:'Uso',        ico:'reloj',      render:vistaUso },
   ];
 
