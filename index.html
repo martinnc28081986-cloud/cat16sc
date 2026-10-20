@@ -3678,6 +3678,23 @@ async function registrarStaff(){
     cumpleRefrescarVistas();
   } catch(e){ console.warn('registrarStaff:', e); }
 }
+// La lista de profes de cada categoría sigue a los ACCESOS: cada vez que el super admin crea un usuario,
+// le cambia las categorías o el rol, o lo da de baja, se actualiza (o se borra) su ficha en
+// clubs/{club}/staff/{uid}. Así, cuando un profe cambia de categoría de un año al otro, o se va, la
+// lista de Plantel no queda desactualizada. Al cambiar de categorías se conservan su nombre y su fecha;
+// al darlo de baja o dejarlo sin categoría, la ficha se borra. Los usuarios de solo lectura (demo) y los
+// coordinadores que no dan clases no figuran como profes.
+async function sincronizarStaff(uid, clubId, perfil){
+  if(!uid || !clubId) return;
+  const cats = [...new Set((perfil && perfil.cats ? Object.values(perfil.cats) : (perfil && perfil.cat ? [perfil.cat] : [])).filter(Boolean))];
+  const esStaff = !!perfil && perfil.role !== 'baja' && perfil.role !== 'super-admin' && !perfil.soloLectura && cats.length > 0 &&
+                  (perfil.role === 'profe' || (perfil.role === 'coordinator' && !!perfil.isProfeCoord));
+  const r = ref(db, 'clubs/' + clubId + '/staff/' + uid);
+  try {
+    if(esStaff) await update(r, { r: perfil.role === 'profe' ? 'profe' : 'coord', c: cats });
+    else await set(r, null);
+  } catch(e){ console.warn('sincronizarStaff:', e); }
+}
 function cumpleRefrescarVistas(){
   try { if(window._cumplesRefrescar) window._cumplesRefrescar(); } catch(e){}
   try { if(window._coordRepintar) window._coordRepintar(); } catch(e){}
@@ -9550,6 +9567,16 @@ function saSaludDeClubes(clubs, users){
     if(invalidas.length) hay(u.clubId, 'error', quien+': tiene una categoría que no existe ('+invalidas.join(', ')+').');
   });
 
+  // Categorías del club sin ningún profe con acceso: sin eso, nadie carga asistencia ni citaciones, y la
+  // lista de "Profes de esta categoría" (cumpleaños) queda vacía.
+  Object.entries(clubs).forEach(([id, c]) => {
+    [...new Set(arr(c.cats))].filter(Boolean).forEach(k => {
+      const tiene = Object.values(users).some(u => u && u.clubId === id && u.role !== 'baja' && !u.soloLectura &&
+        (u.role === 'profe' || (u.role === 'coordinator' && u.isProfeCoord)) && [...arr(u.cats), u.cat].includes(k));
+      if(!tiene) hay(id, 'info', nombreDe(id)+' · '+catNombre(k)+': ningún usuario con acceso de profe asignado a esta categoría.');
+    });
+  });
+
   // (La confirmación de asistencia por link es opcional por club: que unos la tengan y otros no es normal, no se marca.)
   return out;
 }
@@ -9562,7 +9589,11 @@ window.saArreglar = async function(i){
   try{
     if(a.tipo === 'cats')          await set(ref(db, 'clubs/'+a.clubId+'/cats'), a.valor);
     else if(a.tipo === 'dias')     await set(ref(db, 'clubs/'+a.clubId+'/diasEntrenamiento'), a.valor);
-    else if(a.tipo === 'usercats') await set(ref(db, 'users/'+a.uid+'/cats'), a.valor);
+    else if(a.tipo === 'usercats'){
+      await set(ref(db, 'users/'+a.uid+'/cats'), a.valor);
+      const _u = (await get(ref(db, 'users/'+a.uid))).val();
+      if(_u) await sincronizarStaff(a.uid, _u.clubId, _u);
+    }
     else if(a.tipo === 'rol')      await set(ref(db, 'users/'+a.uid+'/role'), a.valor);
     showToast('✓ Corregido');
     renderSAClubes();
@@ -11021,6 +11052,7 @@ window._saDeleteUser = async function(uid, email, btn){
     const actual = await get(ref(db, 'users/' + uid));
     const mail = (actual.exists() && actual.val().email) || email || '';
     if(actual.exists() && actual.val().role === 'super-admin'){ showToast('No se puede eliminar a un super admin'); return; }
+    await sincronizarStaff(uid, actual.exists() ? actual.val().clubId : null, null);   // sale de la lista de profes
     await set(ref(db, 'users/' + uid), { email: mail, role: ROL_BAJA, bajaTs: Date.now() });
     showToast('\u2713 Usuario eliminado: ' + display);
   }catch(e){
@@ -11095,6 +11127,7 @@ window._saEditUserCats = async function(uid, email, clubId){
         cambios.soloLectura = document.getElementById('editUserSoloLectura')?.checked ? true : null;
       }
       await update(ref(db, 'users/'+uid), cambios);
+      await sincronizarStaff(uid, uData.clubId || clubId, Object.assign({}, uData, cambios));   // lista de profes de la categoría
       showToast('✓ Usuario actualizado');
       ov.remove();
       window.saEditarClub(clubId); // refrescar vista del club
@@ -11194,6 +11227,7 @@ window._saCrearUsuario = async function(clubId){
     if(rol==='profe+coord') perfil.isProfeCoord = true;
     if(document.getElementById('addUserSoloLectura')?.checked) perfil.soloLectura = true;
     await set(ref(db,'users/'+uid), perfil);
+    await sincronizarStaff(uid, clubId, perfil);   // aparece en "Profes de esta categoría"
 
     // Enviar email de invitación (reset de contraseña)
     if(invitar){
