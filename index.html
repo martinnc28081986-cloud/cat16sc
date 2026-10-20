@@ -6653,8 +6653,6 @@ function renderPlantel(reordenar){
   // Lo que se estaba escribiendo en el nombre no se pierde si se re-dibuja la lista
   // (por ejemplo al cambiar el puesto de otro jugador)
   const _nombreEscrito = (document.getElementById('newPlayerName')||{}).value || '';
-  const _cumEscrito = id => (document.getElementById(id)||{}).value || '';
-  const _cumSel = { d: _cumEscrito('altaCumDia'), m: _cumEscrito('altaCumMes'), a: _cumEscrito('altaCumAnio') };
   const _hoyIso = _isoLocal(new Date());
 
   let html = cumplesSemanaHtml(true) + staffPlantelHtml(CAT_PREFIX().split('/').pop()) + `
@@ -6666,14 +6664,6 @@ function renderPlantel(reordenar){
       </div>
       <div class="alta-pos" id="altaPos">
         ${Object.entries(POSICIONES).map(([k,v])=>`<button type="button" class="alta-pos-btn${_altaPos===k?' on':''}" onclick="window.elegirPuestoAlta('${k}')">${v.una}</button>`).join('')}
-      </div>
-      <div class="alta-cum">
-        <label for="altaCumDia">Cumpleaños (opcional)</label>
-        <div class="fila">
-          <select id="altaCumDia" aria-label="Día">${cumpleOptDia(_cumSel.d)}</select>
-          <select id="altaCumMes" aria-label="Mes">${cumpleOptMes(_cumSel.m)}</select>
-          <select id="altaCumAnio" aria-label="Año (opcional)">${cumpleOptAnio(_cumSel.a)}</select>
-        </div>
       </div>
     </div>`;
 
@@ -6768,14 +6758,9 @@ window.addPlayer = async function(){
   }
   // Un jugador nuevo se da de alta con su puesto: es el momento en que se sabe
   if(!_altaPos){ showToast('Elegí el puesto del jugador'); return; }
-  // Cumpleaños (opcional): si cargó algo, tiene que ser una fecha que exista
-  const _cum = cumpleLeerSelects('altaCumDia', 'altaCumMes', 'altaCumAnio');
-  if(!_cum.ok){ showToast(_cum.msg); return; }
   PLAYERS.push(nombre);
   PLAYER_POS[nombre] = _altaPos;
-  if(_cum.codigo) PLAYER_CUMPLE[nombre] = _cum.codigo;
   input.value='';
-  ['altaCumDia','altaCumMes','altaCumAnio'].forEach(id => { const s = document.getElementById(id); if(s) s.value = ''; });
   const puestoAlta = _altaPos;
   _altaPos = null;
   try {
