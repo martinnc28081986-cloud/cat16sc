@@ -3509,6 +3509,7 @@ function ordenarPartidosDesc(entradas){
 let CUMPLES = {};              // índice del club {cat: {id: {n, f}}}
 let STAFF = {};                // profes del club {uid: {n: nombre, r: 'profe'|'coord', c: [categorías], f: cumpleaños}}
 let _cumplesCargados = false;
+let _cumplesPidiendo = false;   // hay una lectura del índice en curso pedida desde el panel del coordinador
 const _pad2 = n => String(n).padStart(2, '0');
 const _cumEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const _CUM_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -3666,7 +3667,7 @@ function cumpleLeerSelects(idDia, idMes, idAnio){
 async function cargarCumples(){
   const club = CLUB_PATH;
   CUMPLES = {}; STAFF = {}; _cumplesCargados = false; cumpleAvisoOcultar();
-  if(!club) return;
+  if(!club){ _cumplesCargados = true; return; }     // sin club no hay nada que leer: que no quede cargando
   try {
     const [s1, s2] = await Promise.all([get(ref(db, club + '/cumples')), get(ref(db, club + '/staff'))]);
     if(club !== CLUB_PATH) return;       // mientras tanto se cambió de club
@@ -9956,6 +9957,12 @@ window.saEntrarComo = function(cat, clubId){
   resetContextoTemporada();
   // Y las suspensiones tienen que pasar a escuchar al club nuevo
   suscribirSuspensiones();
+  // Cumpleaños: el super admin entra como coordinador (ve todo) o como profe de esa categoría. No pasa por
+  // _launchByRole, así que sin esto el índice del club nunca se leía y la pestaña Cumpleaños quedaba cargando.
+  window._cumpleVerTodo = (cat === 'coord');
+  window._cumpleCatsPropias = cat === 'coord' ? [] : [cat];
+  window._cumpleStaffRol = '';          // el super admin no figura como profe
+  cargarCumples();
   // Ocultar todo antes de lanzar
   document.getElementById('superadmin-app').style.display = 'none';
   document.getElementById('coord-app').style.display = 'none';
@@ -12639,7 +12646,12 @@ async function startCoordApp(){
   window.coordCumFiltro = function(k){ cumFiltro = k; pintar(); };
   window.coordCumMes = function(m){ cumMesAbierto = (cumMesAbierto === m ? 0 : m); pintar(); };
   function vistaCumples(){
-    if(!cargado || !_cumplesCargados) return spinner;
+    if(!cargado) return spinner;
+    if(!_cumplesCargados){
+      // Si por cualquier camino el índice no llegó a pedirse, se pide acá (y la pantalla se redibuja sola)
+      if(!_cumplesPidiendo){ _cumplesPidiendo = true; cargarCumples().finally(() => { _cumplesPidiendo = false; }); }
+      return spinner;
+    }
     const meses = cumplesPorMes(cumFiltro);
     const total = meses.reduce((s, m) => s + m.length, 0);
     const max = Math.max(1, ...meses.map(m => m.length));
