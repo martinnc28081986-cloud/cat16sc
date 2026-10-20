@@ -1,5 +1,5 @@
 {
-  "updatedAt": "19/10/2026",
+  "updatedAt": "20/10/2026",
   "zona": "lapf-primerab-2026-rueda2",
   "schedule": {
     "1": [
@@ -1440,6 +1440,13 @@
           "gc": 2
         },
         {
+          "fecha": 2,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "fecha": 3,
           "rival": "ARG. JUVENL CLUB",
           "cond": "L",
@@ -1496,6 +1503,13 @@
           "cond": "V",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 2,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         },
         {
           "fecha": 3,
@@ -1556,6 +1570,13 @@
           "gc": 2
         },
         {
+          "fecha": 2,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
+        },
+        {
           "fecha": 3,
           "rival": "VILLA MONTORO",
           "cond": "L",
@@ -1614,6 +1635,13 @@
           "gc": 3
         },
         {
+          "fecha": 2,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 3,
           "rival": "DEFENSORES DE CITY BELL",
           "cond": "V",
@@ -1669,6 +1697,13 @@
           "rival": "ARG. JUVENL CLUB",
           "cond": "L",
           "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 2,
+          "rival": "VILLA MONTORO",
+          "cond": "V",
+          "gf": 2,
           "gc": 2
         },
         {
@@ -1730,6 +1765,13 @@
           "gc": 0
         },
         {
+          "fecha": 2,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
+        },
+        {
           "fecha": 3,
           "rival": "LA PLATA F.C.",
           "cond": "V",
@@ -1779,6 +1821,13 @@
           "cond": "L",
           "gf": 6,
           "gc": 1
+        },
+        {
+          "fecha": 2,
+          "rival": "ROMERENSE",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
         },
         {
           "fecha": 3,
@@ -1897,6 +1946,13 @@
           "gc": 3
         },
         {
+          "fecha": 2,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "fecha": 3,
           "rival": "CURUZU CUATIA",
           "cond": "L",
@@ -1955,6 +2011,13 @@
           "gc": 3
         },
         {
+          "fecha": 2,
+          "rival": "PORTEÑO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
+        },
+        {
           "fecha": 3,
           "rival": "ROMERENSE",
           "cond": "V",
@@ -2009,6 +2072,13 @@
           "fecha": 1,
           "rival": "PORTEÑO",
           "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 2,
+          "rival": "5 DE MAYO",
+          "cond": "V",
           "gf": 2,
           "gc": 2
         },
@@ -2071,6 +2141,13 @@
           "gc": 2
         },
         {
+          "fecha": 2,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
+        },
+        {
           "fecha": 3,
           "rival": "TALLERES F. PROV.",
           "cond": "L",
@@ -2129,6 +2206,13 @@
           "gc": 1
         },
         {
+          "fecha": 2,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
+        },
+        {
           "fecha": 3,
           "rival": "VILLA LENCI",
           "cond": "L",
@@ -2180,6 +2264,13 @@
           "gc": 0
         },
         {
+          "fecha": 2,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 3,
           "rival": "PORTEÑO",
           "cond": "V",
@@ -2227,6 +2318,64 @@
           "cond": "L",
           "gf": 0,
           "gc": 1
+        }
+      ],
+      "VILLA MONTORO": [
+        {
+          "fecha": 2,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 3,
+          "rival": "ASOCIACION IRIS",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 4,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 5,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 6,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 7,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "TRICOLORES",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 9,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "C. F. RINGUELET": [
@@ -2278,57 +2427,6 @@
           "cond": "V",
           "gf": 0,
           "gc": 1
-        }
-      ],
-      "VILLA MONTORO": [
-        {
-          "fecha": 3,
-          "rival": "ASOCIACION IRIS",
-          "cond": "V",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 4,
-          "rival": "LA PLATA F.C.",
-          "cond": "L",
-          "gf": 2,
-          "gc": 0
-        },
-        {
-          "fecha": 5,
-          "rival": "DEFENSORES DE CITY BELL",
-          "cond": "V",
-          "gf": 2,
-          "gc": 2
-        },
-        {
-          "fecha": 6,
-          "rival": "SAN MARTIN L.H.",
-          "cond": "L",
-          "gf": 1,
-          "gc": 0
-        },
-        {
-          "fecha": 7,
-          "rival": "PORTEÑO",
-          "cond": "V",
-          "gf": 1,
-          "gc": 1
-        },
-        {
-          "fecha": 8,
-          "rival": "TRICOLORES",
-          "cond": "L",
-          "gf": 1,
-          "gc": 0
-        },
-        {
-          "fecha": 9,
-          "rival": "TALLERES F. PROV.",
-          "cond": "V",
-          "gf": 1,
-          "gc": 0
         }
       ]
     },
@@ -6247,43 +6345,73 @@
     "101": [
       {
         "eq": "ARG. JUVENL CLUB",
-        "pts": 21,
-        "pj": 7,
-        "pg": 7,
+        "pts": 24,
+        "pj": 8,
+        "pg": 8,
         "pe": 0,
         "pp": 0,
-        "gf": 18,
+        "gf": 19,
         "gc": 3
       },
       {
         "eq": "5 DE MAYO",
-        "pts": 17,
-        "pj": 8,
+        "pts": 18,
+        "pj": 9,
         "pg": 5,
-        "pe": 2,
+        "pe": 3,
         "pp": 1,
-        "gf": 19,
-        "gc": 9
+        "gf": 21,
+        "gc": 11
       },
       {
         "eq": "ROMERENSE",
-        "pts": 15,
-        "pj": 8,
+        "pts": 16,
+        "pj": 9,
         "pg": 4,
-        "pe": 3,
+        "pe": 4,
         "pp": 1,
-        "gf": 18,
-        "gc": 10
+        "gf": 20,
+        "gc": 12
       },
       {
         "eq": "VILLA MONTORO",
-        "pts": 15,
-        "pj": 7,
+        "pts": 16,
+        "pj": 8,
         "pg": 4,
-        "pe": 3,
+        "pe": 4,
         "pp": 0,
-        "gf": 10,
-        "gc": 5
+        "gf": 12,
+        "gc": 7
+      },
+      {
+        "eq": "VILLA LENCI",
+        "pts": 14,
+        "pj": 9,
+        "pg": 4,
+        "pe": 2,
+        "pp": 3,
+        "gf": 24,
+        "gc": 19
+      },
+      {
+        "eq": "PORTEÑO",
+        "pts": 14,
+        "pj": 9,
+        "pg": 3,
+        "pe": 5,
+        "pp": 1,
+        "gf": 17,
+        "gc": 13
+      },
+      {
+        "eq": "C. RURAL",
+        "pts": 12,
+        "pj": 9,
+        "pg": 3,
+        "pe": 3,
+        "pp": 3,
+        "gf": 17,
+        "gc": 11
       },
       {
         "eq": "EXPRESO ROJO",
@@ -6296,64 +6424,54 @@
         "gc": 14
       },
       {
-        "eq": "C. RURAL",
-        "pts": 11,
-        "pj": 8,
-        "pg": 3,
-        "pe": 2,
-        "pp": 3,
-        "gf": 15,
-        "gc": 9
-      },
-      {
-        "eq": "VILLA LENCI",
-        "pts": 11,
-        "pj": 8,
-        "pg": 3,
-        "pe": 2,
-        "pp": 3,
-        "gf": 22,
-        "gc": 18
-      },
-      {
-        "eq": "PORTEÑO",
-        "pts": 11,
-        "pj": 8,
-        "pg": 2,
-        "pe": 5,
-        "pp": 1,
-        "gf": 14,
-        "gc": 12
-      },
-      {
         "eq": "TRICOLORES",
         "pts": 11,
-        "pj": 8,
+        "pj": 9,
         "pg": 3,
         "pe": 2,
-        "pp": 3,
-        "gf": 11,
-        "gc": 11
+        "pp": 4,
+        "gf": 12,
+        "gc": 14
       },
       {
         "eq": "ASOCIACION IRIS",
         "pts": 11,
-        "pj": 8,
+        "pj": 9,
         "pg": 3,
         "pe": 2,
-        "pp": 3,
+        "pp": 4,
         "gf": 12,
-        "gc": 16
+        "gc": 17
+      },
+      {
+        "eq": "TALLERES F. PROV.",
+        "pts": 8,
+        "pj": 9,
+        "pg": 2,
+        "pe": 2,
+        "pp": 5,
+        "gf": 8,
+        "gc": 18
       },
       {
         "eq": "SAN MARTIN L.H.",
         "pts": 7,
-        "pj": 8,
+        "pj": 9,
         "pg": 1,
         "pe": 4,
-        "pp": 3,
-        "gf": 11,
-        "gc": 14
+        "pp": 4,
+        "gf": 12,
+        "gc": 16
+      },
+      {
+        "eq": "DEFENSORES DE CITY BELL",
+        "pts": 7,
+        "pj": 8,
+        "pg": 2,
+        "pe": 1,
+        "pp": 5,
+        "gf": 8,
+        "gc": 17
       },
       {
         "eq": "C. F. RINGUELET",
@@ -6368,42 +6486,22 @@
       {
         "eq": "CURUZU CUATIA",
         "pts": 5,
-        "pj": 8,
+        "pj": 9,
         "pg": 1,
         "pe": 2,
-        "pp": 5,
+        "pp": 6,
         "gf": 9,
-        "gc": 15
-      },
-      {
-        "eq": "TALLERES F. PROV.",
-        "pts": 5,
-        "pj": 8,
-        "pg": 1,
-        "pe": 2,
-        "pp": 5,
-        "gf": 6,
-        "gc": 17
-      },
-      {
-        "eq": "DEFENSORES DE CITY BELL",
-        "pts": 4,
-        "pj": 7,
-        "pg": 1,
-        "pe": 1,
-        "pp": 5,
-        "gf": 7,
-        "gc": 17
+        "gc": 16
       },
       {
         "eq": "LA PLATA F.C.",
         "pts": 4,
-        "pj": 8,
+        "pj": 9,
         "pg": 0,
         "pe": 4,
-        "pp": 4,
-        "gf": 6,
-        "gc": 17
+        "pp": 5,
+        "gf": 7,
+        "gc": 19
       }
     ],
     "103": [
@@ -7078,6 +7176,6 @@
       "VILLA LENCI",
       "VILLA MONTORO"
     ],
-    "actualizadoEl": "2026-10-19"
+    "actualizadoEl": "2026-10-20"
   }
 }
