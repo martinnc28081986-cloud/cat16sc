@@ -168,6 +168,8 @@ function conCumples(d) {
   poner('cat2014', 'q1', en(0)); poner('cat2014', 'q0', en(-5, 2014));
   // Profes del club: la ficha que cada uno deja al entrar (PROFE y PROFE2 son usuarios de Club A). PROFE2 todavía no cargó nombre ni cumpleaños.
   A.staff = { PROFE: { r: 'profe', c: ['cat16'], n: 'Pablo', f: en(-2) }, PROFEX: { r: 'profe', c: ['cat2014'], n: 'Lucía', f: en(0) }, PROFE2: { r: 'profe', c: ['cat16', 'cat2014'] } };
+  // Comisión directiva (sin categoría): la carga el coordinador
+  A.comision = { c1: { n: 'Roberto Díaz', c: 'Presidente', f: en(0) }, c2: { n: 'Marta López', c: 'Tesorera', f: en(2) } };
   A.cumples = {};
   ['cat16', 'cat2014'].forEach(cat => {
     const ps = (A[cat] && A[cat].players) || {}; const idx = {};

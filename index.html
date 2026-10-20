@@ -173,6 +173,7 @@
   .cum-chip.sin { border-style:dashed; border-color:rgba(var(--draw-rgb),.6); color:var(--draw); }
   .cum-chip.hoy { background:var(--draw); border-color:var(--draw); color:#1a1200; font-weight:700; }
   .cum-cat.staff { color:#b48cff; }
+  .cum-cat.club { color:#4dd0c4; }
   .staff-box { margin-bottom:var(--sp-6); }
   .staff-tit { font-size:var(--f-micro); color:#b48cff; text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:var(--sp-4); }
   .staff-nom { font-size:var(--f-md); font-weight:600; }
@@ -3507,6 +3508,7 @@ function ordenarPartidosDesc(entradas){
      · el coordinador ve todo, con edad si hay año;
      · un profe ve la edad y puede saludar SOLO en sus categorías. */
 let CUMPLES = {};              // índice del club {cat: {id: {n, f}}}
+let COMISION = {};             // personas del club sin categoría {id: {n: nombre, c: cargo, f: 'MM-DD'}}: solo las ve el coordinador
 let STAFF = {};                // profes del club {uid: {n: nombre, r: 'profe'|'coord', c: [categorías], f: cumpleaños}}
 let _cumplesCargados = false;
 let _cumplesPidiendo = false;   // hay una lectura del índice en curso pedida desde el panel del coordinador
@@ -3583,6 +3585,17 @@ function cumplesEntre(desde, hasta){
       if(f >= desde && f <= hasta) out.push({ fecha: f, iso: _isoLocal(f), nombre: staffNombre(s), cat, edad: null, staff: true, uid, esYo: uid === yo });
     }
   });
+  // Comisión directiva y otras personas del club (sin categoría): solo las ve el coordinador
+  if(window._cumpleVerTodo){
+    Object.entries(COMISION).forEach(([id, c]) => {
+      const p = cumpleParse(c && c.f);
+      if(!p || !cumpleValido(p.m, p.d, p.a)) return;
+      for(let y = a0; y <= a1; y++){
+        const f = cumpleFechaEn(p, y);
+        if(f >= desde && f <= hasta) out.push({ fecha: f, iso: _isoLocal(f), nombre: c.n || '', cat: '', edad: null, staff: false, comision: true, cargo: c.c || '', id });
+      }
+    });
+  }
   return out.sort((a, b) => a.iso.localeCompare(b.iso) || a.cat.localeCompare(b.cat) || a.nombre.localeCompare(b.nombre, 'es'));
 }
 // Cumpleaños de TODO el año agrupados por mes (para el resumen del coordinador).
@@ -3606,6 +3619,12 @@ function cumplesPorMes(filtro){
     if(filtro === 'todos' || filtro === 'profes' || cats.includes(filtro))
       meses[p.m - 1].push({ d: p.d, nombre: staffNombre(s), cat: cats[0] || '', staff: true, edad: null });
   });
+  if(window._cumpleVerTodo && (filtro === 'todos' || filtro === 'club')){
+    Object.values(COMISION).forEach(c => {
+      const p = cumpleParse(c && c.f);
+      if(p && cumpleValido(p.m, p.d, p.a)) meses[p.m - 1].push({ d: p.d, nombre: c.n || '', cat: '', staff: false, comision: true, cargo: c.c || '', edad: null });
+    });
+  }
   meses.forEach(m => m.sort((a, b) => a.d - b.d || a.nombre.localeCompare(b.nombre, 'es')));
   return meses;
 }
@@ -3633,7 +3652,8 @@ function cumplesSemanaHtml(invitar){
     const hoy = c.iso === s.hoyIso;
     h += '<div class="cum-fila"><span class="cum-dia' + (hoy ? ' hoy' : '') + '">' + (hoy ? 'HOY' : _CUM_DIA3[c.fecha.getDay()] + ' ' + c.fecha.getDate()) + '</span>' +
          '<span>' + _cumEsc(c.nombre) + (c.esYo ? ' <span class="cum-edad">(vos)</span>' : '') + '</span>' + (c.edad ? '<span class="cum-edad">cumple ' + c.edad + '</span>' : '') +
-         (c.staff ? '<span class="cum-cat staff">Profe' + (c.cat ? ' · ' + _cumEsc(catCorta(c.cat)) : '') + '</span>'
+         (c.comision ? '<span class="cum-cat club">' + _cumEsc(c.cargo || 'Club') + '</span>'
+                  : c.staff ? '<span class="cum-cat staff">Profe' + (c.cat ? ' · ' + _cumEsc(catCorta(c.cat)) : '') + '</span>'
                   : '<span class="cum-cat" style="color:' + catColor(c.cat) + '">' + _cumEsc(catCorta(c.cat)) + '</span>') + '</div>';
   });
   return h + '</div>';
@@ -3666,13 +3686,14 @@ function cumpleLeerSelects(idDia, idMes, idAnio){
 
 async function cargarCumples(){
   const club = CLUB_PATH;
-  CUMPLES = {}; STAFF = {}; _cumplesCargados = false; cumpleAvisoOcultar();
+  CUMPLES = {}; STAFF = {}; COMISION = {}; _cumplesCargados = false; cumpleAvisoOcultar();
   if(!club){ _cumplesCargados = true; return; }     // sin club no hay nada que leer: que no quede cargando
   try {
-    const [s1, s2] = await Promise.all([get(ref(db, club + '/cumples')), get(ref(db, club + '/staff'))]);
+    const [s1, s2, s3] = await Promise.all([get(ref(db, club + '/cumples')), get(ref(db, club + '/staff')), get(ref(db, club + '/comision'))]);
     if(club !== CLUB_PATH) return;       // mientras tanto se cambió de club
     CUMPLES = s1.val() || {};
     STAFF = s2.val() || {};
+    COMISION = s3.val() || {};
   } catch(e){ console.warn('cargarCumples:', e); }
   _cumplesCargados = true;
   cumpleAvisoRender();
@@ -3795,7 +3816,9 @@ function cumpleAvisoRender(){
   const propias = lista.filter(c => mias.includes(c.cat));
   const otras = lista.filter(c => !mias.includes(c.cat));
   const cats = [...new Set(propias.map(c => c.cat))];
-  const chipCat = c => c.staff
+  const chipCat = c => c.comision
+    ? '<span class="cum-cat club">' + _cumEsc(c.cargo || 'Club') + '</span>'
+    : c.staff
     ? '<span class="cum-cat staff">Profe' + (c.cat ? ' · ' + _cumEsc(catCorta(c.cat)) : '') + '</span>'
     : '<span class="cum-cat" style="color:' + catColor(c.cat) + '">' + _cumEsc(catCorta(c.cat)) + '</span>';
   let h = '<div class="ca-top"><div><div class="ca-tit">🎂 Cumpleaños de hoy · ' + lista.length + '</div></div>' +
@@ -3816,7 +3839,8 @@ function cumpleAvisoRender(){
     h += '<div class="ca-grupo"><div class="ca-gt" style="color:var(--draw)">' + (propias.length || !window._cumpleVerTodo ? 'Otras categorías' : 'En el club') + '</div>';
     otras.forEach(c => {
       h += '<div class="ca-fila"><div class="ca-nom">' + _cumEsc(c.nombre) + '</div>' +
-           (c.edad ? '<div class="ca-sub">cumple ' + c.edad + '</div>' : '') + chipCat(c) + '</div>';
+           (c.edad ? '<div class="ca-sub">cumple ' + c.edad + '</div>' : '') + chipCat(c) +
+           (c.comision ? '<button class="ca-btn" style="margin-left:var(--sp-3)" onclick="window.cumpleSaludarClub(\'' + c.id + '\')">Saludar</button>' : '') + '</div>';
     });
     h += '</div>';
   }
@@ -3840,6 +3864,15 @@ window.cumpleSaludar = function(cat){
                   (l.length > 1 ? '¡Hoy cumplen años ' : '¡Hoy cumple años ') + quienes + '! 🎉'];
   if(l.length === 1 && l[0].edad) lineas.push('Cumple ' + l[0].edad + ' años.');
   lineas.push('¡Feliz cumpleaños de parte de todo el plantel! ⚽');
+  window.open('https://wa.me/?text=' + encodeURIComponent(lineas.join('\n')), '_blank');
+};
+// Saludo a alguien de la comisión: se abre WhatsApp con el texto armado y el coordinador elige a quién mandarlo.
+window.cumpleSaludarClub = function(id){
+  const c = COMISION[id]; if(!c) return;
+  const club = String(window._clubNombreCumple || 'MI PLANTEL').toUpperCase();
+  const lineas = ['🎂 *' + club + '*',
+                  '¡Hoy cumple años *' + c.n + '*' + (c.c ? ' (' + c.c + ')' : '') + '! 🎉',
+                  '¡Feliz cumpleaños de parte de todo el club! ⚽'];
   window.open('https://wa.me/?text=' + encodeURIComponent(lineas.join('\n')), '_blank');
 };
 // Bloque "Profes de esta categoría" de Plantel: los usuarios registrados para la categoría, cada uno con
@@ -11415,6 +11448,7 @@ async function startCoordApp(){
   document.querySelector('.logo').textContent = 'MI PLANTEL';
   const subEl = document.getElementById('headerSubEl');
   if(subEl) subEl.textContent = (_clubNombre + ' — Coordinación').toUpperCase();
+  window._clubNombreCumple = _clubNombre;   // para el saludo de cumpleaños
   let catBadge = document.getElementById('catBadge');
   if(!catBadge){
     catBadge = document.createElement('span'); catBadge.id='catBadge';
@@ -12645,6 +12679,66 @@ async function startCoordApp(){
   let cumMesAbierto = new Date().getMonth() + 1;
   window.coordCumFiltro = function(k){ cumFiltro = k; pintar(); };
   window.coordCumMes = function(m){ cumMesAbierto = (cumMesAbierto === m ? 0 : m); pintar(); };
+  /* Comisión directiva y otras personas del club que no son de ninguna categoría: las carga el coordinador a
+     mano (nombre, cargo opcional y día y mes). Solo las ve el coordinador. */
+  let comEdit = null;     // id de la persona que se está editando (null = agregando una nueva)
+  function comisionHtml(){
+    const lista = Object.entries(COMISION).sort((a, b) => String((a[1] && a[1].n) || '').localeCompare(String((b[1] && b[1].n) || ''), 'es'));
+    const ed = comEdit && COMISION[comEdit] ? COMISION[comEdit] : null;
+    const p = ed ? cumpleParse(ed.f) : null;
+    let h = '<div class="cum-card" style="margin-top:var(--sp-6)"><div class="cum-head"><span class="cum-tit" style="color:#4dd0c4">Comisión y otros</span></div>'+
+      '<div class="cum-nota">Personas del club que no son de ninguna categoría. Solo las ves vos.</div>';
+    lista.forEach(([id, c]) => {
+      const q = cumpleParse(c.f);
+      h += '<div class="cum-fila"><div style="flex:1;min-width:0"><div>'+esc(c.n || '')+'</div>'+
+        (c.c ? '<div class="cum-edad">'+esc(c.c)+'</div>' : '')+'</div>'+
+        '<span class="cum-dia">'+(q ? _pad2(q.d)+'/'+_pad2(q.m) : 'sin fecha')+'</span>'+
+        '<button class="cbtn" onclick="window.coordComisionEditar(\''+id+'\')">Editar</button>'+
+        '<button class="cbtn" onclick="window.coordComisionQuitar(\''+id+'\')">Quitar</button></div>';
+    });
+    if(!lista.length) h += '<div class="cum-nota">Todavía no cargaste a nadie.</div>';
+    h += '<div style="border-top:1px solid var(--border);padding-top:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3)">'+
+      '<div class="cum-nota">'+(ed ? 'Editando a '+esc(ed.n || '') : 'Agregar a alguien')+'</div>'+
+      '<input id="comNombre" type="text" maxlength="40" placeholder="Nombre y apellido" value="'+esc(ed ? ed.n || '' : '')+'" style="padding:var(--sp-4) var(--sp-5);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:var(--f-md);font-family:\'DM Sans\',sans-serif">'+
+      '<input id="comCargo" type="text" maxlength="30" placeholder="Cargo (opcional): Presidente, Tesorero…" value="'+esc(ed ? ed.c || '' : '')+'" style="padding:var(--sp-4) var(--sp-5);background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);color:var(--text);font-size:var(--f-md);font-family:\'DM Sans\',sans-serif">'+
+      '<div class="alta-cum" style="margin-top:0"><div class="fila"><select id="comDia" aria-label="Día">'+cumpleOptDia(p ? p.d : '')+'</select><select id="comMes" aria-label="Mes">'+cumpleOptMes(p ? p.m : '')+'</select></div></div>'+
+      '<div style="display:flex;gap:var(--sp-3)"><button class="cbtn on" style="flex:1" onclick="window.coordComisionGuardar()">'+(ed ? 'Guardar cambios' : '+ Agregar')+'</button>'+
+      (ed ? '<button class="cbtn" onclick="window.coordComisionCancelar()">Cancelar</button>' : '')+'</div></div></div>';
+    return h;
+  }
+  window.coordComisionEditar = function(id){ comEdit = id; pintar(); };
+  window.coordComisionCancelar = function(){ comEdit = null; pintar(); };
+  window.coordComisionGuardar = async function(){
+    if(window._soloLectura){ showToast('👁 Modo demo · solo lectura'); return; }
+    const nombre = (document.getElementById('comNombre').value || '').trim();
+    const cargo = (document.getElementById('comCargo').value || '').trim();
+    if(nombre.length < 2){ showToast('Escribí el nombre'); return; }
+    const r = cumpleLeerSelects('comDia', 'comMes', '__sin_anio');
+    if(!r.ok){ showToast(r.msg); return; }
+    if(!r.codigo){ showToast('Elegí el día y el mes'); return; }
+    const id = comEdit || push(ref(db, CLUB_PATH + '/comision')).key;
+    const datos = { n: nombre, f: r.codigo }; if(cargo) datos.c = cargo;
+    const antes = COMISION[id];
+    COMISION[id] = datos; comEdit = null; pintar();
+    try {
+      await set(ref(db, CLUB_PATH + '/comision/' + id), datos);
+      showToast('✓ Guardado');
+      cumpleAvisoRender();
+    } catch(e){
+      showToast('Error al guardar');
+      if(antes) COMISION[id] = antes; else delete COMISION[id];
+      pintar();
+    }
+  };
+  window.coordComisionQuitar = async function(id){
+    if(window._soloLectura){ showToast('👁 Modo demo · solo lectura'); return; }
+    const c = COMISION[id]; if(!c) return;
+    if(!confirm('¿Quitar a '+(c.n || 'esta persona')+' de la lista?')) return;
+    delete COMISION[id]; if(comEdit === id) comEdit = null; pintar();
+    try { await set(ref(db, CLUB_PATH + '/comision/' + id), null); showToast('✓ Quitado'); cumpleAvisoRender(); }
+    catch(e){ showToast('Error al quitar'); COMISION[id] = c; pintar(); }
+  };
+
   function vistaCumples(){
     if(!cargado) return spinner;
     if(!_cumplesCargados){
@@ -12671,7 +12765,8 @@ async function startCoordApp(){
     h += '<div class="cfila" style="margin-top:var(--sp-5)">'+
       '<button class="cbtn'+(cumFiltro==='todos'?' on':'')+'" onclick="window.coordCumFiltro(\'todos\')">Todos</button>'+
       ALL_CATS.map(c => '<button class="cbtn'+(cumFiltro===c.key?' on':'')+'" onclick="window.coordCumFiltro(\''+c.key+'\')">'+esc(c.label.replace(/^Cat /,''))+'</button>').join('')+
-      '<button class="cbtn'+(cumFiltro==='profes'?' on':'')+'" onclick="window.coordCumFiltro(\'profes\')">Profes</button></div>';
+      '<button class="cbtn'+(cumFiltro==='profes'?' on':'')+'" onclick="window.coordCumFiltro(\'profes\')">Profes</button>'+
+      '<button class="cbtn'+(cumFiltro==='club'?' on':'')+'" onclick="window.coordCumFiltro(\'club\')">Club</button></div>';
 
     h += '<div style="display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-5)">';
     meses.forEach((lista, i) => {
@@ -12683,7 +12778,8 @@ async function startCoordApp(){
         h += '<div class="cum-mes-det">'+(lista.length ? lista.map(x =>
           '<div class="cum-fila"><span class="cum-dia">'+x.d+'</span><span>'+esc(x.nombre)+'</span>'+
           (x.edad ? '<span class="cum-edad">cumple '+x.edad+'</span>' : '')+
-          (x.staff ? '<span class="cum-cat staff">Profe'+(x.cat ? ' · '+esc(catCorta(x.cat)) : '')+'</span>'
+          (x.comision ? '<span class="cum-cat club">'+esc(x.cargo || 'Club')+'</span>'
+                   : x.staff ? '<span class="cum-cat staff">Profe'+(x.cat ? ' · '+esc(catCorta(x.cat)) : '')+'</span>'
                    : '<span class="cum-cat" style="color:'+catColor(x.cat)+'">'+esc(catCorta(x.cat))+'</span>')+'</div>').join('')
           : '<div class="cum-nota">Nadie cumple años este mes.</div>')+'</div>';
       }
@@ -12696,6 +12792,7 @@ async function startCoordApp(){
           (s.c || []).map(c => '<span class="cum-cat" style="color:'+catColor(c)+'">'+esc(catCorta(c))+'</span>').join('')+'</div>').join('')+
         '<div class="cum-nota">Lo puede cargar cualquier profe de su categoría, desde Plantel.</div></div>';
     }
+    h += comisionHtml();
     return h;
   }
 
