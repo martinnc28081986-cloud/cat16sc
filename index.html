@@ -1212,6 +1212,20 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- Nombre del profe: se pide una vez, al entrar, y no se puede cerrar sin ponerlo -->
+<div id="nombreModal" style="display:none;position:fixed;inset:0;background:rgba(3,8,40,0.88);z-index:10003;align-items:center;justify-content:center;padding:var(--sp-6)">
+  <div style="background:var(--surface);border:1px solid var(--accent);border-radius:var(--r-lg);padding:var(--sp-8);width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.55)">
+    <div style="font-size:var(--f-micro);font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:var(--sp-3)">Bienvenido a MI PLANTEL</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-2xl);letter-spacing:1px;line-height:1.05;margin-bottom:var(--sp-4)">¿Cómo te llamás?</div>
+    <div style="font-size:var(--f-md);color:var(--muted);line-height:1.45;margin-bottom:var(--sp-6)">Tu nombre lo ven los otros profes y el coordinador de tu club, por ejemplo en los avisos de cumpleaños. Se pide una sola vez.</div>
+    <label for="nombreModalInput" style="display:block;font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-2)">Nombre y apellido</label>
+    <input id="nombreModalInput" type="text" autocomplete="name" maxlength="40" style="width:100%;box-sizing:border-box;padding:var(--sp-5);background:var(--surface2);border:1px solid var(--accent);border-radius:var(--r-md);color:var(--text);font-size:var(--f-lg);font-family:'DM Sans',sans-serif;margin-bottom:var(--sp-5)" onkeydown="if(event.key==='Enter')window.nombreGuardar()">
+    <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-6)">Tu usuario: <span id="nombreModalUsuario"></span></div>
+    <button onclick="window.nombreGuardar()" style="width:100%;background:var(--win);color:#000;border:none;border-radius:var(--r-md);padding:var(--sp-5);font-size:var(--f-md);font-weight:700;cursor:pointer">Continuar</button>
+    <div style="font-size:var(--f-sm);color:var(--muted);margin-top:var(--sp-4)">Después lo podés cambiar desde Plantel.</div>
+  </div>
+</div>
+
 <!-- Fecha de cumpleaños de un jugador (Plantel) -->
 <div id="cumpleModal" class="cum-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10002;align-items:flex-end;justify-content:center;">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:var(--sp-7) var(--sp-7) var(--sp-8);width:100%;max-width:480px;">
@@ -3528,8 +3542,15 @@ function cumpleVerAnio(cat){ return !!window._cumpleVerTodo || (window._cumpleCa
 function staffNombre(s){
   const n = String((s && s.n) || '').trim();
   if(n) return n;
+  if(s && s.m) return s.m;
   const c = s && Array.isArray(s.c) && s.c[0];
   return c ? 'Profe de ' + catCorta(c) : 'Profe';
+}
+// Mail con las primeras letras y el dominio ("lu***@gmail.com"): alcanza para saber de quién se trata sin
+// mostrarle el mail completo a todo el club.
+function maskEmail(e){
+  const s = String(e || ''), i = s.indexOf('@');
+  return i < 1 ? '' : s.slice(0, Math.min(2, i)) + '***' + s.slice(i);
 }
 // Cumpleaños entre dos fechas (inclusive, ambas a las 12:00), de todo el club, ordenados.
 // Los profes están ligados a sus categorías: se agrupan en la primera categoría que comparten con
@@ -3667,33 +3688,88 @@ async function registrarStaff(){
   const cats = (window._cumpleCatsPropias || []).filter(Boolean);
   if(!u || window._soloLectura || !r || !cats.length) return;
   const ya = STAFF[u.uid] || {};
-  const igual = ya.r === r && JSON.stringify((ya.c || []).slice().sort()) === JSON.stringify(cats.slice().sort());
-  if(igual) return;
-  const club = CLUB_PATH;
+  const m = maskEmail(u.email);
+  const igual = ya.r === r && JSON.stringify((ya.c || []).slice().sort()) === JSON.stringify(cats.slice().sort()) && (!m || ya.m === m);
+  if(!igual){
+    const club = CLUB_PATH;
+    try {
+      const upd = { r, c: cats };
+      if(m) upd.m = m;
+      await update(ref(db, club + '/staff/' + u.uid), upd);
+      if(club !== CLUB_PATH) return;
+      STAFF[u.uid] = Object.assign({}, ya, upd);
+      cumpleAvisoRender();
+      cumpleRefrescarVistas();
+    } catch(e){ console.warn('registrarStaff:', e); return; }
+  }
+  pedirNombreSiFalta();
+}
+// Si el profe todavía no tiene nombre cargado, se lo pide al entrar (cuadro que no se puede cerrar,
+// una sola vez): sin nombre no se sabe quién es en las listas ni en los avisos de cumpleaños.
+function pedirNombreSiFalta(){
+  const u = auth.currentUser;
+  if(!u || window._soloLectura || !window._cumpleStaffRol) return;
+  const s = STAFF[u.uid];
+  if(!s || String(s.n || '').trim()) return;
+  const modal = document.getElementById('nombreModal');
+  if(!modal) return;
+  document.getElementById('nombreModalUsuario').textContent = (maskEmail(u.email) || 'tu usuario');
+  modal.style.display = 'flex';
+  setTimeout(() => { const i = document.getElementById('nombreModalInput'); if(i) i.focus(); }, 50);
+}
+window.nombreGuardar = async function(){
+  const u = auth.currentUser; if(!u) return;
+  const inp = document.getElementById('nombreModalInput');
+  const nombre = (inp.value || '').trim();
+  if(nombre.length < 2){ showToast('Escribí tu nombre y apellido'); return; }
   try {
-    await update(ref(db, club + '/staff/' + u.uid), { r, c: cats });
-    if(club !== CLUB_PATH) return;
-    STAFF[u.uid] = Object.assign({}, ya, { r, c: cats });
+    await update(ref(db, CLUB_PATH + '/staff/' + u.uid), { n: nombre });
+    STAFF[u.uid] = Object.assign({}, STAFF[u.uid], { n: nombre });
+    document.getElementById('nombreModal').style.display = 'none';
+    showToast('✓ Gracias, ' + nombre.split(' ')[0]);
     cumpleAvisoRender();
     cumpleRefrescarVistas();
-  } catch(e){ console.warn('registrarStaff:', e); }
-}
+  } catch(e){ showToast('No se pudo guardar. Probá de nuevo.'); }
+};
 // La lista de profes de cada categoría sigue a los ACCESOS: cada vez que el super admin crea un usuario,
-// le cambia las categorías o el rol, o lo da de baja, se actualiza (o se borra) su ficha en
+// le cambia las categorías, el rol o el nombre, o lo da de baja, se actualiza (o se borra) su ficha en
 // clubs/{club}/staff/{uid}. Así, cuando un profe cambia de categoría de un año al otro, o se va, la
 // lista de Plantel no queda desactualizada. Al cambiar de categorías se conservan su nombre y su fecha;
 // al darlo de baja o dejarlo sin categoría, la ficha se borra. Los usuarios de solo lectura (demo) y los
-// coordinadores que no dan clases no figuran como profes.
-async function sincronizarStaff(uid, clubId, perfil){
+// coordinadores que no dan clases no figuran como profes. La ficha lleva el mail tapado ("lu***@gmail.com")
+// para identificar al profe mientras no tenga nombre.
+// opts.forzarNombre: el super admin cambió el nombre a propósito (si no, el nombre que el propio profe
+// cargó no se pisa).
+async function sincronizarStaff(uid, clubId, perfil, opts){
   if(!uid || !clubId) return;
   const cats = [...new Set((perfil && perfil.cats ? Object.values(perfil.cats) : (perfil && perfil.cat ? [perfil.cat] : [])).filter(Boolean))];
   const esStaff = !!perfil && perfil.role !== 'baja' && perfil.role !== 'super-admin' && !perfil.soloLectura && cats.length > 0 &&
                   (perfil.role === 'profe' || (perfil.role === 'coordinator' && !!perfil.isProfeCoord));
   const r = ref(db, 'clubs/' + clubId + '/staff/' + uid);
   try {
-    if(esStaff) await update(r, { r: perfil.role === 'profe' ? 'profe' : 'coord', c: cats });
-    else await set(r, null);
+    if(!esStaff){ await set(r, null); return; }
+    const upd = { r: perfil.role === 'profe' ? 'profe' : 'coord', c: cats };
+    const m = maskEmail(perfil.email);
+    if(m) upd.m = m;
+    const nom = String((perfil && perfil.nombre) || '').trim();
+    if(opts && opts.forzarNombre) upd.n = nom || null;
+    else if(nom){
+      const ya = await get(ref(db, 'clubs/' + clubId + '/staff/' + uid + '/n'));
+      if(!ya.exists()) upd.n = nom;
+    }
+    await update(r, upd);
   } catch(e){ console.warn('sincronizarStaff:', e); }
+}
+// Pone al día la lista de profes de TODOS los clubes a partir de los usuarios (el super admin la corre
+// al abrir el panel de clubes): sirve para los profes que ya existían antes de que hubiera lista.
+async function sincronizarStaffTodos(users){
+  let n = 0;
+  for(const [uid, u] of Object.entries(users || {})){
+    if(!u || !u.clubId || u.role === 'baja' || u.role === 'super-admin') continue;
+    await sincronizarStaff(uid, u.clubId, u);
+    n++;
+  }
+  return n;
 }
 function cumpleRefrescarVistas(){
   try { if(window._cumplesRefrescar) window._cumplesRefrescar(); } catch(e){}
@@ -3779,10 +3855,10 @@ function staffPlantelHtml(catKey){
     const p = cumpleParse(s.f), esYo = uid === yo;
     const hoy = !!p && _isoLocal(cumpleFechaEn(p, new Date().getFullYear())) === hoyIso;
     const txt = !p ? '+ Cumple' : _pad2(p.d) + '/' + _pad2(p.m) + (hoy ? ' · hoy' : '');
-    const nom = s.n ? _cumEsc(s.n) : (esYo ? 'Poné tu nombre' : 'Profe sin nombre');
+    const nom = s.n ? _cumEsc(s.n) : (esYo ? 'Poné tu nombre' : 'Todavía sin nombre');
     h += '<div class="prow" style="justify-content:space-between;gap:var(--sp-3);margin-bottom:var(--sp-3)">' +
          '<div style="flex:1;min-width:0"><div class="staff-nom' + (s.n ? '' : ' sin') + '">' + nom + (esYo ? ' <span class="staff-yo">(vos)</span>' : '') + '</div>' +
-         '<div class="staff-rol">' + (s.r === 'coord' ? 'Profe y coordinador' : 'Profe') + '</div></div>' +
+         '<div class="staff-rol">' + (s.r === 'coord' ? 'Profe y coordinador' : 'Profe') + (s.m ? ' · <span style="text-transform:none">' + _cumEsc(s.m) + '</span>' : '') + '</div></div>' +
          (esYo && !s.n ? '<button class="cum-chip sin" style="margin-top:0" onclick="window.cumpleEditarStaff(\'' + uid + '\')">Poner mi nombre</button>' : '') +
          '<button class="cum-chip' + (!p ? ' sin' : '') + (hoy ? ' hoy' : '') + '" style="margin-top:0" onclick="window.cumpleEditarStaff(\'' + uid + '\')" aria-label="Cumpleaños de ' + _cumEsc(staffNombre(s)) + ': ' + (p ? txt : 'sin fecha') + '. Tocar para ' + (p ? 'cambiar' : 'cargar') + '">' + txt + '</button></div>';
   });
@@ -9623,6 +9699,9 @@ async function renderSAClubes(){
     const clubs = snap.exists() ? snap.val() : {};
     const usersTodos = uSnap && uSnap.exists() ? uSnap.val() : {};
     window._saSalud = saSaludDeClubes(clubs, usersTodos);
+    // La lista de profes de cada club se pone al día desde los usuarios (una vez por sesión): cubre a los
+    // profes que ya existían antes de que hubiera lista.
+    if(!window._staffSyncHecho){ window._staffSyncHecho = true; sincronizarStaffTodos(usersTodos).catch(() => {}); }
     const ids = Object.keys(clubs);
 
     let html = saSaludHtml(window._saSalud) + `
@@ -11090,7 +11169,10 @@ window._saEditUserCats = async function(uid, email, clubId){
   ov.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-8);width:100%;max-width:360px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);letter-spacing:2px;color:var(--accent);margin-bottom:var(--sp-2)">✏️ EDITAR USUARIO</div>
-      <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-6)">${email}</div>
+      <div style="font-size:var(--f-sm);color:var(--muted);margin-bottom:var(--sp-4)">${email}</div>
+      <label for="editUserNombre" style="display:block;font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-2)">Nombre y apellido</label>
+      <input id="editUserNombre" type="text" maxlength="40" value="${String(uData.nombre || '').replace(/"/g,'&quot;')}" placeholder="Lucía Pérez"
+        style="width:100%;margin-bottom:var(--sp-6);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:var(--sp-4) var(--sp-5);border-radius:var(--r-md);font-size:var(--f-md);box-sizing:border-box">
       ${rolHtml}
       ${puedeCambiarRol ? `<label style="display:flex;align-items:center;gap:var(--sp-4);margin-bottom:var(--sp-6);cursor:pointer">
         <input type="checkbox" id="editUserSoloLectura" ${uData.soloLectura?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
@@ -11119,7 +11201,8 @@ window._saEditUserCats = async function(uid, email, clubId){
     try{
       const cambios = {
         cats: newCats.length ? newCats : null,
-        cat: newCats[0] || null // compatibilidad retroactiva
+        cat: newCats[0] || null, // compatibilidad retroactiva
+        nombre: (document.getElementById('editUserNombre')?.value || '').trim() || null
       };
       if(rolSel){
         cambios.role = (rolSel === 'profe') ? 'profe' : 'coordinator';
@@ -11127,7 +11210,8 @@ window._saEditUserCats = async function(uid, email, clubId){
         cambios.soloLectura = document.getElementById('editUserSoloLectura')?.checked ? true : null;
       }
       await update(ref(db, 'users/'+uid), cambios);
-      await sincronizarStaff(uid, uData.clubId || clubId, Object.assign({}, uData, cambios));   // lista de profes de la categoría
+      const _final = Object.assign({}, uData, cambios);
+      await sincronizarStaff(uid, uData.clubId || clubId, _final, { forzarNombre: String(_final.nombre || '') !== String(uData.nombre || '') });   // lista de profes de la categoría
       showToast('✓ Usuario actualizado');
       ov.remove();
       window.saEditarClub(clubId); // refrescar vista del club
@@ -11145,6 +11229,10 @@ window._saAbrirAddUser = function(clubId){
   overlay2.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--sp-8);width:100%;max-width:380px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:var(--f-lg);letter-spacing:2px;color:var(--accent);margin-bottom:var(--sp-6)">➕ NUEVO USUARIO</div>
+
+      <label style="display:block;font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-2)">Nombre y apellido <span style="color:var(--accent);font-weight:400;text-transform:none">(así lo ven en los avisos)</span></label>
+      <input id="addUserNombre" type="text" placeholder="Lucía Pérez" maxlength="40"
+        style="width:100%;margin-bottom:var(--sp-5);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:var(--sp-4) var(--sp-5);border-radius:var(--r-md);font-size:var(--f-md);box-sizing:border-box">
 
       <label style="display:block;font-size:var(--f-micro);color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:var(--sp-2)">Email</label>
       <input id="addUserEmail" type="email" placeholder="profe@email.com"
@@ -11224,6 +11312,8 @@ window._saCrearUsuario = async function(clubId){
       cats: selectedCats
     };
     if(selectedCats.length === 1) perfil.cat = selectedCats[0]; // compatibilidad retroactiva
+    const _nombreNuevo = (document.getElementById('addUserNombre')?.value || '').trim();
+    if(_nombreNuevo) perfil.nombre = _nombreNuevo;
     if(rol==='profe+coord') perfil.isProfeCoord = true;
     if(document.getElementById('addUserSoloLectura')?.checked) perfil.soloLectura = true;
     await set(ref(db,'users/'+uid), perfil);
