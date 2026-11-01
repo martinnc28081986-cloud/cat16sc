@@ -1,5 +1,5 @@
 {
-  "updatedAt": "25/10/2026",
+  "updatedAt": "01/11/2026",
   "zona": "lisfi-zona-campeonato-2026",
   "fuente": "https://www.lisfi.com.ar/index.php/zona-camp-2026",
   "clubes": [
@@ -456,6 +456,12 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 2,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "V.S Carlos Bco.",
           "gf": 1,
@@ -532,10 +538,22 @@
           "gc": 4
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 2,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Estud. LH": [
@@ -652,6 +670,12 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 2,
+          "gc": 4
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 0,
@@ -700,6 +724,18 @@
           "vs": "Estud. LH",
           "gf": 4,
           "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "S.J.Bautista": [
@@ -784,6 +820,12 @@
           "gc": 4
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 2,
@@ -820,6 +862,12 @@
           "vs": "Cambaceres",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
+          "gf": 4,
+          "gc": 2
         },
         {
           "f": 8,
@@ -972,6 +1020,18 @@
           "vs": "FIE 25",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
+          "gf": 1,
+          "gc": 1
         }
       ]
     },
@@ -1014,6 +1074,12 @@
           "gc": 3
         },
         {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "V.S Carlos Bco.",
           "gf": 1,
@@ -1090,10 +1156,22 @@
           "gc": 4
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "Estud. LH": [
@@ -1210,6 +1288,12 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 0,
@@ -1258,6 +1342,18 @@
           "vs": "Estud. LH",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "S.J.Bautista": [
@@ -1342,6 +1438,12 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 0,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 1,
@@ -1378,6 +1480,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
+          "gf": 1,
+          "gc": 2
         },
         {
           "f": 8,
@@ -1530,6 +1638,18 @@
           "vs": "FIE 25",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
+          "gf": 1,
+          "gc": 1
         }
       ]
     },
@@ -1569,6 +1689,12 @@
           "f": 6,
           "vs": "Talleres B.",
           "gf": 2,
+          "gc": 0
+        },
+        {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 4,
           "gc": 0
         },
         {
@@ -1648,10 +1774,22 @@
           "gc": 1
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 0,
+          "gc": 4
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Estud. LH": [
@@ -1768,6 +1906,12 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 4,
+          "gc": 3
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 4,
@@ -1816,6 +1960,18 @@
           "vs": "Estud. LH",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "S.J.Bautista": [
@@ -1900,6 +2056,12 @@
           "gc": 1
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 3,
@@ -1936,6 +2098,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
+          "gf": 3,
+          "gc": 4
         },
         {
           "f": 8,
@@ -2087,6 +2255,18 @@
           "f": 6,
           "vs": "FIE 25",
           "gf": 0,
+          "gc": 2
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
+          "gf": 1,
           "gc": 2
         }
       ]
@@ -2130,6 +2310,12 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 3
+        },
+        {
           "f": 8,
           "vs": "V.S Carlos Bco.",
           "gf": 2,
@@ -2206,10 +2392,22 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 3,
+          "gc": 0
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "Estud. LH": [
@@ -2326,6 +2524,12 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 3,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 1,
@@ -2373,6 +2577,18 @@
           "f": 7,
           "vs": "Estud. LH",
           "gf": 2,
+          "gc": 2
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 0,
+          "gc": 8
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 1,
           "gc": 2
         }
       ],
@@ -2458,6 +2674,12 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 0,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 0,
@@ -2494,6 +2716,12 @@
           "vs": "Cambaceres",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
+          "gf": 1,
+          "gc": 3
         },
         {
           "f": 8,
@@ -2646,6 +2874,18 @@
           "vs": "FIE 25",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
+          "gf": 8,
+          "gc": 0
         }
       ]
     },
@@ -2686,6 +2926,12 @@
           "vs": "Talleres B.",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 1
         },
         {
           "f": 8,
@@ -2764,10 +3010,22 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 1,
+          "gc": 0
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 3,
           "gc": 2
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 3,
+          "gc": 0
         }
       ],
       "Estud. LH": [
@@ -2884,6 +3142,12 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 6,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 1,
@@ -2931,6 +3195,18 @@
           "f": 7,
           "vs": "Estud. LH",
           "gf": 3,
+          "gc": 3
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 0,
           "gc": 3
         }
       ],
@@ -3016,6 +3292,12 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 0,
+          "gc": 4
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 2,
@@ -3052,6 +3334,12 @@
           "vs": "Cambaceres",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 6
         },
         {
           "f": 8,
@@ -3203,6 +3491,18 @@
           "f": 6,
           "vs": "FIE 25",
           "gf": 3,
+          "gc": 1
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 4,
+          "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
+          "gf": 1,
           "gc": 1
         }
       ]
@@ -3246,6 +3546,12 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 6
+        },
+        {
           "f": 8,
           "vs": "V.S Carlos Bco.",
           "gf": 0,
@@ -3322,10 +3628,22 @@
           "gc": 1
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 6,
+          "gc": 0
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 6,
           "gc": 0
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 3,
+          "gc": 3
         }
       ],
       "Estud. LH": [
@@ -3442,6 +3760,12 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 0,
@@ -3490,6 +3814,18 @@
           "vs": "Estud. LH",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 3,
+          "gc": 3
         }
       ],
       "S.J.Bautista": [
@@ -3574,6 +3910,12 @@
           "gc": 6
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 1,
+          "gc": 9
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 0,
@@ -3610,6 +3952,12 @@
           "vs": "Cambaceres",
           "gf": 3,
           "gc": 1
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 0
         },
         {
           "f": 8,
@@ -3760,6 +4108,18 @@
         {
           "f": 6,
           "vs": "FIE 25",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 9,
+          "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
           "gf": 0,
           "gc": 2
         }
@@ -3804,6 +4164,12 @@
           "gc": 1
         },
         {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "V.S Carlos Bco.",
           "gf": 2,
@@ -3880,9 +4246,21 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 2,
+          "gc": 0
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 0,
           "gc": 0
         }
       ],
@@ -4000,6 +4378,12 @@
           "gc": 1
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 0,
@@ -4048,6 +4432,18 @@
           "vs": "Estud. LH",
           "gf": 2,
           "gc": 3
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "S.J.Bautista": [
@@ -4132,6 +4528,12 @@
           "gc": 4
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 0,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 0,
@@ -4166,6 +4568,12 @@
         {
           "f": 6,
           "vs": "Cambaceres",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
           "gf": 2,
           "gc": 0
         },
@@ -4320,6 +4728,18 @@
           "vs": "FIE 25",
           "gf": 1,
           "gc": 5
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
+          "gf": 1,
+          "gc": 1
         }
       ]
     },
@@ -4362,6 +4782,12 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "Hernandez",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "f": 8,
           "vs": "V.S Carlos Bco.",
           "gf": 7,
@@ -4438,10 +4864,22 @@
           "gc": 0
         },
         {
+          "f": 7,
+          "vs": "FIE 25",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Universitario",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "f": 9,
+          "vs": "El Carmen",
+          "gf": 3,
+          "gc": 2
         }
       ],
       "Estud. LH": [
@@ -4558,6 +4996,12 @@
           "gc": 2
         },
         {
+          "f": 7,
+          "vs": "ADAFI",
+          "gf": 0,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Everton",
           "gf": 0,
@@ -4605,6 +5049,18 @@
           "f": 7,
           "vs": "Estud. LH",
           "gf": 0,
+          "gc": 3
+        },
+        {
+          "f": 8,
+          "vs": "Talleres B.",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "f": 9,
+          "vs": "Hernandez",
+          "gf": 2,
           "gc": 3
         }
       ],
@@ -4690,6 +5146,12 @@
           "gc": 3
         },
         {
+          "f": 7,
+          "vs": "Talleres B.",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "f": 8,
           "vs": "Hernandez",
           "gf": 0,
@@ -4726,6 +5188,12 @@
           "vs": "Cambaceres",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "f": 7,
+          "vs": "Cap.Chica",
+          "gf": 2,
+          "gc": 0
         },
         {
           "f": 8,
@@ -4878,6 +5346,18 @@
           "vs": "FIE 25",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "f": 7,
+          "vs": "Universitario",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "f": 8,
+          "vs": "El Carmen",
+          "gf": 2,
+          "gc": 0
         }
       ]
     }
@@ -4928,6 +5408,13 @@
           "gc": 2
         },
         {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "V.S Carlos Bco.",
           "cond": "V",
@@ -5023,11 +5510,25 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Estud. LH": [
@@ -5183,6 +5684,13 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 2,
+          "gc": 4
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -5239,6 +5747,20 @@
           "cond": "L",
           "gf": 4,
           "gc": 2
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "S.J.Bautista": [
@@ -5336,6 +5858,13 @@
           "gc": 4
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -5378,6 +5907,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
+          "gf": 4,
+          "gc": 2
         },
         {
           "fecha": 8,
@@ -5626,6 +6162,20 @@
           "cond": "L",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ]
     },
@@ -5674,6 +6224,13 @@
           "gc": 3
         },
         {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "V.S Carlos Bco.",
           "cond": "V",
@@ -5769,11 +6326,25 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "Estud. LH": [
@@ -5929,6 +6500,13 @@
           "gc": 2
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -5985,6 +6563,20 @@
           "cond": "L",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "S.J.Bautista": [
@@ -6082,6 +6674,13 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -6124,6 +6723,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
         },
         {
           "fecha": 8,
@@ -6372,6 +6978,20 @@
           "cond": "L",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ]
     },
@@ -6417,6 +7037,13 @@
           "rival": "Talleres B.",
           "cond": "V",
           "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 4,
           "gc": 0
         },
         {
@@ -6515,11 +7142,25 @@
           "gc": 1
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 0,
+          "gc": 4
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "Estud. LH": [
@@ -6675,6 +7316,13 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 4,
+          "gc": 3
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -6731,6 +7379,20 @@
           "cond": "L",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "S.J.Bautista": [
@@ -6828,6 +7490,13 @@
           "gc": 1
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -6870,6 +7539,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
+          "gf": 3,
+          "gc": 4
         },
         {
           "fecha": 8,
@@ -7117,6 +7793,20 @@
           "rival": "FIE 25",
           "cond": "L",
           "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
+          "cond": "L",
+          "gf": 1,
           "gc": 2
         }
       ]
@@ -7166,6 +7856,13 @@
           "gc": 2
         },
         {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 0,
+          "gc": 3
+        },
+        {
           "fecha": 8,
           "rival": "V.S Carlos Bco.",
           "cond": "V",
@@ -7261,11 +7958,25 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 3,
+          "gc": 0
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "Estud. LH": [
@@ -7421,6 +8132,13 @@
           "gc": 2
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -7476,6 +8194,20 @@
           "rival": "Estud. LH",
           "cond": "L",
           "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 8
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 1,
           "gc": 2
         }
       ],
@@ -7574,6 +8306,13 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -7616,6 +8355,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
         },
         {
           "fecha": 8,
@@ -7864,6 +8610,20 @@
           "cond": "L",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
+          "cond": "L",
+          "gf": 8,
+          "gc": 0
         }
       ]
     },
@@ -7910,6 +8670,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         },
         {
           "fecha": 8,
@@ -8007,11 +8774,25 @@
           "gc": 3
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 3,
           "gc": 2
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 3,
+          "gc": 0
         }
       ],
       "Estud. LH": [
@@ -8167,6 +8948,13 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 6,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -8222,6 +9010,20 @@
           "rival": "Estud. LH",
           "cond": "L",
           "gf": 3,
+          "gc": 3
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 0,
           "gc": 3
         }
       ],
@@ -8320,6 +9122,13 @@
           "gc": 2
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 0,
+          "gc": 4
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -8362,6 +9171,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
+          "gf": 2,
+          "gc": 6
         },
         {
           "fecha": 8,
@@ -8609,6 +9425,20 @@
           "rival": "FIE 25",
           "cond": "L",
           "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 4,
+          "gc": 0
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
+          "cond": "L",
+          "gf": 1,
           "gc": 1
         }
       ]
@@ -8658,6 +9488,13 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 0,
+          "gc": 6
+        },
+        {
           "fecha": 8,
           "rival": "V.S Carlos Bco.",
           "cond": "V",
@@ -8753,11 +9590,25 @@
           "gc": 1
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 6,
+          "gc": 0
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 6,
           "gc": 0
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 3,
+          "gc": 3
         }
       ],
       "Estud. LH": [
@@ -8913,6 +9764,13 @@
           "gc": 2
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -8969,6 +9827,20 @@
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 3,
+          "gc": 3
         }
       ],
       "S.J.Bautista": [
@@ -9066,6 +9938,13 @@
           "gc": 6
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 1,
+          "gc": 9
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -9108,6 +9987,13 @@
           "cond": "V",
           "gf": 3,
           "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
         },
         {
           "fecha": 8,
@@ -9353,6 +10239,20 @@
         {
           "fecha": 6,
           "rival": "FIE 25",
+          "cond": "L",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 9,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
           "cond": "L",
           "gf": 0,
           "gc": 2
@@ -9404,6 +10304,13 @@
           "gc": 1
         },
         {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "V.S Carlos Bco.",
           "cond": "V",
@@ -9499,10 +10406,24 @@
           "gc": 1
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 0,
           "gc": 0
         }
       ],
@@ -9659,6 +10580,13 @@
           "gc": 1
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -9715,6 +10643,20 @@
           "cond": "L",
           "gf": 2,
           "gc": 3
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "S.J.Bautista": [
@@ -9812,6 +10754,13 @@
           "gc": 4
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -9852,6 +10801,13 @@
           "fecha": 6,
           "rival": "Cambaceres",
           "cond": "V",
+          "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
           "gf": 2,
           "gc": 0
         },
@@ -10102,6 +11058,20 @@
           "cond": "L",
           "gf": 1,
           "gc": 5
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ]
     },
@@ -10150,6 +11120,13 @@
           "gc": 0
         },
         {
+          "fecha": 7,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 8,
           "rival": "V.S Carlos Bco.",
           "cond": "V",
@@ -10245,11 +11222,25 @@
           "gc": 1
         },
         {
+          "fecha": 7,
+          "rival": "FIE 25",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Universitario",
           "cond": "L",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "fecha": 9,
+          "rival": "El Carmen",
+          "cond": "V",
+          "gf": 3,
+          "gc": 2
         }
       ],
       "Estud. LH": [
@@ -10405,6 +11396,13 @@
           "gc": 2
         },
         {
+          "fecha": 7,
+          "rival": "ADAFI",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Everton",
           "cond": "L",
@@ -10460,6 +11458,20 @@
           "rival": "Estud. LH",
           "cond": "L",
           "gf": 0,
+          "gc": 3
+        },
+        {
+          "fecha": 8,
+          "rival": "Talleres B.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 9,
+          "rival": "Hernandez",
+          "cond": "L",
+          "gf": 2,
           "gc": 3
         }
       ],
@@ -10558,6 +11570,13 @@
           "gc": 3
         },
         {
+          "fecha": 7,
+          "rival": "Talleres B.",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
+        },
+        {
           "fecha": 8,
           "rival": "Hernandez",
           "cond": "V",
@@ -10600,6 +11619,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "fecha": 7,
+          "rival": "Cap.Chica",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
         },
         {
           "fecha": 8,
@@ -10848,6 +11874,20 @@
           "cond": "L",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "fecha": 7,
+          "rival": "Universitario",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 8,
+          "rival": "El Carmen",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
         }
       ]
     }
@@ -10856,13 +11896,23 @@
     "13": [
       {
         "eq": "El Carmen",
-        "pj": 7,
-        "pg": 6,
-        "pe": 0,
+        "pj": 9,
+        "pg": 7,
+        "pe": 1,
         "pp": 1,
-        "gf": 12,
-        "gc": 3,
-        "pts": 12
+        "gf": 14,
+        "gc": 4,
+        "pts": 15
+      },
+      {
+        "eq": "ADAFI",
+        "pj": 7,
+        "pg": 4,
+        "pe": 2,
+        "pp": 1,
+        "gf": 13,
+        "gc": 6,
+        "pts": 10
       },
       {
         "eq": "Everton",
@@ -10875,13 +11925,13 @@
         "pts": 9
       },
       {
-        "eq": "ADAFI",
-        "pj": 6,
+        "eq": "Hernandez",
+        "pj": 8,
         "pg": 3,
         "pe": 2,
-        "pp": 1,
-        "gf": 9,
-        "gc": 4,
+        "pp": 3,
+        "gf": 14,
+        "gc": 13,
         "pts": 8
       },
       {
@@ -10892,6 +11942,16 @@
         "pp": 3,
         "gf": 12,
         "gc": 12,
+        "pts": 8
+      },
+      {
+        "eq": "Talleres B.",
+        "pj": 7,
+        "pg": 3,
+        "pe": 2,
+        "pp": 2,
+        "gf": 9,
+        "gc": 10,
         "pts": 8
       },
       {
@@ -10912,16 +11972,6 @@
         "pp": 3,
         "gf": 8,
         "gc": 3,
-        "pts": 7
-      },
-      {
-        "eq": "Hernandez",
-        "pj": 6,
-        "pg": 3,
-        "pe": 1,
-        "pp": 2,
-        "gf": 12,
-        "gc": 10,
         "pts": 7
       },
       {
@@ -10946,33 +11996,23 @@
       },
       {
         "eq": "Cap.Chica",
-        "pj": 7,
+        "pj": 8,
         "pg": 1,
         "pe": 4,
-        "pp": 2,
-        "gf": 2,
-        "gc": 3,
+        "pp": 3,
+        "gf": 4,
+        "gc": 7,
         "pts": 6
       },
       {
         "eq": "Universitario",
-        "pj": 7,
+        "pj": 8,
         "pg": 2,
         "pe": 2,
-        "pp": 3,
-        "gf": 7,
-        "gc": 14,
+        "pp": 4,
+        "gf": 8,
+        "gc": 16,
         "pts": 6
-      },
-      {
-        "eq": "Talleres B.",
-        "pj": 5,
-        "pg": 2,
-        "pe": 1,
-        "pp": 2,
-        "gf": 6,
-        "gc": 8,
-        "pts": 5
       },
       {
         "eq": "Cambaceres",
@@ -10996,16 +12036,26 @@
       },
       {
         "eq": "FIE 25",
-        "pj": 7,
+        "pj": 8,
         "pg": 0,
-        "pe": 3,
+        "pe": 4,
         "pp": 4,
-        "gf": 4,
-        "gc": 11,
-        "pts": 3
+        "gf": 6,
+        "gc": 13,
+        "pts": 4
       }
     ],
     "14": [
+      {
+        "eq": "Talleres B.",
+        "pj": 7,
+        "pg": 5,
+        "pe": 2,
+        "pp": 0,
+        "gf": 15,
+        "gc": 6,
+        "pts": 12
+      },
       {
         "eq": "Defensa",
         "pj": 8,
@@ -11015,6 +12065,16 @@
         "gf": 13,
         "gc": 7,
         "pts": 12
+      },
+      {
+        "eq": "El Carmen",
+        "pj": 9,
+        "pg": 4,
+        "pe": 3,
+        "pp": 2,
+        "gf": 13,
+        "gc": 13,
+        "pts": 11
       },
       {
         "eq": "La Curva",
@@ -11028,23 +12088,13 @@
       },
       {
         "eq": "Universitario",
-        "pj": 7,
+        "pj": 8,
         "pg": 4,
         "pe": 2,
-        "pp": 1,
+        "pp": 2,
         "gf": 8,
-        "gc": 4,
-        "pts": 10
-      },
-      {
-        "eq": "Talleres B.",
-        "pj": 5,
-        "pg": 4,
-        "pe": 1,
-        "pp": 0,
-        "gf": 13,
         "gc": 5,
-        "pts": 9
+        "pts": 10
       },
       {
         "eq": "Cambaceres",
@@ -11065,16 +12115,6 @@
         "gf": 9,
         "gc": 5,
         "pts": 9
-      },
-      {
-        "eq": "El Carmen",
-        "pj": 7,
-        "pg": 3,
-        "pe": 2,
-        "pp": 2,
-        "gf": 10,
-        "gc": 11,
-        "pts": 8
       },
       {
         "eq": "Estud. LH",
@@ -11097,24 +12137,34 @@
         "pts": 7
       },
       {
+        "eq": "Hernandez",
+        "pj": 8,
+        "pg": 3,
+        "pe": 1,
+        "pp": 4,
+        "gf": 12,
+        "gc": 16,
+        "pts": 7
+      },
+      {
         "eq": "FIE 25",
-        "pj": 7,
+        "pj": 8,
         "pg": 3,
         "pe": 0,
-        "pp": 4,
-        "gf": 8,
-        "gc": 10,
+        "pp": 5,
+        "gf": 9,
+        "gc": 12,
         "pts": 6
       },
       {
-        "eq": "Hernandez",
-        "pj": 6,
-        "pg": 2,
-        "pe": 1,
-        "pp": 3,
-        "gf": 9,
-        "gc": 13,
-        "pts": 5
+        "eq": "Cap.Chica",
+        "pj": 8,
+        "pg": 1,
+        "pe": 2,
+        "pp": 5,
+        "gf": 5,
+        "gc": 11,
+        "pts": 4
       },
       {
         "eq": "Sagr. Corazón",
@@ -11128,23 +12178,13 @@
       },
       {
         "eq": "ADAFI",
-        "pj": 6,
+        "pj": 7,
         "pg": 1,
         "pe": 1,
-        "pp": 4,
-        "gf": 3,
-        "gc": 8,
-        "pts": 3
-      },
-      {
-        "eq": "Cap.Chica",
-        "pj": 7,
-        "pg": 0,
-        "pe": 2,
         "pp": 5,
-        "gf": 3,
+        "gf": 4,
         "gc": 10,
-        "pts": 2
+        "pts": 3
       },
       {
         "eq": "V.S Carlos Bco.",
@@ -11159,6 +12199,26 @@
     ],
     "15": [
       {
+        "eq": "El Carmen",
+        "pj": 9,
+        "pg": 6,
+        "pe": 3,
+        "pp": 0,
+        "gf": 19,
+        "gc": 11,
+        "pts": 15
+      },
+      {
+        "eq": "FIE 25",
+        "pj": 8,
+        "pg": 6,
+        "pe": 2,
+        "pp": 0,
+        "gf": 16,
+        "gc": 0,
+        "pts": 14
+      },
+      {
         "eq": "La Curva",
         "pj": 7,
         "pg": 5,
@@ -11169,24 +12229,24 @@
         "pts": 12
       },
       {
-        "eq": "FIE 25",
-        "pj": 7,
+        "eq": "Universitario",
+        "pj": 8,
         "pg": 5,
-        "pe": 2,
-        "pp": 0,
-        "gf": 12,
-        "gc": 0,
-        "pts": 12
+        "pe": 1,
+        "pp": 2,
+        "gf": 22,
+        "gc": 14,
+        "pts": 11
       },
       {
-        "eq": "El Carmen",
-        "pj": 7,
-        "pg": 5,
+        "eq": "Cap.Chica",
+        "pj": 8,
+        "pg": 4,
         "pe": 2,
-        "pp": 0,
-        "gf": 16,
-        "gc": 9,
-        "pts": 12
+        "pp": 2,
+        "gf": 18,
+        "gc": 12,
+        "pts": 10
       },
       {
         "eq": "Sagr. Corazón",
@@ -11199,16 +12259,6 @@
         "pts": 10
       },
       {
-        "eq": "Universitario",
-        "pj": 7,
-        "pg": 4,
-        "pe": 1,
-        "pp": 2,
-        "gf": 20,
-        "gc": 13,
-        "pts": 9
-      },
-      {
         "eq": "Cambaceres",
         "pj": 7,
         "pg": 4,
@@ -11219,14 +12269,14 @@
         "pts": 9
       },
       {
-        "eq": "Cap.Chica",
-        "pj": 7,
-        "pg": 3,
-        "pe": 2,
-        "pp": 2,
-        "gf": 14,
-        "gc": 9,
-        "pts": 8
+        "eq": "Hernandez",
+        "pj": 8,
+        "pg": 1,
+        "pe": 4,
+        "pp": 3,
+        "gf": 7,
+        "gc": 11,
+        "pts": 6
       },
       {
         "eq": "Estud. LH",
@@ -11237,16 +12287,6 @@
         "gf": 4,
         "gc": 14,
         "pts": 6
-      },
-      {
-        "eq": "Hernandez",
-        "pj": 6,
-        "pg": 1,
-        "pe": 3,
-        "pp": 2,
-        "gf": 6,
-        "gc": 6,
-        "pts": 5
       },
       {
         "eq": "V.S Carlos Bco.",
@@ -11260,12 +12300,12 @@
       },
       {
         "eq": "ADAFI",
-        "pj": 6,
+        "pj": 7,
         "pg": 1,
         "pe": 2,
-        "pp": 3,
-        "gf": 9,
-        "gc": 13,
+        "pp": 4,
+        "gf": 12,
+        "gc": 17,
         "pts": 4
       },
       {
@@ -11300,16 +12340,36 @@
       },
       {
         "eq": "Talleres B.",
-        "pj": 5,
+        "pj": 7,
         "pg": 0,
         "pe": 1,
-        "pp": 4,
-        "gf": 1,
-        "gc": 12,
+        "pp": 6,
+        "gf": 3,
+        "gc": 16,
         "pts": 1
       }
     ],
     "16": [
+      {
+        "eq": "Talleres B.",
+        "pj": 7,
+        "pg": 6,
+        "pe": 1,
+        "pp": 0,
+        "gf": 28,
+        "gc": 2,
+        "pts": 13
+      },
+      {
+        "eq": "Hernandez",
+        "pj": 8,
+        "pg": 5,
+        "pe": 3,
+        "pp": 0,
+        "gf": 15,
+        "gc": 5,
+        "pts": 13
+      },
       {
         "eq": "Cambaceres",
         "pj": 7,
@@ -11331,63 +12391,43 @@
         "pts": 11
       },
       {
-        "eq": "Universitario",
-        "pj": 7,
+        "eq": "Cap.Chica",
+        "pj": 8,
         "pg": 4,
         "pe": 2,
-        "pp": 1,
-        "gf": 10,
-        "gc": 3,
+        "pp": 2,
+        "gf": 19,
+        "gc": 9,
         "pts": 10
       },
       {
-        "eq": "Talleres B.",
-        "pj": 5,
+        "eq": "Universitario",
+        "pj": 8,
         "pg": 4,
-        "pe": 1,
-        "pp": 0,
-        "gf": 19,
-        "gc": 2,
-        "pts": 9
-      },
-      {
-        "eq": "Hernandez",
-        "pj": 6,
-        "pg": 3,
-        "pe": 3,
-        "pp": 0,
+        "pe": 2,
+        "pp": 2,
         "gf": 10,
         "gc": 4,
-        "pts": 9
+        "pts": 10
       },
       {
         "eq": "El Carmen",
-        "pj": 7,
+        "pj": 9,
         "pg": 3,
         "pe": 3,
-        "pp": 1,
-        "gf": 13,
-        "gc": 14,
+        "pp": 3,
+        "gf": 14,
+        "gc": 24,
         "pts": 9
       },
       {
-        "eq": "Cap.Chica",
-        "pj": 7,
-        "pg": 3,
-        "pe": 2,
-        "pp": 2,
-        "gf": 16,
-        "gc": 8,
-        "pts": 8
-      },
-      {
         "eq": "FIE 25",
-        "pj": 7,
+        "pj": 8,
         "pg": 4,
         "pe": 0,
-        "pp": 3,
+        "pp": 4,
         "gf": 9,
-        "gc": 5,
+        "gc": 8,
         "pts": 8
       },
       {
@@ -11452,16 +12492,26 @@
       },
       {
         "eq": "ADAFI",
-        "pj": 6,
+        "pj": 7,
         "pg": 0,
         "pe": 0,
-        "pp": 6,
-        "gf": 5,
-        "gc": 17,
+        "pp": 7,
+        "gf": 6,
+        "gc": 20,
         "pts": 0
       }
     ],
     "17": [
+      {
+        "eq": "Hernandez",
+        "pj": 8,
+        "pg": 7,
+        "pe": 0,
+        "pp": 1,
+        "gf": 18,
+        "gc": 7,
+        "pts": 14
+      },
       {
         "eq": "Everton",
         "pj": 7,
@@ -11484,23 +12534,23 @@
       },
       {
         "eq": "Universitario",
-        "pj": 7,
+        "pj": 8,
         "pg": 4,
         "pe": 2,
-        "pp": 1,
+        "pp": 2,
         "gf": 20,
-        "gc": 10,
+        "gc": 14,
         "pts": 10
       },
       {
-        "eq": "Hernandez",
-        "pj": 6,
-        "pg": 5,
-        "pe": 0,
-        "pp": 1,
-        "gf": 14,
-        "gc": 7,
-        "pts": 10
+        "eq": "Talleres B.",
+        "pj": 7,
+        "pg": 4,
+        "pe": 1,
+        "pp": 2,
+        "gf": 17,
+        "gc": 8,
+        "pts": 9
       },
       {
         "eq": "Cambaceres",
@@ -11543,44 +12593,34 @@
         "pts": 7
       },
       {
-        "eq": "Talleres B.",
-        "pj": 5,
+        "eq": "Cap.Chica",
+        "pj": 8,
         "pg": 3,
-        "pe": 0,
-        "pp": 2,
-        "gf": 12,
-        "gc": 7,
-        "pts": 6
+        "pe": 1,
+        "pp": 4,
+        "gf": 14,
+        "gc": 16,
+        "pts": 7
       },
       {
         "eq": "FIE 25",
-        "pj": 7,
+        "pj": 8,
         "pg": 2,
         "pe": 1,
-        "pp": 4,
+        "pp": 5,
         "gf": 9,
-        "gc": 12,
-        "pts": 5
-      },
-      {
-        "eq": "Cap.Chica",
-        "pj": 7,
-        "pg": 2,
-        "pe": 1,
-        "pp": 4,
-        "gf": 8,
-        "gc": 14,
+        "gc": 13,
         "pts": 5
       },
       {
         "eq": "El Carmen",
-        "pj": 7,
+        "pj": 9,
         "pg": 1,
-        "pe": 2,
-        "pp": 4,
-        "gf": 7,
-        "gc": 14,
-        "pts": 4
+        "pe": 3,
+        "pp": 5,
+        "gf": 8,
+        "gc": 18,
+        "pts": 5
       },
       {
         "eq": "Estud. LH",
@@ -11594,12 +12634,12 @@
       },
       {
         "eq": "ADAFI",
-        "pj": 6,
+        "pj": 7,
         "pg": 1,
         "pe": 1,
-        "pp": 4,
-        "gf": 4,
-        "gc": 20,
+        "pp": 5,
+        "gf": 6,
+        "gc": 26,
         "pts": 3
       },
       {
@@ -11635,44 +12675,54 @@
         "pts": 14
       },
       {
-        "eq": "ADAFI",
-        "pj": 6,
-        "pg": 4,
-        "pe": 1,
-        "pp": 1,
-        "gf": 21,
-        "gc": 9,
-        "pts": 9
-      },
-      {
         "eq": "El Carmen",
-        "pj": 7,
-        "pg": 4,
-        "pe": 1,
+        "pj": 9,
+        "pg": 5,
+        "pe": 2,
         "pp": 2,
-        "gf": 16,
-        "gc": 10,
-        "pts": 9
+        "gf": 21,
+        "gc": 13,
+        "pts": 12
       },
       {
-        "eq": "FIE 25",
+        "eq": "ADAFI",
         "pj": 7,
-        "pg": 3,
-        "pe": 3,
+        "pg": 5,
+        "pe": 1,
         "pp": 1,
-        "gf": 14,
+        "gf": 23,
         "gc": 9,
-        "pts": 9
+        "pts": 11
       },
       {
         "eq": "Hernandez",
-        "pj": 6,
-        "pg": 3,
-        "pe": 1,
+        "pj": 8,
+        "pg": 4,
+        "pe": 2,
         "pp": 2,
-        "gf": 16,
-        "gc": 7,
-        "pts": 7
+        "gf": 25,
+        "gc": 10,
+        "pts": 10
+      },
+      {
+        "eq": "FIE 25",
+        "pj": 8,
+        "pg": 3,
+        "pe": 3,
+        "pp": 2,
+        "gf": 14,
+        "gc": 15,
+        "pts": 9
+      },
+      {
+        "eq": "Talleres B.",
+        "pj": 7,
+        "pg": 3,
+        "pe": 2,
+        "pp": 2,
+        "gf": 15,
+        "gc": 8,
+        "pts": 8
       },
       {
         "eq": "Sagr. Corazón",
@@ -11702,16 +12752,6 @@
         "pp": 4,
         "gf": 20,
         "gc": 16,
-        "pts": 6
-      },
-      {
-        "eq": "Talleres B.",
-        "pj": 5,
-        "pg": 2,
-        "pe": 2,
-        "pp": 1,
-        "gf": 6,
-        "gc": 5,
         "pts": 6
       },
       {
@@ -11746,35 +12786,35 @@
       },
       {
         "eq": "Universitario",
-        "pj": 7,
+        "pj": 8,
         "pg": 1,
         "pe": 0,
-        "pp": 6,
-        "gf": 11,
-        "gc": 35,
+        "pp": 7,
+        "gf": 12,
+        "gc": 44,
         "pts": 2
       },
       {
         "eq": "Cap.Chica",
-        "pj": 7,
+        "pj": 8,
         "pg": 0,
         "pe": 0,
-        "pp": 7,
+        "pp": 8,
         "gf": 0,
-        "gc": 20,
+        "gc": 22,
         "pts": 0
       }
     ],
     "19": [
       {
         "eq": "FIE 25",
-        "pj": 7,
-        "pg": 6,
+        "pj": 8,
+        "pg": 7,
         "pe": 1,
         "pp": 0,
-        "gf": 28,
-        "gc": 4,
-        "pts": 13
+        "gf": 30,
+        "gc": 5,
+        "pts": 15
       },
       {
         "eq": "Sagr. Corazón",
@@ -11784,6 +12824,16 @@
         "pp": 0,
         "gf": 11,
         "gc": 0,
+        "pts": 11
+      },
+      {
+        "eq": "ADAFI",
+        "pj": 7,
+        "pg": 5,
+        "pe": 1,
+        "pp": 1,
+        "gf": 14,
+        "gc": 5,
         "pts": 11
       },
       {
@@ -11817,34 +12867,24 @@
         "pts": 10
       },
       {
-        "eq": "ADAFI",
-        "pj": 6,
-        "pg": 4,
-        "pe": 1,
-        "pp": 1,
-        "gf": 12,
-        "gc": 5,
-        "pts": 9
-      },
-      {
         "eq": "Hernandez",
-        "pj": 6,
+        "pj": 8,
         "pg": 4,
-        "pe": 1,
-        "pp": 1,
-        "gf": 6,
-        "gc": 1,
-        "pts": 9
+        "pe": 2,
+        "pp": 2,
+        "gf": 7,
+        "gc": 3,
+        "pts": 10
       },
       {
         "eq": "El Carmen",
-        "pj": 7,
+        "pj": 9,
         "pg": 3,
-        "pe": 1,
+        "pe": 3,
         "pp": 3,
-        "gf": 20,
-        "gc": 14,
-        "pts": 7
+        "gf": 21,
+        "gc": 15,
+        "pts": 9
       },
       {
         "eq": "S.J.Bautista",
@@ -11867,24 +12907,24 @@
         "pts": 6
       },
       {
-        "eq": "Universitario",
+        "eq": "Talleres B.",
         "pj": 7,
         "pg": 2,
-        "pe": 1,
-        "pp": 4,
-        "gf": 7,
+        "pe": 2,
+        "pp": 3,
+        "gf": 5,
         "gc": 10,
-        "pts": 5
+        "pts": 6
       },
       {
-        "eq": "Talleres B.",
-        "pj": 5,
-        "pg": 1,
+        "eq": "Universitario",
+        "pj": 8,
+        "pg": 2,
         "pe": 1,
-        "pp": 3,
-        "gf": 3,
-        "gc": 9,
-        "pts": 3
+        "pp": 5,
+        "gf": 7,
+        "gc": 11,
+        "pts": 5
       },
       {
         "eq": "Cambaceres",
@@ -11898,12 +12938,12 @@
       },
       {
         "eq": "Cap.Chica",
-        "pj": 7,
+        "pj": 8,
         "pg": 0,
         "pe": 1,
-        "pp": 6,
+        "pp": 7,
         "gf": 1,
-        "gc": 28,
+        "gc": 30,
         "pts": 1
       },
       {
@@ -11929,6 +12969,16 @@
         "pts": 15
       },
       {
+        "eq": "FIE 25",
+        "pj": 8,
+        "pg": 6,
+        "pe": 1,
+        "pp": 1,
+        "gf": 17,
+        "gc": 4,
+        "pts": 13
+      },
+      {
         "eq": "Everton",
         "pj": 7,
         "pg": 5,
@@ -11939,13 +12989,13 @@
         "pts": 12
       },
       {
-        "eq": "FIE 25",
-        "pj": 7,
+        "eq": "Hernandez",
+        "pj": 8,
         "pg": 5,
         "pe": 1,
-        "pp": 1,
-        "gf": 15,
-        "gc": 3,
+        "pp": 2,
+        "gf": 21,
+        "gc": 9,
         "pts": 11
       },
       {
@@ -11959,16 +13009,6 @@
         "pts": 10
       },
       {
-        "eq": "Hernandez",
-        "pj": 6,
-        "pg": 4,
-        "pe": 1,
-        "pp": 1,
-        "gf": 17,
-        "gc": 5,
-        "pts": 9
-      },
-      {
         "eq": "Sagr. Corazón",
         "pj": 7,
         "pg": 4,
@@ -11979,24 +13019,44 @@
         "pts": 9
       },
       {
-        "eq": "El Carmen",
+        "eq": "Talleres B.",
         "pj": 7,
         "pg": 3,
         "pe": 2,
         "pp": 2,
-        "gf": 6,
+        "gf": 7,
         "gc": 5,
         "pts": 8
       },
       {
+        "eq": "El Carmen",
+        "pj": 9,
+        "pg": 3,
+        "pe": 2,
+        "pp": 4,
+        "gf": 8,
+        "gc": 10,
+        "pts": 8
+      },
+      {
         "eq": "Universitario",
-        "pj": 7,
+        "pj": 8,
         "pg": 3,
         "pe": 1,
-        "pp": 3,
-        "gf": 7,
-        "gc": 12,
+        "pp": 4,
+        "gf": 8,
+        "gc": 14,
         "pts": 7
+      },
+      {
+        "eq": "ADAFI",
+        "pj": 7,
+        "pg": 3,
+        "pe": 0,
+        "pp": 4,
+        "gf": 9,
+        "gc": 11,
+        "pts": 6
       },
       {
         "eq": "La Curva",
@@ -12007,26 +13067,6 @@
         "gf": 5,
         "gc": 9,
         "pts": 6
-      },
-      {
-        "eq": "Talleres B.",
-        "pj": 5,
-        "pg": 1,
-        "pe": 2,
-        "pp": 2,
-        "gf": 3,
-        "gc": 4,
-        "pts": 4
-      },
-      {
-        "eq": "ADAFI",
-        "pj": 6,
-        "pg": 2,
-        "pe": 0,
-        "pp": 4,
-        "gf": 7,
-        "gc": 11,
-        "pts": 4
       },
       {
         "eq": "Cambaceres",
@@ -12060,12 +13100,12 @@
       },
       {
         "eq": "Cap.Chica",
-        "pj": 7,
+        "pj": 8,
         "pg": 0,
         "pe": 0,
-        "pp": 7,
+        "pp": 8,
         "gf": 0,
-        "gc": 14,
+        "gc": 16,
         "pts": 0
       }
     ]

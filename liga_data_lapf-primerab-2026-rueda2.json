@@ -1,5 +1,5 @@
 {
-  "updatedAt": "28/10/2026",
+  "updatedAt": "01/11/2026",
   "zona": "lapf-primerab-2026-rueda2",
   "schedule": {
     "1": [
@@ -1678,6 +1678,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "fecha": 10,
+          "rival": "VILLA MONTORO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "ASOCIACION IRIS": [
@@ -2578,6 +2585,13 @@
           "rival": "TALLERES F. PROV.",
           "cond": "V",
           "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 10,
+          "rival": "CURUZU CUATIA",
+          "cond": "L",
+          "gf": 2,
           "gc": 0
         }
       ],
@@ -7033,12 +7047,12 @@
       },
       {
         "eq": "VILLA MONTORO",
-        "pts": 16,
-        "pj": 8,
-        "pg": 4,
+        "pts": 19,
+        "pj": 9,
+        "pg": 5,
         "pe": 4,
         "pp": 0,
-        "gf": 12,
+        "gf": 14,
         "gc": 7
       },
       {
@@ -7144,12 +7158,12 @@
       {
         "eq": "CURUZU CUATIA",
         "pts": 5,
-        "pj": 9,
+        "pj": 10,
         "pg": 1,
         "pe": 2,
-        "pp": 6,
+        "pp": 7,
         "gf": 9,
-        "gc": 16
+        "gc": 18
       },
       {
         "eq": "LA PLATA F.C.",
@@ -7834,6 +7848,6 @@
       "VILLA LENCI",
       "VILLA MONTORO"
     ],
-    "actualizadoEl": "2026-10-28"
+    "actualizadoEl": "2026-11-01"
   }
 }
