@@ -1,5 +1,5 @@
 {
-  "updatedAt": "02/11/2026",
+  "updatedAt": "03/11/2026",
   "zona": "lisfi-zona-campeonato-2026",
   "fuente": "https://www.lisfi.com.ar/index.php/zona-camp-2026",
   "clubes": [
@@ -990,8 +990,8 @@
         {
           "f": 10,
           "vs": "Cambaceres",
-          "gf": 1,
-          "gc": 0
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Cambaceres": [
@@ -1034,8 +1034,8 @@
         {
           "f": 10,
           "vs": "Defensa",
-          "gf": 0,
-          "gc": 1
+          "gf": 1,
+          "gc": 0
         }
       ],
       "Talleres B.": [
@@ -1656,8 +1656,8 @@
         {
           "f": 10,
           "vs": "Cambaceres",
-          "gf": 2,
-          "gc": 1
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Cambaceres": [
@@ -1700,8 +1700,8 @@
         {
           "f": 10,
           "vs": "Defensa",
-          "gf": 1,
-          "gc": 2
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Talleres B.": [
@@ -2322,8 +2322,8 @@
         {
           "f": 10,
           "vs": "Cambaceres",
-          "gf": 6,
-          "gc": 0
+          "gf": 1,
+          "gc": 6
         }
       ],
       "Cambaceres": [
@@ -2366,8 +2366,8 @@
         {
           "f": 10,
           "vs": "Defensa",
-          "gf": 0,
-          "gc": 6
+          "gf": 6,
+          "gc": 1
         }
       ],
       "Talleres B.": [
@@ -2988,8 +2988,8 @@
         {
           "f": 10,
           "vs": "Cambaceres",
-          "gf": 3,
-          "gc": 0
+          "gf": 0,
+          "gc": 3
         }
       ],
       "Cambaceres": [
@@ -3032,8 +3032,8 @@
         {
           "f": 10,
           "vs": "Defensa",
-          "gf": 0,
-          "gc": 3
+          "gf": 3,
+          "gc": 0
         }
       ],
       "Talleres B.": [
@@ -3654,8 +3654,8 @@
         {
           "f": 10,
           "vs": "Cambaceres",
-          "gf": 2,
-          "gc": 0
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Cambaceres": [
@@ -3698,8 +3698,8 @@
         {
           "f": 10,
           "vs": "Defensa",
-          "gf": 0,
-          "gc": 2
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Talleres B.": [
@@ -4320,8 +4320,8 @@
         {
           "f": 10,
           "vs": "Cambaceres",
-          "gf": 6,
-          "gc": 4
+          "gf": 0,
+          "gc": 6
         }
       ],
       "Cambaceres": [
@@ -4364,8 +4364,8 @@
         {
           "f": 10,
           "vs": "Defensa",
-          "gf": 4,
-          "gc": 6
+          "gf": 6,
+          "gc": 0
         }
       ],
       "Talleres B.": [
@@ -4986,8 +4986,8 @@
         {
           "f": 10,
           "vs": "Cambaceres",
-          "gf": 2,
-          "gc": 0
+          "gf": 4,
+          "gc": 2
         }
       ],
       "Cambaceres": [
@@ -5030,8 +5030,8 @@
         {
           "f": 10,
           "vs": "Defensa",
-          "gf": 0,
-          "gc": 2
+          "gf": 2,
+          "gc": 4
         }
       ],
       "Talleres B.": [
@@ -6447,8 +6447,8 @@
           "fecha": 10,
           "rival": "Defensa",
           "cond": "V",
-          "gf": 0,
-          "gc": 1
+          "gf": 1,
+          "gc": 0
         }
       ],
       "V.S Carlos Bco.": [
@@ -6556,8 +6556,8 @@
           "fecha": 10,
           "rival": "Cambaceres",
           "cond": "L",
-          "gf": 1,
-          "gc": 0
+          "gf": 0,
+          "gc": 1
         }
       ],
       "Talleres B.": [
@@ -7319,8 +7319,8 @@
           "fecha": 10,
           "rival": "Defensa",
           "cond": "V",
-          "gf": 1,
-          "gc": 2
+          "gf": 2,
+          "gc": 0
         }
       ],
       "V.S Carlos Bco.": [
@@ -7428,8 +7428,8 @@
           "fecha": 10,
           "rival": "Cambaceres",
           "cond": "L",
-          "gf": 2,
-          "gc": 1
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Talleres B.": [
@@ -8191,8 +8191,8 @@
           "fecha": 10,
           "rival": "Defensa",
           "cond": "V",
-          "gf": 0,
-          "gc": 6
+          "gf": 6,
+          "gc": 1
         }
       ],
       "V.S Carlos Bco.": [
@@ -8300,8 +8300,8 @@
           "fecha": 10,
           "rival": "Cambaceres",
           "cond": "L",
-          "gf": 6,
-          "gc": 0
+          "gf": 1,
+          "gc": 6
         }
       ],
       "Talleres B.": [
@@ -9063,8 +9063,8 @@
           "fecha": 10,
           "rival": "Defensa",
           "cond": "V",
-          "gf": 0,
-          "gc": 3
+          "gf": 3,
+          "gc": 0
         }
       ],
       "V.S Carlos Bco.": [
@@ -9172,8 +9172,8 @@
           "fecha": 10,
           "rival": "Cambaceres",
           "cond": "L",
-          "gf": 3,
-          "gc": 0
+          "gf": 0,
+          "gc": 3
         }
       ],
       "Talleres B.": [
@@ -9935,8 +9935,8 @@
           "fecha": 10,
           "rival": "Defensa",
           "cond": "V",
-          "gf": 0,
-          "gc": 2
+          "gf": 2,
+          "gc": 0
         }
       ],
       "V.S Carlos Bco.": [
@@ -10044,8 +10044,8 @@
           "fecha": 10,
           "rival": "Cambaceres",
           "cond": "L",
-          "gf": 2,
-          "gc": 0
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Talleres B.": [
@@ -10807,8 +10807,8 @@
           "fecha": 10,
           "rival": "Defensa",
           "cond": "V",
-          "gf": 4,
-          "gc": 6
+          "gf": 6,
+          "gc": 0
         }
       ],
       "V.S Carlos Bco.": [
@@ -10916,8 +10916,8 @@
           "fecha": 10,
           "rival": "Cambaceres",
           "cond": "L",
-          "gf": 6,
-          "gc": 4
+          "gf": 0,
+          "gc": 6
         }
       ],
       "Talleres B.": [
@@ -11679,8 +11679,8 @@
           "fecha": 10,
           "rival": "Defensa",
           "cond": "V",
-          "gf": 0,
-          "gc": 2
+          "gf": 2,
+          "gc": 4
         }
       ],
       "V.S Carlos Bco.": [
@@ -11788,8 +11788,8 @@
           "fecha": 10,
           "rival": "Cambaceres",
           "cond": "L",
-          "gf": 2,
-          "gc": 0
+          "gf": 4,
+          "gc": 2
         }
       ],
       "Talleres B.": [
@@ -12817,6 +12817,16 @@
         "pts": 7
       },
       {
+        "eq": "Cambaceres",
+        "pj": 8,
+        "pg": 3,
+        "pe": 1,
+        "pp": 4,
+        "gf": 6,
+        "gc": 7,
+        "pts": 7
+      },
+      {
         "eq": "Sagr. Corazón",
         "pj": 7,
         "pg": 3,
@@ -12824,16 +12834,6 @@
         "pp": 3,
         "gf": 8,
         "gc": 13,
-        "pts": 7
-      },
-      {
-        "eq": "Defensa",
-        "pj": 9,
-        "pg": 2,
-        "pe": 3,
-        "pp": 4,
-        "gf": 6,
-        "gc": 11,
         "pts": 7
       },
       {
@@ -12857,13 +12857,13 @@
         "pts": 6
       },
       {
-        "eq": "Cambaceres",
-        "pj": 8,
-        "pg": 2,
-        "pe": 1,
+        "eq": "Defensa",
+        "pj": 9,
+        "pg": 1,
+        "pe": 3,
         "pp": 5,
         "gf": 5,
-        "gc": 8,
+        "gc": 12,
         "pts": 5
       },
       {
@@ -12891,12 +12891,22 @@
       {
         "eq": "Defensa",
         "pj": 9,
-        "pg": 7,
+        "pg": 6,
         "pe": 0,
-        "pp": 2,
-        "gf": 15,
-        "gc": 8,
-        "pts": 14
+        "pp": 3,
+        "gf": 13,
+        "gc": 9,
+        "pts": 12
+      },
+      {
+        "eq": "Cambaceres",
+        "pj": 8,
+        "pg": 4,
+        "pe": 3,
+        "pp": 1,
+        "gf": 14,
+        "gc": 6,
+        "pts": 11
       },
       {
         "eq": "El Carmen",
@@ -12937,16 +12947,6 @@
         "gf": 13,
         "gc": 14,
         "pts": 10
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 8,
-        "pg": 3,
-        "pe": 3,
-        "pp": 2,
-        "gf": 13,
-        "gc": 8,
-        "pts": 9
       },
       {
         "eq": "S.J.Bautista",
@@ -13071,6 +13071,16 @@
         "pts": 11
       },
       {
+        "eq": "Cambaceres",
+        "pj": 8,
+        "pg": 5,
+        "pe": 1,
+        "pp": 2,
+        "gf": 14,
+        "gc": 6,
+        "pts": 11
+      },
+      {
         "eq": "Cap.Chica",
         "pj": 8,
         "pg": 4,
@@ -13089,16 +13099,6 @@
         "gf": 8,
         "gc": 3,
         "pts": 10
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 8,
-        "pg": 4,
-        "pe": 1,
-        "pp": 3,
-        "gf": 8,
-        "gc": 11,
-        "pts": 9
       },
       {
         "eq": "Hernandez",
@@ -13141,16 +13141,6 @@
         "pts": 5
       },
       {
-        "eq": "Defensa",
-        "pj": 9,
-        "pg": 2,
-        "pe": 1,
-        "pp": 6,
-        "gf": 14,
-        "gc": 21,
-        "pts": 5
-      },
-      {
         "eq": "ADAFI",
         "pj": 8,
         "pg": 1,
@@ -13168,6 +13158,16 @@
         "pp": 6,
         "gf": 8,
         "gc": 17,
+        "pts": 3
+      },
+      {
+        "eq": "Defensa",
+        "pj": 9,
+        "pg": 1,
+        "pe": 1,
+        "pp": 7,
+        "gf": 9,
+        "gc": 27,
         "pts": 3
       },
       {
@@ -13193,6 +13193,16 @@
         "pts": 15
       },
       {
+        "eq": "Cambaceres",
+        "pj": 8,
+        "pg": 7,
+        "pe": 0,
+        "pp": 1,
+        "gf": 18,
+        "gc": 5,
+        "pts": 14
+      },
+      {
         "eq": "Hernandez",
         "pj": 9,
         "pg": 5,
@@ -13209,16 +13219,6 @@
         "pe": 4,
         "pp": 0,
         "gf": 17,
-        "gc": 8,
-        "pts": 12
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 8,
-        "pg": 6,
-        "pe": 0,
-        "pp": 2,
-        "gf": 15,
         "gc": 8,
         "pts": 12
       },
@@ -13263,16 +13263,6 @@
         "pts": 8
       },
       {
-        "eq": "Defensa",
-        "pj": 9,
-        "pg": 3,
-        "pe": 1,
-        "pp": 5,
-        "gf": 12,
-        "gc": 13,
-        "pts": 7
-      },
-      {
         "eq": "Estud. LH",
         "pj": 9,
         "pg": 2,
@@ -13300,6 +13290,16 @@
         "pp": 5,
         "gf": 6,
         "gc": 11,
+        "pts": 5
+      },
+      {
+        "eq": "Defensa",
+        "pj": 9,
+        "pg": 2,
+        "pe": 1,
+        "pp": 6,
+        "gf": 9,
+        "gc": 16,
         "pts": 5
       },
       {
@@ -13365,6 +13365,16 @@
         "pts": 12
       },
       {
+        "eq": "Cambaceres",
+        "pj": 8,
+        "pg": 5,
+        "pe": 1,
+        "pp": 2,
+        "gf": 18,
+        "gc": 11,
+        "pts": 11
+      },
+      {
         "eq": "Talleres B.",
         "pj": 8,
         "pg": 4,
@@ -13383,16 +13393,6 @@
         "gf": 20,
         "gc": 14,
         "pts": 10
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 8,
-        "pg": 4,
-        "pe": 1,
-        "pp": 3,
-        "gf": 16,
-        "gc": 13,
-        "pts": 9
       },
       {
         "eq": "Sagr. Corazón",
@@ -13477,12 +13477,12 @@
       {
         "eq": "Defensa",
         "pj": 9,
-        "pg": 1,
+        "pg": 0,
         "pe": 0,
-        "pp": 8,
-        "gf": 6,
-        "gc": 28,
-        "pts": 2
+        "pp": 9,
+        "gf": 4,
+        "gc": 30,
+        "pts": 0
       }
     ],
     "18": [
@@ -13547,6 +13547,16 @@
         "pts": 9
       },
       {
+        "eq": "Cambaceres",
+        "pj": 8,
+        "pg": 4,
+        "pe": 0,
+        "pp": 4,
+        "gf": 26,
+        "gc": 16,
+        "pts": 8
+      },
+      {
         "eq": "Talleres B.",
         "pj": 8,
         "pg": 3,
@@ -13577,26 +13587,6 @@
         "pts": 7
       },
       {
-        "eq": "Cambaceres",
-        "pj": 8,
-        "pg": 3,
-        "pe": 0,
-        "pp": 5,
-        "gf": 24,
-        "gc": 22,
-        "pts": 6
-      },
-      {
-        "eq": "Defensa",
-        "pj": 9,
-        "pg": 2,
-        "pe": 2,
-        "pp": 5,
-        "gf": 17,
-        "gc": 26,
-        "pts": 6
-      },
-      {
         "eq": "S.J.Bautista",
         "pj": 8,
         "pg": 1,
@@ -13614,6 +13604,16 @@
         "pp": 3,
         "gf": 6,
         "gc": 16,
+        "pts": 4
+      },
+      {
+        "eq": "Defensa",
+        "pj": 9,
+        "pg": 1,
+        "pe": 2,
+        "pp": 6,
+        "gf": 11,
+        "gc": 28,
         "pts": 4
       },
       {
@@ -13734,8 +13734,8 @@
         "pg": 2,
         "pe": 3,
         "pp": 4,
-        "gf": 7,
-        "gc": 11,
+        "gf": 9,
+        "gc": 13,
         "pts": 7
       },
       {
@@ -13764,8 +13764,8 @@
         "pg": 0,
         "pe": 1,
         "pp": 7,
-        "gf": 1,
-        "gc": 24,
+        "gf": 3,
+        "gc": 26,
         "pts": 1
       },
       {
