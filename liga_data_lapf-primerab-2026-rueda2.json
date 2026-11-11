@@ -1,5 +1,5 @@
 {
-  "updatedAt": "10/11/2026",
+  "updatedAt": "11/11/2026",
   "zona": "lapf-primerab-2026-rueda2",
   "schedule": {
     "1": [
@@ -1968,6 +1968,13 @@
           "gc": 0
         },
         {
+          "fecha": 4,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
+        },
+        {
           "fecha": 5,
           "rival": "SAN MARTIN L.H.",
           "cond": "V",
@@ -2498,6 +2505,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 4
+        },
+        {
+          "fecha": 4,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
         },
         {
           "fecha": 5,
@@ -7185,13 +7199,13 @@
     "101": [
       {
         "eq": "ARG. JUVENL CLUB",
-        "pts": 27,
-        "pj": 10,
-        "pg": 9,
+        "pts": 30,
+        "pj": 11,
+        "pg": 10,
         "pe": 0,
         "pp": 1,
-        "gf": 24,
-        "gc": 5
+        "gf": 26,
+        "gc": 6
       },
       {
         "eq": "5 DE MAYO",
@@ -7286,12 +7300,12 @@
       {
         "eq": "DEFENSORES DE CITY BELL",
         "pts": 11,
-        "pj": 10,
+        "pj": 11,
         "pg": 3,
         "pe": 2,
-        "pp": 5,
-        "gf": 19,
-        "gc": 20
+        "pp": 6,
+        "gf": 20,
+        "gc": 22
       },
       {
         "eq": "C. F. RINGUELET",
@@ -8016,6 +8030,6 @@
       "VILLA LENCI",
       "VILLA MONTORO"
     ],
-    "actualizadoEl": "2026-11-10"
+    "actualizadoEl": "2026-11-11"
   }
 }
