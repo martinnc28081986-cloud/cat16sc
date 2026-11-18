@@ -1,5 +1,5 @@
 {
-  "updatedAt": "17/11/2026",
+  "updatedAt": "18/11/2026",
   "zona": "lapf-primerab-2026-rueda2",
   "schedule": {
     "1": [
@@ -592,6 +592,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "CURUZU CUATIA": [
@@ -671,6 +678,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "ASOCIACION IRIS": [
@@ -750,6 +764,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 3,
+          "gc": 2
         }
       ],
       "VILLA LENCI": [
@@ -829,6 +850,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 4
+        },
+        {
+          "fecha": 13,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "C. RURAL": [
@@ -901,6 +929,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 3
         }
       ],
       "ARG. JUVENL CLUB": [
@@ -980,6 +1015,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 4,
+          "gc": 1
         }
       ],
       "C. F. RINGUELET": [
@@ -1052,6 +1094,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "VILLA MONTORO": [
@@ -1210,6 +1259,13 @@
           "cond": "L",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "EXPRESO ROJO": [
@@ -1282,6 +1338,13 @@
           "cond": "L",
           "gf": 4,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 1,
+          "gc": 4
         }
       ],
       "SAN MARTIN L.H.": [
@@ -1360,6 +1423,13 @@
           "rival": "LA PLATA F.C.",
           "cond": "V",
           "gf": 0,
+          "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 6,
           "gc": 1
         }
       ],
@@ -1447,6 +1517,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 2,
+          "gc": 3
         }
       ],
       "ROMERENSE": [
@@ -1605,6 +1682,13 @@
           "cond": "V",
           "gf": 3,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "DEFENSORES DE CITY BELL": [
@@ -1684,6 +1768,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 7
+        },
+        {
+          "fecha": 13,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 6
         }
       ],
       "TALLERES F. PROV.": [
@@ -1763,6 +1854,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 3,
+          "gc": 3
         }
       ]
     },
@@ -1851,6 +1949,13 @@
           "cond": "L",
           "gf": 3,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "CURUZU CUATIA": [
@@ -1937,6 +2042,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "ASOCIACION IRIS": [
@@ -2022,6 +2134,13 @@
           "rival": "PORTEÑO",
           "cond": "L",
           "gf": 0,
+          "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 2,
           "gc": 1
         }
       ],
@@ -2109,6 +2228,13 @@
           "cond": "V",
           "gf": 3,
           "gc": 4
+        },
+        {
+          "fecha": 13,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 6
         }
       ],
       "C. RURAL": [
@@ -2193,6 +2319,13 @@
           "fecha": 12,
           "rival": "TRICOLORES",
           "cond": "L",
+          "gf": 4,
+          "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
           "gf": 4,
           "gc": 1
         }
@@ -2281,6 +2414,13 @@
           "cond": "V",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "5 DE MAYO": [
@@ -2367,6 +2507,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 6,
+          "gc": 1
         }
       ],
       "EXPRESO ROJO": [
@@ -2446,6 +2593,13 @@
           "cond": "L",
           "gf": 4,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "SAN MARTIN L.H.": [
@@ -2532,6 +2686,13 @@
           "cond": "V",
           "gf": 3,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
         }
       ],
       "TRICOLORES": [
@@ -2618,6 +2779,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 4
+        },
+        {
+          "fecha": 13,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "ROMERENSE": [
@@ -2703,6 +2871,13 @@
           "rival": "DEFENSORES DE CITY BELL",
           "cond": "V",
           "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "VILLA MONTORO",
+          "cond": "L",
+          "gf": 0,
           "gc": 1
         }
       ],
@@ -2790,6 +2965,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "DEFENSORES DE CITY BELL": [
@@ -2876,6 +3058,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
         }
       ],
       "TALLERES F. PROV.": [
@@ -2962,6 +3151,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 1,
+          "gc": 4
         }
       ],
       "VILLA MONTORO": [
@@ -3041,6 +3237,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "ROMERENSE",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "C. F. RINGUELET": [
@@ -3113,6 +3316,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
         }
       ]
     },
@@ -3194,6 +3404,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "CURUZU CUATIA": [
@@ -3273,6 +3490,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "ASOCIACION IRIS": [
@@ -3352,6 +3576,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "VILLA LENCI": [
@@ -3431,6 +3662,13 @@
           "cond": "V",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "C. RURAL": [
@@ -3501,6 +3739,13 @@
           "fecha": 12,
           "rival": "TRICOLORES",
           "cond": "L",
+          "gf": 0,
+          "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
           "gf": 0,
           "gc": 0
         }
@@ -3575,6 +3820,13 @@
           "cond": "V",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "C. F. RINGUELET": [
@@ -3647,6 +3899,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "VILLA MONTORO": [
@@ -3805,6 +4064,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "EXPRESO ROJO": [
@@ -3877,6 +4143,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "SAN MARTIN L.H.": [
@@ -3948,6 +4221,13 @@
           "rival": "LA PLATA F.C.",
           "cond": "V",
           "gf": 1,
+          "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 4,
           "gc": 1
         }
       ],
@@ -4035,6 +4315,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "ROMERENSE": [
@@ -4193,6 +4480,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "DEFENSORES DE CITY BELL": [
@@ -4272,6 +4566,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 4
         }
       ],
       "TALLERES F. PROV.": [
@@ -4351,6 +4652,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 0,
+          "gc": 0
         }
       ]
     },
@@ -4432,6 +4740,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "CURUZU CUATIA": [
@@ -4511,6 +4826,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "ASOCIACION IRIS": [
@@ -4590,6 +4912,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "VILLA LENCI": [
@@ -4669,6 +4998,13 @@
           "cond": "V",
           "gf": 4,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 4,
+          "gc": 1
         }
       ],
       "C. RURAL": [
@@ -4741,6 +5077,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 4
         }
       ],
       "ARG. JUVENL CLUB": [
@@ -4820,6 +5163,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "C. F. RINGUELET": [
@@ -4891,6 +5241,13 @@
           "rival": "TALLERES F. PROV.",
           "cond": "L",
           "gf": 2,
+          "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 0,
           "gc": 2
         }
       ],
@@ -5050,6 +5407,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 1,
+          "gc": 4
         }
       ],
       "EXPRESO ROJO": [
@@ -5122,6 +5486,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 4
+        },
+        {
+          "fecha": 13,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "SAN MARTIN L.H.": [
@@ -5200,6 +5571,13 @@
           "rival": "LA PLATA F.C.",
           "cond": "V",
           "gf": 2,
+          "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 4,
           "gc": 0
         }
       ],
@@ -5286,6 +5664,13 @@
           "rival": "C. RURAL",
           "cond": "V",
           "gf": 3,
+          "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 1,
           "gc": 2
         }
       ],
@@ -5445,6 +5830,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "DEFENSORES DE CITY BELL": [
@@ -5524,6 +5916,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 4
         }
       ],
       "TALLERES F. PROV.": [
@@ -5603,6 +6002,13 @@
           "cond": "V",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 4,
+          "gc": 0
         }
       ]
     },
@@ -5684,6 +6090,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "CURUZU CUATIA": [
@@ -5763,6 +6176,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
+          "gf": 0,
+          "gc": 4
         }
       ],
       "ASOCIACION IRIS": [
@@ -5842,6 +6262,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "VILLA LENCI": [
@@ -5921,6 +6348,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "C. RURAL": [
@@ -6007,6 +6441,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 2
         }
       ],
       "ARG. JUVENL CLUB": [
@@ -6086,6 +6527,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 1
         }
       ],
       "C. F. RINGUELET": [
@@ -6158,6 +6606,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 3
+        },
+        {
+          "fecha": 13,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 4,
+          "gc": 0
         }
       ],
       "VILLA MONTORO": [
@@ -6316,6 +6771,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "EXPRESO ROJO": [
@@ -6394,6 +6856,13 @@
           "rival": "VILLA LENCI",
           "cond": "L",
           "gf": 3,
+          "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 1,
           "gc": 1
         }
       ],
@@ -6474,6 +6943,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "TRICOLORES": [
@@ -6559,6 +7035,13 @@
           "rival": "C. RURAL",
           "cond": "V",
           "gf": 2,
+          "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 0,
           "gc": 1
         }
       ],
@@ -6718,6 +7201,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "DEFENSORES DE CITY BELL": [
@@ -6804,6 +7294,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 5
+        },
+        {
+          "fecha": 13,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "TALLERES F. PROV.": [
@@ -6883,6 +7380,13 @@
           "cond": "V",
           "gf": 3,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 2,
+          "gc": 2
         }
       ]
     },
@@ -6964,6 +7468,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "PORTEÑO",
+          "cond": "V",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "CURUZU CUATIA": [
@@ -7041,6 +7552,13 @@
           "fecha": 12,
           "rival": "5 DE MAYO",
           "cond": "V",
+          "gf": 0,
+          "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "C. F. RINGUELET",
+          "cond": "L",
           "gf": 0,
           "gc": 0
         }
@@ -7122,6 +7640,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "TRICOLORES",
+          "cond": "V",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "VILLA LENCI": [
@@ -7208,6 +7733,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 13,
+          "rival": "5 DE MAYO",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "C. RURAL": [
@@ -7294,6 +7826,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "TALLERES F. PROV.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "ARG. JUVENL CLUB": [
@@ -7372,6 +7911,13 @@
           "rival": "VILLA MONTORO",
           "cond": "V",
           "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "EXPRESO ROJO",
+          "cond": "L",
+          "gf": 3,
           "gc": 0
         }
       ],
@@ -7452,6 +7998,13 @@
           "cond": "L",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "CURUZU CUATIA",
+          "cond": "V",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "VILLA MONTORO": [
@@ -7617,6 +8170,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "VILLA LENCI",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "EXPRESO ROJO": [
@@ -7696,6 +8256,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "ARG. JUVENL CLUB",
+          "cond": "V",
+          "gf": 0,
+          "gc": 3
         }
       ],
       "SAN MARTIN L.H.": [
@@ -7782,6 +8349,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "DEFENSORES DE CITY BELL",
+          "cond": "L",
+          "gf": 1,
+          "gc": 0
         }
       ],
       "TRICOLORES": [
@@ -7860,6 +8434,13 @@
           "rival": "C. RURAL",
           "cond": "V",
           "gf": 1,
+          "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "ASOCIACION IRIS",
+          "cond": "L",
+          "gf": 0,
           "gc": 0
         }
       ],
@@ -8033,6 +8614,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "LA PLATA F.C.",
+          "cond": "L",
+          "gf": 0,
+          "gc": 0
         }
       ],
       "DEFENSORES DE CITY BELL": [
@@ -8119,6 +8707,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 0
+        },
+        {
+          "fecha": 13,
+          "rival": "SAN MARTIN L.H.",
+          "cond": "V",
+          "gf": 0,
+          "gc": 1
         }
       ],
       "TALLERES F. PROV.": [
@@ -8205,6 +8800,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 1
+        },
+        {
+          "fecha": 13,
+          "rival": "C. RURAL",
+          "cond": "L",
+          "gf": 0,
+          "gc": 1
         }
       ]
     }
@@ -8222,94 +8824,94 @@
         "gc": 9
       },
       {
-        "eq": "TALLERES F. PROV.",
-        "pts": 23,
-        "pj": 11,
-        "pg": 7,
-        "pe": 2,
-        "pp": 2,
-        "gf": 24,
-        "gc": 12
-      },
-      {
         "eq": "ARG. JUVENL CLUB",
-        "pts": 21,
-        "pj": 11,
-        "pg": 6,
+        "pts": 24,
+        "pj": 12,
+        "pg": 7,
         "pe": 3,
         "pp": 2,
-        "gf": 26,
-        "gc": 10
-      },
-      {
-        "eq": "ASOCIACION IRIS",
-        "pts": 21,
-        "pj": 11,
-        "pg": 6,
-        "pe": 3,
-        "pp": 2,
-        "gf": 18,
+        "gf": 30,
         "gc": 11
       },
       {
-        "eq": "C. F. RINGUELET",
-        "pts": 20,
-        "pj": 10,
-        "pg": 5,
-        "pe": 5,
-        "pp": 0,
+        "eq": "TALLERES F. PROV.",
+        "pts": 24,
+        "pj": 12,
+        "pg": 7,
+        "pe": 3,
+        "pp": 2,
+        "gf": 27,
+        "gc": 15
+      },
+      {
+        "eq": "ASOCIACION IRIS",
+        "pts": 24,
+        "pj": 12,
+        "pg": 7,
+        "pe": 3,
+        "pp": 2,
         "gf": 21,
-        "gc": 5
+        "gc": 13
       },
       {
         "eq": "PORTEÑO",
-        "pts": 20,
-        "pj": 11,
-        "pg": 6,
+        "pts": 23,
+        "pj": 12,
+        "pg": 7,
         "pe": 2,
         "pp": 3,
-        "gf": 14,
-        "gc": 12
+        "gf": 16,
+        "gc": 13
       },
       {
         "eq": "5 DE MAYO",
-        "pts": 19,
-        "pj": 11,
-        "pg": 5,
+        "pts": 22,
+        "pj": 12,
+        "pg": 6,
         "pe": 4,
         "pp": 2,
-        "gf": 20,
-        "gc": 7
+        "gf": 23,
+        "gc": 8
+      },
+      {
+        "eq": "C. F. RINGUELET",
+        "pts": 21,
+        "pj": 11,
+        "pg": 5,
+        "pe": 6,
+        "pp": 0,
+        "gf": 22,
+        "gc": 6
       },
       {
         "eq": "CURUZU CUATIA",
-        "pts": 19,
-        "pj": 11,
+        "pts": 20,
+        "pj": 12,
         "pg": 6,
-        "pe": 1,
+        "pe": 2,
         "pp": 4,
-        "gf": 21,
-        "gc": 19
+        "gf": 22,
+        "gc": 20
       },
       {
         "eq": "LA PLATA F.C.",
         "pts": 18,
-        "pj": 11,
+        "pj": 12,
         "pg": 5,
         "pe": 3,
-        "pp": 3,
-        "gf": 19,
-        "gc": 16
+        "pp": 4,
+        "gf": 20,
+        "gc": 18
       },
       {
-        "eq": "EXPRESO ROJO",
-        "pts": 13,
-        "pj": 10,
-        "pg": 3,
-        "pe": 4,
-        "pp": 3,
-        "gf": 10,
-        "gc": 8
+        "eq": "SAN MARTIN L.H.",
+        "pts": 15,
+        "pj": 12,
+        "pg": 4,
+        "pe": 3,
+        "pp": 5,
+        "gf": 19,
+        "gc": 17
       },
       {
         "eq": "VILLA MONTORO",
@@ -8322,318 +8924,328 @@
         "gc": 14
       },
       {
-        "eq": "SAN MARTIN L.H.",
-        "pts": 12,
+        "eq": "EXPRESO ROJO",
+        "pts": 13,
         "pj": 11,
         "pg": 3,
-        "pe": 3,
-        "pp": 5,
-        "gf": 13,
-        "gc": 16
+        "pe": 4,
+        "pp": 4,
+        "gf": 11,
+        "gc": 12
       },
       {
         "eq": "TRICOLORES",
         "pts": 6,
-        "pj": 12,
+        "pj": 13,
         "pg": 1,
         "pe": 3,
-        "pp": 8,
-        "gf": 8,
-        "gc": 18
+        "pp": 9,
+        "gf": 10,
+        "gc": 21
       },
       {
         "eq": "VILLA LENCI",
         "pts": 6,
-        "pj": 11,
+        "pj": 12,
         "pg": 2,
         "pe": 0,
-        "pp": 9,
-        "gf": 13,
-        "gc": 33
+        "pp": 10,
+        "gf": 14,
+        "gc": 36
       },
       {
         "eq": "C. RURAL",
-        "pts": 2,
-        "pj": 10,
+        "pts": 3,
+        "pj": 11,
         "pg": 0,
-        "pe": 2,
+        "pe": 3,
         "pp": 8,
-        "gf": 4,
-        "gc": 33
+        "gf": 7,
+        "gc": 36
       },
       {
         "eq": "DEFENSORES DE CITY BELL",
         "pts": 1,
-        "pj": 11,
+        "pj": 12,
         "pg": 0,
         "pe": 1,
-        "pp": 10,
-        "gf": 11,
-        "gc": 46
+        "pp": 11,
+        "gf": 12,
+        "gc": 52
       }
     ],
     "101": [
       {
         "eq": "ARG. JUVENL CLUB",
         "pts": 33,
-        "pj": 12,
+        "pj": 13,
         "pg": 11,
         "pe": 0,
-        "pp": 1,
+        "pp": 2,
         "gf": 28,
-        "gc": 7
+        "gc": 8
       },
       {
         "eq": "5 DE MAYO",
-        "pts": 25,
-        "pj": 12,
-        "pg": 7,
+        "pts": 28,
+        "pj": 13,
+        "pg": 8,
         "pe": 4,
         "pp": 1,
-        "gf": 27,
-        "gc": 14
+        "gf": 33,
+        "gc": 15
+      },
+      {
+        "eq": "EXPRESO ROJO",
+        "pts": 24,
+        "pj": 12,
+        "pg": 7,
+        "pe": 3,
+        "pp": 2,
+        "gf": 19,
+        "gc": 18
       },
       {
         "eq": "ROMERENSE",
         "pts": 23,
-        "pj": 12,
+        "pj": 13,
         "pg": 6,
         "pe": 5,
-        "pp": 1,
-        "gf": 25,
-        "gc": 14
-      },
-      {
-        "eq": "EXPRESO ROJO",
-        "pts": 21,
-        "pj": 11,
-        "pg": 6,
-        "pe": 3,
         "pp": 2,
-        "gf": 18,
-        "gc": 18
+        "gf": 25,
+        "gc": 15
       },
       {
         "eq": "PORTEÑO",
-        "pts": 20,
-        "pj": 12,
-        "pg": 5,
+        "pts": 23,
+        "pj": 13,
+        "pg": 6,
         "pe": 5,
         "pp": 2,
-        "gf": 22,
-        "gc": 17
+        "gf": 24,
+        "gc": 18
       },
       {
         "eq": "VILLA MONTORO",
-        "pts": 19,
-        "pj": 11,
-        "pg": 5,
+        "pts": 22,
+        "pj": 12,
+        "pg": 6,
         "pe": 4,
         "pp": 2,
-        "gf": 16,
+        "gf": 17,
         "gc": 13
       },
       {
         "eq": "C. RURAL",
-        "pts": 18,
-        "pj": 12,
-        "pg": 5,
+        "pts": 21,
+        "pj": 13,
+        "pg": 6,
         "pe": 3,
         "pp": 4,
-        "gf": 26,
-        "gc": 17
+        "gf": 30,
+        "gc": 18
       },
       {
         "eq": "VILLA LENCI",
         "pts": 17,
-        "pj": 12,
+        "pj": 13,
         "pg": 5,
         "pe": 2,
-        "pp": 5,
-        "gf": 31,
-        "gc": 28
+        "pp": 6,
+        "gf": 32,
+        "gc": 34
       },
       {
         "eq": "C. F. RINGUELET",
-        "pts": 13,
-        "pj": 10,
-        "pg": 3,
-        "pe": 4,
-        "pp": 3,
-        "gf": 13,
-        "gc": 13
-      },
-      {
-        "eq": "ASOCIACION IRIS",
-        "pts": 13,
-        "pj": 12,
-        "pg": 3,
-        "pe": 4,
-        "pp": 5,
-        "gf": 17,
-        "gc": 23
-      },
-      {
-        "eq": "DEFENSORES DE CITY BELL",
-        "pts": 12,
-        "pj": 12,
-        "pg": 3,
-        "pe": 3,
-        "pp": 6,
-        "gf": 21,
-        "gc": 23
-      },
-      {
-        "eq": "TRICOLORES",
-        "pts": 12,
-        "pj": 12,
-        "pg": 3,
-        "pe": 3,
-        "pp": 6,
-        "gf": 15,
-        "gc": 22
-      },
-      {
-        "eq": "SAN MARTIN L.H.",
-        "pts": 9,
-        "pj": 12,
-        "pg": 1,
-        "pe": 6,
-        "pp": 5,
-        "gf": 19,
-        "gc": 24
-      },
-      {
-        "eq": "TALLERES F. PROV.",
-        "pts": 8,
-        "pj": 12,
-        "pg": 2,
-        "pe": 2,
-        "pp": 8,
-        "gf": 10,
-        "gc": 23
-      },
-      {
-        "eq": "CURUZU CUATIA",
-        "pts": 6,
-        "pj": 12,
-        "pg": 1,
-        "pe": 3,
-        "pp": 8,
-        "gf": 11,
-        "gc": 21
-      },
-      {
-        "eq": "LA PLATA F.C.",
-        "pts": 5,
-        "pj": 12,
-        "pg": 0,
-        "pe": 5,
-        "pp": 7,
-        "gf": 10,
-        "gc": 32
-      }
-    ],
-    "103": [
-      {
-        "eq": "C. F. RINGUELET",
-        "pts": 23,
-        "pj": 10,
-        "pg": 7,
-        "pe": 2,
-        "pp": 1,
-        "gf": 21,
-        "gc": 6
-      },
-      {
-        "eq": "SAN MARTIN L.H.",
-        "pts": 20,
-        "pj": 10,
-        "pg": 5,
-        "pe": 5,
-        "pp": 0,
-        "gf": 13,
-        "gc": 4
-      },
-      {
-        "eq": "5 DE MAYO",
-        "pts": 20,
-        "pj": 11,
-        "pg": 6,
-        "pe": 2,
-        "pp": 3,
-        "gf": 16,
-        "gc": 9
-      },
-      {
-        "eq": "ARG. JUVENL CLUB",
-        "pts": 18,
-        "pj": 10,
-        "pg": 5,
-        "pe": 3,
-        "pp": 2,
-        "gf": 14,
-        "gc": 6
-      },
-      {
-        "eq": "TRICOLORES",
-        "pts": 18,
-        "pj": 12,
-        "pg": 5,
-        "pe": 3,
-        "pp": 4,
-        "gf": 10,
-        "gc": 7
-      },
-      {
-        "eq": "ASOCIACION IRIS",
-        "pts": 18,
-        "pj": 11,
-        "pg": 5,
-        "pe": 3,
-        "pp": 3,
-        "gf": 12,
-        "gc": 11
-      },
-      {
-        "eq": "LA PLATA F.C.",
-        "pts": 17,
-        "pj": 11,
-        "pg": 4,
-        "pe": 5,
-        "pp": 2,
-        "gf": 9,
-        "gc": 10
-      },
-      {
-        "eq": "PORTEÑO",
         "pts": 16,
         "pj": 11,
         "pg": 4,
         "pe": 4,
         "pp": 3,
+        "gf": 15,
+        "gc": 13
+      },
+      {
+        "eq": "ASOCIACION IRIS",
+        "pts": 16,
+        "pj": 13,
+        "pg": 4,
+        "pe": 4,
+        "pp": 5,
+        "gf": 19,
+        "gc": 24
+      },
+      {
+        "eq": "DEFENSORES DE CITY BELL",
+        "pts": 13,
+        "pj": 13,
+        "pg": 3,
+        "pe": 4,
+        "pp": 6,
+        "gf": 23,
+        "gc": 25
+      },
+      {
+        "eq": "TRICOLORES",
+        "pts": 12,
+        "pj": 13,
+        "pg": 3,
+        "pe": 3,
+        "pp": 7,
         "gf": 16,
-        "gc": 18
+        "gc": 24
+      },
+      {
+        "eq": "SAN MARTIN L.H.",
+        "pts": 10,
+        "pj": 13,
+        "pg": 1,
+        "pe": 7,
+        "pp": 5,
+        "gf": 21,
+        "gc": 26
       },
       {
         "eq": "TALLERES F. PROV.",
-        "pts": 15,
-        "pj": 11,
-        "pg": 4,
+        "pts": 8,
+        "pj": 13,
+        "pg": 2,
+        "pe": 2,
+        "pp": 9,
+        "gf": 11,
+        "gc": 27
+      },
+      {
+        "eq": "CURUZU CUATIA",
+        "pts": 6,
+        "pj": 13,
+        "pg": 1,
         "pe": 3,
+        "pp": 9,
+        "gf": 11,
+        "gc": 23
+      },
+      {
+        "eq": "LA PLATA F.C.",
+        "pts": 5,
+        "pj": 13,
+        "pg": 0,
+        "pe": 5,
+        "pp": 8,
+        "gf": 11,
+        "gc": 34
+      }
+    ],
+    "103": [
+      {
+        "eq": "C. F. RINGUELET",
+        "pts": 24,
+        "pj": 11,
+        "pg": 7,
+        "pe": 3,
+        "pp": 1,
+        "gf": 22,
+        "gc": 7
+      },
+      {
+        "eq": "SAN MARTIN L.H.",
+        "pts": 23,
+        "pj": 11,
+        "pg": 6,
+        "pe": 5,
+        "pp": 0,
+        "gf": 17,
+        "gc": 5
+      },
+      {
+        "eq": "ARG. JUVENL CLUB",
+        "pts": 21,
+        "pj": 11,
+        "pg": 6,
+        "pe": 3,
+        "pp": 2,
+        "gf": 17,
+        "gc": 7
+      },
+      {
+        "eq": "5 DE MAYO",
+        "pts": 21,
+        "pj": 12,
+        "pg": 6,
+        "pe": 3,
+        "pp": 3,
+        "gf": 17,
+        "gc": 10
+      },
+      {
+        "eq": "ASOCIACION IRIS",
+        "pts": 21,
+        "pj": 12,
+        "pg": 6,
+        "pe": 3,
+        "pp": 3,
+        "gf": 14,
+        "gc": 11
+      },
+      {
+        "eq": "PORTEÑO",
+        "pts": 19,
+        "pj": 12,
+        "pg": 5,
+        "pe": 4,
+        "pp": 3,
+        "gf": 18,
+        "gc": 18
+      },
+      {
+        "eq": "TRICOLORES",
+        "pts": 18,
+        "pj": 13,
+        "pg": 5,
+        "pe": 3,
+        "pp": 5,
+        "gf": 10,
+        "gc": 9
+      },
+      {
+        "eq": "LA PLATA F.C.",
+        "pts": 17,
+        "pj": 12,
+        "pg": 4,
+        "pe": 5,
+        "pp": 3,
+        "gf": 9,
+        "gc": 12
+      },
+      {
+        "eq": "TALLERES F. PROV.",
+        "pts": 16,
+        "pj": 12,
+        "pg": 4,
+        "pe": 4,
         "pp": 4,
         "gf": 11,
         "gc": 12
       },
       {
         "eq": "VILLA LENCI",
-        "pts": 12,
+        "pts": 13,
+        "pj": 12,
+        "pg": 2,
+        "pe": 7,
+        "pp": 3,
+        "gf": 18,
+        "gc": 13
+      },
+      {
+        "eq": "C. RURAL",
+        "pts": 13,
         "pj": 11,
         "pg": 2,
-        "pe": 6,
-        "pp": 3,
-        "gf": 17,
-        "gc": 12
+        "pe": 7,
+        "pp": 2,
+        "gf": 9,
+        "gc": 10
       },
       {
         "eq": "ROMERENSE",
@@ -8646,24 +9258,14 @@
         "gc": 17
       },
       {
-        "eq": "C. RURAL",
-        "pts": 12,
-        "pj": 10,
-        "pg": 2,
-        "pe": 6,
-        "pp": 2,
-        "gf": 9,
-        "gc": 10
-      },
-      {
         "eq": "CURUZU CUATIA",
-        "pts": 11,
-        "pj": 11,
+        "pts": 12,
+        "pj": 12,
         "pg": 3,
-        "pe": 2,
+        "pe": 3,
         "pp": 6,
-        "gf": 11,
-        "gc": 14
+        "gf": 12,
+        "gc": 15
       },
       {
         "eq": "VILLA MONTORO",
@@ -8678,22 +9280,22 @@
       {
         "eq": "EXPRESO ROJO",
         "pts": 4,
-        "pj": 10,
+        "pj": 11,
         "pg": 0,
         "pe": 4,
-        "pp": 6,
-        "gf": 8,
-        "gc": 17
+        "pp": 7,
+        "gf": 9,
+        "gc": 20
       },
       {
         "eq": "DEFENSORES DE CITY BELL",
         "pts": 3,
-        "pj": 11,
+        "pj": 12,
         "pg": 0,
         "pe": 3,
-        "pp": 8,
-        "gf": 7,
-        "gc": 30
+        "pp": 9,
+        "gf": 8,
+        "gc": 34
       }
     ],
     "104": [
@@ -8709,23 +9311,33 @@
       },
       {
         "eq": "TALLERES F. PROV.",
-        "pts": 24,
-        "pj": 11,
-        "pg": 7,
+        "pts": 27,
+        "pj": 12,
+        "pg": 8,
         "pe": 3,
         "pp": 1,
-        "gf": 22,
+        "gf": 26,
         "gc": 9
+      },
+      {
+        "eq": "ASOCIACION IRIS",
+        "pts": 23,
+        "pj": 12,
+        "pg": 7,
+        "pe": 2,
+        "pp": 3,
+        "gf": 20,
+        "gc": 7
       },
       {
         "eq": "LA PLATA F.C.",
         "pts": 23,
-        "pj": 11,
+        "pj": 12,
         "pg": 7,
         "pe": 2,
-        "pp": 2,
+        "pp": 3,
         "gf": 22,
-        "gc": 8
+        "gc": 10
       },
       {
         "eq": "ROMERENSE",
@@ -8740,69 +9352,69 @@
       {
         "eq": "TRICOLORES",
         "pts": 23,
-        "pj": 12,
+        "pj": 13,
         "pg": 6,
         "pe": 5,
-        "pp": 1,
-        "gf": 19,
-        "gc": 11
-      },
-      {
-        "eq": "ASOCIACION IRIS",
-        "pts": 20,
-        "pj": 11,
-        "pg": 6,
-        "pe": 2,
-        "pp": 3,
-        "gf": 18,
-        "gc": 6
+        "pp": 2,
+        "gf": 20,
+        "gc": 13
       },
       {
         "eq": "SAN MARTIN L.H.",
-        "pts": 20,
-        "pj": 11,
-        "pg": 6,
+        "pts": 23,
+        "pj": 12,
+        "pg": 7,
         "pe": 2,
         "pp": 3,
-        "gf": 11,
+        "gf": 15,
         "gc": 10
+      },
+      {
+        "eq": "VILLA LENCI",
+        "pts": 14,
+        "pj": 12,
+        "pg": 4,
+        "pe": 2,
+        "pp": 6,
+        "gf": 17,
+        "gc": 17
       },
       {
         "eq": "5 DE MAYO",
         "pts": 14,
-        "pj": 11,
+        "pj": 12,
         "pg": 3,
         "pe": 5,
-        "pp": 3,
-        "gf": 11,
-        "gc": 9
+        "pp": 4,
+        "gf": 12,
+        "gc": 13
       },
       {
         "eq": "EXPRESO ROJO",
-        "pts": 12,
-        "pj": 10,
+        "pts": 13,
+        "pj": 11,
         "pg": 3,
-        "pe": 3,
+        "pe": 4,
         "pp": 4,
         "gf": 12,
         "gc": 12
       },
       {
-        "eq": "VILLA LENCI",
-        "pts": 11,
-        "pj": 11,
-        "pg": 3,
-        "pe": 2,
-        "pp": 6,
-        "gf": 13,
-        "gc": 16
+        "eq": "CURUZU CUATIA",
+        "pts": 12,
+        "pj": 12,
+        "pg": 2,
+        "pe": 6,
+        "pp": 4,
+        "gf": 8,
+        "gc": 10
       },
       {
         "eq": "ARG. JUVENL CLUB",
-        "pts": 11,
-        "pj": 11,
+        "pts": 12,
+        "pj": 12,
         "pg": 3,
-        "pe": 2,
+        "pe": 3,
         "pp": 6,
         "gf": 10,
         "gc": 15
@@ -8810,84 +9422,84 @@
       {
         "eq": "C. F. RINGUELET",
         "pts": 9,
-        "pj": 10,
+        "pj": 11,
         "pg": 2,
         "pe": 3,
-        "pp": 5,
+        "pp": 6,
         "gf": 15,
-        "gc": 18
-      },
-      {
-        "eq": "CURUZU CUATIA",
-        "pts": 9,
-        "pj": 11,
-        "pg": 1,
-        "pe": 6,
-        "pp": 4,
-        "gf": 6,
-        "gc": 10
+        "gc": 20
       },
       {
         "eq": "PORTEÑO",
-        "pts": 6,
-        "pj": 11,
-        "pg": 1,
+        "pts": 9,
+        "pj": 12,
+        "pg": 2,
         "pe": 3,
         "pp": 7,
-        "gf": 3,
+        "gf": 5,
         "gc": 18
       },
       {
         "eq": "C. RURAL",
         "pts": 4,
-        "pj": 10,
+        "pj": 11,
         "pg": 1,
         "pe": 1,
-        "pp": 8,
+        "pp": 9,
         "gf": 8,
-        "gc": 19
+        "gc": 23
       },
       {
         "eq": "DEFENSORES DE CITY BELL",
         "pts": 0,
-        "pj": 11,
+        "pj": 12,
         "pg": 0,
         "pe": 0,
-        "pp": 11,
+        "pp": 12,
         "gf": 4,
-        "gc": 44
+        "gc": 48
       }
     ],
     "105": [
       {
         "eq": "5 DE MAYO",
-        "pts": 27,
-        "pj": 11,
-        "pg": 8,
+        "pts": 30,
+        "pj": 12,
+        "pg": 9,
         "pe": 3,
         "pp": 0,
-        "gf": 20,
+        "gf": 21,
         "gc": 5
       },
       {
         "eq": "ARG. JUVENL CLUB",
-        "pts": 27,
-        "pj": 11,
+        "pts": 28,
+        "pj": 12,
         "pg": 8,
-        "pe": 3,
+        "pe": 4,
         "pp": 0,
-        "gf": 14,
-        "gc": 3
+        "gf": 15,
+        "gc": 4
       },
       {
         "eq": "ASOCIACION IRIS",
-        "pts": 24,
-        "pj": 11,
-        "pg": 7,
+        "pts": 27,
+        "pj": 12,
+        "pg": 8,
         "pe": 3,
         "pp": 1,
-        "gf": 20,
+        "gf": 21,
         "gc": 5
+      },
+      {
+        "eq": "EXPRESO ROJO",
+        "pts": 21,
+        "pj": 12,
+        "pg": 6,
+        "pe": 3,
+        "pp": 3,
+        "gf": 21,
+        "gc": 12
       },
       {
         "eq": "ROMERENSE",
@@ -8900,84 +9512,84 @@
         "gc": 11
       },
       {
-        "eq": "EXPRESO ROJO",
-        "pts": 20,
-        "pj": 11,
-        "pg": 6,
-        "pe": 2,
-        "pp": 3,
-        "gf": 20,
-        "gc": 11
-      },
-      {
         "eq": "PORTEÑO",
-        "pts": 19,
-        "pj": 11,
+        "pts": 20,
+        "pj": 12,
         "pg": 5,
-        "pe": 4,
+        "pe": 5,
         "pp": 2,
         "gf": 13,
         "gc": 9
       },
       {
-        "eq": "TALLERES F. PROV.",
-        "pts": 17,
-        "pj": 11,
+        "eq": "SAN MARTIN L.H.",
+        "pts": 19,
+        "pj": 12,
         "pg": 5,
-        "pe": 2,
+        "pe": 4,
+        "pp": 3,
+        "gf": 11,
+        "gc": 8
+      },
+      {
+        "eq": "TALLERES F. PROV.",
+        "pts": 18,
+        "pj": 12,
+        "pg": 5,
+        "pe": 3,
         "pp": 4,
-        "gf": 16,
-        "gc": 11
+        "gf": 18,
+        "gc": 13
       },
       {
         "eq": "LA PLATA F.C.",
-        "pts": 16,
-        "pj": 11,
+        "pts": 17,
+        "pj": 12,
         "pg": 4,
-        "pe": 4,
+        "pe": 5,
         "pp": 3,
         "gf": 22,
         "gc": 13
       },
       {
-        "eq": "SAN MARTIN L.H.",
-        "pts": 16,
-        "pj": 11,
-        "pg": 4,
-        "pe": 4,
-        "pp": 3,
-        "gf": 10,
-        "gc": 8
-      },
-      {
         "eq": "C. RURAL",
-        "pts": 13,
-        "pj": 12,
+        "pts": 14,
+        "pj": 13,
         "pg": 3,
-        "pe": 4,
+        "pe": 5,
         "pp": 5,
-        "gf": 13,
-        "gc": 13
+        "gf": 15,
+        "gc": 15
       },
       {
         "eq": "VILLA LENCI",
-        "pts": 11,
-        "pj": 11,
-        "pg": 3,
-        "pe": 2,
-        "pp": 6,
-        "gf": 11,
-        "gc": 16
-      },
-      {
-        "eq": "TRICOLORES",
         "pts": 11,
         "pj": 12,
         "pg": 3,
         "pe": 2,
         "pp": 7,
-        "gf": 9,
+        "gf": 11,
         "gc": 17
+      },
+      {
+        "eq": "TRICOLORES",
+        "pts": 11,
+        "pj": 13,
+        "pg": 3,
+        "pe": 2,
+        "pp": 8,
+        "gf": 9,
+        "gc": 18
+      },
+      {
+        "eq": "C. F. RINGUELET",
+        "pts": 9,
+        "pj": 11,
+        "pg": 2,
+        "pe": 3,
+        "pp": 6,
+        "gf": 11,
+        "gc": 18
       },
       {
         "eq": "VILLA MONTORO",
@@ -8990,45 +9602,35 @@
         "gc": 17
       },
       {
-        "eq": "C. F. RINGUELET",
-        "pts": 6,
-        "pj": 10,
-        "pg": 1,
-        "pe": 3,
-        "pp": 6,
-        "gf": 7,
-        "gc": 18
-      },
-      {
         "eq": "DEFENSORES DE CITY BELL",
         "pts": 6,
-        "pj": 12,
+        "pj": 13,
         "pg": 2,
         "pe": 0,
-        "pp": 10,
+        "pp": 11,
         "gf": 9,
-        "gc": 36
+        "gc": 37
       },
       {
         "eq": "CURUZU CUATIA",
         "pts": 5,
-        "pj": 11,
+        "pj": 12,
         "pg": 1,
         "pe": 2,
-        "pp": 8,
+        "pp": 9,
         "gf": 7,
-        "gc": 27
+        "gc": 31
       }
     ],
     "106": [
       {
         "eq": "ARG. JUVENL CLUB",
-        "pts": 25,
-        "pj": 11,
-        "pg": 7,
+        "pts": 28,
+        "pj": 12,
+        "pg": 8,
         "pe": 4,
         "pp": 0,
-        "gf": 13,
+        "gf": 16,
         "gc": 0
       },
       {
@@ -9043,63 +9645,83 @@
       },
       {
         "eq": "ASOCIACION IRIS",
-        "pts": 22,
-        "pj": 11,
+        "pts": 23,
+        "pj": 12,
         "pg": 6,
-        "pe": 4,
+        "pe": 5,
         "pp": 1,
         "gf": 10,
         "gc": 2
       },
       {
         "eq": "SAN MARTIN L.H.",
-        "pts": 17,
-        "pj": 12,
-        "pg": 3,
+        "pts": 20,
+        "pj": 13,
+        "pg": 4,
         "pe": 8,
         "pp": 1,
-        "gf": 7,
+        "gf": 8,
         "gc": 5
       },
       {
         "eq": "TRICOLORES",
-        "pts": 16,
-        "pj": 11,
+        "pts": 17,
+        "pj": 12,
         "pg": 4,
-        "pe": 4,
+        "pe": 5,
         "pp": 3,
         "gf": 7,
         "gc": 7
       },
       {
         "eq": "PORTEÑO",
-        "pts": 16,
-        "pj": 12,
+        "pts": 17,
+        "pj": 13,
         "pg": 3,
-        "pe": 7,
+        "pe": 8,
         "pp": 2,
         "gf": 5,
         "gc": 6
       },
       {
-        "eq": "TALLERES F. PROV.",
+        "eq": "CURUZU CUATIA",
         "pts": 15,
         "pj": 12,
         "pg": 3,
         "pe": 6,
         "pp": 3,
-        "gf": 7,
-        "gc": 4
-      },
-      {
-        "eq": "CURUZU CUATIA",
-        "pts": 14,
-        "pj": 11,
-        "pg": 3,
-        "pe": 5,
-        "pp": 3,
         "gf": 9,
         "gc": 7
+      },
+      {
+        "eq": "TALLERES F. PROV.",
+        "pts": 15,
+        "pj": 13,
+        "pg": 3,
+        "pe": 6,
+        "pp": 4,
+        "gf": 7,
+        "gc": 5
+      },
+      {
+        "eq": "VILLA LENCI",
+        "pts": 15,
+        "pj": 13,
+        "pg": 4,
+        "pe": 3,
+        "pp": 6,
+        "gf": 6,
+        "gc": 7
+      },
+      {
+        "eq": "C. F. RINGUELET",
+        "pts": 14,
+        "pj": 12,
+        "pg": 2,
+        "pe": 8,
+        "pp": 2,
+        "gf": 6,
+        "gc": 6
       },
       {
         "eq": "VILLA MONTORO",
@@ -9112,74 +9734,54 @@
         "gc": 3
       },
       {
-        "eq": "C. F. RINGUELET",
-        "pts": 13,
-        "pj": 11,
-        "pg": 2,
-        "pe": 7,
-        "pp": 2,
-        "gf": 6,
-        "gc": 6
-      },
-      {
-        "eq": "VILLA LENCI",
+        "eq": "LA PLATA F.C.",
         "pts": 12,
         "pj": 12,
-        "pg": 3,
-        "pe": 3,
-        "pp": 6,
-        "gf": 5,
-        "gc": 7
-      },
-      {
-        "eq": "LA PLATA F.C.",
-        "pts": 11,
-        "pj": 11,
         "pg": 2,
-        "pe": 5,
+        "pe": 6,
         "pp": 4,
         "gf": 5,
         "gc": 9
       },
       {
+        "eq": "C. RURAL",
+        "pts": 11,
+        "pj": 13,
+        "pg": 1,
+        "pe": 8,
+        "pp": 4,
+        "gf": 3,
+        "gc": 7
+      },
+      {
         "eq": "5 DE MAYO",
+        "pts": 9,
+        "pj": 13,
+        "pg": 1,
+        "pe": 6,
+        "pp": 6,
+        "gf": 1,
+        "gc": 7
+      },
+      {
+        "eq": "EXPRESO ROJO",
         "pts": 9,
         "pj": 12,
         "pg": 1,
         "pe": 6,
         "pp": 5,
-        "gf": 1,
-        "gc": 6
-      },
-      {
-        "eq": "EXPRESO ROJO",
-        "pts": 9,
-        "pj": 11,
-        "pg": 1,
-        "pe": 6,
-        "pp": 4,
         "gf": 3,
-        "gc": 8
-      },
-      {
-        "eq": "C. RURAL",
-        "pts": 8,
-        "pj": 12,
-        "pg": 0,
-        "pe": 8,
-        "pp": 4,
-        "gf": 2,
-        "gc": 7
+        "gc": 11
       },
       {
         "eq": "DEFENSORES DE CITY BELL",
         "pts": 7,
-        "pj": 12,
+        "pj": 13,
         "pg": 1,
         "pe": 4,
-        "pp": 7,
+        "pp": 8,
         "gf": 1,
-        "gc": 19
+        "gc": 20
       }
     ]
   },
@@ -9206,6 +9808,6 @@
       "VILLA LENCI",
       "VILLA MONTORO"
     ],
-    "actualizadoEl": "2026-11-17"
+    "actualizadoEl": "2026-11-18"
   }
 }
