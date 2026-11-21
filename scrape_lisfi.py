@@ -49,7 +49,16 @@ CLUB_ID = os.environ.get("CLUB_ID", "sagrado-corazon")
 
 # Se usan solo si Firebase no responde o no tiene ninguna zona cargada
 FALLBACK_LIGA_ID  = "lisfi-zona-campeonato-2026"
-FALLBACK_ZONA_URL = "https://www.lisfi.com.ar/index.php/zona-camp-2026"
+FALLBACK_ZONA_URL = "https://lisfi.com.ar/desa/zona/?zona=215"
+
+# En noviembre 2026 LISFI mudó la web: de www.lisfi.com.ar/index.php/<slug> a
+# lisfi.com.ar/desa/zona/?zona=<n>. Las URLs viejas ya no tienen resultados.
+# Los clubes que migraron antes del cambio siguen teniendo la URL vieja como
+# `fuente` en Firebase; esta tabla la traduce sola, sin tener que tocar nada.
+# Las zonas nuevas se cargan directo con la URL nueva y no pasan por acá.
+LISFI_SLUG_A_ZONA = {
+    "zona-camp-2026": 215,   # Zona Campeonato
+}
 
 CATEGORIES = [13, 14, 15, 16, 17, 18, 19, 20]
 SC_RE      = re.compile(r'sagr', re.IGNORECASE)
@@ -74,6 +83,31 @@ def get_soup(url):
             if attempt == 3: raise
             print(f"   ⚠️  Conexión falló (intento {attempt}): {e} — reintentando en 5s...")
             time.sleep(5)
+
+
+# ── URLs DE LISFI (formato viejo y nuevo) ─────────────────────────────────────
+def normalizar_fuente(url):
+    """Pasa una URL del sitio viejo de LISFI a la del sitio nuevo, si se conoce."""
+    url = str(url).strip().rstrip("/")
+    m = re.search(r"lisfi\.com\.ar/index\.php/([^/?#]+)", url)
+    if m and m.group(1) in LISFI_SLUG_A_ZONA:
+        nueva = f"https://lisfi.com.ar/desa/zona/?zona={LISFI_SLUG_A_ZONA[m.group(1)]}"
+        print(f"   ↪️  URL vieja de LISFI → {nueva}")
+        return nueva
+    return url
+
+
+def urls_de_zona(fuente):
+    """
+    (url_resultados, url_tabla_general) de una zona.
+      Sitio nuevo:  .../desa/zona/?zona=215  → &seccion=resultados  /  &seccion=actualidad
+      Sitio viejo:  .../index.php/<slug>     → <slug>/resultados    /  <slug>
+    """
+    m = re.search(r"[?&]zona=(\d+)", fuente)
+    if m:
+        base = fuente.split("?")[0].rstrip("/") + "/?zona=" + m.group(1)
+        return base + "&seccion=resultados", base + "&seccion=actualidad"
+    return f"{fuente}/resultados", fuente
 
 
 # ── RESOLVER QUÉ ZONAS SCRAPEAR ───────────────────────────────────────────────
@@ -127,7 +161,7 @@ def resolver_zonas():
         print(f"🔧 Zona por variable de entorno: {env_url}")
         print("   (no se toca liga_data.json: el override sirve para recuperar")
         print("    una zona vieja sin pisar la de la temporada en curso)")
-        return [{"liga_id": liga_id, "url": env_url.rstrip("/"),
+        return [{"liga_id": liga_id, "url": normalizar_fuente(env_url),
                  "equipos": _equipos_de_zona(liga_id), "clubes": ["(env)"],
                  "es_override": True}]
 
@@ -144,7 +178,7 @@ def resolver_zonas():
                 print(f"   ⚠️  {club_id}: sin ligaId o sin fuente — se saltea")
                 continue
             z = zonas.setdefault(liga_id, {"liga_id": liga_id,
-                                           "url": str(fuente).rstrip("/"),
+                                           "url": normalizar_fuente(fuente),
                                            "equipos": None, "clubes": []})
             z["clubes"].append(club_id)
 
@@ -456,7 +490,7 @@ def procesar_zona(zona):
     """
     liga_id = zona["liga_id"]
     equipos = zona["equipos"]
-    results_url = f"{zona['url']}/resultados"
+    results_url, general_url = urls_de_zona(zona["url"])
     # Sagrado solo juega en su zona; en las demás no tiene que haber resultados suyos
     exigir_sc = CLUB_ID in zona.get("clubes", []) and is_sc(CLUB_ID)
 
@@ -475,7 +509,7 @@ def procesar_zona(zona):
             # es un dato de más, no vale abortar el scrapeo por él.
             try:
                 print("   ⏳ Bajando la tabla general de la zona...")
-                general = scrape_general(zona["url"])
+                general = scrape_general(general_url)
             except Exception as e:
                 print(f"   ⚠️  No se pudo bajar la tabla general: {e}")
                 general = []
