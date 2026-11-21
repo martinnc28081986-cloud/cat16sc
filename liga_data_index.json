@@ -1,15 +1,15 @@
 {
-  "generadoEl": "03/11/2026 07:32",
+  "generadoEl": "21/11/2026 21:18",
   "zonas": [
     {
       "ligaId": "lisfi-zona-campeonato-2026",
       "archivo": "liga_data_lisfi-zona-campeonato-2026.json",
-      "fuente": "https://www.lisfi.com.ar/index.php/zona-camp-2026",
+      "fuente": "https://lisfi.com.ar/desa/zona/?zona=215",
       "clubes": [
         "hernandez",
         "sagrado-corazon"
       ],
-      "updatedAt": "03/11/2026",
+      "updatedAt": "21/11/2026",
       "equipos": 15
     }
   ],
