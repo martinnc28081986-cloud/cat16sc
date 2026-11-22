@@ -2319,6 +2319,23 @@ onValue(query(ref(db, 'presence'), orderByChild('t'), startAt(Date.now() - 10 * 
 
 // ── SUSPENSIONES (compartidas, tiempo real) ──
 let _suspensions = {};
+/* Lo que hay en Firebase, sin filtrar. Las suspensiones de fecha se guardan por
+   número de fecha (config/suspensions/{n}), y el número se repite en cada zona:
+   la "fecha 8" de Zona II B y la de Zona Campeonato son partidos distintos. Por
+   eso el valor guardado es el id del torneo al que pertenece la suspensión, y
+   _suspensions solo trae las del torneo que se está viendo.
+   Las viejas guardadas como `true` (de antes de este cambio) se toman como del
+   torneo actual; al migrar de zona se sellan con el torneo anterior y dejan de
+   aplicar en la nueva. */
+let _suspensionsRaw = {};
+function recalcularSuspensiones(){
+  const out = {};
+  Object.entries(_suspensionsRaw || {}).forEach(([n, v]) => {
+    if(v === true || (v && v === TORNEO_ID)) out[n] = true;
+  });
+  _suspensions = out;
+}
+window.recalcularSuspensiones = recalcularSuspensiones;
 let _suspensionesEnt = {};
 let _onSuspensionChange = null;
 // Estado del tab Suspensiones — global para funcionar con y sin startCoordApp
@@ -2337,12 +2354,13 @@ let _unsubSusp = [];
 function suscribirSuspensiones(){
   _unsubSusp.forEach(u => { try{ u(); }catch(e){} });
   _unsubSusp = [];
-  _suspensions = {}; _suspensionesEnt = {};
+  _suspensions = {}; _suspensionsRaw = {}; _suspensionesEnt = {};
   const rutaClub = CLUB_PATH;
   _unsubSusp.push(onValue(ref(db, rutaClub+'/config/suspensions'), snap => {
     // Si el club cambió mientras venía la respuesta, este dato ya no sirve
     if(rutaClub !== CLUB_PATH) return;
-    _suspensions = snap.val() || {};
+    _suspensionsRaw = snap.val() || {};
+    recalcularSuspensiones();
     if(typeof _onSuspensionChange === 'function') _onSuspensionChange();
   }, ()=>{}));
   _unsubSusp.push(onValue(ref(db, rutaClub+'/config/suspensionesEnt'), snap => {
@@ -3276,13 +3294,22 @@ async function migrarClubAZona(clubId, zonaDef){
       nombre: Z.nombre, fechas: Z.fechas || Object.keys(SCHED).length, ligaId: Z.ligaId, orden: (Z.orden || 2)
     };
 
+    // Las fechas suspendidas viejas (guardadas como `true`) son de la zona que se
+    // cierra: se sellan con ese torneo para que no aparezcan suspendidas las
+    // fechas con el mismo número en la zona nueva.
+    const _selloSusp = {};
+    Object.entries(cfg.suspensions || {}).forEach(([n, v]) => {
+      if(v === true) _selloSusp['suspensions/'+n] = anterior;
+    });
+
     await update(ref(db, 'clubs/'+clubId+'/config'), {
       torneoActivo: Z.torneoNuevo,
       ligaId:       Z.ligaId,
       ligaNombre:   cfg.ligaNombre || equipo.toUpperCase(),
       liga:         Z.liga || 'LISFI',
       zona:         Z.zona || Z.nombre,
-      temporadas
+      temporadas,
+      ..._selloSusp
     });
 
     return 'migrado';
@@ -4219,6 +4246,7 @@ async function loadClubConfig(){
     TEMPORADAS = cfg.temporadas || {};
     // Si el usuario eligió una temporada a mano se respeta; si no, la vigente
     TORNEO_ID = window._viewTorneo || TORNEO_ACTIVO;
+    recalcularSuspensiones();   // las suspensiones dependen del torneo que se mira
     DB_PREFIX = CLUB_PATH+'/'+CFG.dbPath+'/torneos/'+TORNEO_ID;
     // El subtítulo del header se pinta también desde un fetch aparte (más liviano,
     // solo club+liga) que suele terminar ANTES que este loadClubConfig -- en ese
@@ -11406,6 +11434,7 @@ async function startCoordApp(){
       if(cfg.torneoActivo) TORNEO_ACTIVO = cfg.torneoActivo;
       TEMPORADAS = cfg.temporadas || {};
       TORNEO_ID  = window._viewTorneo || cfg.torneoActivo || TORNEO_ID;
+      recalcularSuspensiones();   // las suspensiones dependen del torneo que se mira
       if(cfg.ligaNombre) _ligaNombre = cfg.ligaNombre;
       CLUB_LIGA_NOMBRE = _ligaNombre || CLUB_PATH.split('/').pop().toUpperCase().replace(/-/g,' ');
       window._clubLigaNombreDe = CLUB_PATH.split('/').pop();
@@ -11766,6 +11795,26 @@ async function startCoordApp(){
     const desde = ult ? ult.fecha : -Infinity;
     return FIXTURE_C.find(f => f.cond !== '-' && !_suspensions[f.fecha] && f.fecha > desde) || null;
   }
+  /* Una fecha con resultado no puede seguir suspendida: si la marca quedó (se
+     postergó y después se jugó, o se olvidó reactivarla), se borra sola. Sin
+     esto la fecha quedaba trabada en "suspendida": el botón Reactivar no se
+     muestra en las fechas jugadas, y a los profes no los dejaba citar. */
+  const _suspLimpiadas = new Set();
+  function limpiarSuspensionesJugadas(){
+    if(!_hayFixture || archivoBloqueado() || window._soloLectura) return;
+    const jugadas = new Set();
+    COMP_CATS.forEach(c => (RESULTADOS[c.num]||[]).forEach(r => jugadas.add(+r.f)));
+    const borrar = {};
+    Object.keys(_suspensions).forEach(n => {
+      if(_suspensions[n] && jugadas.has(+n) && !_suspLimpiadas.has(+n)){
+        borrar[n] = null; _suspLimpiadas.add(+n);
+      }
+    });
+    if(Object.keys(borrar).length)
+      update(ref(db, CLUB_PATH+'/config/suspensions'), borrar)
+        .catch(e => console.warn('No se pudo limpiar suspensiones jugadas:', e));
+  }
+
   // La última jugada, para mostrar los resultados del fin de semana
   function ultimaJugada(){
     if(!_hayFixture) return null;
@@ -12071,8 +12120,9 @@ async function startCoordApp(){
     const f = FIXTURE_C.find(x => +x.fecha === +n); if(!f) return;
     const estaba = !!_suspensions[n];
     try{
-      if(estaba) await remove(ref(db, CLUB_PATH+'/config/suspensions/'+n));
-      else       await set(ref(db, CLUB_PATH+'/config/suspensions/'+n), true);
+      // Se guarda el torneo al que pertenece, no `true`: el número de fecha se
+      // repite en cada zona (ver recalcularSuspensiones)
+      await update(ref(db, CLUB_PATH+'/config/suspensions'), { [n]: estaba ? null : TORNEO_ID });
     }catch(e){ showToast('No se pudo guardar. Revisá la conexión.'); return; }
     if(!estaba){
       abrirDlgWA('Fecha '+n+' suspendida',
@@ -13038,9 +13088,11 @@ async function startCoordApp(){
         const libre = f.cond === '-';
         const jugada = jugadas.has(+f.fecha);
         const esProx = prox && +prox.fecha === +f.fecha;
-        const et = susp   ? ['falta','suspendida']
+        // Si hay resultado se jugó, aunque haya quedado una marca de suspendida
+        // (p. ej. una fecha postergada que después se recuperó)
+        const et = jugada ? ['ok','jugada']
+                 : susp   ? ['falta','suspendida']
                  : libre  ? ['','fecha libre']
-                 : jugada ? ['ok','jugada']
                  : esProx ? ['medio','la que viene']
                           : ['','pendiente'];
         return '<div class="crow">'+
@@ -13223,6 +13275,7 @@ async function startCoordApp(){
     const el = document.getElementById('coordVista');
     if(!el) return;
     const t = TABS.find(x => x.id === tabAct) || TABS[0];
+    try { limpiarSuspensionesJugadas(); } catch(e){ console.warn('limpiarSuspensionesJugadas', e); }
     let cuerpo = '';
     try { cuerpo = t.render(); }
     catch(e){
