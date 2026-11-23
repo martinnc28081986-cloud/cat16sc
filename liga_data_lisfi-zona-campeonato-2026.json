@@ -1,5 +1,5 @@
 {
-  "updatedAt": "22/11/2026",
+  "updatedAt": "23/11/2026",
   "zona": "lisfi-zona-campeonato-2026",
   "fuente": "https://lisfi.com.ar/desa/zona/?zona=215",
   "clubes": [
@@ -1461,6 +1461,12 @@
           "vs": "Everton",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Defensa": [
@@ -1597,6 +1603,12 @@
           "vs": "Hernandez",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Talleres B.": [
@@ -2439,6 +2451,12 @@
           "vs": "Everton",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 0,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -2573,6 +2591,12 @@
         {
           "f": 13,
           "vs": "Hernandez",
+          "gf": 3,
+          "gc": 0
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
           "gf": 3,
           "gc": 0
         }
@@ -3417,6 +3441,12 @@
           "vs": "Everton",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 2,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -3553,6 +3583,12 @@
           "vs": "Hernandez",
           "gf": 3,
           "gc": 1
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
+          "gf": 3,
+          "gc": 2
         }
       ],
       "Talleres B.": [
@@ -4395,6 +4431,12 @@
           "vs": "Everton",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -4529,6 +4571,12 @@
         {
           "f": 13,
           "vs": "Hernandez",
+          "gf": 3,
+          "gc": 1
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
           "gf": 3,
           "gc": 1
         }
@@ -5373,6 +5421,12 @@
           "vs": "Everton",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -5509,6 +5563,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 5
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "Talleres B.": [
@@ -6339,6 +6399,12 @@
           "vs": "Everton",
           "gf": 1,
           "gc": 4
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -6475,6 +6541,12 @@
           "vs": "Hernandez",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "Talleres B.": [
@@ -7317,6 +7389,12 @@
           "vs": "Everton",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 0,
+          "gc": 2
         }
       ],
       "Defensa": [
@@ -7453,6 +7531,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Talleres B.": [
@@ -8295,6 +8379,12 @@
           "vs": "Everton",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "f": 14,
+          "vs": "Cambaceres",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -8431,6 +8521,12 @@
           "vs": "Hernandez",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "f": 14,
+          "vs": "V.S Carlos Bco.",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "Talleres B.": [
@@ -9377,6 +9473,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 1
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Universitario": [
@@ -9633,6 +9736,13 @@
           "fecha": 13,
           "rival": "Everton",
           "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
           "gf": 0,
           "gc": 2
         }
@@ -10683,6 +10793,13 @@
           "cond": "L",
           "gf": 3,
           "gc": 0
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 0
         }
       ],
       "Universitario": [
@@ -10941,6 +11058,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
+          "gf": 0,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -11989,6 +12113,13 @@
           "cond": "L",
           "gf": 3,
           "gc": 1
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 2
         }
       ],
       "Universitario": [
@@ -12247,6 +12378,13 @@
           "cond": "V",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
+          "gf": 2,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -13295,6 +13433,13 @@
           "cond": "L",
           "gf": 3,
           "gc": 1
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "Universitario": [
@@ -13553,6 +13698,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -14601,6 +14753,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 5
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 1,
+          "gc": 2
         }
       ],
       "Universitario": [
@@ -14859,6 +15018,13 @@
           "cond": "V",
           "gf": 2,
           "gc": 0
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
+          "gf": 2,
+          "gc": 1
         }
       ],
       "Defensa": [
@@ -15900,6 +16066,13 @@
           "cond": "L",
           "gf": 2,
           "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "Universitario": [
@@ -16151,6 +16324,13 @@
           "cond": "V",
           "gf": 1,
           "gc": 4
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -17192,6 +17372,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 2,
+          "gc": 0
         }
       ],
       "Universitario": [
@@ -17441,6 +17628,13 @@
           "fecha": 13,
           "rival": "Everton",
           "cond": "V",
+          "gf": 0,
+          "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
           "gf": 0,
           "gc": 2
         }
@@ -18491,6 +18685,13 @@
           "cond": "L",
           "gf": 0,
           "gc": 2
+        },
+        {
+          "fecha": 14,
+          "rival": "V.S Carlos Bco.",
+          "cond": "V",
+          "gf": 3,
+          "gc": 1
         }
       ],
       "Universitario": [
@@ -18749,6 +18950,13 @@
           "cond": "V",
           "gf": 0,
           "gc": 8
+        },
+        {
+          "fecha": 14,
+          "rival": "Cambaceres",
+          "cond": "L",
+          "gf": 1,
+          "gc": 3
         }
       ],
       "Defensa": [
@@ -18949,13 +19157,23 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 12,
+        "pj": 13,
         "pg": 7,
         "pe": 1,
-        "pp": 4,
+        "pp": 5,
         "gf": 23,
-        "gc": 14,
+        "gc": 16,
         "pts": 15
+      },
+      {
+        "eq": "Cambaceres",
+        "pj": 13,
+        "pg": 6,
+        "pe": 2,
+        "pp": 5,
+        "gf": 13,
+        "gc": 9,
+        "pts": 14
       },
       {
         "eq": "Everton",
@@ -18985,16 +19203,6 @@
         "pp": 5,
         "gf": 16,
         "gc": 13,
-        "pts": 12
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 12,
-        "pg": 5,
-        "pe": 2,
-        "pp": 5,
-        "gf": 11,
-        "gc": 9,
         "pts": 12
       },
       {
@@ -19100,6 +19308,16 @@
         "pts": 18
       },
       {
+        "eq": "Cambaceres",
+        "pj": 13,
+        "pg": 7,
+        "pe": 3,
+        "pp": 3,
+        "gf": 22,
+        "gc": 9,
+        "pts": 17
+      },
+      {
         "eq": "La Curva",
         "pj": 12,
         "pg": 6,
@@ -19108,16 +19326,6 @@
         "gf": 23,
         "gc": 10,
         "pts": 16
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 12,
-        "pg": 6,
-        "pe": 3,
-        "pp": 3,
-        "gf": 19,
-        "gc": 9,
-        "pts": 15
       },
       {
         "eq": "Universitario",
@@ -19221,12 +19429,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 12,
+        "pj": 13,
         "pg": 1,
         "pe": 2,
-        "pp": 9,
+        "pp": 10,
         "gf": 15,
-        "gc": 27,
+        "gc": 30,
         "pts": 4
       }
     ],
@@ -19252,6 +19460,16 @@
         "pts": 20
       },
       {
+        "eq": "Cambaceres",
+        "pj": 13,
+        "pg": 9,
+        "pe": 1,
+        "pp": 3,
+        "gf": 31,
+        "gc": 14,
+        "pts": 19
+      },
+      {
         "eq": "La Curva",
         "pj": 12,
         "pg": 6,
@@ -19259,16 +19477,6 @@
         "pp": 1,
         "gf": 29,
         "gc": 8,
-        "pts": 17
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 12,
-        "pg": 8,
-        "pe": 1,
-        "pp": 3,
-        "gf": 28,
-        "gc": 12,
         "pts": 17
       },
       {
@@ -19323,12 +19531,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 12,
+        "pj": 13,
         "pg": 1,
         "pe": 5,
-        "pp": 6,
-        "gf": 11,
-        "gc": 19,
+        "pp": 7,
+        "gf": 13,
+        "gc": 22,
         "pts": 7
       },
       {
@@ -19394,6 +19602,16 @@
         "pts": 20
       },
       {
+        "eq": "Cambaceres",
+        "pj": 13,
+        "pg": 9,
+        "pe": 1,
+        "pp": 3,
+        "gf": 25,
+        "gc": 10,
+        "pts": 19
+      },
+      {
         "eq": "Cap.Chica",
         "pj": 12,
         "pg": 8,
@@ -19402,16 +19620,6 @@
         "gf": 30,
         "gc": 11,
         "pts": 18
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 12,
-        "pg": 8,
-        "pe": 1,
-        "pp": 3,
-        "gf": 22,
-        "gc": 9,
-        "pts": 17
       },
       {
         "eq": "S.J.Bautista",
@@ -19475,12 +19683,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 12,
+        "pj": 13,
         "pg": 3,
         "pe": 4,
-        "pp": 5,
-        "gf": 13,
-        "gc": 19,
+        "pp": 6,
+        "gf": 14,
+        "gc": 22,
         "pts": 10
       },
       {
@@ -19537,13 +19745,13 @@
     "17": [
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 12,
-        "pg": 9,
+        "pj": 13,
+        "pg": 10,
         "pe": 1,
         "pp": 2,
-        "gf": 28,
-        "gc": 7,
-        "pts": 19
+        "gf": 30,
+        "gc": 8,
+        "pts": 21
       },
       {
         "eq": "S.J.Bautista",
@@ -19587,12 +19795,12 @@
       },
       {
         "eq": "Cambaceres",
-        "pj": 12,
+        "pj": 13,
         "pg": 7,
         "pe": 1,
-        "pp": 4,
-        "gf": 23,
-        "gc": 19,
+        "pp": 5,
+        "gf": 24,
+        "gc": 21,
         "pts": 15
       },
       {
@@ -19738,6 +19946,16 @@
         "pts": 16
       },
       {
+        "eq": "Cambaceres",
+        "pj": 13,
+        "pg": 7,
+        "pe": 1,
+        "pp": 5,
+        "gf": 36,
+        "gc": 22,
+        "pts": 15
+      },
+      {
         "eq": "Hernandez",
         "pj": 12,
         "pg": 5,
@@ -19746,16 +19964,6 @@
         "gf": 33,
         "gc": 21,
         "pts": 14
-      },
-      {
-        "eq": "Cambaceres",
-        "pj": 12,
-        "pg": 6,
-        "pe": 1,
-        "pp": 5,
-        "gf": 33,
-        "gc": 21,
-        "pts": 13
       },
       {
         "eq": "La Curva",
@@ -19789,12 +19997,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 12,
+        "pj": 13,
         "pg": 3,
         "pe": 3,
-        "pp": 6,
-        "gf": 18,
-        "gc": 31,
+        "pp": 7,
+        "gf": 19,
+        "gc": 34,
         "pts": 9
       },
       {
@@ -19961,13 +20169,13 @@
       },
       {
         "eq": "Cambaceres",
-        "pj": 12,
-        "pg": 1,
+        "pj": 13,
+        "pg": 2,
         "pe": 2,
         "pp": 9,
-        "gf": 13,
+        "gf": 15,
         "gc": 37,
-        "pts": 4
+        "pts": 6
       },
       {
         "eq": "Cap.Chica",
@@ -19981,12 +20189,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 11,
+        "pj": 12,
         "pg": 0,
         "pe": 0,
-        "pp": 11,
+        "pp": 12,
         "gf": 0,
-        "gc": 22,
+        "gc": 24,
         "pts": 0
       }
     ],
@@ -20083,13 +20291,13 @@
       },
       {
         "eq": "Cambaceres",
-        "pj": 12,
-        "pg": 4,
+        "pj": 13,
+        "pg": 5,
         "pe": 1,
         "pp": 7,
-        "gf": 18,
-        "gc": 19,
-        "pts": 9
+        "gf": 21,
+        "gc": 20,
+        "pts": 11
       },
       {
         "eq": "ADAFI",
@@ -20113,12 +20321,12 @@
       },
       {
         "eq": "V.S Carlos Bco.",
-        "pj": 12,
+        "pj": 13,
         "pg": 2,
         "pe": 1,
-        "pp": 9,
-        "gf": 5,
-        "gc": 53,
+        "pp": 10,
+        "gf": 6,
+        "gc": 56,
         "pts": 5
       },
       {
@@ -20156,13 +20364,13 @@
     },
     {
       "eq": "Cambaceres",
-      "pj": 72,
-      "pg": 40,
+      "pj": 78,
+      "pg": 45,
       "pe": 9,
-      "pp": 23,
-      "gf": 136,
-      "gc": 79,
-      "pts": 89
+      "pp": 24,
+      "gf": 151,
+      "gc": 85,
+      "pts": 99
     },
     {
       "eq": "Talleres B.",
@@ -20256,13 +20464,13 @@
     },
     {
       "eq": "V.S Carlos Bco.",
-      "pj": 72,
-      "pg": 24,
+      "pj": 78,
+      "pg": 25,
       "pe": 16,
-      "pp": 32,
-      "gf": 108,
-      "gc": 117,
-      "pts": 64
+      "pp": 37,
+      "gf": 114,
+      "gc": 132,
+      "pts": 66
     },
     {
       "eq": "Cap.Chica",
